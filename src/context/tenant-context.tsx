@@ -2,9 +2,9 @@
 'use client';
 
 import * as React from 'react';
-import { useUser, useFirestore, useCollection } from '@/firebase';
-import { collection, query, where, limit } from 'firebase/firestore';
-import { useMemoFirebase } from '@/firebase/provider';
+import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 interface TenantContextType {
   companyId: string | null;
@@ -19,19 +19,53 @@ const TenantContext = React.createContext<TenantContextType>({
 });
 
 export function TenantProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const db = useFirestore();
+  const [isInitializing, setIsInitializing] = React.useState(true);
 
-  // In a real multi-tenant app, we'd fetch the user's profile to get their company/branch.
-  // For this MVP, we'll assume a "demo-company" and "main-branch" if not found,
-  // or look for documents the user belongs to.
-  
   // Mock IDs for the prototype environment
   const companyId = "warrior-demo-corp";
   const branchId = "dhaka-main";
 
+  React.useEffect(() => {
+    if (isUserLoading) return;
+
+    if (user && db) {
+      const userRef = doc(db, "companies", companyId, "users", user.uid);
+      
+      // Check if user record exists, if not create it to satisfy security rules
+      getDoc(userRef).then((snap) => {
+        if (!snap.exists()) {
+          const userData = {
+            id: user.uid,
+            companyId,
+            branchId,
+            firstName: "Guest",
+            lastName: "Admin",
+            email: user.email || "guest@warrior.com",
+            isActive: true,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          };
+          setDocumentNonBlocking(userRef, userData, { merge: true });
+        }
+        setIsInitializing(false);
+      }).catch(() => {
+        // Even if the check fails (e.g. initial propagation delay), we unblock the UI
+        // since the security rule exception for demo-corp handles the access.
+        setIsInitializing(false);
+      });
+    } else if (!user) {
+      setIsInitializing(false);
+    }
+  }, [user, isUserLoading, db, companyId, branchId]);
+
   return (
-    <TenantContext.Provider value={{ companyId, branchId, isLoading: false }}>
+    <TenantContext.Provider value={{ 
+      companyId, 
+      branchId, 
+      isLoading: isUserLoading || isInitializing 
+    }}>
       {children}
     </TenantContext.Provider>
   );

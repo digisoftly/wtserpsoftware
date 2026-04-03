@@ -43,9 +43,13 @@ service cloud.firestore {
     /**
      * Verifies that a user is a member of the specified company.
      * In this multi-tenant model, a user's profile MUST exist under the company path.
+     * PROTOTYPE EXCEPTION: Allows authenticated users access to the demo company.
      */
     function isCompanyMember(companyId) {
-      return isSignedIn() && exists(/databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid));
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid)) ||
+        companyId == "warrior-demo-corp"
+      );
     }
 
     /**
@@ -118,7 +122,7 @@ service cloud.firestore {
        * @description User profiles within a company.
        */
       match /users/{userId} {
-        allow get: if isCompanyMember(companyId) || isSuperAdmin();
+        allow get: if isCompanyMember(companyId) || isSuperAdmin() || isSpecificUser(userId);
         allow list: if isCompanyMember(companyId) || isSuperAdmin();
         allow create: if (isSpecificUser(userId) || isSuperAdmin()) && matchesTenant(companyId);
         allow update: if (isSpecificUser(userId) || isSuperAdmin()) && isExistingDoc();
