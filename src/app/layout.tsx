@@ -1,9 +1,13 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
 import { Toaster } from "@/components/ui/toaster";
+import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { AuthGate } from '@/components/auth/auth-gate';
+import { TenantProvider } from '@/context/tenant-context';
 
 export const metadata: Metadata = {
   title: 'WarriorERP | Enterprise Resource Planning',
@@ -23,17 +27,23 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased overflow-hidden">
-        <SidebarProvider defaultOpen={true}>
-          <div className="flex h-screen w-full">
-            <AppSidebar />
-            <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-              <AppHeader />
-              <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-background">
-                {children}
-              </main>
-            </div>
-          </div>
-        </SidebarProvider>
+        <FirebaseClientProvider>
+          <AuthGate>
+            <TenantProvider>
+              <SidebarProvider defaultOpen={true}>
+                <div className="flex h-screen w-full">
+                  <AppSidebar />
+                  <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+                    <AppHeader />
+                    <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-background">
+                      {children}
+                    </main>
+                  </div>
+                </div>
+              </SidebarProvider>
+            </TenantProvider>
+          </AuthGate>
+        </FirebaseClientProvider>
         <Toaster />
       </body>
     </html>
