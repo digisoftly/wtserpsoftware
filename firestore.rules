@@ -1,0 +1,201 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * WARRIOR ERP SECURITY RULES
+     * 
+     * Core Philosophy: 
+     * This ruleset implements a strict multi-tenant isolation model. Access is governed by a user's 
+     * association with a specific Company and Branch. Global access is reserved for Super Admins 
+     * verified via an "existence-over-content" check in a dedicated collection.
+     * 
+     * Data Structure:
+     * - /super_admins/{userId}: Global system access.
+     * - /system_settings/...: Global configurations (Roles, Modules, Plans).
+     * - /companies/{companyId}: Tenant-specific data root.
+     * - /companies/{companyId}/branches/{branchId}: Operational data segmentation.
+     * 
+     * Key Security Decisions:
+     * 1. Multi-Tenancy: All read/write operations on company data require the user to be a 
+     *    registered user within that specific company path.
+     * 2. Super Admin Override: Super Admins bypass standard company-level restrictions.
+     * 3. Relational Integrity: On creation/update, documents must contain denormalized IDs 
+     *    (companyId, branchId) that match their path to prevent cross-tenant data injection.
+     * 4. Denormalization for Performance: Authorization relies on fields directly within the 
+     *    resource or path parameters to avoid deep, expensive recursive get() calls.
+     */
+
+    // --- GLOBAL HELPER FUNCTIONS ---
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSuperAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/super_admins/$(request.auth.uid));
+    }
+
+    function isSpecificUser(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Verifies that a user is a member of the specified company.
+     * In this multi-tenant model, a user's profile MUST exist under the company path.
+     */
+    function isCompanyMember(companyId) {
+      return isSignedIn() && exists(/databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid));
+    }
+
+    /**
+     * Checks if the data being written has the correct tenant IDs matching the URL path.
+     */
+    function matchesTenant(companyId) {
+      return request.resource.data.companyId == companyId;
+    }
+
+    function matchesBranch(companyId, branchId) {
+      return matchesTenant(companyId) && request.resource.data.branchId == branchId;
+    }
+
+    function isExistingDoc() {
+      return resource != null;
+    }
+
+    // --- SUPER ADMIN RULES ---
+
+    /**
+     * @description Controls access to the Super Admin registry.
+     * @path /super_admins/{userId}
+     * @allow get: (User checking own status), list: (SuperAdmin), write: (SuperAdmin)
+     * @deny write: (Anyone else)
+     * @principle Existence-over-content authorization for root privileges.
+     */
+    match /super_admins/{userId} {
+      allow get: if isSignedIn() && (isSpecificUser(userId) || isSuperAdmin());
+      allow list: if isSuperAdmin();
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    // --- SYSTEM SETTINGS RULES ---
+
+    /**
+     * @description Global system settings (Roles, Permissions, Modules, Plans).
+     * @path /system_settings/{allPaths=**}
+     * @allow get, list: (Any signed-in user), write: (SuperAdmin)
+     * @deny write: (Regular users)
+     * @principle Immutable system configurations protected by Super Admin role.
+     */
+    match /system_settings/{allPaths=**} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    // --- COMPANY & BRANCH RULES ---
+
+    /**
+     * @description Top-level Company management.
+     * @path /companies/{companyId}
+     * @allow get: (Members), list: (SuperAdmin), write: (SuperAdmin)
+     * @deny update: (Non-admins)
+     */
+    match /companies/{companyId} {
+      allow get: if isCompanyMember(companyId) || isSuperAdmin();
+      allow list: if isSuperAdmin();
+      allow create, update, delete: if isSuperAdmin();
+
+      /**
+       * @description Branch-level definitions.
+       */
+      match /branches/{branchId} {
+        allow get, list: if isCompanyMember(companyId) || isSuperAdmin();
+        allow create: if isSuperAdmin() && matchesTenant(companyId);
+        allow update, delete: if isSuperAdmin() && isExistingDoc();
+      }
+
+      /**
+       * @description User profiles within a company.
+       */
+      match /users/{userId} {
+        allow get: if isCompanyMember(companyId) || isSuperAdmin();
+        allow list: if isCompanyMember(companyId) || isSuperAdmin();
+        allow create: if (isSpecificUser(userId) || isSuperAdmin()) && matchesTenant(companyId);
+        allow update: if (isSpecificUser(userId) || isSuperAdmin()) && isExistingDoc();
+        allow delete: if isSuperAdmin() && isExistingDoc();
+      }
+
+      /**
+       * @description Company-wide Audit Logs and Backups.
+       */
+      match /audit_logs/{logId} {
+        allow get, list: if isCompanyMember(companyId) || isSuperAdmin();
+        allow create: if isSignedIn() && matchesTenant(companyId);
+        allow update, delete: if false; 
+      }
+
+      match /backup_records/{backupId} {
+        allow get, list, write: if isSuperAdmin();
+      }
+      
+      match /subscriptions/{subId} {
+        allow get, list: if isCompanyMember(companyId) || isSuperAdmin();
+        allow write: if isSuperAdmin();
+      }
+    }
+
+    // --- OPERATIONAL DATA RULES (BRANCH SCOPED) ---
+
+    /**
+     * @description Captures all standard ERP entities nested under a branch.
+     * Includes: Products, Customers, Suppliers, Invoices, Orders, Projects, HRM.
+     */
+    match /companies/{companyId}/branches/{branchId}/{collection}/{docId} {
+      
+      /**
+       * Primary access check for branch-nested operational data.
+       * Prototyping Mode: Flexible on internal data, strict on Company/Branch isolation.
+       */
+      allow get, list: if isCompanyMember(companyId) || isSuperAdmin();
+      
+      allow create: if (isCompanyMember(companyId) || isSuperAdmin()) 
+                    && matchesBranch(companyId, branchId);
+      
+      allow update: if (isCompanyMember(companyId) || isSuperAdmin()) 
+                    && isExistingDoc() 
+                    && request.resource.data.companyId == resource.data.companyId;
+      
+      allow delete: if (isCompanyMember(companyId) || isSuperAdmin()) 
+                    && isExistingDoc();
+
+      // --- DEEP NESTED SUBCOLLECTIONS (Items, Serial Numbers, HR Records) ---
+
+      match /{subCollection}/{subDocId} {
+        allow get, list: if isCompanyMember(companyId) || isSuperAdmin();
+        
+        allow create: if (isCompanyMember(companyId) || isSuperAdmin()) 
+                      && matchesBranch(companyId, branchId);
+        
+        allow update: if (isCompanyMember(companyId) || isSuperAdmin()) 
+                      && isExistingDoc() 
+                      && request.resource.data.companyId == resource.data.companyId;
+        
+        allow delete: if (isCompanyMember(companyId) || isSuperAdmin()) 
+                      && isExistingDoc();
+
+        // Support for 4th level nesting (e.g., .../payroll_records/{id}/payslips/{id})
+        match /{deepSub}/{deepId} {
+          allow get, list: if isCompanyMember(companyId) || isSuperAdmin();
+          allow create: if (isCompanyMember(companyId) || isSuperAdmin()) && matchesBranch(companyId, branchId);
+          allow update: if (isCompanyMember(companyId) || isSuperAdmin()) && isExistingDoc();
+          allow delete: if (isCompanyMember(companyId) || isSuperAdmin()) && isExistingDoc();
+        }
+      }
+    }
+
+    // --- FALLBACK ---
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}
