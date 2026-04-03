@@ -2,13 +2,11 @@
 
 import * as React from "react"
 import { 
-  Package, 
   Search, 
   Plus, 
   Filter, 
   BarChart, 
   Zap, 
-  AlertTriangle,
   RefreshCw,
   ArrowRight
 } from "lucide-react"
@@ -29,22 +27,17 @@ export default function InventoryPage() {
   const handleRunForecast = async () => {
     setIsForecasting(true)
     try {
-      // Mock data for AI flow input
       const result = await inventoryForecasting({
         historicalSalesData: [
           { date: "2023-10-01", productId: "PROD-001", quantitySold: 45 },
           { date: "2023-11-01", productId: "PROD-001", quantitySold: 52 },
           { date: "2023-12-01", productId: "PROD-001", quantitySold: 68 },
-          { date: "2023-10-15", productId: "PROD-002", quantitySold: 12 },
-          { date: "2023-11-15", productId: "PROD-002", quantitySold: 8 },
         ],
         currentInventory: [
           { productId: "PROD-001", currentStock: 25, reorderPoint: 30, maxStockLevel: 100 },
-          { productId: "PROD-002", currentStock: 15, reorderPoint: 5, maxStockLevel: 20 },
         ],
         productCatalog: [
           { productId: "PROD-001", productName: "CCTV Camera 4K Pro", unitCost: 45, unitPrice: 89 },
-          { productId: "PROD-002", productName: "Network Switch 16P", unitCost: 120, unitPrice: 199 },
         ]
       })
       setForecast(result)

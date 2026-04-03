@@ -5,20 +5,23 @@ import {
   LayoutDashboard,
   ShoppingCart,
   FileText,
-  Truck,
-  RotateCcw,
   Package,
+  RotateCcw,
+  Boxes,
+  Scan,
+  Folder,
   Layers,
+  Wrench,
   Users,
-  Building2,
+  Truck,
   Wallet,
-  Users2,
+  UserRoundCog,
   BarChart3,
+  TrendingUp,
   Database,
   Settings,
   ShieldCheck,
-  LogOut,
-  ChevronDown
+  LogOut
 } from "lucide-react"
 
 import {
@@ -30,30 +33,31 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
   useSidebar
 } from "@/components/ui/sidebar"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
 const modules = [
-  { name: "Dashboard", icon: LayoutDashboard, color: "text-blue-400", path: "/" },
-  { name: "Sales", icon: ShoppingCart, color: "text-green-400", path: "/sales" },
-  { name: "Quotation", icon: FileText, color: "text-purple-400", path: "/quotations" },
-  { name: "Purchase", icon: Truck, color: "text-orange-400", path: "/purchases" },
-  { name: "Sales Return", icon: RotateCcw, color: "text-red-400", path: "/sales-returns" },
-  { name: "Purchase Return", icon: RotateCcw, color: "text-amber-600", path: "/purchase-returns" },
-  { name: "Inventory", icon: Package, color: "text-yellow-400", path: "/inventory" },
-  { name: "Projects", icon: Layers, color: "text-teal-400", path: "/projects" },
-  { name: "Customers", icon: Users, color: "text-cyan-400", path: "/customers" },
-  { name: "Suppliers", icon: Building2, color: "text-stone-400", path: "/suppliers" },
-  { name: "Accounts", icon: Wallet, color: "text-indigo-400", path: "/accounts" },
-  { name: "HRM", icon: Users2, color: "text-violet-400", path: "/hrm" },
-  { name: "Reports", icon: BarChart3, color: "text-blue-500", path: "/reports" },
-  { name: "Backup", icon: Database, color: "text-gray-400", path: "/backup", adminOnly: true },
-  { name: "Settings", icon: Settings, color: "text-pink-400", path: "/settings" },
-  { name: "Users & Roles", icon: ShieldCheck, color: "text-violet-500", path: "/users" },
+  { name: "Dashboard", icon: LayoutDashboard, color: "text-blue-500", path: "/" },
+  { name: "Sales", icon: ShoppingCart, color: "text-green-500", path: "/sales" },
+  { name: "Quotation", icon: FileText, color: "text-purple-500", path: "/quotations" },
+  { name: "Purchase", icon: Package, color: "text-orange-500", path: "/purchases" },
+  { name: "returns", icon: RotateCcw, color: "text-red-500", path: "/returns" },
+  { name: "Products & Services", icon: Boxes, color: "text-yellow-600", path: "/inventory" },
+  { name: "Serial Inventory", icon: Scan, color: "text-blue-400", path: "/serial-inventory" },
+  { name: "Projects", icon: Folder, color: "text-teal-500", path: "/projects" },
+  { name: "Project Billing", icon: Layers, color: "text-violet-500", path: "/project-billing" },
+  { name: "Service Contracts", icon: Wrench, color: "text-emerald-500", path: "/contracts" },
+  { name: "Customers", icon: Users, color: "text-cyan-500", path: "/customers" },
+  { name: "Suppliers", icon: Truck, color: "text-amber-700", path: "/suppliers" },
+  { name: "Accounts", icon: Wallet, color: "text-blue-600", path: "/accounts" },
+  { name: "HRM", icon: UserRoundCog, color: "text-purple-500", path: "/hrm" },
+  { name: "Reports", icon: BarChart3, color: "text-indigo-400", path: "/reports" },
+  { name: "AI Forecasting", icon: TrendingUp, color: "text-violet-500", path: "/ai-forecasting" },
+  { name: "Backup", icon: Database, color: "text-gray-500", path: "/backup" },
+  { name: "Settings", icon: Settings, color: "text-rose-500", path: "/settings" },
+  { name: "Users & Roles", icon: ShieldCheck, color: "text-violet-600", path: "/users" },
 ]
 
 export function AppSidebar() {

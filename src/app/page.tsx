@@ -8,8 +8,6 @@ import {
   Users, 
   AlertTriangle, 
   ClipboardList,
-  ArrowUpRight,
-  ArrowDownRight,
   Package,
   CalendarDays,
   Briefcase
@@ -22,13 +20,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { cn } from "@/lib/utils"
 
 export default function Dashboard() {
-  const [loading, setLoading] = React.useState(true)
-
-  React.useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 800)
-    return () => clearTimeout(timer)
-  }, [])
-
   const kpis = [
     { title: "Total Sales", value: "$128,430", icon: TrendingUp, colorClass: "bg-blue-500", trend: { value: 12, isPositive: true } },
     { title: "Monthly Purchases", value: "$45,200", icon: ShoppingCart, colorClass: "bg-orange-500", trend: { value: 8, isPositive: false } },
