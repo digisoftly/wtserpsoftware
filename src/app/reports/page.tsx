@@ -66,7 +66,7 @@ export default function ReportsPage() {
             <CardTitle className="text-xs font-medium text-muted-foreground uppercase">Annual Revenue</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${salesData.reduce((sum, d) => sum + d.total, 0).toLocaleString()}</div>
+            <div className="text-2xl font-bold">৳{salesData.reduce((sum, d) => sum + d.total, 0).toLocaleString()}</div>
             <p className="text-[10px] text-green-600 mt-1 flex items-center gap-1"><TrendingUp className="h-3 w-3" /> +14.2% YoY</p>
           </CardContent>
         </Card>
@@ -84,7 +84,7 @@ export default function ReportsPage() {
             <CardTitle className="text-xs font-medium text-muted-foreground uppercase">Avg Order Value</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${invoices && invoices.length > 0 ? (salesData.reduce((sum, d) => sum + d.total, 0) / invoices.length).toFixed(2) : "0.00"}</div>
+            <div className="text-2xl font-bold">৳{invoices && invoices.length > 0 ? (salesData.reduce((sum, d) => sum + d.total, 0) / invoices.length).toFixed(2) : "0.00"}</div>
             <p className="text-[10px] text-muted-foreground mt-1">Per transaction</p>
           </CardContent>
         </Card>
@@ -121,7 +121,7 @@ export default function ReportsPage() {
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(value) => `$${value}`}
+                  tickFormatter={(value) => `৳${value}`}
                 />
                 <Tooltip 
                   cursor={{ fill: '#f5f5f5' }}

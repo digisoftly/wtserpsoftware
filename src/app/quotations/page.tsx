@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -144,7 +143,7 @@ export default function QuotationsPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard title="Draft Proposals" value={quotations?.filter(q => q.status === 'draft').length || 0} icon={FileText} colorClass="bg-purple-500" />
-        <KPICard title="Total Value" value={`$${quotations?.reduce((s, q) => s + (q.totalAmount || 0), 0).toLocaleString()}`} icon={Calculator} colorClass="bg-blue-500" />
+        <KPICard title="Total Value" value={`৳${quotations?.reduce((s, q) => s + (q.totalAmount || 0), 0).toLocaleString()}`} icon={Calculator} colorClass="bg-blue-500" />
         <KPICard title="Converted" value={quotations?.filter(q => q.status === 'converted').length || 0} icon={CheckCircle2} colorClass="bg-green-500" />
         <KPICard title="Pending Clients" value={new Set(quotations?.map(q => q.customerId)).size} icon={Users} colorClass="bg-amber-500" />
       </div>
@@ -169,7 +168,7 @@ export default function QuotationsPage() {
                   <TableRow key={q.id}>
                     <TableCell className="font-bold text-purple-700">{q.quotationNumber}</TableCell>
                     <TableCell>{customers?.find(c => c.id === q.customerId)?.firstName || "Unknown"}</TableCell>
-                    <TableCell className="font-bold">${q.totalAmount?.toLocaleString()}</TableCell>
+                    <TableCell className="font-bold">৳{q.totalAmount?.toLocaleString()}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={cn(q.status === "converted" ? "bg-green-50 text-green-700 border-green-200" : "bg-purple-50 text-purple-700")}>
                         {q.status}
@@ -220,8 +219,8 @@ export default function QuotationsPage() {
                       {lineItems.map((item, idx) => (
                         <TableRow key={idx}>
                           <TableCell className="text-xs">{item.name}</TableCell>
-                          <TableCell className="text-xs">${item.unitPrice}</TableCell>
-                          <TableCell className="text-xs text-right font-bold">${item.total.toLocaleString()}</TableCell>
+                          <TableCell className="text-xs">৳{item.unitPrice}</TableCell>
+                          <TableCell className="text-xs text-right font-bold">৳{item.total.toLocaleString()}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -232,7 +231,7 @@ export default function QuotationsPage() {
             <div className="bg-purple-50 p-6 rounded-2xl border border-purple-100 flex flex-col justify-between">
               <div>
                 <h3 className="font-bold text-purple-800 uppercase text-xs mb-4">Total Estimate</h3>
-                <div className="text-3xl font-bold text-purple-700">${totalValue.toLocaleString()}</div>
+                <div className="text-3xl font-bold text-purple-700">৳{totalValue.toLocaleString()}</div>
               </div>
               <Button className="w-full bg-purple-600 hover:bg-purple-700 h-12 font-bold gap-2" onClick={handleSubmitQuote} disabled={isSubmitting}>
                 {isSubmitting ? <Loader2 className="animate-spin" /> : <ChevronRight />} Save Proposal

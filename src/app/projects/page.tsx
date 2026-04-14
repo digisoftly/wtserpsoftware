@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -86,7 +85,7 @@ export default function ProjectsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard title="Active Work" value={projects?.filter(p => p.status === 'active').length || 0} icon={Folder} colorClass="bg-teal-500" />
         <KPICard title="Completions" value={projects?.filter(p => p.status === 'completed').length || 0} icon={ClipboardCheck} colorClass="bg-green-500" />
-        <KPICard title="Budget Pool" value={`$${projects?.reduce((s, p) => s + (p.budget || 0), 0).toLocaleString()}`} icon={DollarSign} colorClass="bg-blue-500" />
+        <KPICard title="Budget Pool" value={`৳${projects?.reduce((s, p) => s + (p.budget || 0), 0).toLocaleString()}`} icon={DollarSign} colorClass="bg-blue-500" />
         <KPICard title="Deadlines Today" value="0" icon={Calendar} colorClass="bg-red-500" />
       </div>
 
@@ -111,7 +110,7 @@ export default function ProjectsPage() {
                   <TableRow key={p.id}>
                     <TableCell className="font-bold text-teal-700">{p.name}</TableCell>
                     <TableCell>{customers?.find(c => c.id === p.customerId)?.firstName || "Unknown"}</TableCell>
-                    <TableCell className="font-bold">${p.budget?.toLocaleString()}</TableCell>
+                    <TableCell className="font-bold">৳{p.budget?.toLocaleString()}</TableCell>
                     <TableCell className="text-xs">{new Date(p.deadline).toLocaleDateString()}</TableCell>
                     <TableCell>
                       <div className="w-full bg-muted rounded-full h-2">
@@ -145,7 +144,7 @@ export default function ProjectsPage() {
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Budget ($)</Label><Input name="budget" type="number" required /></div>
+              <div className="space-y-2"><Label>Budget (৳)</Label><Input name="budget" type="number" required /></div>
               <div className="space-y-2"><Label>Deadline</Label><Input name="deadline" type="date" required /></div>
             </div>
             <DialogFooter>

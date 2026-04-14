@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -65,9 +64,9 @@ export default function Dashboard() {
   const totalSales = allInvoices?.reduce((sum, inv) => sum + (inv.totalAmount || 0), 0) || 0;
 
   const kpis = [
-    { title: "Total Sales", value: totalSales.toLocaleString('en-US', { style: 'currency', currency: 'USD' }), icon: TrendingUp, colorClass: "bg-blue-500", trend: { value: 12, isPositive: true } },
-    { title: "Monthly Purchases", value: "$0.00", icon: ShoppingCart, colorClass: "bg-orange-500" },
-    { title: "Net Profit", value: (totalSales * 0.35).toLocaleString('en-US', { style: 'currency', currency: 'USD' }), icon: CreditCard, colorClass: "bg-green-500" },
+    { title: "Total Sales", value: `৳${totalSales.toLocaleString()}`, icon: TrendingUp, colorClass: "bg-blue-500", trend: { value: 12, isPositive: true } },
+    { title: "Monthly Purchases", value: "৳0.00", icon: ShoppingCart, colorClass: "bg-orange-500" },
+    { title: "Net Profit", value: `৳${(totalSales * 0.35).toLocaleString()}`, icon: CreditCard, colorClass: "bg-green-500" },
     { title: "Pending Projects", value: "0", icon: ClipboardList, colorClass: "bg-teal-500" },
     { title: "Low Stock Items", value: lowStockAlerts?.length.toString() || "0", icon: AlertTriangle, colorClass: "bg-red-500" },
     { title: "Active Customers", value: customers?.length.toString() || "0", icon: Users, colorClass: "bg-cyan-500", trend: { value: 2, isPositive: true } },
@@ -131,7 +130,7 @@ export default function Dashboard() {
                             {inv.status}
                           </Badge>
                         </TableCell>
-                        <TableCell>{inv.totalAmount?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</TableCell>
+                        <TableCell>৳{inv.totalAmount?.toLocaleString()}</TableCell>
                         <TableCell className="text-right">
                           <Button variant="ghost" size="sm">Details</Button>
                         </TableCell>

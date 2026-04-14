@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -28,7 +27,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, serverTimestamp, query, orderBy, addDoc, doc, updateDoc, increment, runTransaction } from "firebase/firestore"
+import { collection, serverTimestamp, query, orderBy, doc, updateDoc, increment, runTransaction } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { cn } from "@/lib/utils"
@@ -118,9 +117,7 @@ export default function SalesPage() {
 
     setIsSubmitting(true);
     try {
-      // Use a transaction to ensure stock is only deducted if invoice is created
       await runTransaction(db, async (transaction) => {
-        // 1. Check stock for all items
         for (const item of lineItems) {
           const productRef = doc(db, "companies", companyId!, "branches", branchId!, "products", item.productId);
           const productSnap = await transaction.get(productRef);
@@ -132,7 +129,6 @@ export default function SalesPage() {
           }
         }
 
-        // 2. Deduct stock
         for (const item of lineItems) {
           const productRef = doc(db, "companies", companyId!, "branches", branchId!, "products", item.productId);
           transaction.update(productRef, {
@@ -140,7 +136,6 @@ export default function SalesPage() {
           });
         }
 
-        // 3. Create invoice
         const invoiceRef = doc(collection(db, "companies", companyId!, "branches", branchId!, "sales_invoices"));
         const invoiceData = {
           id: invoiceRef.id,
@@ -193,10 +188,10 @@ export default function SalesPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Total Revenue" value={`$${invoices?.reduce((s, i) => s + (i.totalAmount || 0), 0).toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-500" />
-        <KPICard title="Outstanding Due" value={`$${invoices?.reduce((s, i) => s + (i.dueAmount || 0), 0).toLocaleString()}`} icon={Clock} colorClass="bg-orange-500" />
+        <KPICard title="Total Revenue" value={`৳${invoices?.reduce((s, i) => s + (i.totalAmount || 0), 0).toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-500" />
+        <KPICard title="Outstanding Due" value={`৳${invoices?.reduce((s, i) => s + (i.dueAmount || 0), 0).toLocaleString()}`} icon={Clock} colorClass="bg-orange-500" />
         <KPICard title="Invoices Issued" value={invoices?.length || 0} icon={FileText} colorClass="bg-blue-500" />
-        <KPICard title="Total Paid" value={`$${invoices?.reduce((s, i) => s + (i.paidAmount || 0), 0).toLocaleString()}`} icon={CreditCard} colorClass="bg-purple-500" />
+        <KPICard title="Total Paid" value={`৳${invoices?.reduce((s, i) => s + (i.paidAmount || 0), 0).toLocaleString()}`} icon={CreditCard} colorClass="bg-purple-500" />
       </div>
 
       <div className="flex items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
@@ -231,7 +226,7 @@ export default function SalesPage() {
                     <TableCell>
                       <div className="font-medium">{customers?.find(c => c.id === inv.customerId)?.firstName || "Unknown"}</div>
                     </TableCell>
-                    <TableCell className="font-bold">${inv.totalAmount?.toLocaleString()}</TableCell>
+                    <TableCell className="font-bold">৳{inv.totalAmount?.toLocaleString()}</TableCell>
                     <TableCell>
                       <Badge variant="secondary" className={cn(inv.status === "paid" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700")}>
                         {inv.status}
@@ -322,8 +317,8 @@ export default function SalesPage() {
                                 }}
                               />
                             </TableCell>
-                            <TableCell className="text-xs">${item.unitPrice}</TableCell>
-                            <TableCell className="text-xs text-right font-bold">${item.total.toLocaleString()}</TableCell>
+                            <TableCell className="text-xs">৳{item.unitPrice}</TableCell>
+                            <TableCell className="text-xs text-right font-bold">৳{item.total.toLocaleString()}</TableCell>
                             <TableCell>
                               <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => handleRemoveItem(idx)}>
                                 <Trash2 className="h-4 w-4" />
@@ -343,7 +338,7 @@ export default function SalesPage() {
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
                   <span>Subtotal</span>
-                  <span>${subtotal.toLocaleString()}</span>
+                  <span>৳{subtotal.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm items-center">
                   <div className="flex items-center gap-2">
@@ -351,7 +346,7 @@ export default function SalesPage() {
                     <Input type="number" className="w-12 h-6 p-1 text-[10px]" value={taxRate} onChange={e => setTaxRate(Number(e.target.value))} />
                     <span className="text-[10px]">%</span>
                   </div>
-                  <span>+${taxAmount.toLocaleString()}</span>
+                  <span>+৳{taxAmount.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm items-center">
                   <span>Discount</span>
@@ -359,7 +354,7 @@ export default function SalesPage() {
                 </div>
                 <div className="border-t pt-3 flex justify-between font-bold text-lg text-green-700">
                   <span>Grand Total</span>
-                  <span>${grandTotal.toLocaleString()}</span>
+                  <span>৳{grandTotal.toLocaleString()}</span>
                 </div>
               </div>
 

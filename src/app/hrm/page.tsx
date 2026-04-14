@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -87,7 +86,7 @@ export default function HRMPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard title="Total Staff" value={totalStaff} icon={Users} colorClass="bg-purple-500" />
         <KPICard title="Active Status" value={activeStaff} icon={UserRoundCog} colorClass="bg-blue-500" />
-        <KPICard title="Monthly Payroll" value={`$${totalPayroll.toLocaleString()}`} icon={DollarSign} colorClass="bg-green-500" />
+        <KPICard title="Monthly Payroll" value={`৳${totalPayroll.toLocaleString()}`} icon={DollarSign} colorClass="bg-green-500" />
         <KPICard title="Departments" value={new Set(employees?.map(e => e.department)).size} icon={Briefcase} colorClass="bg-orange-500" />
       </div>
 
@@ -145,7 +144,7 @@ export default function HRMPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-xs">{emp.department}</TableCell>
-                    <TableCell className="font-semibold text-xs">${emp.salary?.toLocaleString()}/mo</TableCell>
+                    <TableCell className="font-semibold text-xs">৳{emp.salary?.toLocaleString()}/mo</TableCell>
                     <TableCell>
                       <Badge className="bg-green-100 text-green-700 hover:bg-green-100 text-[10px]" variant="secondary">Active</Badge>
                     </TableCell>
@@ -195,7 +194,7 @@ export default function HRMPage() {
                 <Input id="email" name="email" type="email" className="text-sm" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="salary" className="text-xs">Monthly Salary ($)</Label>
+                <Label htmlFor="salary" className="text-xs">Monthly Salary (৳)</Label>
                 <Input id="salary" name="salary" type="number" required className="text-sm" />
               </div>
             </div>

@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -76,9 +75,9 @@ export default function AccountsPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Net Balance" value={`$${balance.toLocaleString()}`} icon={Wallet} colorClass="bg-blue-600" />
-        <KPICard title="Total Income" value={`$${totalIncome.toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-600" />
-        <KPICard title="Total Expense" value={`$${totalExpense.toLocaleString()}`} icon={TrendingDown} colorClass="bg-red-600" />
+        <KPICard title="Net Balance" value={`৳${balance.toLocaleString()}`} icon={Wallet} colorClass="bg-blue-600" />
+        <KPICard title="Total Income" value={`৳${totalIncome.toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-600" />
+        <KPICard title="Total Expense" value={`৳${totalExpense.toLocaleString()}`} icon={TrendingDown} colorClass="bg-red-600" />
         <KPICard title="Transactions" value={transactions?.length || 0} icon={Landmark} colorClass="bg-purple-600" />
       </div>
 
@@ -105,7 +104,7 @@ export default function AccountsPage() {
                     <TableCell className="text-right">
                       <span className={cn("font-bold text-xs md:text-sm flex items-center justify-end gap-1", t.transactionType === 'income' ? 'text-green-600' : 'text-red-600')}>
                         {t.transactionType === 'income' ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownLeft className="h-3 w-3" />}
-                        ${t.amount?.toLocaleString()}
+                        ৳{t.amount?.toLocaleString()}
                       </span>
                     </TableCell>
                   </TableRow>
@@ -137,7 +136,7 @@ export default function AccountsPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-xs">Amount ($)</Label>
+                <Label className="text-xs">Amount (৳)</Label>
                 <Input name="amount" type="number" step="0.01" required className="text-sm" />
               </div>
               <div className="space-y-2">

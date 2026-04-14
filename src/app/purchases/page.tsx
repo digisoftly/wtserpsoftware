@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -92,7 +91,6 @@ export default function PurchasesPage() {
     setIsSubmitting(true);
     try {
       await runTransaction(db, async (transaction) => {
-        // 1. Create PO
         const poRef = doc(collection(db, "companies", companyId!, "branches", branchId!, "purchase_orders"));
         transaction.set(poRef, {
           id: poRef.id,
@@ -102,13 +100,12 @@ export default function PurchasesPage() {
           supplierId: selectedSupplierId,
           items: lineItems,
           totalAmount: totalSpend,
-          status: "received", // ERP assumes instant receipt for this logic
+          status: "received", 
           orderDate: new Date().toISOString(),
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
 
-        // 2. Increase Stock
         for (const item of lineItems) {
           const productRef = doc(db, "companies", companyId!, "branches", branchId!, "products", item.productId);
           transaction.update(productRef, {
@@ -142,10 +139,10 @@ export default function PurchasesPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Total Procurement" value={`$${purchaseOrders?.reduce((s, i) => s + (i.totalAmount || 0), 0).toLocaleString()}`} icon={ShoppingBag} colorClass="bg-orange-500" />
+        <KPICard title="Total Procurement" value={`৳${purchaseOrders?.reduce((s, i) => s + (i.totalAmount || 0), 0).toLocaleString()}`} icon={ShoppingBag} colorClass="bg-orange-500" />
         <KPICard title="Suppliers" value={suppliers?.length || 0} icon={Truck} colorClass="bg-blue-500" />
         <KPICard title="Recent Receipts" value={purchaseOrders?.filter(po => po.status === 'received').length || 0} icon={Package} colorClass="bg-green-500" />
-        <KPICard title="Monthly Spend" value={`$${totalSpend.toLocaleString()}`} icon={DollarSign} colorClass="bg-purple-500" />
+        <KPICard title="Monthly Spend" value={`৳${totalSpend.toLocaleString()}`} icon={DollarSign} colorClass="bg-purple-500" />
       </div>
 
       <div className="flex items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
@@ -175,7 +172,7 @@ export default function PurchasesPage() {
                   <TableRow key={po.id}>
                     <TableCell className="font-bold text-orange-700">{po.orderNumber}</TableCell>
                     <TableCell>{suppliers?.find(s => s.id === po.supplierId)?.name || "Unknown"}</TableCell>
-                    <TableCell className="font-bold">${po.totalAmount?.toLocaleString()}</TableCell>
+                    <TableCell className="font-bold">৳{po.totalAmount?.toLocaleString()}</TableCell>
                     <TableCell><Badge className="bg-green-50 text-green-700 border-green-200">Received</Badge></TableCell>
                     <TableCell className="text-right"><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></TableCell>
                   </TableRow>
@@ -243,8 +240,8 @@ export default function PurchasesPage() {
                               onChange={e => setLineItems(lineItems.map((li, i) => i === idx ? { ...li, quantity: Number(e.target.value), total: Number(e.target.value) * li.unitCost } : li))}
                             />
                           </TableCell>
-                          <TableCell className="text-xs">${item.unitCost}</TableCell>
-                          <TableCell className="text-right font-bold">${item.total.toLocaleString()}</TableCell>
+                          <TableCell className="text-xs">৳{item.unitCost}</TableCell>
+                          <TableCell className="text-right font-bold">৳{item.total.toLocaleString()}</TableCell>
                           <TableCell>
                             <Button variant="ghost" size="icon" onClick={() => setLineItems(lineItems.filter((_, i) => i !== idx))}><Trash2 className="h-4 w-4 text-red-500" /></Button>
                           </TableCell>
@@ -259,7 +256,7 @@ export default function PurchasesPage() {
             <div className="bg-orange-50/50 p-6 rounded-2xl border-2 border-orange-100 flex flex-col justify-between">
               <div>
                 <h3 className="font-bold text-orange-800 uppercase text-xs mb-4">Total Purchase Value</h3>
-                <div className="text-3xl font-bold text-orange-700">${totalSpend.toLocaleString()}</div>
+                <div className="text-3xl font-bold text-orange-700">৳{totalSpend.toLocaleString()}</div>
               </div>
               <Button 
                 className="w-full bg-orange-600 hover:bg-orange-700 h-12 font-bold gap-2"

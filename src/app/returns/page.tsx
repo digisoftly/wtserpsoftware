@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -171,7 +170,7 @@ export default function ReturnsPage() {
                           {invoices?.find(inv => inv.id === r.salesInvoiceId)?.invoiceNumber || "N/A"}
                         </TableCell>
                         <TableCell className="text-xs font-medium">{r.reason}</TableCell>
-                        <TableCell className="font-bold text-red-600 text-xs md:text-sm">-${r.returnAmount?.toLocaleString()}</TableCell>
+                        <TableCell className="font-bold text-red-600 text-xs md:text-sm">-৳{r.returnAmount?.toLocaleString()}</TableCell>
                         <TableCell><Badge variant="outline" className="border-red-200 text-red-700 bg-red-50 capitalize text-[10px]">{r.status}</Badge></TableCell>
                         <TableCell className="text-right"><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></TableCell>
                       </TableRow>
@@ -220,7 +219,7 @@ export default function ReturnsPage() {
                           {purchaseOrders?.find(po => po.id === r.purchaseOrderId)?.orderNumber || "N/A"}
                         </TableCell>
                         <TableCell className="text-xs font-medium">{r.reason}</TableCell>
-                        <TableCell className="font-bold text-red-600 text-xs md:text-sm">-${r.returnAmount?.toLocaleString()}</TableCell>
+                        <TableCell className="font-bold text-red-600 text-xs md:text-sm">-৳{r.returnAmount?.toLocaleString()}</TableCell>
                         <TableCell><Badge variant="outline" className="border-red-200 text-red-700 bg-red-50 capitalize text-[10px]">{r.status}</Badge></TableCell>
                         <TableCell className="text-right"><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></TableCell>
                       </TableRow>
@@ -251,15 +250,15 @@ export default function ReturnsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {activeTab === "sales" 
-                    ? invoices?.map(inv => <SelectItem key={inv.id} value={inv.id}>{inv.invoiceNumber} - ${inv.totalAmount}</SelectItem>)
-                    : purchaseOrders?.map(po => <SelectItem key={po.id} value={po.id}>{po.orderNumber} - ${po.totalAmount}</SelectItem>)
+                    ? invoices?.map(inv => <SelectItem key={inv.id} value={inv.id}>{inv.invoiceNumber} - ৳{inv.totalAmount}</SelectItem>)
+                    : purchaseOrders?.map(po => <SelectItem key={po.id} value={po.id}>{po.orderNumber} - ৳{po.totalAmount}</SelectItem>)
                   }
                 </SelectContent>
               </Select>
             </div>
             
             <div className="space-y-2">
-              <Label className="text-xs">Return Amount ($)</Label>
+              <Label className="text-xs">Return Amount (৳)</Label>
               <Input name="amount" type="number" step="0.01" required placeholder="0.00" className="text-sm" />
             </div>
 

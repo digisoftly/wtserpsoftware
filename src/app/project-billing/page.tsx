@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -96,7 +95,7 @@ export default function ProjectBillingPage() {
                       <TableCell className="font-bold">{b.billNumber}</TableCell>
                       <TableCell>{project?.name || "Unknown Project"}</TableCell>
                       <TableCell className="text-sm font-medium">{b.milestone}</TableCell>
-                      <TableCell className="font-bold text-violet-600">${b.amount?.toLocaleString()}</TableCell>
+                      <TableCell className="font-bold text-violet-600">৳{b.amount?.toLocaleString()}</TableCell>
                       <TableCell><Badge variant="outline" className="border-violet-200 text-violet-700 bg-violet-50">Unpaid</Badge></TableCell>
                       <TableCell className="text-right"><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></TableCell>
                     </TableRow>
@@ -139,7 +138,7 @@ export default function ProjectBillingPage() {
               <Input name="milestone" required placeholder="e.g. Phase 1 Completion" />
             </div>
             <div className="space-y-2">
-              <Label>Billing Amount ($)</Label>
+              <Label>Billing Amount (৳)</Label>
               <Input name="amount" type="number" step="0.01" required placeholder="0.00" />
             </div>
             <Button type="submit" className="w-full bg-violet-600 rounded-full">Post Bill</Button>
