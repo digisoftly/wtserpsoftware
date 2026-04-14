@@ -27,7 +27,8 @@ import {
   MessageSquare,
   Upload,
   X,
-  Image as ImageIcon
+  Image as ImageIcon,
+  FileBarChart
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -131,6 +132,13 @@ export default function SettingsPage() {
     return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
+  const templates = [
+    { id: 'professional', name: 'Professional (Default)', desc: 'Corporate high-fidelity layout' },
+    { id: 'minimal', name: 'Minimal', desc: 'Focused, modern and clean' },
+    { id: 'modern', name: 'Modern', desc: 'Vibrant colors and bold typography' },
+    { id: 'thermal', name: 'Thermal Receipt', desc: 'Narrow format for POS printers' },
+  ];
+
   return (
     <div className="space-y-6 pb-20">
       <form onSubmit={handleSaveSettings}>
@@ -155,6 +163,9 @@ export default function SettingsPage() {
             <TabsTrigger value="business" className="rounded-lg gap-2 flex-1 min-w-[120px] py-2">
               <Warehouse className="h-4 w-4" /> {t('businessRules')}
             </TabsTrigger>
+            <TabsTrigger value="templates" className="rounded-lg gap-2 flex-1 min-w-[120px] py-2">
+              <FileBarChart className="h-4 w-4" /> PDF Templates
+            </TabsTrigger>
             <TabsTrigger value="billing" className="rounded-lg gap-2 flex-1 min-w-[120px] py-2">
               <Percent className="h-4 w-4" /> {t('billing')}
             </TabsTrigger>
@@ -166,9 +177,6 @@ export default function SettingsPage() {
             </TabsTrigger>
             <TabsTrigger value="security" className="rounded-lg gap-2 flex-1 min-w-[120px] py-2">
               <Lock className="h-4 w-4" /> {t('security')}
-            </TabsTrigger>
-            <TabsTrigger value="backup" className="rounded-lg gap-2 flex-1 min-w-[120px] py-2">
-              <Database className="h-4 w-4" /> {t('backup')}
             </TabsTrigger>
           </TabsList>
 
@@ -279,6 +287,106 @@ export default function SettingsPage() {
                         <SelectContent><SelectItem value="flat">Flat Amount (৳)</SelectItem><SelectItem value="percentage">Percentage (%)</SelectItem></SelectContent>
                       </Select>
                     </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="templates" className="space-y-6">
+            <Card className="border-none shadow-sm rounded-xl">
+              <CardHeader>
+                <CardTitle className="text-lg font-headline">PDF Layout Engine</CardTitle>
+                <CardDescription>Select default templates for system-generated documents</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Sales Invoice Template */}
+                  <div className="space-y-3">
+                    <Label className="text-xs font-bold uppercase tracking-widest text-primary">Sales Invoice Template</Label>
+                    <Select name="defaultTemplate_invoice" defaultValue={settings?.defaultTemplate_invoice || "professional"}>
+                      <SelectTrigger className="h-12 rounded-xl">
+                        <SelectValue placeholder="Select template" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {templates.map(t => (
+                          <SelectItem key={t.id} value={t.id}>
+                            <div className="flex flex-col items-start py-1">
+                              <span className="font-bold">{t.name}</span>
+                              <span className="text-[10px] text-muted-foreground">{t.desc}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Quotation Template */}
+                  <div className="space-y-3">
+                    <Label className="text-xs font-bold uppercase tracking-widest text-purple-600">Quotation Template</Label>
+                    <Select name="defaultTemplate_quotation" defaultValue={settings?.defaultTemplate_quotation || "professional"}>
+                      <SelectTrigger className="h-12 rounded-xl">
+                        <SelectValue placeholder="Select template" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {templates.map(t => (
+                          <SelectItem key={t.id} value={t.id} disabled={t.id === 'thermal'}>
+                            <div className="flex flex-col items-start py-1">
+                              <span className="font-bold">{t.name}</span>
+                              <span className="text-[10px] text-muted-foreground">{t.desc}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Purchase Template */}
+                  <div className="space-y-3">
+                    <Label className="text-xs font-bold uppercase tracking-widest text-orange-600">Purchase Order Template</Label>
+                    <Select name="defaultTemplate_po" defaultValue={settings?.defaultTemplate_po || "professional"}>
+                      <SelectTrigger className="h-12 rounded-xl">
+                        <SelectValue placeholder="Select template" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {templates.map(t => (
+                          <SelectItem key={t.id} value={t.id} disabled={t.id === 'thermal'}>
+                            <div className="flex flex-col items-start py-1">
+                              <span className="font-bold">{t.name}</span>
+                              <span className="text-[10px] text-muted-foreground">{t.desc}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Service Contract Template */}
+                  <div className="space-y-3">
+                    <Label className="text-xs font-bold uppercase tracking-widest text-emerald-600">Service Contract Template</Label>
+                    <Select name="defaultTemplate_agreement" defaultValue={settings?.defaultTemplate_agreement || "professional"}>
+                      <SelectTrigger className="h-12 rounded-xl">
+                        <SelectValue placeholder="Select template" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {templates.map(t => (
+                          <SelectItem key={t.id} value={t.id} disabled={t.id === 'thermal'}>
+                            <div className="flex flex-col items-start py-1">
+                              <span className="font-bold">{t.name}</span>
+                              <span className="text-[10px] text-muted-foreground">{t.desc}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl flex items-start gap-3">
+                  <FileText className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <div className="text-xs text-blue-800 leading-relaxed">
+                    <p className="font-bold mb-1">Layout Strategy</p>
+                    Different templates are optimized for different hardware. The <strong>Thermal Receipt</strong> template is specifically designed for 80mm POS printers, while others are A4 optimized.
                   </div>
                 </div>
               </CardContent>
