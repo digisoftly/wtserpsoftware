@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
+import { initiateAnonymousSignIn, initiateEmailSignIn } from '@/firebase/non-blocking-login';
 import { useAuth, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, Loader2, ArrowRight, Building2, Lock, Mail, Languages, Info } from 'lucide-react';
@@ -21,6 +21,9 @@ export default function LoginPage() {
   const { t, language } = useTranslation();
   const { setLanguage, userRole } = useTenant();
   const router = useRouter();
+  
+  const [email, setEmail] = React.useState('erpwts@gmail.com');
+  const [password, setPassword] = React.useState('adminwts123');
   const [isLoading, setIsLoading] = React.useState(false);
   const [isRedirecting, setIsRedirecting] = React.useState(false);
 
@@ -39,6 +42,12 @@ export default function LoginPage() {
       }
     }
   }, [user, userRole, router]);
+
+  const handleEmailLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    initiateEmailSignIn(auth, email, password);
+  };
 
   const handleDemoLogin = () => {
     setIsLoading(true);
@@ -126,7 +135,7 @@ export default function LoginPage() {
                 <p className="text-sm font-bold text-blue-600 animate-pulse">{t('roleRedirecting')}</p>
               </div>
             ) : (
-              <div className="space-y-6">
+              <form onSubmit={handleEmailLogin} className="space-y-6">
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('emailLabel')}</Label>
@@ -135,24 +144,28 @@ export default function LoginPage() {
                       <Input 
                         id="email" 
                         type="email" 
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         placeholder="admin@warrior.com" 
                         className="pl-11 h-14 rounded-2xl bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all font-medium" 
-                        disabled 
+                        required
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="password" className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('passwordLabel')}</Label>
-                      <button className="text-xs text-blue-600 font-bold hover:underline transition-all">{t('forgotPassword')}</button>
+                      <button type="button" className="text-xs text-blue-600 font-bold hover:underline transition-all">{t('forgotPassword')}</button>
                     </div>
                     <div className="relative">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                       <Input 
                         id="password" 
                         type="password" 
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                         className="pl-11 h-14 rounded-2xl bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all" 
-                        disabled 
+                        required
                       />
                     </div>
                   </div>
@@ -164,8 +177,12 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <Button className="w-full h-14 rounded-2xl text-lg font-bold bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-100 gap-2 transition-all active:scale-95" disabled>
-                  {t('signInBtn')} <ArrowRight className="h-5 w-5" />
+                <Button 
+                  type="submit"
+                  className="w-full h-14 rounded-2xl text-lg font-bold bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-100 gap-2 transition-all active:scale-95" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><ArrowRight className="h-5 w-5" /> {t('signInBtn')}</>}
                 </Button>
 
                 <div className="relative py-4">
@@ -178,6 +195,7 @@ export default function LoginPage() {
                 </div>
 
                 <Button 
+                  type="button"
                   variant="outline" 
                   className="w-full h-14 rounded-2xl gap-3 border-slate-200 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 font-bold transition-all" 
                   onClick={handleDemoLogin}
@@ -186,7 +204,7 @@ export default function LoginPage() {
                   {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShieldCheck className="h-5 w-5" />}
                   {t('guestAdmin')}
                 </Button>
-              </div>
+              </form>
             )}
           </div>
 
