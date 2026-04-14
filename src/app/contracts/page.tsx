@@ -1,36 +1,70 @@
+
 "use client"
 
 import * as React from "react"
-import { Button } from "@/components/ui/button"
-import { Wrench, Plus, ShieldCheck, Loader2, Search, MoreVertical, Calendar, FileCheck } from "lucide-react"
+import { 
+  Plus, 
+  Wrench, 
+  ShieldCheck, 
+  Loader2, 
+  Search, 
+  MoreVertical, 
+  Calendar, 
+  FileCheck, 
+  Clock, 
+  CreditCard, 
+  CheckCircle2, 
+  AlertCircle, 
+  TrendingUp, 
+  UserPlus, 
+  ArrowRight,
+  Zap,
+  Receipt
+} from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, serverTimestamp, query, orderBy } from "firebase/firestore"
+import { collection, serverTimestamp, query, orderBy, doc, runTransaction, increment, setDoc, where, getDocs } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
-import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { KPICard } from "@/components/dashboard/kpi-card"
+import { toast } from "@/hooks/use-toast"
+import { cn } from "@/lib/utils"
 
 export default function ContractsPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
+  const [isPayModalOpen, setIsPayModalOpen] = React.useState(false);
+  const [isGenerating, setIsGenerating] = React.useState(false);
+  const [selectedInvoice, setSelectedInvoice] = React.useState<any>(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [customerMode, setCustomerType] = React.useState<"select" | "new">("select");
 
-  const contractsColRef = useMemoFirebase(() => {
-    if (!db || !companyId || !branchId) return null;
-    return collection(db, "companies", companyId, "branches", branchId, "service_contracts");
-  }, [db, companyId, branchId]);
-
+  // --- DATA QUERIES ---
   const contractsQuery = useMemoFirebase(() => {
-    if (!contractsColRef) return null;
-    return query(contractsColRef, orderBy("createdAt", "desc"));
-  }, [contractsColRef]);
+    if (!db || !companyId || !branchId) return null;
+    return query(
+      collection(db, "companies", companyId, "branches", branchId, "service_contracts"),
+      orderBy("createdAt", "desc")
+    );
+  }, [db, companyId, branchId]);
+  const { data: contracts, isLoading: isContractsLoading } = useCollection(contractsQuery);
 
-  const { data: contracts, isLoading } = useCollection(contractsQuery);
+  const invoicesQuery = useMemoFirebase(() => {
+    if (!db || !companyId || !branchId) return null;
+    return query(
+      collection(db, "companies", companyId, "branches", branchId, "contract_invoices"),
+      orderBy("billingMonth", "desc")
+    );
+  }, [db, companyId, branchId]);
+  const { data: invoices, isLoading: isInvoicesLoading } = useCollection(invoicesQuery);
 
   const customersQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
@@ -38,123 +72,516 @@ export default function ContractsPage() {
   }, [db, companyId, branchId]);
   const { data: customers } = useCollection(customersQuery);
 
-  const handleAddContract = (e: React.FormEvent<HTMLFormElement>) => {
+  // --- KPI CALCULATIONS ---
+  const activeContracts = contracts?.filter(c => c.status === 'active').length || 0;
+  const totalContractRevenue = contracts?.reduce((s, c) => s + (c.totalAmount || 0), 0) || 0;
+  const totalDues = invoices?.reduce((s, i) => s + ((i.amount || 0) - (i.paidAmount || 0)), 0) || 0;
+
+  // --- ACTIONS ---
+  const handleAddContract = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    if (!contractsColRef || !companyId || !branchId) return;
+    if (!db || !companyId || !branchId) return;
 
-    const contractData = {
-      companyId,
-      branchId,
-      contractNumber: `AMC-${Date.now().toString().slice(-6)}`,
-      customerId: formData.get("customerId") as string,
-      serviceName: formData.get("serviceName") as string,
-      startDate: formData.get("startDate") as string,
-      endDate: formData.get("endDate") as string,
-      status: "active",
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
+    setIsSubmitting(true);
+    try {
+      await runTransaction(db, async (transaction) => {
+        let finalCustomerId = formData.get("customerId") as string;
 
-    addDocumentNonBlocking(contractsColRef, contractData);
-    setIsAddModalOpen(false);
+        // 1. Handle New Customer Registration
+        if (customerMode === "new") {
+          const custRef = doc(collection(db, "companies", companyId, "branches", branchId, "customers"));
+          const custData = {
+            id: custRef.id,
+            companyId,
+            branchId,
+            firstName: formData.get("firstName") as string,
+            lastName: formData.get("lastName") as string,
+            email: formData.get("email") as string || "",
+            phoneNumber: formData.get("phone") as string || "",
+            customerType: "individual",
+            createdAt: serverTimestamp(),
+          };
+          transaction.set(custRef, custData);
+          finalCustomerId = custRef.id;
+        }
+
+        if (!finalCustomerId && customerMode === "select") throw new Error("Please select a customer.");
+
+        // 2. Prepare Contract Data
+        const contractRef = doc(collection(db, "companies", companyId, "branches", branchId, "service_contracts"));
+        const totalAmount = Number(formData.get("totalAmount"));
+        const duration = Number(formData.get("duration"));
+        const paymentType = formData.get("paymentType") as string;
+        const monthlyAmount = paymentType === 'monthly' ? totalAmount / duration : 0;
+
+        const contractData = {
+          id: contractRef.id,
+          companyId,
+          branchId,
+          contractNumber: `AMC-${Date.now().toString().slice(-6)}`,
+          customerId: finalCustomerId,
+          serviceType: formData.get("serviceType") as string,
+          serviceName: formData.get("serviceName") as string,
+          totalAmount,
+          durationMonths: duration,
+          paymentType,
+          monthlyAmount,
+          startDate: formData.get("startDate") as string,
+          endDate: formData.get("endDate") as string,
+          status: "active",
+          isFullyPaid: paymentType === 'advance',
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        };
+
+        transaction.set(contractRef, contractData);
+
+        // 3. If Advance Payment, record full payment
+        if (paymentType === 'advance') {
+          const paymentRef = doc(collection(db, "companies", companyId, "branches", branchId, "contract_payments"));
+          transaction.set(paymentRef, {
+            id: paymentRef.id,
+            companyId,
+            branchId,
+            contractId: contractRef.id,
+            customerId: finalCustomerId,
+            amount: totalAmount,
+            paymentDate: new Date().toISOString(),
+            notes: "Full advance payment for contract",
+            createdAt: serverTimestamp(),
+          });
+        }
+      });
+
+      toast({ title: "Contract Active", description: "Service agreement has been registered successfully." });
+      setIsAddModalOpen(false);
+      setCustomerType("select");
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Registration Failed", description: err.message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRunBillingEngine = async () => {
+    if (!contracts || !db || !companyId || !branchId) return;
+    setIsGenerating(true);
+    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+
+    try {
+      let createdCount = 0;
+      for (const contract of contracts) {
+        if (contract.paymentType !== 'monthly' || contract.status !== 'active') continue;
+
+        // Check if invoice already exists for this month
+        const q = query(
+          collection(db, "companies", companyId, "branches", branchId, "contract_invoices"),
+          where("contractId", "==", contract.id),
+          where("billingMonth", "==", currentMonth)
+        );
+        const existing = await getDocs(q);
+        
+        if (existing.empty) {
+          const invRef = doc(collection(db, "companies", companyId, "branches", branchId, "contract_invoices"));
+          await setDoc(invRef, {
+            id: invRef.id,
+            companyId,
+            branchId,
+            contractId: contract.id,
+            customerId: contract.customerId,
+            invoiceNumber: `INV-${contract.contractNumber.split('-')[1]}-${currentMonth.replace('-', '')}`,
+            amount: contract.monthlyAmount,
+            paidAmount: 0,
+            billingMonth: currentMonth,
+            status: "unpaid",
+            createdAt: serverTimestamp(),
+          });
+          createdCount++;
+        }
+      }
+      toast({ title: "Billing Complete", description: `${createdCount} monthly invoices generated.` });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Engine Error", description: err.message });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleRecordPayment = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    if (!db || !companyId || !branchId || !selectedInvoice) return;
+
+    setIsSubmitting(true);
+    try {
+      const payAmount = Number(formData.get("amount"));
+      await runTransaction(db, async (transaction) => {
+        const invRef = doc(db, "companies", companyId, "branches", branchId, "contract_invoices", selectedInvoice.id);
+        const paymentRef = doc(collection(db, "companies", companyId, "branches", branchId, "contract_payments"));
+
+        const newPaidTotal = (selectedInvoice.paidAmount || 0) + payAmount;
+        const status = newPaidTotal >= selectedInvoice.amount ? "paid" : "partial";
+
+        transaction.update(invRef, {
+          paidAmount: increment(payAmount),
+          status,
+          updatedAt: serverTimestamp()
+        });
+
+        transaction.set(paymentRef, {
+          id: paymentRef.id,
+          companyId,
+          branchId,
+          invoiceId: selectedInvoice.id,
+          contractId: selectedInvoice.contractId,
+          amount: payAmount,
+          paymentDate: new Date().toISOString(),
+          createdAt: serverTimestamp(),
+        });
+      });
+
+      toast({ title: "Payment Recorded", description: `৳${payAmount.toLocaleString()} added to invoice.` });
+      setIsPayModalOpen(false);
+      setSelectedInvoice(null);
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Payment Error", description: err.message });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline text-emerald-600">Service Contracts</h1>
-          <p className="text-muted-foreground mt-1">Manage AMC and warranty agreements</p>
+          <h1 className="text-2xl md:text-3xl font-bold font-headline text-emerald-600 flex items-center gap-2">
+            <Wrench className="h-6 w-6 md:h-8 md:w-8" />
+            Service Agreements
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">AMC, Internet & Recurring Maintenance</p>
         </div>
-        <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2 rounded-full shadow-lg shadow-emerald-100" onClick={() => setIsAddModalOpen(true)}>
-          <Plus className="h-4 w-4" />
-          Add Contract
-        </Button>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <Button 
+            variant="outline" 
+            className="rounded-full gap-2 border-emerald-200 hover:bg-emerald-50 text-emerald-700"
+            onClick={handleRunBillingEngine}
+            disabled={isGenerating}
+          >
+            {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+            Run Billing Engine
+          </Button>
+          <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2 rounded-full shadow-lg shadow-emerald-100 px-6" onClick={() => setIsAddModalOpen(true)}>
+            <Plus className="h-4 w-4" />
+            New Contract
+          </Button>
+        </div>
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-emerald-600" /></div>
-      ) : contracts && contracts.length > 0 ? (
-        <Card className="border-none shadow-sm rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-muted/50">
-                <TableRow>
-                  <TableHead>Contract #</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Service</TableHead>
-                  <TableHead>Duration</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {contracts.map((c) => {
-                  const customer = customers?.find(cust => cust.id === c.customerId);
-                  return (
-                    <TableRow key={c.id} className="hover:bg-muted/30">
-                      <TableCell className="font-bold">{c.contractNumber}</TableCell>
-                      <TableCell>{customer ? `${customer.firstName} ${customer.lastName}` : "Loading..."}</TableCell>
-                      <TableCell className="text-sm font-medium">{c.serviceName}</TableCell>
-                      <TableCell className="text-xs">
-                        {new Date(c.startDate).toLocaleDateString()} - {new Date(c.endDate).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell><Badge className="bg-emerald-50 text-emerald-700 border-emerald-200">Active</Badge></TableCell>
-                      <TableCell className="text-right"><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        </Card>
-      ) : (
-        <div className="p-12 bg-white rounded-xl border border-dashed flex flex-col items-center justify-center text-center">
-          <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mb-4 text-emerald-500">
-            <ShieldCheck className="h-8 w-8" />
-          </div>
-          <h2 className="text-xl font-headline font-bold">No Service Contracts</h2>
-          <p className="text-muted-foreground max-w-sm mt-2">
-            Keep track of Annual Maintenance Contracts (AMC) and warranty periods for your clients.
-          </p>
-          <Button className="mt-6 bg-emerald-600 rounded-full px-8" onClick={() => setIsAddModalOpen(true)}>Add First Contract</Button>
-        </div>
-      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard title="Active Subs" value={activeContracts} icon={ShieldCheck} colorClass="bg-emerald-500" />
+        <KPICard title="Contract Value" value={`৳${totalContractRevenue.toLocaleString()}`} icon={TrendingUp} colorClass="bg-blue-500" />
+        <KPICard title="Outstanding Due" value={`৳${totalDues.toLocaleString()}`} icon={AlertCircle} colorClass="bg-red-500" />
+        <KPICard title="Billing Cycle" value="Monthly" icon={Calendar} colorClass="bg-purple-500" />
+      </div>
 
+      <Tabs defaultValue="contracts" className="w-full">
+        <TabsList className="bg-white border p-1 rounded-xl shadow-sm mb-6 flex h-auto overflow-x-auto">
+          <TabsTrigger value="contracts" className="rounded-lg gap-2 flex-1 py-2">
+            <FileCheck className="h-4 w-4" /> Agreements
+          </TabsTrigger>
+          <TabsTrigger value="billing" className="rounded-lg gap-2 flex-1 py-2">
+            <Receipt className="h-4 w-4" /> Billing / Invoices
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="contracts" className="space-y-4">
+          {isContractsLoading ? (
+            <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-emerald-600" /></div>
+          ) : contracts && contracts.length > 0 ? (
+            <Card className="border-none shadow-sm rounded-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-muted/50">
+                    <TableRow>
+                      <TableHead>Contract #</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Service</TableHead>
+                      <TableHead>Payment Mode</TableHead>
+                      <TableHead>Duration</TableHead>
+                      <TableHead className="text-right">Total Value</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {contracts.map((c) => (
+                      <TableRow key={c.id} className="hover:bg-muted/30">
+                        <TableCell className="font-bold text-emerald-700">{c.contractNumber}</TableCell>
+                        <TableCell className="text-sm">
+                          {customers?.find(cust => cust.id === c.customerId)?.firstName || "Unknown"}
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-xs font-medium">{c.serviceName}</div>
+                          <Badge variant="secondary" className="text-[9px] uppercase">{c.serviceType}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={cn("text-[10px] capitalize", c.paymentType === 'advance' ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-purple-50 text-purple-700 border-purple-200")}>
+                            {c.paymentType}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-[10px] text-muted-foreground">
+                          {new Date(c.startDate).toLocaleDateString()} - {new Date(c.endDate).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="text-right font-bold">৳{c.totalAmount?.toLocaleString()}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </Card>
+          ) : (
+            <EmptyState icon={ShieldCheck} title="No Active Contracts" description="Start tracking your recurring revenue by adding your first service agreement." onAdd={() => setIsAddModalOpen(true)} color="emerald" />
+          )}
+        </TabsContent>
+
+        <TabsContent value="billing" className="space-y-4">
+          <div className="bg-blue-50 p-4 rounded-xl flex items-start gap-3 border border-blue-100 mb-4">
+            <Clock className="h-5 w-5 text-blue-600 mt-0.5" />
+            <div className="text-xs text-blue-800 leading-relaxed">
+              <p className="font-bold mb-1">How it works</p>
+              For monthly contracts, use the "Run Billing Engine" button to generate invoices for the current month. Advance contracts do not generate recurring invoices.
+            </div>
+          </div>
+
+          {isInvoicesLoading ? (
+            <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-emerald-600" /></div>
+          ) : invoices && invoices.length > 0 ? (
+            <Card className="border-none shadow-sm rounded-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-muted/50">
+                    <TableRow>
+                      <TableHead>Invoice #</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Month</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Paid</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {invoices.map((inv) => (
+                      <TableRow key={inv.id} className="hover:bg-muted/30">
+                        <TableCell className="font-bold text-[10px] uppercase">{inv.invoiceNumber}</TableCell>
+                        <TableCell className="text-xs">
+                          {customers?.find(c => c.id === inv.customerId)?.firstName || "Client"}
+                        </TableCell>
+                        <TableCell className="text-xs font-medium">{inv.billingMonth}</TableCell>
+                        <TableCell className="font-bold text-xs">৳{inv.amount?.toLocaleString()}</TableCell>
+                        <TableCell className="text-xs text-green-600">৳{inv.paidAmount?.toLocaleString()}</TableCell>
+                        <TableCell>
+                          <Badge className={cn("text-[9px] uppercase", 
+                            inv.status === 'paid' ? "bg-green-50 text-green-700 border-green-200" : 
+                            inv.status === 'partial' ? "bg-orange-50 text-orange-700 border-orange-200" : 
+                            "bg-red-50 text-red-700 border-red-200")}>
+                            {inv.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-full"
+                            onClick={() => { setSelectedInvoice(inv); setIsPayModalOpen(true); }}
+                            disabled={inv.status === 'paid'}
+                          >
+                            <CreditCard className="h-3.5 w-3.5 mr-1" /> Pay
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </Card>
+          ) : (
+            <div className="p-16 text-center bg-white rounded-2xl border-2 border-dashed">
+              <Receipt className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+              <h3 className="text-lg font-bold">No Monthly Invoices</h3>
+              <p className="text-sm text-muted-foreground">Run the Billing Engine to generate dues for this month.</p>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {/* --- ADD CONTRACT MODAL --- */}
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>New Service Agreement</DialogTitle>
+        <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
+          <DialogHeader className="p-6 bg-emerald-600 text-white">
+            <DialogTitle className="text-2xl font-headline flex items-center gap-3">
+              <ShieldCheck className="h-6 w-6" /> New Service Agreement
+            </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleAddContract} className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label>Select Customer</Label>
-              <Select name="customerId" required>
-                <SelectTrigger><SelectValue placeholder="Client" /></SelectTrigger>
-                <SelectContent>
-                  {customers?.map(c => <SelectItem key={c.id} value={c.id}>{c.firstName} {c.lastName}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Service Name</Label>
-              <Input name="serviceName" required placeholder="e.g. Monthly CCTV Maintenance" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Start Date</Label>
-                <Input name="startDate" type="date" required />
+          <form onSubmit={handleAddContract} className="p-6 space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <div className="space-y-4 p-4 bg-muted/20 rounded-2xl">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground tracking-widest">Customer Entity</Label>
+                    <div className="flex bg-white rounded-lg p-1 border shadow-sm">
+                      <Button type="button" size="sm" variant={customerMode === 'select' ? 'default' : 'ghost'} className="h-7 text-[10px] rounded-md" onClick={() => setCustomerType('select')}>Existing</Button>
+                      <Button type="button" size="sm" variant={customerMode === 'new' ? 'default' : 'ghost'} className="h-7 text-[10px] rounded-md" onClick={() => setCustomerType('new')}>Register New</Button>
+                    </div>
+                  </div>
+
+                  {customerMode === "select" ? (
+                    <Select name="customerId" required>
+                      <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Search client directory..." /></SelectTrigger>
+                      <SelectContent>
+                        {customers?.map(c => <SelectItem key={c.id} value={c.id}>{c.firstName} {c.lastName}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <Input name="firstName" placeholder="First Name" className="h-10 text-xs rounded-lg" required />
+                        <Input name="lastName" placeholder="Last Name" className="h-10 text-xs rounded-lg" required />
+                      </div>
+                      <Input name="phone" placeholder="Phone Number" className="h-10 text-xs rounded-lg" />
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground">Service Category</Label>
+                    <Select name="serviceType" defaultValue="cctv">
+                      <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cctv">CCTV Maintenance</SelectItem>
+                        <SelectItem value="internet">Internet / ISP</SelectItem>
+                        <SelectItem value="software">Software SaaS</SelectItem>
+                        <SelectItem value="other">Other Support</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground">Contract Label</Label>
+                    <Input name="serviceName" required placeholder="e.g. Annual Support" className="h-11 rounded-xl" />
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>End Date</Label>
-                <Input name="endDate" type="date" required />
+
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground">Total Budget (৳)</Label>
+                    <Input name="totalAmount" type="number" required placeholder="0.00" className="h-11 rounded-xl font-bold" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground">Duration (Months)</Label>
+                    <Input name="duration" type="number" defaultValue="12" required className="h-11 rounded-xl" />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">Payment Cycle</Label>
+                  <Select name="paymentType" defaultValue="monthly">
+                    <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monthly">Monthly Recurring (Installments)</SelectItem>
+                      <SelectItem value="advance">Full Advance (Upfront Payment)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground">Start Date</Label>
+                    <Input name="startDate" type="date" required className="h-11 rounded-xl" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground">End Date</Label>
+                    <Input name="endDate" type="date" required className="h-11 rounded-xl" />
+                  </div>
+                </div>
               </div>
             </div>
-            <Button type="submit" className="w-full bg-emerald-600 rounded-full">Save Contract</Button>
+
+            <div className="flex flex-col md:flex-row items-center justify-between p-6 bg-emerald-50 rounded-2xl border-2 border-dashed border-emerald-200">
+              <div className="flex items-center gap-4 mb-4 md:mb-0">
+                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-emerald-600">
+                  <AlertCircle className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-emerald-900">Billing Activation</p>
+                  <p className="text-[10px] text-emerald-700 max-w-xs">Activating this contract will instantly record the service agreement and prepare the billing cycle logic.</p>
+                </div>
+              </div>
+              <div className="flex gap-3 w-full md:w-auto">
+                <Button type="button" variant="outline" className="flex-1 md:flex-none rounded-full px-8" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
+                <Button type="submit" className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 rounded-full px-12 h-12 font-bold shadow-lg gap-2" disabled={isSubmitting}>
+                  {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
+                  Activate Service
+                </Button>
+              </div>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* --- RECORD PAYMENT MODAL --- */}
+      <Dialog open={isPayModalOpen} onOpenChange={setIsPayModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>Settle Monthly Due</DialogTitle></DialogHeader>
+          <form onSubmit={handleRecordPayment} className="space-y-4 pt-4">
+            <div className="p-4 bg-muted/20 rounded-xl space-y-1">
+              <p className="text-[10px] uppercase font-bold text-muted-foreground">Billing Month</p>
+              <p className="text-lg font-bold">{selectedInvoice?.billingMonth}</p>
+              <div className="flex justify-between text-xs mt-2 pt-2 border-t border-dashed">
+                <span>Monthly Amount:</span>
+                <span className="font-bold">৳{selectedInvoice?.amount}</span>
+              </div>
+              <div className="flex justify-between text-xs text-red-600">
+                <span>Remaining:</span>
+                <span className="font-bold">৳{(selectedInvoice?.amount || 0) - (selectedInvoice?.paidAmount || 0)}</span>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-xs">Payment Amount (৳)</Label>
+              <Input 
+                name="amount" 
+                type="number" 
+                step="0.01" 
+                required 
+                max={(selectedInvoice?.amount || 0) - (selectedInvoice?.paidAmount || 0)}
+                defaultValue={(selectedInvoice?.amount || 0) - (selectedInvoice?.paidAmount || 0)}
+                className="h-12 text-lg font-bold text-emerald-600 border-emerald-100" 
+              />
+            </div>
+
+            <Button type="submit" className="w-full bg-emerald-600 rounded-full h-12 font-bold" disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="animate-spin" /> : "Confirm Receipt"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
+function EmptyState({ icon: Icon, title, description, onAdd, color }: any) {
+  return (
+    <div className="p-16 bg-white rounded-2xl border-2 border-dashed flex flex-col items-center justify-center text-center">
+      <div className={cn("w-20 h-20 rounded-full flex items-center justify-center mb-6", `bg-${color}-50 text-${color}-500`)}>
+        <Icon className="h-10 w-10" />
+      </div>
+      <h2 className="text-2xl font-headline font-bold">{title}</h2>
+      <p className="text-muted-foreground max-w-sm mt-2">{description}</p>
+      <Button className={cn("mt-8 px-10 rounded-full h-12 font-bold", `bg-${color}-600 hover:bg-${color}-700 shadow-lg shadow-${color}-100`)} onClick={onAdd}>
+        <Plus className="h-5 w-5 mr-2" /> Add Record
+      </Button>
     </div>
   )
 }
