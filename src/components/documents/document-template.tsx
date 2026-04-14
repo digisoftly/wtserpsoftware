@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -55,9 +56,13 @@ export function DocumentTemplate({
     <div className="document-container bg-white p-8 md:p-12 min-h-[29.7cm] flex flex-col">
       {/* Header */}
       <div className="flex justify-between items-start mb-12 border-b-4 border-primary pb-8">
-        <div className="space-y-2">
-          <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-white text-3xl font-bold shadow-lg">
-            W
+        <div className="space-y-4">
+          <div className="w-20 h-20 bg-primary rounded-2xl flex items-center justify-center text-white text-4xl font-bold shadow-lg overflow-hidden border-2 border-primary/10">
+            {settings?.companyLogo ? (
+              <img src={settings.companyLogo} alt="Logo" className="w-full h-full object-contain p-2 bg-white" />
+            ) : (
+              <span>{settings?.companyName?.[0] || "W"}</span>
+            )}
           </div>
           <div>
             <h1 className="text-2xl font-bold font-headline uppercase tracking-tight">{settings?.companyName || "Warrior Tech System"}</h1>

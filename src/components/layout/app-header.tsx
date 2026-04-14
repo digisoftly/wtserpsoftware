@@ -38,6 +38,7 @@ import { useTenant } from "@/context/tenant-context"
 import { collection, serverTimestamp, query, orderBy } from "firebase/firestore"
 import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { toast } from "@/hooks/use-toast"
+import { useSettings } from "@/hooks/use-settings"
 
 export function AppHeader() {
   const { isMobile } = useSidebar()
@@ -45,6 +46,7 @@ export function AppHeader() {
   const auth = useAuth()
   const db = useFirestore()
   const { companyId, branchId, setBranchId, language, setLanguage, userRole } = useTenant()
+  const { settings } = useSettings()
   const router = useRouter()
   const [isQuickEntryOpen, setIsQuickEntryOpen] = React.useState(false)
 

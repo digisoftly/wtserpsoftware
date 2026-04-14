@@ -24,7 +24,10 @@ import {
   Warehouse,
   FileText,
   Clock,
-  MessageSquare
+  MessageSquare,
+  Upload,
+  X,
+  Image as ImageIcon
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -39,12 +42,14 @@ import { useTenant } from "@/context/tenant-context"
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { toast } from "@/hooks/use-toast"
 import { useTranslation } from "@/hooks/use-translation"
+import Image from "next/image"
 
 export default function SettingsPage() {
   const { companyId } = useTenant();
   const db = useFirestore();
   const { t } = useTranslation();
   const [isSaving, setIsSaving] = React.useState(false);
+  const [logoPreview, setLogoPreview] = React.useState<string | null>(null);
 
   const settingsRef = useMemoFirebase(() => {
     if (!db || !companyId) return null;
@@ -52,6 +57,32 @@ export default function SettingsPage() {
   }, [db, companyId]);
 
   const { data: settings, isLoading } = useDoc(settingsRef);
+
+  React.useEffect(() => {
+    if (settings?.companyLogo) {
+      setLogoPreview(settings.companyLogo);
+    }
+  }, [settings]);
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ variant: "destructive", title: "File too large", description: "Logo must be under 2MB." });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setLogoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveLogo = () => {
+    setLogoPreview(null);
+  };
 
   const handleSaveSettings = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -62,6 +93,7 @@ export default function SettingsPage() {
     
     const updates: Record<string, any> = {
       updatedAt: serverTimestamp(),
+      companyLogo: logoPreview, // Save the logo data URI
     };
 
     formData.forEach((value, key) => {
@@ -175,9 +207,38 @@ export default function SettingsPage() {
                 </CardContent>
               </Card>
               <Card className="border-none shadow-sm rounded-xl flex flex-col items-center justify-center p-6 text-center bg-muted/10">
-                <div className="w-32 h-32 rounded-3xl bg-primary flex items-center justify-center text-white text-5xl font-bold shadow-xl mb-6">W</div>
-                <Button variant="outline" className="rounded-full">Upload Branding</Button>
-                <p className="text-[10px] text-muted-foreground mt-4">Transparent PNG, 512x512 recommended</p>
+                <div className="relative w-32 h-32 mb-6 group">
+                  {logoPreview ? (
+                    <div className="w-full h-full rounded-3xl bg-white border-2 border-primary/20 shadow-xl overflow-hidden flex items-center justify-center relative">
+                      <img 
+                        src={logoPreview} 
+                        alt="Company Logo" 
+                        className="max-w-full max-h-full object-contain p-2"
+                      />
+                      <button 
+                        type="button"
+                        onClick={handleRemoveLogo}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-full h-full rounded-3xl bg-primary flex items-center justify-center text-white text-5xl font-bold shadow-xl">
+                      {settings?.companyName?.[0] || "W"}
+                    </div>
+                  )}
+                </div>
+                <div className="relative">
+                  <Button variant="outline" className="rounded-full gap-2" asChild>
+                    <label className="cursor-pointer">
+                      <Upload className="h-4 w-4" />
+                      Upload Branding
+                      <input type="file" className="hidden" accept="image/*" onChange={handleLogoChange} />
+                    </label>
+                  </Button>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-4">Transparent PNG, 512x512 recommended (Max 2MB)</p>
               </Card>
             </div>
           </TabsContent>

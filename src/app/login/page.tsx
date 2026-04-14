@@ -10,10 +10,12 @@ import { initiateEmailSignIn, initiateAnonymousSignIn } from '@/firebase/non-blo
 import { useAuth, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, Loader2 } from 'lucide-react';
+import { useSettings } from '@/hooks/use-settings';
 
 export default function LoginPage() {
   const auth = useAuth();
   const { user } = useUser();
+  const { settings } = useSettings();
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -33,11 +35,17 @@ export default function LoginPage() {
       <Card className="w-full max-w-md border-none shadow-2xl">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-white text-3xl font-bold shadow-xl">
-              W
+            <div className="w-20 h-20 rounded-2xl bg-primary flex items-center justify-center text-white text-3xl font-bold shadow-xl overflow-hidden ring-4 ring-primary/10">
+              {settings?.companyLogo ? (
+                <img src={settings.companyLogo} alt="Logo" className="w-full h-full object-contain p-2 bg-white" />
+              ) : (
+                <span>{settings?.companyName?.[0] || "W"}</span>
+              )}
             </div>
           </div>
-          <CardTitle className="text-2xl font-headline font-bold">WarriorERP Login</CardTitle>
+          <CardTitle className="text-2xl font-headline font-bold">
+            {settings?.companyName || "WarriorERP"}
+          </CardTitle>
           <CardDescription>
             Enter your credentials to access your dashboard
           </CardDescription>
@@ -74,7 +82,7 @@ export default function LoginPage() {
         </CardContent>
         <CardFooter className="flex flex-col gap-2">
           <p className="text-xs text-center text-muted-foreground">
-            Warrior Tech System &copy; 2024. All rights reserved.
+            {settings?.companyName || "Warrior Tech System"} &copy; 2024. All rights reserved.
           </p>
         </CardFooter>
       </Card>

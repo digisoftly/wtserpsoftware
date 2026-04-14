@@ -45,6 +45,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { useAuth } from "@/firebase"
 import { signOut } from "firebase/auth"
 import { usePermissions } from "@/hooks/use-permissions"
+import { useSettings } from "@/hooks/use-settings"
 
 const modules = [
   { name: "Dashboard", key: "dashboard", icon: LayoutDashboard, color: "text-blue-500", path: "/" },
@@ -78,6 +79,7 @@ export function AppSidebar() {
   const auth = useAuth()
   const router = useRouter()
   const { can } = usePermissions()
+  const { settings } = useSettings()
 
   const handleLogout = async () => {
     await signOut(auth)
@@ -91,12 +93,18 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border shadow-xl">
       <SidebarHeader className="h-16 flex items-center px-4 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-headline font-bold text-xl shadow-lg ring-2 ring-primary/20">
-            W
+          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-headline font-bold text-xl shadow-lg ring-2 ring-primary/20 overflow-hidden">
+            {settings?.companyLogo ? (
+              <img src={settings.companyLogo} alt="Logo" className="w-full h-full object-contain p-1 bg-white" />
+            ) : (
+              <span>{settings?.companyName?.[0] || "W"}</span>
+            )}
           </div>
           {state === "expanded" && (
             <div className="flex flex-col">
-              <span className="font-headline font-bold text-sidebar-foreground leading-none">WarriorERP</span>
+              <span className="font-headline font-bold text-sidebar-foreground leading-none truncate max-w-[120px]">
+                {settings?.companyName || "WarriorERP"}
+              </span>
               <span className="text-[10px] text-sidebar-foreground/50 uppercase tracking-widest mt-1">Tech System</span>
             </div>
           )}
