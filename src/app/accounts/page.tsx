@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -65,25 +66,25 @@ export default function AccountsPage() {
           <p className="text-muted-foreground mt-1">Ledgers, cash flow, and banking</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline">Statement</Button>
-          <Button className="bg-blue-600 hover:bg-blue-700 rounded-full gap-2" onClick={() => setIsAddModalOpen(true)}>
+          <Button variant="outline" className="rounded-full hidden sm:flex">Statement</Button>
+          <Button className="bg-blue-600 hover:bg-blue-700 rounded-full gap-2 shadow-lg" onClick={() => setIsAddModalOpen(true)}>
             <Plus className="h-4 w-4" /> Add Journal Entry
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         <div className="p-6 bg-white rounded-xl border shadow-sm flex flex-col">
           <span className="text-sm font-medium text-muted-foreground">Main Balance</span>
-          <span className="text-3xl font-bold font-headline mt-2 text-primary">${(totalIncome - totalExpense).toLocaleString()}</span>
+          <span className="text-2xl md:text-3xl font-bold font-headline mt-2 text-primary">${(totalIncome - totalExpense).toLocaleString()}</span>
         </div>
         <div className="p-6 bg-white rounded-xl border shadow-sm flex flex-col">
           <span className="text-sm font-medium text-muted-foreground flex items-center gap-1"><TrendingUp className="h-3 w-3 text-green-500" /> Income</span>
-          <span className="text-3xl font-bold font-headline mt-2 text-green-600">${totalIncome.toLocaleString()}</span>
+          <span className="text-2xl md:text-3xl font-bold font-headline mt-2 text-green-600">${totalIncome.toLocaleString()}</span>
         </div>
         <div className="p-6 bg-white rounded-xl border shadow-sm flex flex-col">
           <span className="text-sm font-medium text-muted-foreground flex items-center gap-1"><TrendingDown className="h-3 w-3 text-red-500" /> Expense</span>
-          <span className="text-3xl font-bold font-headline mt-2 text-red-600">${totalExpense.toLocaleString()}</span>
+          <span className="text-2xl md:text-3xl font-bold font-headline mt-2 text-red-600">${totalExpense.toLocaleString()}</span>
         </div>
       </div>
 
@@ -91,31 +92,33 @@ export default function AccountsPage() {
         <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
       ) : transactions && transactions.length > 0 ? (
         <Card className="border-none shadow-sm rounded-xl overflow-hidden">
-          <Table>
-            <TableHeader className="bg-muted/50">
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {transactions?.map((t) => (
-                <TableRow key={t.id}>
-                  <TableCell className="text-xs">{new Date(t.transactionDate).toLocaleDateString()}</TableCell>
-                  <TableCell className="font-medium">{t.description}</TableCell>
-                  <TableCell className="text-xs uppercase text-muted-foreground">{t.category || "General"}</TableCell>
-                  <TableCell className="text-right">
-                    <span className={cn("font-bold flex items-center justify-end gap-1", t.transactionType === 'income' ? 'text-green-600' : 'text-red-600')}>
-                      {t.transactionType === 'income' ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownLeft className="h-3 w-3" />}
-                      ${t.amount?.toLocaleString()}
-                    </span>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-muted/50">
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {transactions?.map((t) => (
+                  <TableRow key={t.id} className="hover:bg-muted/20 transition-colors">
+                    <TableCell className="text-xs">{new Date(t.transactionDate).toLocaleDateString()}</TableCell>
+                    <TableCell className="font-medium">{t.description}</TableCell>
+                    <TableCell className="text-xs uppercase text-muted-foreground">{t.category || "General"}</TableCell>
+                    <TableCell className="text-right">
+                      <span className={cn("font-bold flex items-center justify-end gap-1", t.transactionType === 'income' ? 'text-green-600' : 'text-red-600')}>
+                        {t.transactionType === 'income' ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownLeft className="h-3 w-3" />}
+                        ${t.amount?.toLocaleString()}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </Card>
       ) : (
         <div className="p-12 bg-white rounded-xl border border-dashed flex flex-col items-center justify-center text-center">
@@ -124,12 +127,12 @@ export default function AccountsPage() {
           </div>
           <h2 className="text-xl font-headline font-bold">No Transactions Recorded</h2>
           <p className="text-muted-foreground max-w-sm mt-2">Sync your bank statements or add manual entries to begin accurate financial tracking.</p>
-          <Button className="mt-6 bg-blue-600" onClick={() => setIsAddModalOpen(true)}>Add First Transaction</Button>
+          <Button className="mt-6 bg-blue-600 rounded-full px-8" onClick={() => setIsAddModalOpen(true)}>Add First Transaction</Button>
         </div>
       )}
 
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>New Journal Entry</DialogTitle>
           </DialogHeader>
@@ -158,7 +161,7 @@ export default function AccountsPage() {
               <Label>Category</Label>
               <Input name="category" placeholder="e.g. Utilities, Sales, Salary" />
             </div>
-            <Button type="submit" className="w-full bg-blue-600">Post Transaction</Button>
+            <Button type="submit" className="w-full bg-blue-600 rounded-full">Post Transaction</Button>
           </form>
         </DialogContent>
       </Dialog>

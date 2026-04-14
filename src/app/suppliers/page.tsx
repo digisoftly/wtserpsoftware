@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -58,7 +59,7 @@ export default function SuppliersPage() {
           <h1 className="text-3xl font-bold font-headline text-amber-700">Suppliers</h1>
           <p className="text-muted-foreground mt-1">Manage vendor relations and contacts</p>
         </div>
-        <Button className="bg-amber-700 hover:bg-amber-800 gap-2 rounded-full" onClick={() => setIsAddModalOpen(true)}>
+        <Button className="bg-amber-700 hover:bg-amber-800 gap-2 rounded-full shadow-lg shadow-amber-100" onClick={() => setIsAddModalOpen(true)}>
           <Plus className="h-4 w-4" />
           Add Supplier
         </Button>
@@ -67,7 +68,12 @@ export default function SuppliersPage() {
       <div className="flex items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search supplier name..." className="pl-9" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          <Input 
+            placeholder="Search supplier name..." 
+            className="pl-9 bg-background border-none ring-1 ring-input" 
+            value={searchTerm} 
+            onChange={(e) => setSearchTerm(e.target.value)} 
+          />
         </div>
       </div>
 
@@ -75,31 +81,35 @@ export default function SuppliersPage() {
         <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-amber-700" /></div>
       ) : suppliers && suppliers.length > 0 ? (
         <Card className="border-none shadow-sm rounded-xl overflow-hidden">
-          <Table>
-            <TableHeader className="bg-muted/50">
-              <TableRow>
-                <TableHead>Vendor Name</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredSuppliers?.map((s) => (
-                <TableRow key={s.id} className="hover:bg-muted/30 transition-colors">
-                  <TableCell className="font-bold">{s.name}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> {s.email}</span>
-                      <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {s.phoneNumber}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-xs flex items-center gap-1"><MapPin className="h-3 w-3" /> {s.city || "N/A"}</TableCell>
-                  <TableCell className="text-right"><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-muted/50">
+                <TableRow>
+                  <TableHead>Vendor Name</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredSuppliers?.map((s) => (
+                  <TableRow key={s.id} className="hover:bg-muted/30 transition-colors">
+                    <TableCell className="font-bold">{s.name}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> {s.email}</span>
+                        <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {s.phoneNumber}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      <div className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {s.city || "N/A"}</div>
+                    </TableCell>
+                    <TableCell className="text-right"><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </Card>
       ) : (
         <div className="p-12 bg-white rounded-xl border border-dashed flex flex-col items-center justify-center text-center">
@@ -108,13 +118,15 @@ export default function SuppliersPage() {
           </div>
           <h2 className="text-xl font-headline font-bold">No Suppliers Registered</h2>
           <p className="text-muted-foreground max-w-sm mt-2">Add your hardware vendors and service providers to manage procurement.</p>
-          <Button className="mt-6 bg-amber-700" onClick={() => setIsAddModalOpen(true)}>Add First Supplier</Button>
+          <Button className="mt-6 bg-amber-700 rounded-full px-8" onClick={() => setIsAddModalOpen(true)}>Add First Supplier</Button>
         </div>
       )}
 
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Register New Supplier</DialogTitle></DialogHeader>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Register New Supplier</DialogTitle>
+          </DialogHeader>
           <form onSubmit={handleAddSupplier} className="space-y-4 pt-4">
             <div className="space-y-2">
               <Label>Company Name</Label>
@@ -122,19 +134,19 @@ export default function SuppliersPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Email</Label>
-                <Input name="email" type="email" required />
+                <Label>Contact Email</Label>
+                <Input name="email" type="email" required placeholder="vendor@example.com" />
               </div>
               <div className="space-y-2">
-                <Label>Phone</Label>
-                <Input name="phone" required />
+                <Label>Phone Number</Label>
+                <Input name="phone" required placeholder="+880 1..." />
               </div>
             </div>
             <div className="space-y-2">
-              <Label>City</Label>
-              <Input name="city" />
+              <Label>City / Location</Label>
+              <Input name="city" placeholder="e.g. Dhaka" />
             </div>
-            <Button type="submit" className="w-full bg-amber-700">Save Supplier</Button>
+            <Button type="submit" className="w-full bg-amber-700 rounded-full">Save Supplier Record</Button>
           </form>
         </DialogContent>
       </Dialog>
