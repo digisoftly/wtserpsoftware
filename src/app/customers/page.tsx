@@ -10,7 +10,7 @@ import { useTenant } from "@/context/tenant-context"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, CardHeader, CardTitle, DialogHeader } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 
@@ -146,9 +146,7 @@ export default function CustomersPage() {
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogHeader>
-              <CardTitle className="font-headline">Add New Customer</CardTitle>
-            </DialogHeader>
+            <DialogTitle className="font-headline">Add New Customer</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleAddCustomer} className="space-y-4 pt-4">
             <div className="grid grid-cols-2 gap-4">

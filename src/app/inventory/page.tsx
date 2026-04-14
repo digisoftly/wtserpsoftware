@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, serverTimestamp } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
-import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 
@@ -269,7 +269,6 @@ export default function InventoryPage() {
                       </div>
                     ))}
                   </CardContent>
-                </Card>
 
                 <Card className="border-none shadow-md bg-white rounded-xl">
                   <CardHeader>
@@ -308,7 +307,7 @@ export default function InventoryPage() {
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <CardTitle className="font-headline">Add New Product</CardTitle>
+            <DialogTitle className="font-headline">Add New Product</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleAddProduct} className="space-y-4 pt-4">
             <div className="space-y-2">
