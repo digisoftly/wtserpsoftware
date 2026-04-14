@@ -1,7 +1,7 @@
-
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import { 
   Search, 
   Plus, 
@@ -17,7 +17,8 @@ import {
   Edit,
   Trash2,
   Eye,
-  CheckCircle2
+  CheckCircle2,
+  Table as TableIcon
 } from "lucide-react"
 import { inventoryForecasting, type InventoryForecastingOutput } from "@/ai/flows/ai-inventory-forecasting-and-optimization"
 import { Button } from "@/components/ui/button"
@@ -149,9 +150,16 @@ export default function InventoryPage() {
           <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary">Warehouse Management</h1>
           <p className="text-sm text-muted-foreground mt-1">Stock control & serial tracking</p>
         </div>
-        <Button className="bg-primary hover:bg-primary/90 rounded-full gap-2 px-6" onClick={() => { resetForm(); setIsAddModalOpen(true); }}>
-          <Plus className="h-4 w-4" /> Add Product
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="rounded-full gap-2 px-6" asChild>
+            <Link href="/inventory/bulk-add">
+              <TableIcon className="h-4 w-4" /> Bulk Intake
+            </Link>
+          </Button>
+          <Button className="bg-primary hover:bg-primary/90 rounded-full gap-2 px-6" onClick={() => { resetForm(); setIsAddModalOpen(true); }}>
+            <Plus className="h-4 w-4" /> Add Product
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
