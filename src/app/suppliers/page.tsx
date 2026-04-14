@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { Truck, Plus, Search, Loader2, MoreVertical, Mail, Phone, MapPin } from "lucide-react"
+import { Truck, Plus, Search, Loader2, MoreVertical, Mail, Phone, MapPin, Filter } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -30,7 +30,7 @@ export default function SuppliersPage() {
   const handleAddSupplier = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    if (!suppliersQuery || !companyId || !branchId) return;
+    if (!db || !companyId || !branchId) return;
 
     const supplierData = {
       companyId,
@@ -46,27 +46,28 @@ export default function SuppliersPage() {
       updatedAt: serverTimestamp(),
     };
 
-    addDocumentNonBlocking(suppliersQuery, supplierData);
+    const colRef = collection(db, "companies", companyId, "branches", branchId, "suppliers");
+    addDocumentNonBlocking(colRef, supplierData);
     setIsAddModalOpen(false);
   };
 
   const filteredSuppliers = suppliers?.filter(s => s.name?.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline text-amber-700">Suppliers</h1>
-          <p className="text-muted-foreground mt-1">Manage vendor relations and contacts</p>
+          <h1 className="text-2xl md:text-3xl font-bold font-headline text-amber-700">Suppliers</h1>
+          <p className="text-sm text-muted-foreground mt-1">Manage vendor relations and procurement contacts</p>
         </div>
-        <Button className="bg-amber-700 hover:bg-amber-800 gap-2 rounded-full shadow-lg shadow-amber-100" onClick={() => setIsAddModalOpen(true)}>
+        <Button className="bg-amber-700 hover:bg-amber-800 gap-2 rounded-full shadow-lg shadow-amber-100 w-full md:w-auto" onClick={() => setIsAddModalOpen(true)}>
           <Plus className="h-4 w-4" />
           Add Supplier
         </Button>
       </div>
 
-      <div className="flex items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
+        <div className="relative flex-1 w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
             placeholder="Search supplier name..." 
@@ -75,6 +76,9 @@ export default function SuppliersPage() {
             onChange={(e) => setSearchTerm(e.target.value)} 
           />
         </div>
+        <Button variant="outline" className="gap-2 w-full sm:w-auto">
+          <Filter className="h-4 w-4" /> Filters
+        </Button>
       </div>
 
       {isLoading ? (
@@ -86,7 +90,7 @@ export default function SuppliersPage() {
               <TableHeader className="bg-muted/50">
                 <TableRow>
                   <TableHead>Vendor Name</TableHead>
-                  <TableHead>Contact</TableHead>
+                  <TableHead>Contact Info</TableHead>
                   <TableHead>Location</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -94,15 +98,15 @@ export default function SuppliersPage() {
               <TableBody>
                 {filteredSuppliers?.map((s) => (
                   <TableRow key={s.id} className="hover:bg-muted/30 transition-colors">
-                    <TableCell className="font-bold">{s.name}</TableCell>
+                    <TableCell className="font-bold text-xs md:text-sm">{s.name}</TableCell>
                     <TableCell>
-                      <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+                      <div className="flex flex-col gap-1 text-[10px] md:text-xs text-muted-foreground">
                         <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> {s.email}</span>
                         <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {s.phoneNumber}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-xs">
-                      <div className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {s.city || "N/A"}</div>
+                    <TableCell className="text-[10px] md:text-xs">
+                      <div className="flex items-center gap-1"><MapPin className="h-3 w-3 text-muted-foreground" /> {s.city || "N/A"}</div>
                     </TableCell>
                     <TableCell className="text-right"><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></TableCell>
                   </TableRow>
@@ -117,36 +121,39 @@ export default function SuppliersPage() {
             <Truck className="h-8 w-8" />
           </div>
           <h2 className="text-xl font-headline font-bold">No Suppliers Registered</h2>
-          <p className="text-muted-foreground max-w-sm mt-2">Add your hardware vendors and service providers to manage procurement.</p>
+          <p className="text-sm text-muted-foreground max-w-sm mt-2">Add your hardware vendors and service providers to manage procurement.</p>
           <Button className="mt-6 bg-amber-700 rounded-full px-8" onClick={() => setIsAddModalOpen(true)}>Add First Supplier</Button>
         </div>
       )}
 
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md w-[95vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Register New Supplier</DialogTitle>
+            <DialogTitle className="font-headline text-xl">Register New Supplier</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleAddSupplier} className="space-y-4 pt-4">
             <div className="space-y-2">
-              <Label>Company Name</Label>
-              <Input name="name" required placeholder="e.g. Global Tech Supplies" />
+              <Label className="text-xs">Company Name</Label>
+              <Input name="name" required placeholder="e.g. Global Tech Supplies" className="text-sm" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Contact Email</Label>
-                <Input name="email" type="email" required placeholder="vendor@example.com" />
+                <Label className="text-xs">Contact Email</Label>
+                <Input name="email" type="email" required placeholder="vendor@example.com" className="text-sm" />
               </div>
               <div className="space-y-2">
-                <Label>Phone Number</Label>
-                <Input name="phone" required placeholder="+880 1..." />
+                <Label className="text-xs">Phone Number</Label>
+                <Input name="phone" required placeholder="+880 1..." className="text-sm" />
               </div>
             </div>
             <div className="space-y-2">
-              <Label>City / Location</Label>
-              <Input name="city" placeholder="e.g. Dhaka" />
+              <Label className="text-xs">City / Location</Label>
+              <Input name="city" placeholder="e.g. Dhaka" className="text-sm" />
             </div>
-            <Button type="submit" className="w-full bg-amber-700 rounded-full">Save Supplier Record</Button>
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)} className="rounded-full w-full sm:w-auto">Cancel</Button>
+              <Button type="submit" className="bg-amber-700 rounded-full px-8 w-full sm:w-auto">Save Supplier Record</Button>
+            </div>
           </form>
         </DialogContent>
       </Dialog>

@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -22,7 +23,6 @@ export default function SalesPage() {
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
 
-  // Fetch Invoices
   const invoicesQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
     return query(
@@ -33,7 +33,6 @@ export default function SalesPage() {
 
   const { data: invoices, isLoading: isInvoicesLoading } = useCollection(invoicesQuery);
 
-  // Fetch Customers for the dropdown
   const customersQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
     return collection(db, "companies", companyId, "branches", branchId, "customers");
@@ -45,7 +44,7 @@ export default function SalesPage() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
-    if (!invoicesQuery || !companyId || !branchId) return;
+    if (!db || !companyId || !branchId) return;
 
     const invoiceData = {
       companyId,
@@ -58,12 +57,13 @@ export default function SalesPage() {
       paidAmount: 0,
       dueAmount: Number(formData.get("amount")),
       status: "due",
-      createdByUserId: "current-user-id", // In a real app, this comes from auth
+      createdByUserId: "current-user-id",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
 
-    addDocumentNonBlocking(invoicesQuery, invoiceData);
+    const colRef = collection(db, "companies", companyId, "branches", branchId, "sales_invoices");
+    addDocumentNonBlocking(colRef, invoiceData);
     setIsAddModalOpen(false);
   };
 
@@ -72,31 +72,31 @@ export default function SalesPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline text-green-600">Sales Management</h1>
-          <p className="text-muted-foreground mt-1">Track customer orders, invoices, and revenue</p>
+          <h1 className="text-2xl md:text-3xl font-bold font-headline text-green-600">Sales Management</h1>
+          <p className="text-sm text-muted-foreground mt-1">Track customer orders, invoices, and revenue</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button className="bg-green-600 hover:bg-green-700 gap-2 rounded-full" onClick={() => setIsAddModalOpen(true)}>
+          <Button className="bg-green-600 hover:bg-green-700 gap-2 rounded-full w-full md:w-auto" onClick={() => setIsAddModalOpen(true)}>
             <Plus className="h-4 w-4" />
             New Invoice
           </Button>
         </div>
       </div>
 
-      <div className="flex items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
+        <div className="relative flex-1 w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
             placeholder="Search invoice number..." 
-            className="pl-9" 
+            className="pl-9 bg-background border-none ring-1 ring-input" 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button variant="outline" className="gap-2">
+        <Button variant="outline" className="gap-2 w-full sm:w-auto">
           <Filter className="h-4 w-4" />
           Filters
         </Button>
@@ -108,56 +108,58 @@ export default function SalesPage() {
         </div>
       ) : invoices && invoices.length > 0 ? (
         <Card className="border-none shadow-sm rounded-xl overflow-hidden">
-          <Table>
-            <TableHeader className="bg-muted/50">
-              <TableRow>
-                <TableHead>Invoice #</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredInvoices?.map((inv) => {
-                const customer = customers?.find(c => c.id === inv.customerId);
-                return (
-                  <TableRow key={inv.id} className="hover:bg-muted/30 transition-colors">
-                    <TableCell>
-                      <div className="font-bold">{inv.invoiceNumber}</div>
-                      <div className="text-[10px] text-muted-foreground uppercase font-mono">ID: {inv.id.slice(-6)}</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">{customer ? `${customer.firstName} ${customer.lastName}` : "Unknown Customer"}</div>
-                      <div className="text-xs text-muted-foreground">{customer?.companyName || "Personal"}</div>
-                    </TableCell>
-                    <TableCell className="text-xs">
-                      {inv.invoiceDate ? new Date(inv.invoiceDate).toLocaleDateString() : "N/A"}
-                    </TableCell>
-                    <TableCell className="font-semibold">
-                      ${inv.totalAmount?.toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant="secondary"
-                        className={cn(
-                          inv.status === "paid" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"
-                        )}
-                      >
-                        {inv.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-muted/50">
+                <TableRow>
+                  <TableHead>Invoice #</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredInvoices?.map((inv) => {
+                  const customer = customers?.find(c => c.id === inv.customerId);
+                  return (
+                    <TableRow key={inv.id} className="hover:bg-muted/30 transition-colors">
+                      <TableCell>
+                        <div className="font-bold">{inv.invoiceNumber}</div>
+                        <div className="text-[10px] text-muted-foreground uppercase font-mono">ID: {inv.id.slice(-6)}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">{customer ? `${customer.firstName} ${customer.lastName}` : "Loading..."}</div>
+                        <div className="text-xs text-muted-foreground">{customer?.companyName || "Personal"}</div>
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {inv.invoiceDate ? new Date(inv.invoiceDate).toLocaleDateString() : "N/A"}
+                      </TableCell>
+                      <TableCell className="font-semibold">
+                        ${inv.totalAmount?.toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant="secondary"
+                          className={cn(
+                            inv.status === "paid" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"
+                          )}
+                        >
+                          {inv.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
         </Card>
       ) : (
         <div className="p-12 bg-white rounded-xl border border-dashed flex flex-col items-center justify-center text-center">
@@ -165,23 +167,23 @@ export default function SalesPage() {
             <ShoppingCart className="h-8 w-8" />
           </div>
           <h2 className="text-xl font-headline font-bold">No Recent Sales Found</h2>
-          <p className="text-muted-foreground max-w-sm mt-2">
+          <p className="text-sm text-muted-foreground max-w-sm mt-2">
             Your sales records will appear here once you start generating invoices or processing orders.
           </p>
-          <Button className="mt-6 bg-green-600" onClick={() => setIsAddModalOpen(true)}>Create Your First Invoice</Button>
+          <Button className="mt-6 bg-green-600 rounded-full" onClick={() => setIsAddModalOpen(true)}>Create Your First Invoice</Button>
         </div>
       )}
 
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="sm:max-w-md w-[95vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-headline">Create New Sales Invoice</DialogTitle>
+            <DialogTitle className="font-headline text-xl">Create New Sales Invoice</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleAddInvoice} className="space-y-4 pt-4">
             <div className="space-y-2">
               <Label htmlFor="customerId">Select Customer</Label>
               <Select name="customerId" required>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Choose a customer" />
                 </SelectTrigger>
                 <SelectContent>
@@ -199,14 +201,14 @@ export default function SalesPage() {
             </div>
             <div className="bg-muted/30 p-4 rounded-lg flex gap-3 items-start border border-dashed">
               <FileText className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-              <div className="text-xs text-muted-foreground">
+              <div className="text-[11px] text-muted-foreground leading-relaxed">
                 <p className="font-bold text-foreground mb-1">Standard Terms Apply</p>
-                This will generate a due invoice with a 7-day payment window. You can record payments later from the ledger.
+                This will generate a due invoice with a 7-day payment window. You can record payments later from the financial ledger.
               </div>
             </div>
-            <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
-              <Button type="submit" className="bg-green-600">Generate Invoice</Button>
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)} className="rounded-full">Cancel</Button>
+              <Button type="submit" className="bg-green-600 rounded-full">Generate Invoice</Button>
             </div>
           </form>
         </DialogContent>

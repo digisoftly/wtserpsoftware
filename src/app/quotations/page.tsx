@@ -1,7 +1,8 @@
+
 "use client"
 
 import * as React from "react"
-import { Plus, FileText, Search, Loader2, MoreVertical } from "lucide-react"
+import { Plus, FileText, Search, Loader2, MoreVertical, Filter } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -42,7 +43,7 @@ export default function QuotationsPage() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
-    if (!quotationsQuery || !companyId || !branchId) return;
+    if (!db || !companyId || !branchId) return;
 
     const quotationData = {
       companyId,
@@ -58,7 +59,8 @@ export default function QuotationsPage() {
       updatedAt: serverTimestamp(),
     };
 
-    addDocumentNonBlocking(quotationsQuery, quotationData);
+    const colRef = collection(db, "companies", companyId, "branches", branchId, "quotations");
+    addDocumentNonBlocking(colRef, quotationData);
     setIsAddModalOpen(false);
   };
 
@@ -67,28 +69,32 @@ export default function QuotationsPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline text-purple-600">Quotations</h1>
-          <p className="text-muted-foreground mt-1">Generate and manage price quotes for clients</p>
+          <h1 className="text-2xl md:text-3xl font-bold font-headline text-purple-600">Quotations</h1>
+          <p className="text-sm text-muted-foreground mt-1">Generate and manage price quotes for clients</p>
         </div>
-        <Button className="bg-purple-600 hover:bg-purple-700 gap-2 rounded-full" onClick={() => setIsAddModalOpen(true)}>
+        <Button className="bg-purple-600 hover:bg-purple-700 gap-2 rounded-full w-full md:w-auto" onClick={() => setIsAddModalOpen(true)}>
           <Plus className="h-4 w-4" />
           New Quotation
         </Button>
       </div>
 
-      <div className="flex items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
+        <div className="relative flex-1 w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
             placeholder="Search quotation #..." 
-            className="pl-9" 
+            className="pl-9 bg-background border-none ring-1 ring-input" 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+        <Button variant="outline" className="gap-2 w-full sm:w-auto">
+          <Filter className="h-4 w-4" />
+          Filters
+        </Button>
       </div>
 
       {isLoading ? (
@@ -97,37 +103,41 @@ export default function QuotationsPage() {
         </div>
       ) : quotations && quotations.length > 0 ? (
         <Card className="border-none shadow-sm rounded-xl overflow-hidden">
-          <Table>
-            <TableHeader className="bg-muted/50">
-              <TableRow>
-                <TableHead>Quote #</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredQuotations?.map((q) => {
-                const customer = customers?.find(c => c.id === q.customerId);
-                return (
-                  <TableRow key={q.id} className="hover:bg-muted/30 transition-colors">
-                    <TableCell className="font-bold">{q.quotationNumber}</TableCell>
-                    <TableCell>{customer ? `${customer.firstName} ${customer.lastName}` : "Unknown"}</TableCell>
-                    <TableCell className="text-xs">{new Date(q.quotationDate).toLocaleDateString()}</TableCell>
-                    <TableCell className="font-semibold">${q.totalAmount?.toLocaleString()}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="bg-purple-50 text-purple-700">{q.status}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-muted/50">
+                <TableRow>
+                  <TableHead>Quote #</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredQuotations?.map((q) => {
+                  const customer = customers?.find(c => c.id === q.customerId);
+                  return (
+                    <TableRow key={q.id} className="hover:bg-muted/30 transition-colors">
+                      <TableCell className="font-bold text-xs md:text-sm">{q.quotationNumber}</TableCell>
+                      <TableCell className="text-xs md:text-sm">{customer ? `${customer.firstName} ${customer.lastName}` : "Loading..."}</TableCell>
+                      <TableCell className="text-[10px] md:text-xs">{new Date(q.quotationDate).toLocaleDateString()}</TableCell>
+                      <TableCell className="font-semibold text-xs md:text-sm">${q.totalAmount?.toLocaleString()}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="bg-purple-50 text-purple-700 text-[10px] capitalize">{q.status}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
         </Card>
       ) : (
         <div className="p-12 bg-white rounded-xl border border-dashed flex flex-col items-center justify-center text-center">
@@ -135,23 +145,25 @@ export default function QuotationsPage() {
             <FileText className="h-8 w-8" />
           </div>
           <h2 className="text-xl font-headline font-bold">No Active Quotations</h2>
-          <p className="text-muted-foreground max-w-sm mt-2">
+          <p className="text-sm text-muted-foreground max-w-sm mt-2">
             Create professional quotes to send to your potential leads and customers.
           </p>
-          <Button className="mt-6 bg-purple-600" onClick={() => setIsAddModalOpen(true)}>Create First Quotation</Button>
+          <Button className="mt-6 bg-purple-600 rounded-full px-8" onClick={() => setIsAddModalOpen(true)}>Create Quotation</Button>
         </div>
       )}
 
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md w-[95vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>New Price Quotation</DialogTitle>
+            <DialogTitle className="font-headline text-xl">New Price Quotation</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleAddQuotation} className="space-y-4 pt-4">
             <div className="space-y-2">
-              <Label>Select Customer</Label>
+              <Label htmlFor="customerId" className="text-xs">Select Customer</Label>
               <Select name="customerId" required>
-                <SelectTrigger><SelectValue placeholder="Choose client" /></SelectTrigger>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Choose client" />
+                </SelectTrigger>
                 <SelectContent>
                   {customers?.map(c => (
                     <SelectItem key={c.id} value={c.id}>{c.firstName} {c.lastName}</SelectItem>
@@ -160,10 +172,13 @@ export default function QuotationsPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Estimated Total Amount ($)</Label>
-              <Input name="amount" type="number" step="0.01" required placeholder="0.00" />
+              <Label htmlFor="amount" className="text-xs">Estimated Total Amount ($)</Label>
+              <Input name="amount" type="number" step="0.01" required placeholder="0.00" className="text-sm" />
             </div>
-            <Button type="submit" className="w-full bg-purple-600">Save Draft Quote</Button>
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)} className="rounded-full w-full sm:w-auto">Cancel</Button>
+              <Button type="submit" className="bg-purple-600 rounded-full w-full sm:w-auto">Save Draft Quote</Button>
+            </div>
           </form>
         </DialogContent>
       </Dialog>

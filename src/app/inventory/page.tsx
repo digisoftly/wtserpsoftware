@@ -83,7 +83,7 @@ export default function InventoryPage() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
-    if (!productsQuery) return;
+    if (!db || !companyId || !branchId) return;
 
     const productData = {
       companyId,
@@ -100,7 +100,8 @@ export default function InventoryPage() {
       updatedAt: serverTimestamp(),
     };
 
-    addDocumentNonBlocking(productsQuery, productData);
+    const colRef = collection(db, "companies", companyId, "branches", branchId, "products");
+    addDocumentNonBlocking(colRef, productData);
     setIsAddModalOpen(false);
   };
 
@@ -110,22 +111,22 @@ export default function InventoryPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline text-primary">Inventory Control</h1>
-          <p className="text-muted-foreground mt-1">Manage stock, serial numbers, and demand forecasting</p>
+          <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary">Inventory Control</h1>
+          <p className="text-sm text-muted-foreground mt-1">Manage stock, serial numbers, and demand forecasting</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
           <Button 
             onClick={handleRunForecast} 
             disabled={isForecasting}
-            className="bg-accent hover:bg-accent/90 text-accent-foreground gap-2 rounded-full font-semibold shadow-lg"
+            className="bg-accent hover:bg-accent/90 text-accent-foreground gap-2 rounded-full font-semibold shadow-lg shrink-0"
           >
             {isForecasting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
             AI Forecast
           </Button>
-          <Button className="bg-primary hover:bg-primary/90 gap-2 rounded-full" onClick={() => setIsAddModalOpen(true)}>
+          <Button className="bg-primary hover:bg-primary/90 gap-2 rounded-full shrink-0" onClick={() => setIsAddModalOpen(true)}>
             <Plus className="h-4 w-4" />
             Add Product
           </Button>
@@ -133,15 +134,15 @@ export default function InventoryPage() {
       </div>
 
       <Tabs defaultValue="list" className="w-full">
-        <TabsList className="bg-white p-1 rounded-xl shadow-sm border mb-6">
-          <TabsTrigger value="list" className="rounded-lg">Product List</TabsTrigger>
-          <TabsTrigger value="ai-insights" className="rounded-lg">AI Insights {forecast && <Badge variant="destructive" className="ml-2 h-4 px-1 animate-pulse">!</Badge>}</TabsTrigger>
-          <TabsTrigger value="stock-movement" className="rounded-lg">Stock Movement</TabsTrigger>
+        <TabsList className="bg-white p-1 rounded-xl shadow-sm border mb-6 flex overflow-x-auto h-auto">
+          <TabsTrigger value="list" className="rounded-lg flex-1">Product List</TabsTrigger>
+          <TabsTrigger value="ai-insights" className="rounded-lg flex-1">AI Insights {forecast && <Badge variant="destructive" className="ml-2 h-4 px-1 animate-pulse">!</Badge>}</TabsTrigger>
+          <TabsTrigger value="stock-movement" className="rounded-lg flex-1">Stock Movement</TabsTrigger>
         </TabsList>
 
         <TabsContent value="list" className="space-y-4">
-          <div className="flex items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
-            <div className="relative flex-1 max-w-sm">
+          <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
+            <div className="relative flex-1 w-full max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
                 placeholder="Search SKU, Name..." 
@@ -150,7 +151,7 @@ export default function InventoryPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline" className="gap-2 border-primary/20 rounded-lg">
+            <Button variant="outline" className="gap-2 border-primary/20 rounded-lg w-full sm:w-auto">
               <Filter className="h-4 w-4" />
               Filters
             </Button>
@@ -160,58 +161,61 @@ export default function InventoryPage() {
             <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
           ) : products && products.length > 0 ? (
             <Card className="border-none shadow-sm rounded-xl overflow-hidden">
-              <Table>
-                <TableHeader className="bg-muted/50">
-                  <TableRow>
-                    <TableHead>Product Details</TableHead>
-                    <TableHead>SKU</TableHead>
-                    <TableHead>Stock Level</TableHead>
-                    <TableHead>Pricing (Cost/Sell)</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredProducts?.map((product) => (
-                    <TableRow key={product.id} className="hover:bg-muted/30 transition-colors">
-                      <TableCell>
-                        <div className="font-bold text-primary">{product.name}</div>
-                        <div className="text-[10px] text-muted-foreground font-mono uppercase">ID: {product.id.slice(-8)}</div>
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">{product.sku}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{product.currentStock} Units</span>
-                          <span className="text-[10px] text-muted-foreground">Min Level: {product.minStockLevel}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="text-xs text-muted-foreground">Cost: ${product.costPrice?.toFixed(2)}</span>
-                          <span className="font-semibold">${product.unitPrice?.toFixed(2)}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant="outline" 
-                          className={cn(
-                            (product.currentStock || 0) <= (product.minStockLevel || 0) 
-                              ? "border-red-500 text-red-500 bg-red-50" 
-                              : "border-green-500 text-green-500 bg-green-50"
-                          )}
-                        >
-                          {(product.currentStock || 0) <= (product.minStockLevel || 0) ? "Low Stock" : "Optimal"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-muted/50">
+                    <TableRow>
+                      <TableHead>Product Details</TableHead>
+                      <TableHead>SKU</TableHead>
+                      <TableHead>Stock Level</TableHead>
+                      <TableHead>Pricing (Cost/Sell)</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredProducts?.map((product) => (
+                      <TableRow key={product.id} className="hover:bg-muted/30 transition-colors">
+                        <TableCell>
+                          <div className="font-bold text-primary">{product.name}</div>
+                          <div className="text-[10px] text-muted-foreground font-mono uppercase">ID: {product.id.slice(-8)}</div>
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{product.sku}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-medium text-xs md:text-sm">{product.currentStock} Units</span>
+                            <span className="text-[10px] text-muted-foreground">Min Level: {product.minStockLevel}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="text-[10px] text-muted-foreground">Cost: ${product.costPrice?.toFixed(2)}</span>
+                            <span className="font-semibold text-xs md:text-sm">${product.unitPrice?.toFixed(2)}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant="outline" 
+                            className={cn(
+                              "text-[10px]",
+                              (product.currentStock || 0) <= (product.minStockLevel || 0) 
+                                ? "border-red-500 text-red-500 bg-red-50" 
+                                : "border-green-500 text-green-500 bg-green-50"
+                            )}
+                          >
+                            {(product.currentStock || 0) <= (product.minStockLevel || 0) ? "Low Stock" : "Optimal"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="icon">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </Card>
           ) : (
             <div className="p-12 bg-white rounded-xl border border-dashed flex flex-col items-center justify-center text-center">
@@ -219,10 +223,10 @@ export default function InventoryPage() {
                 <Package className="h-8 w-8" />
               </div>
               <h2 className="text-xl font-headline font-bold">Warehouse Empty</h2>
-              <p className="text-muted-foreground max-w-sm mt-2">
+              <p className="text-sm text-muted-foreground max-w-sm mt-2">
                 Start adding products to track stock, prices, and automated reorder alerts.
               </p>
-              <Button className="mt-6 bg-primary" onClick={() => setIsAddModalOpen(true)}>Add Your First Product</Button>
+              <Button className="mt-6 bg-primary rounded-full px-8" onClick={() => setIsAddModalOpen(true)}>Add Your First Product</Button>
             </div>
           )}
         </TabsContent>
@@ -236,20 +240,20 @@ export default function InventoryPage() {
                     <BarChart className="h-5 w-5 text-accent" />
                     <CardTitle className="font-headline text-lg">Demand Forecast</CardTitle>
                   </div>
-                  <CardDescription>Predicted requirements for the next 30 days</CardDescription>
+                  <CardDescription className="text-xs">Predicted requirements for the next 30 days</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6">
                   <div className="space-y-4">
                     {forecast.forecasts.map((f, i) => (
-                      <div key={i} className="flex items-center justify-between p-4 bg-muted/30 rounded-xl border border-dashed border-primary/20">
+                      <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-muted/30 rounded-xl border border-dashed border-primary/20 gap-3">
                         <div>
                           <p className="font-bold text-primary">{f.productName}</p>
-                          <div className="flex gap-4 mt-1 text-xs text-muted-foreground">
+                          <div className="flex flex-wrap gap-4 mt-1 text-xs text-muted-foreground">
                             <span>Predicted: <strong className="text-foreground">{f.predictedDemandNextPeriod}</strong></span>
                             <span>Optimal Stock: <strong className="text-foreground">{f.recommendedStockLevel}</strong></span>
                           </div>
                         </div>
-                        <Badge className="bg-primary text-white">Target: {f.recommendedReorderPoint}</Badge>
+                        <Badge className="bg-primary text-white w-fit">Target: {f.recommendedReorderPoint}</Badge>
                       </div>
                     ))}
                   </div>
@@ -265,7 +269,7 @@ export default function InventoryPage() {
                     {forecast.recommendations.map((rec, i) => (
                       <div key={i} className="flex gap-3 items-start bg-white/10 p-3 rounded-lg backdrop-blur-sm">
                         <Zap className="h-4 w-4 shrink-0 mt-1" />
-                        <p className="text-sm leading-relaxed">{rec}</p>
+                        <p className="text-xs leading-relaxed">{rec}</p>
                       </div>
                     ))}
                   </CardContent>
@@ -276,12 +280,12 @@ export default function InventoryPage() {
                     <CardTitle className="font-headline text-lg">Methodology</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-muted-foreground italic leading-relaxed border-l-4 border-accent pl-4 py-1">
+                    <p className="text-xs text-muted-foreground italic leading-relaxed border-l-4 border-accent pl-4 py-1">
                       {forecast.explanation}
                     </p>
                   </CardContent>
                   <CardFooter className="pt-0">
-                    <Button variant="outline" className="w-full gap-2 border-primary/20 text-primary hover:bg-primary/5 rounded-lg">
+                    <Button variant="outline" className="w-full gap-2 border-primary/20 text-primary hover:bg-primary/5 rounded-lg text-xs">
                       Apply Strategic Adjustments <ArrowRight className="h-4 w-4" />
                     </Button>
                   </CardFooter>
@@ -289,12 +293,12 @@ export default function InventoryPage() {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border shadow-sm">
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border shadow-sm text-center px-4">
               <div className="w-20 h-20 rounded-full bg-accent/10 flex items-center justify-center mb-4">
                 <Zap className="h-10 w-10 text-accent animate-pulse" />
               </div>
               <h3 className="text-xl font-headline font-bold">Generate Intelligence</h3>
-              <p className="text-muted-foreground max-w-md text-center mt-2 mb-6">
+              <p className="text-sm text-muted-foreground max-w-md mt-2 mb-6">
                 Our AI engine analyzes sales cycles, seasonality, and lead times to provide the most accurate inventory optimization strategy.
               </p>
               <Button onClick={handleRunForecast} size="lg" className="bg-accent text-accent-foreground font-bold rounded-full px-8 shadow-lg shadow-accent/20">
@@ -306,16 +310,16 @@ export default function InventoryPage() {
       </Tabs>
 
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-headline">Add New Product</DialogTitle>
+            <DialogTitle className="font-headline text-xl">Add New Product</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleAddProduct} className="space-y-4 pt-4">
             <div className="space-y-2">
               <Label htmlFor="name">Product Name</Label>
               <Input id="name" name="name" required placeholder="e.g. Fiber Optic Cable 50m" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="sku">SKU (Stock Keeping Unit)</Label>
                 <Input id="sku" name="sku" required placeholder="W-NET-001" />
@@ -325,7 +329,7 @@ export default function InventoryPage() {
                 <Input id="currentStock" name="currentStock" type="number" required defaultValue="0" />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="costPrice">Cost Price ($)</Label>
                 <Input id="costPrice" name="costPrice" type="number" step="0.01" required />
@@ -339,9 +343,9 @@ export default function InventoryPage() {
               <Label htmlFor="minStockLevel">Minimum Stock Level (Alert Threshold)</Label>
               <Input id="minStockLevel" name="minStockLevel" type="number" required defaultValue="5" />
             </div>
-            <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
-              <Button type="submit" className="bg-primary">Register Product</Button>
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)} className="rounded-full">Cancel</Button>
+              <Button type="submit" className="bg-primary rounded-full">Register Product</Button>
             </div>
           </form>
         </DialogContent>

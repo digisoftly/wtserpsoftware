@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -26,7 +27,6 @@ export default function Dashboard() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
 
-  // Invoices Collection
   const invoicesQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
     return query(
@@ -38,28 +38,24 @@ export default function Dashboard() {
 
   const { data: recentInvoices, isLoading: invoicesLoading } = useCollection(invoicesQuery);
 
-  // All Invoices for KPI Total
   const allInvoicesQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
     return collection(db, "companies", companyId, "branches", branchId, "sales_invoices");
   }, [db, companyId, branchId]);
   const { data: allInvoices } = useCollection(allInvoicesQuery);
 
-  // Customers Collection
   const customersQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
     return collection(db, "companies", companyId, "branches", branchId, "customers");
   }, [db, companyId, branchId]);
   const { data: customers } = useCollection(customersQuery);
 
-  // Employees Collection
   const employeesQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
     return collection(db, "companies", companyId, "branches", branchId, "employees");
   }, [db, companyId, branchId]);
   const { data: employees } = useCollection(employeesQuery);
 
-  // Low Stock Items Query
   const lowStockQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
     return collection(db, "companies", companyId, "branches", branchId, "low_stock_alerts");
@@ -80,15 +76,15 @@ export default function Dashboard() {
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline">Operational Overview</h1>
-          <p className="text-muted-foreground mt-1">Real-time performance metrics for {branchId?.replace('-', ' ')}</p>
+          <h1 className="text-2xl md:text-3xl font-bold font-headline">Operational Overview</h1>
+          <p className="text-sm text-muted-foreground mt-1">Real-time performance metrics for {branchId?.replace('-', ' ')}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" className="bg-white border-primary/20">Export PDF</Button>
-          <Button className="bg-primary hover:bg-primary/90 rounded-full px-6">Add Entry</Button>
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
+          <Button variant="outline" className="bg-white border-primary/20 shrink-0">Export PDF</Button>
+          <Button className="bg-primary hover:bg-primary/90 rounded-full px-6 shrink-0">Add Entry</Button>
         </div>
       </div>
 
@@ -99,59 +95,61 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 border-none shadow-sm rounded-xl">
+        <Card className="lg:col-span-2 border-none shadow-sm rounded-xl overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="font-headline">Recent Sales</CardTitle>
-              <CardDescription>Latest generated invoices</CardDescription>
+              <CardTitle className="font-headline text-lg md:text-xl">Recent Sales</CardTitle>
+              <CardDescription className="text-xs md:text-sm">Latest generated invoices</CardDescription>
             </div>
             <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/5">View All</Button>
           </CardHeader>
-          <CardContent>
-            {invoicesLoading ? (
-              <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
-            ) : recentInvoices && recentInvoices.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Invoice #</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentInvoices.map((inv) => (
-                    <TableRow key={inv.id}>
-                      <TableCell className="font-medium">{inv.invoiceNumber}</TableCell>
-                      <TableCell>
-                        <Badge 
-                          className={cn(
-                            inv.status === "paid" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"
-                          )} 
-                          variant="secondary"
-                        >
-                          {inv.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{inv.totalAmount?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">Details</Button>
-                      </TableCell>
+          <CardContent className="p-0 md:p-6 md:pt-0">
+            <div className="overflow-x-auto">
+              {invoicesLoading ? (
+                <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+              ) : recentInvoices && recentInvoices.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Invoice #</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <div className="text-center py-10 text-muted-foreground">No recent invoices found.</div>
-            )}
+                  </TableHeader>
+                  <TableBody>
+                    {recentInvoices.map((inv) => (
+                      <TableRow key={inv.id}>
+                        <TableCell className="font-medium">{inv.invoiceNumber}</TableCell>
+                        <TableCell>
+                          <Badge 
+                            className={cn(
+                              inv.status === "paid" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"
+                            )} 
+                            variant="secondary"
+                          >
+                            {inv.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{inv.totalAmount?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm">Details</Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-10 text-muted-foreground text-sm">No recent invoices found.</div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
         <Card className="border-none shadow-sm rounded-xl">
           <CardHeader>
-            <CardTitle className="font-headline">Inventory Alerts</CardTitle>
-            <CardDescription>Items below reorder point</CardDescription>
+            <CardTitle className="font-headline text-lg md:text-xl">Inventory Alerts</CardTitle>
+            <CardDescription className="text-xs md:text-sm">Items below reorder point</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {lowStockAlerts && lowStockAlerts.length > 0 ? (
@@ -164,7 +162,7 @@ export default function Dashboard() {
                       <p className="text-xs text-muted-foreground">Stock: {item.currentStock} / Min: {item.minStockLevel}</p>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" className="h-8 text-xs">Order</Button>
+                  <Button variant="outline" size="sm" className="h-8 text-xs shrink-0">Order</Button>
                 </div>
               ))
             ) : (
