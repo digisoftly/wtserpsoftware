@@ -24,10 +24,11 @@ import {
   Trash2,
   Eye,
   Download,
-  FilePlus
+  FilePlus,
+  ArrowUpDown
 } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, serverTimestamp, query, orderBy, doc, runTransaction, increment, setDoc, where, getDocs, updateDoc } from "firebase/firestore"
+import { collection, serverTimestamp, query, orderBy, doc, runTransaction, increment, setDoc, where, getDocs, updateDoc, deleteDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
@@ -48,18 +49,24 @@ import { deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 export default function ContractsPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
+  
+  // Modal States
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [isPayModalOpen, setIsPayModalOpen] = React.useState(false);
+  const [isEditInvoiceModalOpen, setIsEditInvoiceModalOpen] = React.useState(false);
   const [isManualInvoiceModalOpen, setIsManualInvoiceModalOpen] = React.useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
+  const [isDeleteInvoiceAlertOpen, setIsDeleteInvoiceAlertOpen] = React.useState(false);
+  
+  // Selection States
   const [selectedRecord, setSelectedRecord] = React.useState<any>(null);
-  const [isGenerating, setIsGenerating] = React.useState(false);
   const [selectedInvoice, setSelectedInvoice] = React.useState<any>(null);
+  const [isGenerating, setIsGenerating] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [customerMode, setCustomerType] = React.useState<"select" | "new">("select");
 
-  // Reactive calculation states
+  // Reactive calculation states for Contracts
   const [formTotalAmount, setFormTotalAmount] = React.useState<number>(0);
   const [formMonthlyAmount, setFormMonthlyAmount] = React.useState<number>(0);
   const [formDuration, setFormDuration] = React.useState<number>(12);
@@ -68,13 +75,13 @@ export default function ContractsPage() {
   const [manualInvoiceContractId, setManualInvoiceContractId] = React.useState<string>("");
   const [manualInvoiceAmount, setManualInvoiceAmount] = React.useState<number>(0);
 
-  // Sync state when editing or opening
+  // Sync state when editing or opening Contract
   React.useEffect(() => {
-    if (selectedRecord) {
+    if (selectedRecord && (isEditModalOpen)) {
       setFormTotalAmount(Number(selectedRecord.totalAmount) || 0);
       setFormDuration(Number(selectedRecord.durationMonths) || 12);
       setFormMonthlyAmount(Number(selectedRecord.monthlyAmount) || 0);
-    } else {
+    } else if (isAddModalOpen) {
       setFormTotalAmount(0);
       setFormDuration(12);
       setFormMonthlyAmount(0);
@@ -347,6 +354,52 @@ export default function ContractsPage() {
     }
   };
 
+  const handleUpdateInvoiceEntry = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    if (!db || !companyId || !branchId || !selectedInvoice) return;
+
+    setIsSubmitting(true);
+    try {
+      const newAmount = Number(formData.get("amount"));
+      const paidAmount = Number(selectedInvoice.paidAmount) || 0;
+      
+      // Determine status based on adjusted amount
+      const status = paidAmount >= newAmount ? "paid" : (paidAmount > 0 ? "partial" : "unpaid");
+
+      const invRef = doc(db, "companies", companyId, "branches", branchId, "contract_invoices", selectedInvoice.id);
+      await updateDoc(invRef, {
+        amount: newAmount,
+        status,
+        updatedAt: serverTimestamp()
+      });
+
+      toast({ title: "Invoice Corrected", description: "The billed amount has been adjusted." });
+      setIsEditInvoiceModalOpen(false);
+      setSelectedInvoice(null);
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Update Error", description: err.message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteInvoiceEntry = async () => {
+    if (!db || !companyId || !branchId || !selectedInvoice) return;
+    setIsSubmitting(true);
+    try {
+      const invRef = doc(db, "companies", companyId, "branches", branchId, "contract_invoices", selectedInvoice.id);
+      await deleteDoc(invRef);
+      toast({ title: "Invoice Deleted", description: "The incorrect entry has been removed." });
+      setIsDeleteInvoiceAlertOpen(false);
+      setSelectedInvoice(null);
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Delete Error", description: err.message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleRecordPayment = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -575,15 +628,23 @@ export default function ContractsPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-full gap-1 px-3"
-                            onClick={() => { setSelectedInvoice(inv); setIsPayModalOpen(true); }}
-                            disabled={inv.status === 'paid'}
-                          >
-                            <CreditCard className="h-3.5 w-3.5" /> Pay
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => { setSelectedInvoice(inv); setIsPayModalOpen(true); }} disabled={inv.status === 'paid'}>
+                                <CreditCard className="mr-2 h-4 w-4 text-emerald-600" /> Settle Payment
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => { setSelectedInvoice(inv); setIsEditInvoiceModalOpen(true); }}>
+                                <Edit className="mr-2 h-4 w-4 text-blue-600" /> Correct Amount
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="text-red-600" onClick={() => { setSelectedInvoice(inv); setIsDeleteInvoiceAlertOpen(true); }}>
+                                <Trash2 className="mr-2 h-4 w-4" /> Delete Entry
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -601,7 +662,7 @@ export default function ContractsPage() {
         </TabsContent>
       </Tabs>
 
-      {/* ADD/EDIT MODAL */}
+      {/* ADD/EDIT CONTRACT MODAL */}
       <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) { setIsAddModalOpen(false); setIsEditModalOpen(false); resetForm(); } }}>
         <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
           <DialogHeader className={cn("p-6 text-white", isEditModalOpen ? "bg-blue-600" : "bg-emerald-600")}>
@@ -748,6 +809,49 @@ export default function ContractsPage() {
         </DialogContent>
       </Dialog>
 
+      {/* EDIT INVOICE MODAL */}
+      <Dialog open={isEditInvoiceModalOpen} onOpenChange={setIsEditInvoiceModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-headline text-xl flex items-center gap-2">
+              <Edit className="h-5 w-5 text-blue-600" /> Correct Entry Amount
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdateInvoiceEntry} className="space-y-4 pt-4">
+            <div className="p-4 bg-blue-50 rounded-xl space-y-1">
+              <p className="text-[10px] uppercase font-bold text-blue-800 tracking-widest">Target Billing Month</p>
+              <p className="text-lg font-headline font-bold text-blue-900">{selectedInvoice?.billingMonth}</p>
+              <div className="text-[10px] text-blue-700 mt-2">
+                Original amount was ৳{selectedInvoice?.amount?.toLocaleString()}
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase">Corrected Amount (৳)</Label>
+              <Input 
+                name="amount" 
+                type="number" 
+                step="0.01" 
+                required 
+                defaultValue={selectedInvoice?.amount}
+                className="h-12 text-xl font-bold rounded-xl" 
+              />
+            </div>
+
+            <p className="text-[10px] text-muted-foreground italic">
+              Adjusting this amount will automatically update the "DUE" status if payments were already recorded.
+            </p>
+
+            <DialogFooter className="pt-4">
+              <Button type="button" variant="outline" className="rounded-full" onClick={() => setIsEditInvoiceModalOpen(false)}>Cancel</Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 rounded-full px-8 shadow-lg" disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : "Update Entry"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {/* CREATE MANUAL INVOICE MODAL */}
       <Dialog open={isManualInvoiceModalOpen} onOpenChange={setIsManualInvoiceModalOpen}>
         <DialogContent className="sm:max-w-md">
@@ -850,7 +954,7 @@ export default function ContractsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* DELETE CONFIRMATION */}
+      {/* DELETE CONTRACT CONFIRMATION */}
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -860,6 +964,22 @@ export default function ContractsPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={handleDeleteContract}>Confirm Termination</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* DELETE INVOICE CONFIRMATION */}
+      <AlertDialog open={isDeleteInvoiceAlertOpen} onOpenChange={setIsDeleteInvoiceAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Billing Entry?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to permanently remove this invoice? This will also disconnect any payments linked to it.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={handleDeleteInvoiceEntry}>Delete Permanently</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
