@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -56,6 +55,43 @@ export default function ContractsPage() {
   const [selectedInvoice, setSelectedInvoice] = React.useState<any>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [customerMode, setCustomerType] = React.useState<"select" | "new">("select");
+
+  // Reactive calculation states
+  const [formTotalAmount, setFormTotalAmount] = React.useState<number>(0);
+  const [formMonthlyAmount, setFormMonthlyAmount] = React.useState<number>(0);
+  const [formDuration, setFormDuration] = React.useState<number>(12);
+
+  // Sync state when editing or opening
+  React.useEffect(() => {
+    if (selectedRecord) {
+      setFormTotalAmount(selectedRecord.totalAmount || 0);
+      setFormDuration(selectedRecord.durationMonths || 12);
+      setFormMonthlyAmount(selectedRecord.monthlyAmount || 0);
+    } else {
+      setFormTotalAmount(0);
+      setFormDuration(12);
+      setFormMonthlyAmount(0);
+    }
+  }, [selectedRecord]);
+
+  const handleTotalChange = (val: number) => {
+    setFormTotalAmount(val);
+    if (formDuration > 0) {
+      setFormMonthlyAmount(Number((val / formDuration).toFixed(2)));
+    }
+  };
+
+  const handleMonthlyChange = (val: number) => {
+    setFormMonthlyAmount(val);
+    setFormTotalAmount(Number((val * formDuration).toFixed(2)));
+  };
+
+  const handleDurationChange = (val: number) => {
+    setFormDuration(val);
+    if (val > 0) {
+      setFormTotalAmount(Number((formMonthlyAmount * val).toFixed(2)));
+    }
+  };
 
   // --- DATA QUERIES ---
   const contractsQuery = useMemoFirebase(() => {
@@ -118,10 +154,7 @@ export default function ContractsPage() {
         if (!finalCustomerId && customerMode === "select") throw new Error("Please select a customer.");
 
         const contractRef = doc(collection(db, "companies", companyId, "branches", branchId, "service_contracts"));
-        const totalAmount = Number(formData.get("totalAmount"));
-        const duration = Number(formData.get("duration"));
         const paymentType = formData.get("paymentType") as string;
-        const monthlyAmount = paymentType === 'monthly' ? totalAmount / duration : 0;
 
         const contractData = {
           id: contractRef.id,
@@ -131,10 +164,10 @@ export default function ContractsPage() {
           customerId: finalCustomerId,
           serviceType: formData.get("serviceType") as string,
           serviceName: formData.get("serviceName") as string,
-          totalAmount,
-          durationMonths: duration,
+          totalAmount: formTotalAmount,
+          durationMonths: formDuration,
           paymentType,
-          monthlyAmount,
+          monthlyAmount: formMonthlyAmount,
           startDate: formData.get("startDate") as string,
           endDate: formData.get("endDate") as string,
           status: "active",
@@ -153,7 +186,7 @@ export default function ContractsPage() {
             branchId,
             contractId: contractRef.id,
             customerId: finalCustomerId,
-            amount: totalAmount,
+            amount: formTotalAmount,
             paymentDate: new Date().toISOString(),
             notes: "Full advance payment for contract",
             createdAt: serverTimestamp(),
@@ -179,18 +212,15 @@ export default function ContractsPage() {
     
     try {
       const docRef = doc(db, "companies", companyId, "branches", branchId, "service_contracts", selectedRecord.id);
-      const totalAmount = Number(formData.get("totalAmount"));
-      const duration = Number(formData.get("duration"));
       const paymentType = formData.get("paymentType") as string;
-      const monthlyAmount = paymentType === 'monthly' ? totalAmount / duration : 0;
 
       await updateDoc(docRef, {
         serviceType: formData.get("serviceType"),
         serviceName: formData.get("serviceName"),
-        totalAmount,
-        durationMonths: duration,
+        totalAmount: formTotalAmount,
+        durationMonths: formDuration,
         paymentType,
-        monthlyAmount,
+        monthlyAmount: formMonthlyAmount,
         startDate: formData.get("startDate"),
         endDate: formData.get("endDate"),
         updatedAt: serverTimestamp()
@@ -304,6 +334,9 @@ export default function ContractsPage() {
   const resetForm = () => {
     setSelectedRecord(null);
     setCustomerType("select");
+    setFormTotalAmount(0);
+    setFormMonthlyAmount(0);
+    setFormDuration(12);
   };
 
   const openEdit = (c: any) => {
@@ -563,13 +596,40 @@ export default function ContractsPage() {
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase text-muted-foreground">Total Budget (৳)</Label>
-                    <Input name="totalAmount" type="number" required defaultValue={selectedRecord?.totalAmount} placeholder="0.00" className="h-11 rounded-xl font-bold" />
+                    <Label className="text-[10px] font-bold uppercase text-emerald-600">Monthly Installment (৳)</Label>
+                    <Input 
+                      type="number" 
+                      step="0.01"
+                      required 
+                      value={formMonthlyAmount}
+                      onChange={(e) => handleMonthlyChange(Number(e.target.value))}
+                      placeholder="0.00" 
+                      className="h-11 rounded-xl font-bold border-emerald-100 focus:border-emerald-500" 
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase text-muted-foreground">Duration (Months)</Label>
-                    <Input name="duration" type="number" defaultValue={selectedRecord?.durationMonths || 12} required className="h-11 rounded-xl" />
+                    <Input 
+                      type="number" 
+                      value={formDuration}
+                      onChange={(e) => handleDurationChange(Number(e.target.value))}
+                      required 
+                      className="h-11 rounded-xl" 
+                    />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase text-blue-600">Total Budget (৳)</Label>
+                  <Input 
+                    type="number" 
+                    step="0.01"
+                    required 
+                    value={formTotalAmount}
+                    onChange={(e) => handleTotalChange(Number(e.target.value))}
+                    placeholder="0.00" 
+                    className="h-11 rounded-xl font-bold border-blue-100 focus:border-blue-500 bg-blue-50/30" 
+                  />
                 </div>
 
                 <div className="space-y-2">
