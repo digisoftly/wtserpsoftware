@@ -5,13 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { initiateAnonymousSignIn, initiateEmailSignIn } from '@/firebase/non-blocking-login';
+import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
 import { useAuth, useUser } from '@/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Loader2, ArrowRight, Building2, Lock, Mail, Languages, Info } from 'lucide-react';
+import { ShieldCheck, Loader2, ArrowRight, Building2, Lock, Mail, Languages, Info, AlertCircle } from 'lucide-react';
 import { useSettings } from '@/hooks/use-settings';
 import { useTranslation } from '@/hooks/use-translation';
 import { useTenant } from '@/context/tenant-context';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import Image from 'next/image';
 
 export default function LoginPage() {
@@ -26,6 +28,7 @@ export default function LoginPage() {
   const [password, setPassword] = React.useState('adminwts123');
   const [isLoading, setIsLoading] = React.useState(false);
   const [isRedirecting, setIsRedirecting] = React.useState(false);
+  const [authError, setAuthError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (user && userRole) {
@@ -46,11 +49,28 @@ export default function LoginPage() {
   const handleEmailLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    initiateEmailSignIn(auth, email, password);
+    setAuthError(null);
+
+    // Call the Firebase SDK directly to handle the promise rejection/error state
+    signInWithEmailAndPassword(auth, email, password)
+      .then(() => {
+        // Success will be handled by the useEffect watching the 'user' state
+      })
+      .catch((error: any) => {
+        console.error('Login Error:', error);
+        setIsLoading(false);
+        // Map specific Firebase errors to user-friendly messages
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+          setAuthError(t('loginError'));
+        } else {
+          setAuthError("An unexpected error occurred. Please try again.");
+        }
+      });
   };
 
   const handleDemoLogin = () => {
     setIsLoading(true);
+    setAuthError(null);
     initiateAnonymousSignIn(auth);
   };
 
@@ -128,6 +148,15 @@ export default function LoginPage() {
               </h2>
               <p className="text-slate-500 mt-2 font-medium">Please enter your details to sign in</p>
             </div>
+
+            {authError && (
+              <Alert variant="destructive" className="mb-6 rounded-2xl border-none bg-red-50 text-red-600">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-xs font-bold">
+                  {authError}
+                </AlertDescription>
+              </Alert>
+            )}
 
             {isRedirecting ? (
               <div className="flex flex-col items-center justify-center py-12 space-y-4">
