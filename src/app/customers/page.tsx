@@ -49,8 +49,8 @@ export default function CustomersPage() {
       customerType,
       firstName: formData.get("firstName") as string,
       lastName: formData.get("lastName") as string,
-      email: formData.get("email") as string,
-      phoneNumber: formData.get("phoneNumber") as string,
+      email: formData.get("email") as string || "",
+      phoneNumber: formData.get("phoneNumber") as string || "",
       companyName: customerType === "company" ? (formData.get("companyName") as string) : "",
       city: formData.get("city") as string,
       createdAt: serverTimestamp(),
@@ -136,10 +136,10 @@ export default function CustomersPage() {
                     <TableCell>
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                          <Mail className="h-3 w-3" /> {customer.email}
+                          <Mail className="h-3 w-3" /> {customer.email || "No email"}
                         </div>
                         <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                          <Phone className="h-3 w-3" /> {customer.phoneNumber}
+                          <Phone className="h-3 w-3" /> {customer.phoneNumber || "No phone"}
                         </div>
                       </div>
                     </TableCell>
@@ -231,12 +231,12 @@ export default function CustomersPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-xs">Email Address</Label>
-                <Input id="email" name="email" type="email" required placeholder="john@example.com" className="text-sm" />
+                <Label htmlFor="email" className="text-xs">Email Address (Optional)</Label>
+                <Input id="email" name="email" type="email" placeholder="john@example.com" className="text-sm" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phoneNumber" className="text-xs">Phone Number</Label>
-                <Input id="phoneNumber" name="phoneNumber" required placeholder="+880 1700-000000" className="text-sm" />
+                <Label htmlFor="phoneNumber" className="text-xs">Phone Number (Optional)</Label>
+                <Input id="phoneNumber" name="phoneNumber" placeholder="+880 1700-000000" className="text-sm" />
               </div>
             </div>
 

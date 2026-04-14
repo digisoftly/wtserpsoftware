@@ -37,8 +37,8 @@ export default function SuppliersPage() {
       branchId,
       name: formData.get("name") as string,
       contactPersonName: formData.get("contactPerson") as string,
-      email: formData.get("email") as string,
-      phoneNumber: formData.get("phone") as string,
+      email: formData.get("email") as string || "",
+      phoneNumber: formData.get("phone") as string || "",
       city: formData.get("city") as string,
       totalDueAmount: 0,
       totalPaidAmount: 0,
@@ -101,8 +101,8 @@ export default function SuppliersPage() {
                     <TableCell className="font-bold text-xs md:text-sm">{s.name}</TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1 text-[10px] md:text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> {s.email}</span>
-                        <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {s.phoneNumber}</span>
+                        <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> {s.email || "No email"}</span>
+                        <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {s.phoneNumber || "No phone"}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-[10px] md:text-xs">
@@ -138,12 +138,12 @@ export default function SuppliersPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-xs">Contact Email</Label>
-                <Input name="email" type="email" required placeholder="vendor@example.com" className="text-sm" />
+                <Label className="text-xs">Contact Email (Optional)</Label>
+                <Input name="email" type="email" placeholder="vendor@example.com" className="text-sm" />
               </div>
               <div className="space-y-2">
-                <Label className="text-xs">Phone Number</Label>
-                <Input name="phone" required placeholder="+880 1..." className="text-sm" />
+                <Label className="text-xs">Phone Number (Optional)</Label>
+                <Input name="phone" placeholder="+880 1..." className="text-sm" />
               </div>
             </div>
             <div className="space-y-2">

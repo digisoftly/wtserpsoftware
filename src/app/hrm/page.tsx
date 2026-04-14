@@ -42,7 +42,7 @@ export default function HRMPage() {
       branchId,
       firstName: formData.get("firstName") as string,
       lastName: formData.get("lastName") as string,
-      email: formData.get("email") as string,
+      email: formData.get("email") as string || "",
       jobTitle: formData.get("jobTitle") as string,
       department: formData.get("department") as string,
       employeeIdNumber: `EMP-${Date.now().toString().slice(-4)}`,
@@ -179,8 +179,8 @@ export default function HRMPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-xs">Work Email</Label>
-                <Input id="email" name="email" type="email" required className="text-sm" />
+                <Label htmlFor="email" className="text-xs">Work Email (Optional)</Label>
+                <Input id="email" name="email" type="email" className="text-sm" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="salary" className="text-xs">Monthly Salary ($)</Label>
