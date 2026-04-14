@@ -40,14 +40,15 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = React.useState<Language>('EN');
   const [branchId, setBranchId] = React.useState<string | null>(null);
 
-  // Mock ID for the prototype environment
-  const companyId = "warrior-demo-corp";
+  // Use a derived companyId that is only present when a user is authenticated.
+  // This prevents hooks from attempting to fetch data before auth is resolved.
+  const companyId = user ? "warrior-demo-corp" : null;
 
   React.useEffect(() => {
     if (isUserLoading) return;
 
     const initTenant = async () => {
-      if (user && db) {
+      if (user && db && companyId) {
         try {
           const userRef = doc(db, "companies", companyId, "users", user.uid);
           const userSnap = await getDoc(userRef).catch(async (err) => {
@@ -135,7 +136,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
   const handleSetLanguage = React.useCallback((lang: Language) => {
     setLanguage(lang);
-    if (user && db) {
+    if (user && db && companyId) {
       const userRef = doc(db, "companies", companyId, "users", user.uid);
       setDoc(userRef, { preferredLanguage: lang }, { merge: true });
     }
@@ -143,7 +144,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
   const handleSetBranch = React.useCallback((id: string) => {
     setBranchId(id);
-    if (user && db) {
+    if (user && db && companyId) {
       const userRef = doc(db, "companies", companyId, "users", user.uid);
       setDoc(userRef, { branchId: id }, { merge: true });
     }
