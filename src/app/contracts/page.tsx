@@ -23,7 +23,8 @@ import {
   Edit,
   Trash2,
   Eye,
-  Download
+  Download,
+  FilePlus
 } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, serverTimestamp, query, orderBy, doc, runTransaction, increment, setDoc, where, getDocs, updateDoc } from "firebase/firestore"
@@ -50,6 +51,7 @@ export default function ContractsPage() {
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [isPayModalOpen, setIsPayModalOpen] = React.useState(false);
+  const [isManualInvoiceModalOpen, setIsManualInvoiceModalOpen] = React.useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
   const [selectedRecord, setSelectedRecord] = React.useState<any>(null);
   const [isGenerating, setIsGenerating] = React.useState(false);
@@ -61,6 +63,10 @@ export default function ContractsPage() {
   const [formTotalAmount, setFormTotalAmount] = React.useState<number>(0);
   const [formMonthlyAmount, setFormMonthlyAmount] = React.useState<number>(0);
   const [formDuration, setFormDuration] = React.useState<number>(12);
+
+  // Manual Invoice Form State
+  const [manualInvoiceContractId, setManualInvoiceContractId] = React.useState<string>("");
+  const [manualInvoiceAmount, setManualInvoiceAmount] = React.useState<number>(0);
 
   // Sync state when editing or opening
   React.useEffect(() => {
@@ -286,6 +292,61 @@ export default function ContractsPage() {
     }
   };
 
+  const handleCreateManualInvoice = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    if (!db || !companyId || !branchId) return;
+
+    const contractId = manualInvoiceContractId;
+    const billingMonth = formData.get("billingMonth") as string;
+    const amount = Number(formData.get("amount"));
+
+    if (!contractId || !billingMonth || amount <= 0) {
+      toast({ variant: "destructive", title: "Incomplete Data", description: "Please fill all required fields." });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const q = query(
+        collection(db, "companies", companyId, "branches", branchId, "contract_invoices"),
+        where("contractId", "==", contractId),
+        where("billingMonth", "==", billingMonth)
+      );
+      const existing = await getDocs(q);
+
+      if (!existing.empty) {
+        throw new Error("An invoice for this contract and month already exists.");
+      }
+
+      const contract = contracts?.find(c => c.id === contractId);
+      const invRef = doc(collection(db, "companies", companyId, "branches", branchId, "contract_invoices"));
+      
+      await setDoc(invRef, {
+        id: invRef.id,
+        companyId,
+        branchId,
+        contractId,
+        customerId: contract?.customerId,
+        invoiceNumber: `M-INV-${contract?.contractNumber?.split('-')[1] || 'MAN'}-${billingMonth.replace('-', '')}`,
+        amount,
+        paidAmount: 0,
+        billingMonth,
+        status: "unpaid",
+        createdAt: serverTimestamp(),
+      });
+
+      toast({ title: "Invoice Created", description: `Manual invoice for ${billingMonth} registered.` });
+      setIsManualInvoiceModalOpen(false);
+      setManualInvoiceContractId("");
+      setManualInvoiceAmount(0);
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Failed", description: err.message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleRecordPayment = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -462,12 +523,20 @@ export default function ContractsPage() {
         </TabsContent>
 
         <TabsContent value="billing" className="space-y-4">
-          <div className="bg-blue-50 p-4 rounded-xl flex items-start gap-3 border border-blue-100 mb-4">
-            <Clock className="h-5 w-5 text-blue-600 mt-0.5" />
-            <div className="text-xs text-blue-800 leading-relaxed">
-              <p className="font-bold mb-1">Billing Engine Guide</p>
-              For monthly contracts, use the "Run Billing Engine" button at the top to generate invoices for the current period.
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-blue-50 p-4 rounded-xl border border-blue-100">
+            <div className="flex items-start gap-3">
+              <Clock className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div className="text-xs text-blue-800 leading-relaxed">
+                <p className="font-bold mb-1">Billing Management</p>
+                Run the batch engine for automated monthly dues, or create a specific manual invoice for adjustments.
+              </div>
             </div>
+            <Button 
+              className="bg-blue-600 hover:bg-blue-700 text-white rounded-full gap-2 px-6 h-10 shadow-lg"
+              onClick={() => setIsManualInvoiceModalOpen(true)}
+            >
+              <FilePlus className="h-4 w-4" /> Manual Invoice
+            </Button>
           </div>
 
           {isInvoicesLoading ? (
@@ -675,6 +744,70 @@ export default function ContractsPage() {
                 </Button>
               </div>
             </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* CREATE MANUAL INVOICE MODAL */}
+      <Dialog open={isManualInvoiceModalOpen} onOpenChange={setIsManualInvoiceModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-headline text-xl flex items-center gap-2">
+              <FilePlus className="h-5 w-5 text-blue-600" /> Manual Billing Entry
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateManualInvoice} className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase">Contract</Label>
+              <Select 
+                value={manualInvoiceContractId} 
+                onValueChange={(id) => {
+                  setManualInvoiceContractId(id);
+                  const c = contracts?.find(c => c.id === id);
+                  if (c) setManualInvoiceAmount(Number(c.monthlyAmount) || 0);
+                }}
+              >
+                <SelectTrigger className="rounded-xl h-11">
+                  <SelectValue placeholder="Select active agreement..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {contracts?.filter(c => c.status === 'active' && c.paymentType === 'monthly').map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.contractNumber} - {c.serviceName}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase">Billing Month</Label>
+                <Input name="billingMonth" type="month" required className="h-11 rounded-xl" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase">Amount (৳)</Label>
+                <Input 
+                  name="amount" 
+                  type="number" 
+                  step="0.01" 
+                  required 
+                  value={manualInvoiceAmount}
+                  onChange={(e) => setManualInvoiceAmount(Number(e.target.value))}
+                  className="h-11 rounded-xl font-bold" 
+                />
+              </div>
+            </div>
+
+            <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 flex gap-3">
+              <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+              <p className="text-[10px] text-blue-800 italic">Manual invoices are useful for partial month billing or extra service charges linked to an AMC.</p>
+            </div>
+
+            <DialogFooter className="pt-4">
+              <Button type="button" variant="outline" className="rounded-full" onClick={() => setIsManualInvoiceModalOpen(false)}>Cancel</Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 rounded-full px-8 shadow-lg" disabled={isSubmitting || !manualInvoiceContractId}>
+                {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : "Generate Invoice"}
+              </Button>
+            </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
