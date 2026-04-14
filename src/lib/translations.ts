@@ -13,6 +13,19 @@ export const translations = {
     settings: "Settings",
     users: "Users & Roles",
     
+    // Login
+    loginTitle: "Access Portal",
+    loginSub: "Enter your credentials to manage your enterprise",
+    emailLabel: "Email Address",
+    passwordLabel: "Password",
+    rememberMe: "Remember me on this device",
+    forgotPassword: "Forgot password?",
+    signInBtn: "Sign In to Dashboard",
+    demoAccess: "Demo Access",
+    guestAdmin: "Continue as Guest Admin",
+    loginError: "Authentication failed. Please check your credentials.",
+    roleRedirecting: "Authenticating role and redirecting...",
+    
     // Settings Tabs
     general: "General",
     businessRules: "Business Rules",
@@ -69,6 +82,19 @@ export const translations = {
     inventory: "ইনভেন্টরি",
     settings: "সেটিংস",
     users: "ব্যবহারকারী ও ভূমিকা",
+
+    // Login
+    loginTitle: "এক্সেস পোর্টাল",
+    loginSub: "আপনার এন্টারপ্রাইজ পরিচালনা করতে লগইন করুন",
+    emailLabel: "ইমেল ঠিকানা",
+    passwordLabel: "পাসওয়ার্ড",
+    rememberMe: "এই ডিভাইসে মনে রাখুন",
+    forgotPassword: "পাসওয়ার্ড ভুলে গেছেন?",
+    signInBtn: "ড্যাশবোর্ডে লগইন করুন",
+    demoAccess: "ডেমো এক্সেস",
+    guestAdmin: "গেস্ট অ্যাডমিন হিসেবে চালিয়ে যান",
+    loginError: "অথেন্টিকেশন ব্যর্থ হয়েছে। আপনার তথ্য যাচাই করুন।",
+    roleRedirecting: "ভূমিকা যাচাই করা হচ্ছে এবং রিডাইরেক্ট করা হচ্ছে...",
     
     // Settings Tabs
     general: "সাধারণ",

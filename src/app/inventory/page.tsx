@@ -22,7 +22,9 @@ import {
   Table as TableIcon,
   Tag,
   Cpu,
-  Settings2
+  Settings2,
+  PlusCircle,
+  X
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -56,6 +58,12 @@ export default function InventoryPage() {
   const [isBrandModalOpen, setIsBrandModalOpen] = React.useState(false);
   const [isModelModalOpen, setIsModelModalOpen] = React.useState(false);
   
+  // Inline Model Creation State
+  const [isInlineModelOpen, setIsInlineModelOpen] = React.useState(false);
+  const [newModelName, setNewModelName] = React.useState("");
+  const [formSelectedBrand, setFormSelectedBrand] = React.useState<string>("");
+  const [selectedModelId, setSelectedModelId] = React.useState<string>("");
+
   // Selection States
   const [selectedRecord, setSelectedRecord] = React.useState<any>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -98,8 +106,8 @@ export default function InventoryPage() {
         id: productRef.id,
         companyId,
         branchId,
-        brandId: formData.get("brandId") as string,
-        modelId: formData.get("modelId") as string,
+        brandId: formSelectedBrand,
+        modelId: selectedModelId,
         name: formData.get("name") as string,
         sku: formData.get("sku") as string,
         unitPrice: Number(formData.get("unitPrice")),
@@ -129,8 +137,8 @@ export default function InventoryPage() {
     try {
       const docRef = doc(db, "companies", companyId, "branches", branchId, "products", selectedRecord.id);
       await updateDoc(docRef, {
-        brandId: formData.get("brandId"),
-        modelId: formData.get("modelId"),
+        brandId: formSelectedBrand,
+        modelId: selectedModelId,
         name: formData.get("name"),
         sku: formData.get("sku"),
         unitPrice: Number(formData.get("unitPrice")),
@@ -180,22 +188,34 @@ export default function InventoryPage() {
     }
   };
 
-  const handleAddModel = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    if (!db || !companyId) return;
+  const handleQuickAddModel = async () => {
+    if (!db || !companyId || !formSelectedBrand || !newModelName) {
+      toast({ variant: "destructive", title: "Missing Data", description: "Select brand and enter model name." });
+      return;
+    }
+    
+    // Prevent duplicates
+    const exists = models?.some(m => m.brandId === formSelectedBrand && m.name.toLowerCase() === newModelName.toLowerCase());
+    if (exists) {
+      toast({ variant: "destructive", title: "Duplicate", description: "This model line already exists for the brand." });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const modelRef = doc(collection(db, "companies", companyId, "models"));
+      const newId = modelRef.id;
       await setDoc(modelRef, {
-        id: modelRef.id,
+        id: newId,
         companyId,
-        brandId: formData.get("brandId") as string,
-        name: formData.get("name") as string,
+        brandId: formSelectedBrand,
+        name: newModelName,
         createdAt: serverTimestamp()
       });
-      toast({ title: "Model Line Initialized" });
-      setIsModelModalOpen(false);
+      toast({ title: "Model Created", description: `${newModelName} is now available.` });
+      setSelectedModelId(newId);
+      setNewModelName("");
+      setIsInlineModelOpen(false);
     } catch (e: any) {
       toast({ variant: "destructive", title: "Failed", description: e.message });
     } finally {
@@ -206,16 +226,19 @@ export default function InventoryPage() {
   const resetForm = () => {
     setSelectedRecord(null);
     setSerialRequired(false);
+    setFormSelectedBrand("");
+    setSelectedModelId("");
+    setNewModelName("");
+    setIsInlineModelOpen(false);
   };
 
   const openEdit = (p: any) => {
     setSelectedRecord(p);
     setSerialRequired(p.serialNumberTrackingRequired || false);
+    setFormSelectedBrand(p.brandId || "");
+    setSelectedModelId(p.modelId || "");
     setIsEditModalOpen(true);
   };
-
-  // --- FILTERING ---
-  const [formSelectedBrand, setFormSelectedBrand] = React.useState<string>("");
 
   const filteredProducts = React.useMemo(() => {
     return products?.filter(p => {
@@ -403,19 +426,22 @@ export default function InventoryPage() {
             <Card className="border-none shadow-sm rounded-xl h-fit">
               <CardHeader><CardTitle className="text-lg">Register Model</CardTitle></CardHeader>
               <CardContent>
-                <form onSubmit={handleAddModel} className="space-y-4">
+                <div className="space-y-4">
                   <div className="space-y-2">
                     <Label className="text-xs uppercase font-bold text-muted-foreground">Parent Brand</Label>
-                    <Select name="brandId" required>
+                    <Select value={formSelectedBrand} onValueChange={setFormSelectedBrand}>
                       <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Identify manufacturer" /></SelectTrigger>
                       <SelectContent>{brands?.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2"><Label className="text-xs uppercase font-bold text-muted-foreground">Model Number/Line</Label><Input name="name" required placeholder="e.g. Galaxy S24" /></div>
-                  <Button type="submit" className="w-full h-11 rounded-xl shadow-lg" disabled={isSubmitting}>
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase font-bold text-muted-foreground">Model Number/Line</Label>
+                    <Input value={newModelName} onChange={e => setNewModelName(e.target.value)} placeholder="e.g. Galaxy S24" />
+                  </div>
+                  <Button onClick={handleQuickAddModel} className="w-full h-11 rounded-xl shadow-lg" disabled={isSubmitting || !formSelectedBrand || !newModelName}>
                     {isSubmitting ? <Loader2 className="animate-spin" /> : "Save Model"}
                   </Button>
-                </form>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -441,21 +467,54 @@ export default function InventoryPage() {
                       <Select 
                         name="brandId" 
                         required 
-                        defaultValue={selectedRecord?.brandId}
+                        value={formSelectedBrand}
                         onValueChange={setFormSelectedBrand}
                       >
                         <SelectTrigger className="h-11 rounded-xl bg-white shadow-sm"><SelectValue placeholder="Choose brand..." /></SelectTrigger>
                         <SelectContent>{brands?.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
+                    
                     <div className="space-y-2">
-                      <Label className="text-xs">Product Model</Label>
-                      <Select name="modelId" required defaultValue={selectedRecord?.modelId}>
-                        <SelectTrigger className="h-11 rounded-xl bg-white shadow-sm"><SelectValue placeholder="Identify model line..." /></SelectTrigger>
-                        <SelectContent>
-                          {models?.filter(m => !formSelectedBrand || m.brandId === formSelectedBrand).map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs">Product Model</Label>
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-6 text-[10px] text-primary font-bold hover:bg-primary/5 px-2"
+                          onClick={() => setIsInlineModelOpen(!isInlineModelOpen)}
+                        >
+                          {isInlineModelOpen ? <X className="h-3 w-3 mr-1" /> : <PlusCircle className="h-3 w-3 mr-1" />}
+                          {isInlineModelOpen ? "Cancel" : "New Model"}
+                        </Button>
+                      </div>
+
+                      {isInlineModelOpen ? (
+                        <div className="flex gap-2 animate-in fade-in slide-in-from-top-2">
+                          <Input 
+                            className="h-11 rounded-xl bg-white text-xs" 
+                            placeholder="Type model name..." 
+                            value={newModelName} 
+                            onChange={e => setNewModelName(e.target.value)}
+                          />
+                          <Button 
+                            type="button" 
+                            className="h-11 px-3 rounded-xl bg-primary"
+                            disabled={!newModelName || isSubmitting}
+                            onClick={handleQuickAddModel}
+                          >
+                            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add"}
+                          </Button>
+                        </div>
+                      ) : (
+                        <Select value={selectedModelId} onValueChange={setSelectedModelId}>
+                          <SelectTrigger className="h-11 rounded-xl bg-white shadow-sm"><SelectValue placeholder="Identify model line..." /></SelectTrigger>
+                          <SelectContent>
+                            {models?.filter(m => !formSelectedBrand || m.brandId === formSelectedBrand).map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      )}
                     </div>
                   </div>
                 </div>
