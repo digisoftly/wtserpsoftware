@@ -62,6 +62,27 @@ export const translations = {
     quotePrefix: "Quotation Prefix",
     partialPay: "Enable Partial Payments",
     lateFee: "Late Fee Surcharge (%)",
+
+    // Security
+    loginSecurity: "Login & Session Security",
+    securitySub: "Protect your data with access policies",
+    loginLimit: "Max Login Attempts",
+    sessionTimeout: "Session Timeout (Minutes)",
+    minPassword: "Minimum Password Length",
+    enable2fa: "Enable Two-Factor Authentication",
+    securityAudit: "Log Security Events",
+
+    // Integrations
+    externalGway: "External Gateways",
+    integrationSub: "Connect SMS, Email, and WhatsApp providers",
+    smsProvider: "SMS Gateway Provider",
+    apiKey: "API Key",
+    senderId: "Sender ID / Masking",
+    smtpHost: "SMTP Host",
+    smtpPort: "Port",
+    smtpUser: "Username",
+    smtpPass: "Password",
+    waPhoneId: "WhatsApp Phone ID",
     
     // Common
     save: "Save",
@@ -113,7 +134,7 @@ export const translations = {
     currency: "প্রাথমিক মুদ্রা",
     timezone: "আঞ্চলিক টাইমজোন",
     saveSystem: "সিস্টেম স্টেট সংরক্ষণ করুন",
-    controlCenter: "কন্ট্রোল সেন্টার",
+    controlCenter: "কনট্রোল সেন্টার",
     configSub: "বৈশ্বিক ব্যবসায়িক নিয়ম এবং সিস্টেম আর্কিটেকচার কনফিগার করুন",
     
     // Business Rules
@@ -132,6 +153,27 @@ export const translations = {
     quotePrefix: "কোটেশন প্রিফিক্স",
     partialPay: "আংশিক অর্থপ্রদান সক্ষম করুন",
     lateFee: "বিলম্ব ফি সারচার্জ (%)",
+
+    // Security
+    loginSecurity: "লগইন এবং সেশন নিরাপত্তা",
+    securitySub: "এক্সেস পলিসির মাধ্যমে আপনার ডাটা সুরক্ষিত করুন",
+    loginLimit: "সর্বোচ্চ লগইন চেষ্টা",
+    sessionTimeout: "সেশন টাইমআউট (মিনিট)",
+    minPassword: "ন্যূনতম পাসওয়ার্ড দৈর্ঘ্য",
+    enable2fa: "টু-ফ্যাক্টর অথেন্টিকেশন সক্ষম করুন",
+    securityAudit: "নিরাপত্তা ইভেন্ট লগ করুন",
+
+    // Integrations
+    externalGway: "এক্সটারনাল গেটওয়ে",
+    integrationSub: "এসএমএস, ইমেল এবং হোয়াটসঅ্যাপ প্রোভাইডার সংযুক্ত করুন",
+    smsProvider: "এসএমএস গেটওয়ে প্রোভাইডার",
+    apiKey: "API কি",
+    senderId: "সেন্ডার আইডি / মাস্কিং",
+    smtpHost: "SMTP হোস্ট",
+    smtpPort: "পোর্ট",
+    smtpUser: "ইউজার নেম",
+    smtpPass: "পাসওয়ার্ড",
+    waPhoneId: "হোয়াটসঅ্যাপ ফোন আইডি",
     
     // Common
     save: "সংরক্ষণ",
