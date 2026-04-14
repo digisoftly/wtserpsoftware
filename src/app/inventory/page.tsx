@@ -24,7 +24,9 @@ import {
   Cpu,
   Settings2,
   PlusCircle,
-  X
+  X,
+  PlusSquare,
+  AlertCircle
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -56,7 +58,6 @@ export default function InventoryPage() {
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
   const [isBrandModalOpen, setIsBrandModalOpen] = React.useState(false);
-  const [isModelModalOpen, setIsModelModalOpen] = React.useState(false);
   
   // Inline Model Creation State
   const [isInlineModelOpen, setIsInlineModelOpen] = React.useState(false);
@@ -119,7 +120,7 @@ export default function InventoryPage() {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-      toast({ title: "Product Created" });
+      toast({ title: "Product Created", description: "The item is now tracked in inventory." });
       setIsAddModalOpen(false);
       resetForm();
     } catch (err: any) {
@@ -190,14 +191,14 @@ export default function InventoryPage() {
 
   const handleQuickAddModel = async () => {
     if (!db || !companyId || !formSelectedBrand || !newModelName) {
-      toast({ variant: "destructive", title: "Missing Data", description: "Select brand and enter model name." });
+      toast({ variant: "destructive", title: "Missing Context", description: "Please select a brand before creating a new model." });
       return;
     }
     
     // Prevent duplicates
-    const exists = models?.some(m => m.brandId === formSelectedBrand && m.name.toLowerCase() === newModelName.toLowerCase());
+    const exists = models?.some(m => m.brandId === formSelectedBrand && m.name.toLowerCase() === newModelName.trim().toLowerCase());
     if (exists) {
-      toast({ variant: "destructive", title: "Duplicate", description: "This model line already exists for the brand." });
+      toast({ variant: "destructive", title: "Duplicate Model", description: "This model name already exists for the selected brand." });
       return;
     }
 
@@ -205,14 +206,16 @@ export default function InventoryPage() {
     try {
       const modelRef = doc(collection(db, "companies", companyId, "models"));
       const newId = modelRef.id;
-      await setDoc(modelRef, {
+      const modelData = {
         id: newId,
         companyId,
         brandId: formSelectedBrand,
-        name: newModelName,
+        name: newModelName.trim(),
         createdAt: serverTimestamp()
-      });
-      toast({ title: "Model Created", description: `${newModelName} is now available.` });
+      };
+      await setDoc(modelRef, modelData);
+      
+      toast({ title: "Model Added", description: `"${newModelName}" is now available.` });
       setSelectedModelId(newId);
       setNewModelName("");
       setIsInlineModelOpen(false);
@@ -256,7 +259,7 @@ export default function InventoryPage() {
           <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary flex items-center gap-2">
             <Boxes className="h-8 w-8" /> Warehouse Management
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Stock control, brands & serial tracking</p>
+          <p className="text-sm text-muted-foreground mt-1">Real-time stock monitoring and brand tracking</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" className="rounded-full gap-2 px-6" asChild>
@@ -271,17 +274,17 @@ export default function InventoryPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Assets" value={products?.length || 0} icon={Boxes} colorClass="bg-blue-500" />
-        <KPICard title="Valuation" value={`৳${products?.reduce((s, p) => s + ((p.currentStock || 0) * (p.costPrice || 0)), 0).toLocaleString()}`} icon={DollarSign} colorClass="bg-green-500" />
-        <KPICard title="Low Stock" value={products?.filter(p => (p.currentStock || 0) <= (p.minStockLevel || 0)).length || 0} icon={AlertTriangle} colorClass="bg-red-500" />
-        <KPICard title="Manufacturers" value={brands?.length || 0} icon={Tag} colorClass="bg-orange-500" />
+        <KPICard title="Total Assets" value={products?.length || 0} icon={Boxes} colorClass="bg-blue-500" />
+        <KPICard title="Warehouse Valuation" value={`৳${products?.reduce((s, p) => s + ((p.currentStock || 0) * (p.costPrice || 0)), 0).toLocaleString()}`} icon={DollarSign} colorClass="bg-green-500" />
+        <KPICard title="Low Stock Alerts" value={products?.filter(p => (p.currentStock || 0) <= (p.minStockLevel || 0)).length || 0} icon={AlertTriangle} colorClass="bg-red-500" />
+        <KPICard title="Brands" value={brands?.length || 0} icon={Tag} colorClass="bg-orange-500" />
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="bg-white border rounded-xl p-1 mb-6 shadow-sm flex h-auto overflow-x-auto no-scrollbar">
-          <TabsTrigger value="products" className="rounded-lg gap-2 flex-1 py-2"><Boxes className="h-4 w-4" /> Products</TabsTrigger>
-          <TabsTrigger value="brands" className="rounded-lg gap-2 flex-1 py-2"><Tag className="h-4 w-4" /> Brands</TabsTrigger>
-          <TabsTrigger value="models" className="rounded-lg gap-2 flex-1 py-2"><Cpu className="h-4 w-4" /> Models</TabsTrigger>
+          <TabsTrigger value="products" className="rounded-lg gap-2 flex-1 py-2 font-bold"><Boxes className="h-4 w-4" /> Products</TabsTrigger>
+          <TabsTrigger value="brands" className="rounded-lg gap-2 flex-1 py-2 font-bold"><Tag className="h-4 w-4" /> Brands</TabsTrigger>
+          <TabsTrigger value="models" className="rounded-lg gap-2 flex-1 py-2 font-bold"><Cpu className="h-4 w-4" /> Models</TabsTrigger>
         </TabsList>
 
         <TabsContent value="products" className="space-y-4">
@@ -289,18 +292,18 @@ export default function InventoryPage() {
             <div className="p-4 border-b bg-muted/20 flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="relative max-w-sm w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search SKU or Name..." className="pl-9 h-10 border-none ring-1 ring-input bg-background" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                <Input placeholder="Search SKU, Name or Serial..." className="pl-9 h-10 border-none ring-1 ring-input bg-background shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
               </div>
               <div className="flex gap-2 w-full md:w-auto">
                 <Select value={brandFilter} onValueChange={setBrandFilter}>
-                  <SelectTrigger className="h-10 bg-background min-w-[140px]"><SelectValue placeholder="Brand" /></SelectTrigger>
+                  <SelectTrigger className="h-10 bg-background min-w-[140px] rounded-lg"><SelectValue placeholder="Brand" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Brands</SelectItem>
                     {brands?.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <Select value={modelFilter} onValueChange={setModelFilter}>
-                  <SelectTrigger className="h-10 bg-background min-w-[140px]"><SelectValue placeholder="Model" /></SelectTrigger>
+                  <SelectTrigger className="h-10 bg-background min-w-[140px] rounded-lg"><SelectValue placeholder="Model" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Models</SelectItem>
                     {models?.filter(m => brandFilter === 'all' || m.brandId === brandFilter).map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
@@ -315,19 +318,19 @@ export default function InventoryPage() {
                 <Table>
                   <TableHeader className="bg-muted/50">
                     <TableRow>
-                      <TableHead>Product Identity</TableHead>
+                      <TableHead>Identity</TableHead>
                       <TableHead>SKU</TableHead>
-                      <TableHead>Stock Status</TableHead>
-                      <TableHead>Pricing</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead>Availability</TableHead>
+                      <TableHead>Commercials</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredProducts?.length === 0 ? (
-                      <TableRow><TableCell colSpan={5} className="text-center py-10 text-muted-foreground italic">No products matching filters.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={5} className="text-center py-16 text-muted-foreground italic">No products matched your criteria.</TableCell></TableRow>
                     ) : (
                       filteredProducts?.map((p) => (
-                        <TableRow key={p.id} className="hover:bg-muted/30 transition-colors">
+                        <TableRow key={p.id} className="hover:bg-muted/30 transition-colors group">
                           <TableCell>
                             <div className="font-bold text-primary text-xs md:text-sm">{p.name}</div>
                             <div className="flex gap-1 mt-1">
@@ -335,30 +338,34 @@ export default function InventoryPage() {
                                 {brands?.find(b => b.id === p.brandId)?.name || "Generic"}
                               </Badge>
                               {p.modelId && (
-                                <Badge variant="outline" className="text-[8px] uppercase tracking-tighter">
+                                <Badge variant="outline" className="text-[8px] uppercase tracking-tighter bg-slate-50">
                                   {models?.find(m => m.id === p.modelId)?.name}
                                 </Badge>
                               )}
-                              {p.serialNumberTrackingRequired && <Badge className="text-[8px] bg-purple-50 text-purple-700 border-purple-100">SERIALIZED</Badge>}
+                              {p.serialNumberTrackingRequired && <Badge className="text-[8px] bg-purple-50 text-purple-700 border-purple-100">SN-TRACKED</Badge>}
                             </div>
                           </TableCell>
-                          <TableCell className="font-mono text-[10px] uppercase">{p.sku}</TableCell>
+                          <TableCell className="font-mono text-[10px] uppercase text-muted-foreground">{p.sku}</TableCell>
                           <TableCell>
-                            <div className={cn("text-xs font-bold", (p.currentStock || 0) <= (p.minStockLevel || 0) ? "text-red-600" : "text-green-600")}>
+                            <div className={cn("text-xs font-bold", (p.currentStock || 0) <= (p.minStockLevel || 0) ? "text-red-600" : "text-emerald-600")}>
                               {p.currentStock || 0} Units
                             </div>
-                            <div className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter">Min Alert: {p.minStockLevel}</div>
+                            {(p.currentStock || 0) <= (p.minStockLevel || 0) && (
+                              <div className="flex items-center gap-1 text-[9px] text-red-500 font-bold uppercase animate-pulse">
+                                <AlertCircle className="h-2 w-2" /> Critical Low
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell>
-                            <div className="text-xs font-bold">৳{p.unitPrice?.toLocaleString()}</div>
-                            <div className="text-[9px] text-muted-foreground font-bold tracking-tighter">COST: ৳{p.costPrice?.toLocaleString()}</div>
+                            <div className="text-xs font-bold text-slate-900">৳{p.unitPrice?.toLocaleString()}</div>
+                            <div className="text-[9px] text-muted-foreground font-bold tracking-tighter uppercase">GP: {(((p.unitPrice - p.costPrice) / p.unitPrice) * 100).toFixed(1)}%</div>
                           </TableCell>
                           <TableCell className="text-right">
                             <DropdownMenu>
-                              <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                              <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="rounded-full h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => openEdit(p)}><Edit className="mr-2 h-4 w-4" /> Edit Product</DropdownMenuItem>
-                                <DropdownMenuItem className="text-red-600" onClick={() => { setSelectedRecord(p); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => openEdit(p)}><Edit className="mr-2 h-4 w-4" /> Edit Record</DropdownMenuItem>
+                                <DropdownMenuItem className="text-red-600" onClick={() => { setSelectedRecord(p); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-4 w-4" /> Remove</DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
@@ -377,27 +384,27 @@ export default function InventoryPage() {
             <Card className="lg:col-span-2 border-none shadow-sm rounded-xl overflow-hidden">
               <Table>
                 <TableHeader className="bg-muted/50">
-                  <TableRow><TableHead>Brand Name</TableHead><TableHead>Models Count</TableHead><TableHead className="text-right">Actions</TableHead></TableRow>
+                  <TableRow><TableHead>Brand Name</TableHead><TableHead>Active Models</TableHead><TableHead className="text-right">Actions</TableHead></TableRow>
                 </TableHeader>
                 <TableBody>
                   {brands?.map(b => (
-                    <TableRow key={b.id}>
+                    <TableRow key={b.id} className="hover:bg-muted/20">
                       <TableCell className="font-bold">{b.name}</TableCell>
-                      <TableCell><Badge variant="secondary">{models?.filter(m => m.brandId === b.id).length || 0} models</Badge></TableCell>
-                      <TableCell className="text-right"><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-red-500" /></Button></TableCell>
+                      <TableCell><Badge variant="secondary" className="rounded-md font-bold">{models?.filter(m => m.brandId === b.id).length || 0} series</Badge></TableCell>
+                      <TableCell className="text-right"><Button variant="ghost" size="icon" className="text-muted-foreground hover:text-red-600 rounded-full"><Trash2 className="h-4 w-4" /></Button></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </Card>
-            <Card className="border-none shadow-sm rounded-xl h-fit">
-              <CardHeader><CardTitle className="text-lg">Register Brand</CardTitle></CardHeader>
-              <CardContent>
+            <Card className="border-none shadow-md rounded-xl h-fit">
+              <CardHeader className="bg-orange-50/30 border-b"><CardTitle className="text-lg flex items-center gap-2"><PlusSquare className="h-5 w-5 text-orange-600" /> Register Brand</CardTitle></CardHeader>
+              <CardContent className="pt-6">
                 <form onSubmit={handleAddBrand} className="space-y-4">
-                  <div className="space-y-2"><Label className="text-xs uppercase font-bold text-muted-foreground">Manufacturer Name</Label><Input name="name" required placeholder="e.g. Samsung" /></div>
-                  <div className="space-y-2"><Label className="text-xs uppercase font-bold text-muted-foreground">Description</Label><Input name="description" placeholder="Brief info..." /></div>
-                  <Button type="submit" className="w-full h-11 rounded-xl shadow-lg" disabled={isSubmitting}>
-                    {isSubmitting ? <Loader2 className="animate-spin" /> : "Save Brand"}
+                  <div className="space-y-2"><Label className="text-xs uppercase font-bold text-muted-foreground">Manufacturer Label</Label><Input name="name" required placeholder="e.g. Hikvision" className="h-11 rounded-xl" /></div>
+                  <div className="space-y-2"><Label className="text-xs uppercase font-bold text-muted-foreground">Corporate Description</Label><Input name="description" placeholder="Brief info..." className="h-11 rounded-xl" /></div>
+                  <Button type="submit" className="w-full h-12 rounded-xl shadow-lg bg-orange-600 hover:bg-orange-700 font-bold" disabled={isSubmitting}>
+                    {isSubmitting ? <Loader2 className="animate-spin" /> : "Authorize Brand"}
                   </Button>
                 </form>
               </CardContent>
@@ -410,36 +417,36 @@ export default function InventoryPage() {
             <Card className="lg:col-span-2 border-none shadow-sm rounded-xl overflow-hidden">
               <Table>
                 <TableHeader className="bg-muted/50">
-                  <TableRow><TableHead>Model Name</TableHead><TableHead>Brand</TableHead><TableHead className="text-right">Actions</TableHead></TableRow>
+                  <TableRow><TableHead>Model Line</TableHead><TableHead>Manufacturer</TableHead><TableHead className="text-right">Actions</TableHead></TableRow>
                 </TableHeader>
                 <TableBody>
                   {models?.map(m => (
-                    <TableRow key={m.id}>
+                    <TableRow key={m.id} className="hover:bg-muted/20">
                       <TableCell className="font-bold">{m.name}</TableCell>
-                      <TableCell><Badge variant="outline">{brands?.find(b => b.id === m.brandId)?.name}</Badge></TableCell>
-                      <TableCell className="text-right"><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-red-500" /></Button></TableCell>
+                      <TableCell><Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-100">{brands?.find(b => b.id === m.brandId)?.name}</Badge></TableCell>
+                      <TableCell className="text-right"><Button variant="ghost" size="icon" className="text-muted-foreground hover:text-red-600 rounded-full"><Trash2 className="h-4 w-4" /></Button></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </Card>
-            <Card className="border-none shadow-sm rounded-xl h-fit">
-              <CardHeader><CardTitle className="text-lg">Register Model</CardTitle></CardHeader>
-              <CardContent>
+            <Card className="border-none shadow-md rounded-xl h-fit">
+              <CardHeader className="bg-purple-50/30 border-b"><CardTitle className="text-lg flex items-center gap-2"><Cpu className="h-5 w-5 text-purple-600" /> New Model Series</CardTitle></CardHeader>
+              <CardContent className="pt-6">
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label className="text-xs uppercase font-bold text-muted-foreground">Parent Brand</Label>
                     <Select value={formSelectedBrand} onValueChange={setFormSelectedBrand}>
-                      <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Identify manufacturer" /></SelectTrigger>
+                      <SelectTrigger className="h-11 rounded-xl border-purple-100"><SelectValue placeholder="Identify manufacturer" /></SelectTrigger>
                       <SelectContent>{brands?.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs uppercase font-bold text-muted-foreground">Model Number/Line</Label>
-                    <Input value={newModelName} onChange={e => setNewModelName(e.target.value)} placeholder="e.g. Galaxy S24" />
+                    <Label className="text-xs uppercase font-bold text-muted-foreground">Product Version/Model</Label>
+                    <Input value={newModelName} onChange={e => setNewModelName(e.target.value)} placeholder="e.g. Pro-Series 4K" className="h-11 rounded-xl" />
                   </div>
-                  <Button onClick={handleQuickAddModel} className="w-full h-11 rounded-xl shadow-lg" disabled={isSubmitting || !formSelectedBrand || !newModelName}>
-                    {isSubmitting ? <Loader2 className="animate-spin" /> : "Save Model"}
+                  <Button onClick={handleQuickAddModel} className="w-full h-12 rounded-xl shadow-lg bg-purple-600 hover:bg-purple-700 font-bold" disabled={isSubmitting || !formSelectedBrand || !newModelName}>
+                    {isSubmitting ? <Loader2 className="animate-spin" /> : "Deploy Model"}
                   </Button>
                 </div>
               </CardContent>
@@ -450,68 +457,91 @@ export default function InventoryPage() {
 
       {/* ADD/EDIT PRODUCT MODAL */}
       <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) { setIsAddModalOpen(false); setIsEditModalOpen(false); resetForm(); } }}>
-        <DialogContent className="max-w-3xl w-[95vw] max-h-[95vh] overflow-y-auto p-0 border-none shadow-2xl">
-          <DialogHeader className={cn("p-6 text-white", isEditModalOpen ? "bg-blue-600" : "bg-primary")}>
-            <DialogTitle className="text-2xl font-headline flex items-center gap-3">
-              <Boxes className="h-6 w-6" /> {isEditModalOpen ? "Modify Inventory Item" : "Register New Product"}
-            </DialogTitle>
+        <DialogContent className="max-w-4xl w-[95vw] max-h-[95vh] overflow-y-auto p-0 border-none shadow-2xl rounded-3xl">
+          <DialogHeader className={cn("p-8 text-white", isEditModalOpen ? "bg-blue-600" : "bg-primary")}>
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <Boxes className="h-6 w-6" />
+              </div>
+              <div>
+                <DialogTitle className="text-3xl font-headline font-bold">
+                  {isEditModalOpen ? "Adjust Inventory" : "New Acquisition"}
+                </DialogTitle>
+                <p className="text-white/70 text-xs font-medium tracking-wide uppercase mt-1">Master Product Registration</p>
+              </div>
+            </div>
           </DialogHeader>
-          <form onSubmit={isEditModalOpen ? handleUpdateProduct : handleAddProduct} className="p-6 space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-6">
-                <div className="space-y-4 p-4 bg-muted/20 rounded-2xl border-2 border-dashed">
-                  <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Master Classification</Label>
-                  <div className="space-y-4">
+          <form onSubmit={isEditModalOpen ? handleUpdateProduct : handleAddProduct} className="p-8 space-y-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              <div className="space-y-8">
+                <div className="space-y-6 p-6 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-[0.2em]">Categorization</Label>
+                    <Badge className="bg-primary/10 text-primary border-none text-[9px] uppercase font-black">Step 1</Badge>
+                  </div>
+                  
+                  <div className="space-y-5">
                     <div className="space-y-2">
-                      <Label className="text-xs">Brand / Manufacturer</Label>
+                      <Label className="text-xs font-bold text-slate-700">Manufacturer Brand</Label>
                       <Select 
                         name="brandId" 
                         required 
                         value={formSelectedBrand}
                         onValueChange={setFormSelectedBrand}
                       >
-                        <SelectTrigger className="h-11 rounded-xl bg-white shadow-sm"><SelectValue placeholder="Choose brand..." /></SelectTrigger>
+                        <SelectTrigger className="h-12 rounded-2xl bg-white border-slate-200 shadow-sm transition-all focus:ring-primary"><SelectValue placeholder="Choose brand..." /></SelectTrigger>
                         <SelectContent>{brands?.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
                     
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <Label className="text-xs">Product Model</Label>
+                        <Label className="text-xs font-bold text-slate-700">Product Model</Label>
                         <Button 
                           type="button" 
                           variant="ghost" 
                           size="sm" 
-                          className="h-6 text-[10px] text-primary font-bold hover:bg-primary/5 px-2"
-                          onClick={() => setIsInlineModelOpen(!isInlineModelOpen)}
+                          className={cn("h-7 text-[10px] font-black uppercase tracking-widest rounded-lg px-3 transition-colors", isInlineModelOpen ? "text-red-500 hover:bg-red-50" : "text-primary hover:bg-primary/5")}
+                          onClick={() => {
+                            if(!formSelectedBrand) {
+                              toast({ variant: "destructive", title: "Action Blocked", description: "Select a brand first to link the new model." });
+                              return;
+                            }
+                            setIsInlineModelOpen(!isInlineModelOpen);
+                          }}
                         >
-                          {isInlineModelOpen ? <X className="h-3 w-3 mr-1" /> : <PlusCircle className="h-3 w-3 mr-1" />}
-                          {isInlineModelOpen ? "Cancel" : "New Model"}
+                          {isInlineModelOpen ? <X className="h-3 w-3 mr-1.5" /> : <PlusCircle className="h-3 w-3 mr-1.5" />}
+                          {isInlineModelOpen ? "Cancel" : "Add New"}
                         </Button>
                       </div>
 
                       {isInlineModelOpen ? (
-                        <div className="flex gap-2 animate-in fade-in slide-in-from-top-2">
+                        <div className="flex gap-2 animate-in slide-in-from-top-4 duration-300">
                           <Input 
-                            className="h-11 rounded-xl bg-white text-xs" 
-                            placeholder="Type model name..." 
+                            className="h-12 rounded-2xl bg-white border-2 border-primary/20 text-sm font-bold shadow-md shadow-primary/5 focus:border-primary" 
+                            placeholder="Enter new model code..." 
                             value={newModelName} 
+                            autoFocus
                             onChange={e => setNewModelName(e.target.value)}
                           />
                           <Button 
                             type="button" 
-                            className="h-11 px-3 rounded-xl bg-primary"
+                            className="h-12 w-12 shrink-0 rounded-2xl bg-primary shadow-lg shadow-primary/20 active:scale-95 transition-transform"
                             disabled={!newModelName || isSubmitting}
                             onClick={handleQuickAddModel}
                           >
-                            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add"}
+                            {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
                           </Button>
                         </div>
                       ) : (
                         <Select value={selectedModelId} onValueChange={setSelectedModelId}>
-                          <SelectTrigger className="h-11 rounded-xl bg-white shadow-sm"><SelectValue placeholder="Identify model line..." /></SelectTrigger>
+                          <SelectTrigger className="h-12 rounded-2xl bg-white border-slate-200 shadow-sm transition-all focus:ring-primary"><SelectValue placeholder="Identify series..." /></SelectTrigger>
                           <SelectContent>
-                            {models?.filter(m => !formSelectedBrand || m.brandId === formSelectedBrand).map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
+                            {!formSelectedBrand ? (
+                              <div className="p-4 text-center text-[10px] text-slate-400 font-bold uppercase italic">Pick a brand first</div>
+                            ) : (
+                              models?.filter(m => m.brandId === formSelectedBrand).map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)
+                            )}
                           </SelectContent>
                         </Select>
                       )}
@@ -519,56 +549,68 @@ export default function InventoryPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">Product Display Name</Label>
-                  <Input name="name" required defaultValue={selectedRecord?.name} placeholder="e.g. Sony 4K IP Camera" className="h-11 rounded-xl" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">SKU / Unique ID</Label>
-                  <Input name="sku" required defaultValue={selectedRecord?.sku} placeholder="CAM-001-PRO" className="h-11 rounded-xl font-mono uppercase" />
+                <div className="space-y-5">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold text-slate-700">Display Identity</Label>
+                    <Input name="name" required defaultValue={selectedRecord?.name} placeholder="e.g. 4K NightVision PTZ Camera" className="h-14 rounded-2xl bg-white border-slate-200 text-base font-bold placeholder:font-normal" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold text-slate-700">Stock Keeping Unit (SKU)</Label>
+                    <Input name="sku" required defaultValue={selectedRecord?.sku} placeholder="WAR-CAM-001" className="h-14 rounded-2xl bg-white border-slate-200 font-mono text-base uppercase font-bold text-primary" />
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-6">
-                <div className="flex items-center justify-between p-4 bg-purple-50 rounded-2xl border-2 border-purple-100 shadow-sm">
-                  <div className="space-y-0.5"><Label className="text-purple-900 font-bold">Serial Tracking</Label><p className="text-[10px] text-purple-700">Enforce unique item monitoring</p></div>
-                  <Switch checked={serialRequired} onCheckedChange={setSerialRequired} />
+              <div className="space-y-10">
+                <div className="p-6 bg-purple-50/50 rounded-[2rem] border-2 border-purple-100 shadow-sm flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label className="text-purple-900 text-sm font-black uppercase tracking-tighter">Unique Serialization</Label>
+                    <p className="text-[10px] text-purple-600 font-medium leading-none">Track individual IMEI/Serial numbers</p>
+                  </div>
+                  <Switch checked={serialRequired} onCheckedChange={setSerialRequired} className="data-[state=checked]:bg-purple-600" />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase text-red-600">Unit Cost (৳)</Label>
-                    <Input name="costPrice" type="number" step="0.01" defaultValue={selectedRecord?.costPrice} required className="h-11 rounded-xl border-red-50 focus:border-red-500 shadow-sm" />
+                    <Label className="text-xs font-bold text-red-600 uppercase tracking-widest">Base Cost (৳)</Label>
+                    <div className="relative">
+                      <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-red-400" />
+                      <Input name="costPrice" type="number" step="0.01" defaultValue={selectedRecord?.costPrice} required className="h-14 rounded-2xl pl-10 bg-white border-red-50 focus:border-red-500 font-bold text-lg" />
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase text-green-600">Sale Price (৳)</Label>
-                    <Input name="unitPrice" type="number" step="0.01" defaultValue={selectedRecord?.unitPrice} required className="h-11 rounded-xl border-green-50 focus:border-green-500 shadow-sm" />
+                    <Label className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Retail MSRP (৳)</Label>
+                    <div className="relative">
+                      <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-400" />
+                      <Input name="unitPrice" type="number" step="0.01" defaultValue={selectedRecord?.unitPrice} required className="h-14 rounded-2xl pl-10 bg-white border-emerald-50 focus:border-emerald-500 font-bold text-lg" />
+                    </div>
                   </div>
                 </div>
 
-                {!isEditModalOpen && (
+                <div className="grid grid-cols-2 gap-6">
+                  {!isEditModalOpen && (
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold text-slate-700">Initial Opening Stock</Label>
+                      <Input name="currentStock" type="number" defaultValue="0" className="h-14 rounded-2xl bg-white border-slate-200 font-bold" />
+                    </div>
+                  )}
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase">Initial Stock</Label>
-                    <Input name="currentStock" type="number" defaultValue="0" className="h-11 rounded-xl" />
+                    <Label className="text-xs font-bold text-slate-700">Safety Limit (Low Stock)</Label>
+                    <Input name="minStockLevel" type="number" defaultValue={selectedRecord?.minStockLevel || 5} className="h-14 rounded-2xl bg-white border-slate-200 font-bold text-red-600" />
                   </div>
-                )}
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">Low Stock Warning Level</Label>
-                  <Input name="minStockLevel" type="number" defaultValue={selectedRecord?.minStockLevel || 5} className="h-11 rounded-xl" />
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-between p-6 bg-muted/20 rounded-2xl border-2 border-dashed">
+            <div className="pt-6 border-t flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-primary"><Settings2 className="h-6 w-6" /></div>
-                <div><p className="text-sm font-bold">Inventory Sync</p><p className="text-[10px] text-muted-foreground">Product will be added to the active branch ({branchId?.replace('-', ' ')})</p></div>
+                <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400"><Settings2 className="h-6 w-6" /></div>
+                <div><p className="text-sm font-black text-slate-900 uppercase tracking-tighter">System Synchronization</p><p className="text-[10px] text-slate-500 font-bold uppercase">Deployment Target: {branchId?.replace('-', ' ')}</p></div>
               </div>
-              <div className="flex gap-3">
-                <Button type="button" variant="outline" className="rounded-full px-8 h-12" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
-                <Button type="submit" disabled={isSubmitting} className="bg-primary hover:bg-primary/90 rounded-full px-12 h-12 font-bold shadow-xl">
-                  {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <CheckCircle2 className="h-5 w-5 mr-2" />} 
-                  {isEditModalOpen ? "Save Adjustments" : "Initialize Item"}
+              <div className="flex gap-4 w-full md:w-auto">
+                <Button type="button" variant="outline" className="flex-1 md:flex-none rounded-2xl px-10 h-14 font-bold border-slate-200" onClick={() => setIsAddModalOpen(false)}>Discard</Button>
+                <Button type="submit" disabled={isSubmitting} className={cn("flex-1 md:flex-none rounded-2xl px-16 h-14 font-black uppercase tracking-widest text-sm shadow-2xl transition-all active:scale-95", isEditModalOpen ? "bg-blue-600 hover:bg-blue-700 shadow-blue-200" : "bg-primary hover:bg-primary/90 shadow-primary/20")}>
+                  {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : isEditModalOpen ? "Push Adjustments" : "Finalize Item"}
                 </Button>
               </div>
             </div>
@@ -578,9 +620,20 @@ export default function InventoryPage() {
 
       {/* DELETE ALERT */}
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Remove Product?</AlertDialogTitle><AlertDialogDescription>This will delete {selectedRecord?.name}. Stock records and existing transactions using this ID may be affected.</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={handleDeleteProduct}>Delete</AlertDialogAction></AlertDialogFooter>
+        <AlertDialogContent className="rounded-3xl border-none shadow-2xl">
+          <AlertDialogHeader>
+            <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center text-red-600 mb-4">
+              <Trash2 className="h-8 w-8" />
+            </div>
+            <AlertDialogTitle className="text-2xl font-headline font-bold">Remove Product Record?</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-500 text-sm leading-relaxed">
+              This will permanently delete <strong className="text-slate-900">{selectedRecord?.name}</strong> from your master catalog. Stock levels and historical ledger links for this ID will be detached. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-6 gap-3">
+            <AlertDialogCancel className="rounded-2xl h-12 px-8 font-bold border-slate-200">Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 rounded-2xl h-12 px-8 font-bold text-white shadow-lg shadow-red-100" onClick={handleDeleteProduct}>Confirm Removal</AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
