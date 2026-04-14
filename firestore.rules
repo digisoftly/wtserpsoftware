@@ -87,6 +87,10 @@ service cloud.firestore {
         allow create, update, delete: if isCompanyMember(companyId) || isSuperAdmin();
       }
 
+      match /system/{allPaths=**} {
+        allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
+      }
+
       match /branches/{branchId} {
         allow get, list: if isCompanyMember(companyId) || isSuperAdmin();
         allow create: if (isSuperAdmin() || companyId == "warrior-demo-corp") && matchesTenant(companyId);
