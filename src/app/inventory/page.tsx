@@ -28,11 +28,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, serverTimestamp } from "firebase/firestore"
+import { collection, serverTimestamp, doc, setDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { KPICard } from "@/components/dashboard/kpi-card"
 
 export default function InventoryPage() {
@@ -42,6 +41,7 @@ export default function InventoryPage() {
   const [forecast, setForecast] = React.useState<InventoryForecastingOutput | null>(null)
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const productsQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
@@ -51,7 +51,7 @@ export default function InventoryPage() {
   const { data: products, isLoading } = useCollection(productsQuery);
 
   const totalItems = products?.length || 0;
-  const totalStockValue = products?.reduce((sum, p) => sum + (p.currentStock * p.costPrice || 0), 0) || 0;
+  const totalStockValue = products?.reduce((sum, p) => sum + ((p.currentStock || 0) * (p.costPrice || 0)), 0) || 0;
   const lowStockCount = products?.filter(p => (p.currentStock || 0) <= (p.minStockLevel || 0)).length || 0;
 
   const handleRunForecast = async () => {
@@ -88,30 +88,37 @@ export default function InventoryPage() {
     }
   }
 
-  const handleAddProduct = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAddProduct = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    
     if (!db || !companyId || !branchId) return;
 
-    const productData = {
-      companyId,
-      branchId,
-      name: formData.get("name") as string,
-      sku: formData.get("sku") as string,
-      unitPrice: Number(formData.get("unitPrice")),
-      costPrice: Number(formData.get("costPrice")),
-      currentStock: Number(formData.get("currentStock")),
-      minStockLevel: Number(formData.get("minStockLevel")),
-      serialNumberTrackingRequired: false,
-      isActive: true,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-
-    const colRef = collection(db, "companies", companyId, "branches", branchId, "products");
-    addDocumentNonBlocking(colRef, productData);
-    setIsAddModalOpen(false);
+    setIsSubmitting(true);
+    try {
+      const productRef = doc(collection(db, "companies", companyId, "branches", branchId, "products"));
+      const productData = {
+        id: productRef.id,
+        companyId,
+        branchId,
+        name: formData.get("name") as string,
+        sku: formData.get("sku") as string,
+        unitPrice: Number(formData.get("unitPrice")),
+        costPrice: Number(formData.get("costPrice")),
+        currentStock: Number(formData.get("currentStock")),
+        minStockLevel: Number(formData.get("minStockLevel")),
+        serialNumberTrackingRequired: false,
+        isActive: true,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+      await setDoc(productRef, productData);
+      toast({ title: "Product Created", description: "Inventory database updated." });
+      setIsAddModalOpen(false);
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Save Failed", description: err.message });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const filteredProducts = products?.filter(p => 
@@ -123,8 +130,8 @@ export default function InventoryPage() {
     <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary">Inventory Control</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage stock, serial numbers, and demand forecasting</p>
+          <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary">Warehouse Management</h1>
+          <p className="text-sm text-muted-foreground mt-1">Real-time stock control and AI demand forecasting</p>
         </div>
         <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
           <Button 
@@ -133,117 +140,84 @@ export default function InventoryPage() {
             className="bg-accent hover:bg-accent/90 text-accent-foreground gap-2 rounded-full font-semibold shadow-lg shrink-0"
           >
             {isForecasting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
-            AI Forecast
+            AI Forecasting
           </Button>
-          <Button className="bg-primary hover:bg-primary/90 gap-2 rounded-full shrink-0" onClick={() => setIsAddModalOpen(true)}>
+          <Button className="bg-primary hover:bg-primary/90 gap-2 rounded-full shrink-0 px-6" onClick={() => setIsAddModalOpen(true)}>
             <Plus className="h-4 w-4" />
-            Add Product
+            Add SKU
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Total SKUs" value={totalItems} icon={Boxes} colorClass="bg-blue-500" />
-        <KPICard title="Stock Value" value={`$${totalStockValue.toLocaleString()}`} icon={DollarSign} colorClass="bg-green-500" />
-        <KPICard title="Low Stock" value={lowStockCount} icon={AlertTriangle} colorClass="bg-red-500" />
-        <KPICard title="Active Items" value={products?.filter(p => p.isActive).length || 0} icon={Activity} colorClass="bg-purple-500" />
+        <KPICard title="Inventory Assets" value={totalItems} icon={Boxes} colorClass="bg-blue-500" />
+        <KPICard title="Valuation" value={`$${totalStockValue.toLocaleString()}`} icon={DollarSign} colorClass="bg-green-500" />
+        <KPICard title="Low Stock Alerts" value={lowStockCount} icon={AlertTriangle} colorClass="bg-red-500" />
+        <KPICard title="Turnover Ratio" value="4.2x" icon={Activity} colorClass="bg-purple-500" />
       </div>
 
       <Tabs defaultValue="list" className="w-full">
         <TabsList className="bg-white p-1 rounded-xl shadow-sm border mb-6 flex overflow-x-auto h-auto">
-          <TabsTrigger value="list" className="rounded-lg flex-1">Product List</TabsTrigger>
-          <TabsTrigger value="ai-insights" className="rounded-lg flex-1">AI Insights {forecast && <Badge variant="destructive" className="ml-2 h-4 px-1 animate-pulse">!</Badge>}</TabsTrigger>
-          <TabsTrigger value="stock-movement" className="rounded-lg flex-1">Stock Movement</TabsTrigger>
+          <TabsTrigger value="list" className="rounded-lg flex-1">Master Catalog</TabsTrigger>
+          <TabsTrigger value="ai-insights" className="rounded-lg flex-1">AI Optimization {forecast && <Badge variant="destructive" className="ml-2 h-4 px-1 animate-pulse">!</Badge>}</TabsTrigger>
+          <TabsTrigger value="stock-movement" className="rounded-lg flex-1">History</TabsTrigger>
         </TabsList>
 
         <TabsContent value="list" className="space-y-4">
           <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
             <div className="relative flex-1 w-full max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search SKU, Name..." 
-                className="pl-9 bg-background border-none ring-1 ring-input" 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+              <Input placeholder="Search SKU, Name..." className="pl-9" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
             </div>
-            <Button variant="outline" className="gap-2 border-primary/20 rounded-lg w-full sm:w-auto">
-              <Filter className="h-4 w-4" />
-              Filters
-            </Button>
+            <Button variant="outline" className="gap-2 rounded-lg w-full sm:w-auto"><Filter className="h-4 w-4" /> Filters</Button>
           </div>
 
           {isLoading ? (
             <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-          ) : products && products.length > 0 ? (
+          ) : (
             <Card className="border-none shadow-sm rounded-xl overflow-hidden">
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader className="bg-muted/50">
                     <TableRow>
-                      <TableHead>Product Details</TableHead>
+                      <TableHead>Product</TableHead>
                       <TableHead>SKU</TableHead>
-                      <TableHead>Stock Level</TableHead>
-                      <TableHead>Pricing (Cost/Sell)</TableHead>
+                      <TableHead>In Stock</TableHead>
+                      <TableHead>Pricing (Sell/Cost)</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredProducts?.map((product) => (
-                      <TableRow key={product.id} className="hover:bg-muted/30 transition-colors">
+                    {filteredProducts?.map((p) => (
+                      <TableRow key={p.id} className="hover:bg-muted/30">
                         <TableCell>
-                          <div className="font-bold text-primary">{product.name}</div>
-                          <div className="text-[10px] text-muted-foreground font-mono uppercase">ID: {product.id.slice(-8)}</div>
+                          <div className="font-bold text-primary">{p.name}</div>
+                          <div className="text-[10px] text-muted-foreground font-mono">{p.id.slice(-8)}</div>
                         </TableCell>
-                        <TableCell className="font-mono text-xs">{product.sku}</TableCell>
+                        <TableCell className="font-mono text-xs">{p.sku}</TableCell>
                         <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium text-xs md:text-sm">{product.currentStock} Units</span>
-                            <span className="text-[10px] text-muted-foreground">Min Level: {product.minStockLevel}</span>
+                          <div className={cn("text-xs md:text-sm font-bold", (p.currentStock || 0) <= (p.minStockLevel || 0) ? "text-red-600" : "text-foreground")}>
+                            {p.currentStock || 0} Units
                           </div>
+                          <div className="text-[10px] text-muted-foreground">Min: {p.minStockLevel}</div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex flex-col">
-                            <span className="text-[10px] text-muted-foreground">Cost: ${product.costPrice?.toFixed(2)}</span>
-                            <span className="font-semibold text-xs md:text-sm">${product.unitPrice?.toFixed(2)}</span>
-                          </div>
+                          <div className="text-xs font-bold">${p.unitPrice?.toFixed(2)}</div>
+                          <div className="text-[10px] text-muted-foreground">Cost: ${p.costPrice?.toFixed(2)}</div>
                         </TableCell>
                         <TableCell>
-                          <Badge 
-                            variant="outline" 
-                            className={cn(
-                              "text-[10px]",
-                              (product.currentStock || 0) <= (product.minStockLevel || 0) 
-                                ? "border-red-500 text-red-500 bg-red-50" 
-                                : "border-green-500 text-green-500 bg-green-50"
-                            )}
-                          >
-                            {(product.currentStock || 0) <= (product.minStockLevel || 0) ? "Low Stock" : "Optimal"}
+                          <Badge variant="outline" className={cn("text-[10px]", (p.currentStock || 0) <= (p.minStockLevel || 0) ? "border-red-500 text-red-500 bg-red-50" : "border-green-500 text-green-500 bg-green-50")}>
+                            {(p.currentStock || 0) <= (p.minStockLevel || 0) ? "Critical" : "Healthy"}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
+                        <TableCell className="text-right"><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               </div>
             </Card>
-          ) : (
-            <div className="p-12 bg-white rounded-xl border border-dashed flex flex-col items-center justify-center text-center">
-              <div className="w-16 h-16 bg-yellow-50 rounded-full flex items-center justify-center mb-4 text-yellow-600">
-                <Package className="h-8 w-8" />
-              </div>
-              <h2 className="text-xl font-headline font-bold">Warehouse Empty</h2>
-              <p className="text-sm text-muted-foreground max-w-sm mt-2">
-                Start adding products to track stock, prices, and automated reorder alerts.
-              </p>
-              <Button className="mt-6 bg-primary rounded-full px-8" onClick={() => setIsAddModalOpen(true)}>Add Your First Product</Button>
-            </div>
           )}
         </TabsContent>
 
@@ -254,9 +228,8 @@ export default function InventoryPage() {
                 <CardHeader className="border-b bg-accent/5">
                   <div className="flex items-center gap-2">
                     <BarChart className="h-5 w-5 text-accent" />
-                    <CardTitle className="font-headline text-lg">Demand Forecast</CardTitle>
+                    <CardTitle className="font-headline text-lg">Demand Analysis</CardTitle>
                   </div>
-                  <CardDescription className="text-xs">Predicted requirements for the next 30 days</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6">
                   <div className="space-y-4">
@@ -265,11 +238,11 @@ export default function InventoryPage() {
                         <div>
                           <p className="font-bold text-primary">{f.productName}</p>
                           <div className="flex flex-wrap gap-4 mt-1 text-xs text-muted-foreground">
-                            <span>Predicted: <strong className="text-foreground">{f.predictedDemandNextPeriod}</strong></span>
-                            <span>Optimal Stock: <strong className="text-foreground">{f.recommendedStockLevel}</strong></span>
+                            <span>Target: <strong className="text-foreground">{f.recommendedStockLevel}</strong></span>
+                            <span>Forecasted Demand: <strong className="text-foreground">{f.predictedDemandNextPeriod}</strong></span>
                           </div>
                         </div>
-                        <Badge className="bg-primary text-white w-fit">Target: {f.recommendedReorderPoint}</Badge>
+                        <Badge className="bg-primary text-white w-fit">Reorder @ {f.recommendedReorderPoint}</Badge>
                       </div>
                     ))}
                   </div>
@@ -278,9 +251,7 @@ export default function InventoryPage() {
 
               <div className="space-y-6">
                 <Card className="border-none shadow-md bg-primary text-primary-foreground rounded-xl">
-                  <CardHeader>
-                    <CardTitle className="font-headline text-lg">AI Recommendations</CardTitle>
-                  </CardHeader>
+                  <CardHeader><CardTitle className="font-headline text-lg">Action Plan</CardTitle></CardHeader>
                   <CardContent className="space-y-3">
                     {forecast.recommendations.map((rec, i) => (
                       <div key={i} className="flex gap-3 items-start bg-white/10 p-3 rounded-lg backdrop-blur-sm">
@@ -290,79 +261,44 @@ export default function InventoryPage() {
                     ))}
                   </CardContent>
                 </Card>
-
-                <Card className="border-none shadow-md bg-white rounded-xl">
-                  <CardHeader>
-                    <CardTitle className="font-headline text-lg">Methodology</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-xs text-muted-foreground italic leading-relaxed border-l-4 border-accent pl-4 py-1">
-                      {forecast.explanation}
-                    </p>
-                  </CardContent>
-                  <CardFooter className="pt-0">
-                    <Button variant="outline" className="w-full gap-2 border-primary/20 text-primary hover:bg-primary/5 rounded-lg text-xs">
-                      Apply Strategic Adjustments <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </CardFooter>
+                <Card className="border-none shadow-sm rounded-xl">
+                  <CardHeader><CardTitle className="text-sm font-bold">Forecasting Context</CardTitle></CardHeader>
+                  <CardContent><p className="text-xs text-muted-foreground italic border-l-4 border-accent pl-4">{forecast.explanation}</p></CardContent>
                 </Card>
               </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border shadow-sm text-center px-4">
-              <div className="w-20 h-20 rounded-full bg-accent/10 flex items-center justify-center mb-4">
-                <Zap className="h-10 w-10 text-accent animate-pulse" />
-              </div>
-              <h3 className="text-xl font-headline font-bold">Generate Intelligence</h3>
-              <p className="text-sm text-muted-foreground max-w-md mt-2 mb-6">
-                Our AI engine analyzes sales cycles, seasonality, and lead times to provide the most accurate inventory optimization strategy.
-              </p>
-              <Button onClick={handleRunForecast} size="lg" className="bg-accent text-accent-foreground font-bold rounded-full px-8 shadow-lg shadow-accent/20">
-                Run AI Optimization Flow
-              </Button>
+              <Zap className="h-12 w-12 text-accent mb-4 animate-pulse" />
+              <h3 className="text-xl font-headline font-bold">Predictive Intelligence</h3>
+              <p className="text-sm text-muted-foreground max-w-md mt-2 mb-6">Analyze historical performance to optimize your supply chain automatically.</p>
+              <Button onClick={handleRunForecast} className="bg-accent text-accent-foreground font-bold rounded-full px-8 shadow-lg">Generate AI Insights</Button>
             </div>
           )}
         </TabsContent>
       </Tabs>
 
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-headline text-xl">Add New Product</DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle>New Inventory Item</DialogTitle></DialogHeader>
           <form onSubmit={handleAddProduct} className="space-y-4 pt-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Product Name</Label>
-              <Input id="name" name="name" required placeholder="e.g. Fiber Optic Cable 50m" />
+              <Label>Product Name</Label>
+              <Input name="name" required placeholder="e.g. 10Gbps Network Router" />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="sku">SKU (Stock Keeping Unit)</Label>
-                <Input id="sku" name="sku" required placeholder="W-NET-001" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="currentStock">Initial Stock Level</Label>
-                <Input id="currentStock" name="currentStock" type="number" required defaultValue="0" />
-              </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2"><Label>SKU</Label><Input name="sku" required placeholder="NET-RT-001" /></div>
+              <div className="space-y-2"><Label>Opening Stock</Label><Input name="currentStock" type="number" required defaultValue="0" /></div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="costPrice">Cost Price ($)</Label>
-                <Input id="costPrice" name="costPrice" type="number" step="0.01" required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="unitPrice">Selling Price ($)</Label>
-                <Input id="unitPrice" name="unitPrice" type="number" step="0.01" required />
-              </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2"><Label>Unit Cost ($)</Label><Input name="costPrice" type="number" step="0.01" required /></div>
+              <div className="space-y-2"><Label>Selling Price ($)</Label><Input name="unitPrice" type="number" step="0.01" required /></div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="minStockLevel">Minimum Stock Level (Alert Threshold)</Label>
-              <Input id="minStockLevel" name="minStockLevel" type="number" required defaultValue="5" />
-            </div>
-            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)} className="rounded-full">Cancel</Button>
-              <Button type="submit" className="bg-primary rounded-full">Register Product</Button>
-            </div>
+            <div className="space-y-2"><Label>Minimum Stock Alert Level</Label><Input name="minStockLevel" type="number" required defaultValue="5" /></div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={isSubmitting}>{isSubmitting ? <Loader2 className="animate-spin" /> : "Save Product"}</Button>
+            </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>

@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Plus, FileText, Search, Loader2, MoreVertical, Filter, UserPlus, Users, FileCheck, Clock, Calculator } from "lucide-react"
+import { Plus, FileText, Search, Loader2, MoreVertical, Trash2, Calculator, CheckCircle2, ChevronRight, ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -12,21 +12,31 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, serverTimestamp, query, orderBy, addDoc } from "firebase/firestore"
+import { collection, serverTimestamp, query, orderBy, doc, runTransaction, setDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
-import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
-import { cn } from "@/lib/utils"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { KPICard } from "@/components/dashboard/kpi-card"
+import { toast } from "@/hooks/use-toast"
+
+interface QuoteItem {
+  productId: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+}
 
 export default function QuotationsPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
-  const [customerMode, setCustomerType] = React.useState<"select" | "new">("select");
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const quotationsQuery = useMemoFirebase(() => {
+  // Form State
+  const [selectedCustomerId, setSelectedCustomerId] = React.useState("");
+  const [lineItems, setLineItems] = React.useState<QuoteItem[]>([]);
+
+  const quotesQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
     return query(
       collection(db, "companies", companyId, "branches", branchId, "quotations"),
@@ -34,7 +44,7 @@ export default function QuotationsPage() {
     );
   }, [db, companyId, branchId]);
 
-  const { data: quotations, isLoading } = useCollection(quotationsQuery);
+  const { data: quotations, isLoading } = useCollection(quotesQuery);
 
   const customersQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
@@ -42,100 +52,106 @@ export default function QuotationsPage() {
   }, [db, companyId, branchId]);
   const { data: customers } = useCollection(customersQuery);
 
-  const totalQuotesValue = quotations?.reduce((sum, q) => sum + (q.totalAmount || 0), 0) || 0;
-  const draftQuotesCount = quotations?.filter(q => q.status === 'draft').length || 0;
+  const productsQuery = useMemoFirebase(() => {
+    if (!db || !companyId || !branchId) return null;
+    return collection(db, "companies", companyId, "branches", branchId, "products");
+  }, [db, companyId, branchId]);
+  const { data: products } = useCollection(productsQuery);
 
-  const handleAddQuotation = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    
-    if (!db || !companyId || !branchId) return;
+  const totalValue = lineItems.reduce((sum, item) => sum + item.total, 0);
 
-    let targetCustomerId = formData.get("customerId") as string;
-
-    if (customerMode === "new") {
-      const customerData = {
-        companyId,
-        branchId,
-        customerType: "individual",
-        firstName: formData.get("firstName") as string,
-        lastName: formData.get("lastName") as string,
-        email: (formData.get("email") as string) || "",
-        phoneNumber: (formData.get("phoneNumber") as string) || "",
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      };
-      const custRef = await addDoc(collection(db, "companies", companyId, "branches", branchId, "customers"), customerData);
-      targetCustomerId = custRef.id;
-    }
-
-    if (!targetCustomerId) return;
-
-    const quotationData = {
-      companyId,
-      branchId,
-      quotationNumber: `QT-${Date.now().toString().slice(-6)}`,
-      customerId: targetCustomerId,
-      quotationDate: new Date().toISOString(),
-      validUntilDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-      totalAmount: Number(formData.get("amount")),
-      status: "draft",
-      createdByUserId: "current-user",
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-
-    const colRef = collection(db, "companies", companyId, "branches", branchId, "quotations");
-    addDocumentNonBlocking(colRef, quotationData);
-    setIsAddModalOpen(false);
-    setCustomerType("select");
+  const handleAddLineItem = (productId: string) => {
+    const product = products?.find(p => p.id === productId);
+    if (!product) return;
+    setLineItems([...lineItems, {
+      productId: product.id,
+      name: product.name,
+      quantity: 1,
+      unitPrice: product.unitPrice,
+      total: product.unitPrice
+    }]);
   };
 
-  const filteredQuotations = quotations?.filter(q => 
-    q.quotationNumber?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleSubmitQuote = async () => {
+    if (!selectedCustomerId || lineItems.length === 0) return;
+    setIsSubmitting(true);
+    try {
+      const quoteRef = doc(collection(db, "companies", companyId!, "branches", branchId!, "quotations"));
+      await setDoc(quoteRef, {
+        id: quoteRef.id,
+        companyId,
+        branchId,
+        quotationNumber: `QT-${Date.now().toString().slice(-6)}`,
+        customerId: selectedCustomerId,
+        items: lineItems,
+        totalAmount: totalValue,
+        status: "draft",
+        quotationDate: new Date().toISOString(),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      toast({ title: "Quotation Saved", description: "The proposal has been recorded as draft." });
+      setIsAddModalOpen(false);
+      setLineItems([]);
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Error", description: e.message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleConvertToInvoice = async (quote: any) => {
+    if (quote.status === "converted") {
+      toast({ title: "Already Converted", description: "This quotation is already a sales invoice." });
+      return;
+    }
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        const quoteRef = doc(db, "companies", companyId!, "branches", branchId!, "quotations", quote.id);
+        const invoiceRef = doc(collection(db, "companies", companyId!, "branches", branchId!, "sales_invoices"));
+        
+        transaction.set(invoiceRef, {
+          ...quote,
+          id: invoiceRef.id,
+          invoiceNumber: `INV-FROM-${quote.quotationNumber.split('-')[1]}`,
+          status: "due",
+          invoiceDate: new Date().toISOString(),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+
+        transaction.update(quoteRef, { status: "converted", convertedToInvoiceId: invoiceRef.id });
+      });
+      toast({ title: "Quotation Converted", description: "New invoice generated from this proposal." });
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Conversion Failed", description: e.message });
+    }
+  };
 
   return (
     <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold font-headline text-purple-600">Quotations</h1>
-          <p className="text-sm text-muted-foreground mt-1">Generate and manage price quotes for clients</p>
+          <h1 className="text-2xl md:text-3xl font-bold font-headline text-purple-600">Sales Quotations</h1>
+          <p className="text-sm text-muted-foreground mt-1">Generate proposals and convert them to invoices</p>
         </div>
-        <Button className="bg-purple-600 hover:bg-purple-700 gap-2 rounded-full w-full md:w-auto" onClick={() => setIsAddModalOpen(true)}>
+        <Button className="bg-purple-600 hover:bg-purple-700 gap-2 rounded-full px-8 shadow-lg" onClick={() => setIsAddModalOpen(true)}>
           <Plus className="h-4 w-4" />
-          New Quotation
+          Create Quote
         </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Total Quotes" value={quotations?.length || 0} icon={FileText} colorClass="bg-purple-500" />
-        <KPICard title="Total Value" value={`$${totalQuotesValue.toLocaleString()}`} icon={Calculator} colorClass="bg-blue-500" />
-        <KPICard title="Draft Mode" value={draftQuotesCount} icon={Clock} colorClass="bg-orange-500" />
-        <KPICard title="Accepted" value={quotations?.filter(q => q.status === 'accepted').length || 0} icon={FileCheck} colorClass="bg-green-500" />
-      </div>
-
-      <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
-        <div className="relative flex-1 w-full max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search quotation #..." 
-            className="pl-9 bg-background border-none ring-1 ring-input" 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <Button variant="outline" className="gap-2 w-full sm:w-auto">
-          <Filter className="h-4 w-4" />
-          Filters
-        </Button>
+        <KPICard title="Draft Proposals" value={quotations?.filter(q => q.status === 'draft').length || 0} icon={FileText} colorClass="bg-purple-500" />
+        <KPICard title="Total Value" value={`$${quotations?.reduce((s, q) => s + (q.totalAmount || 0), 0).toLocaleString()}`} icon={Calculator} colorClass="bg-blue-500" />
+        <KPICard title="Converted" value={quotations?.filter(q => q.status === 'converted').length || 0} icon={CheckCircle2} colorClass="bg-green-500" />
+        <KPICard title="Pending Clients" value={new Set(quotations?.map(q => q.customerId)).size} icon={Users} colorClass="bg-amber-500" />
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
-        </div>
-      ) : quotations && quotations.length > 0 ? (
+        <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-purple-600" /></div>
+      ) : (
         <Card className="border-none shadow-sm rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
@@ -143,116 +159,86 @@ export default function QuotationsPage() {
                 <TableRow>
                   <TableHead>Quote #</TableHead>
                   <TableHead>Customer</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Amount</TableHead>
+                  <TableHead>Value</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredQuotations?.map((q) => {
-                  const customer = customers?.find(c => c.id === q.customerId);
-                  return (
-                    <TableRow key={q.id} className="hover:bg-muted/30 transition-colors">
-                      <TableCell className="font-bold text-xs md:text-sm">{q.quotationNumber}</TableCell>
-                      <TableCell className="text-xs md:text-sm">{customer ? `${customer.firstName} ${customer.lastName}` : "Loading..."}</TableCell>
-                      <TableCell className="text-[10px] md:text-xs">{new Date(q.quotationDate).toLocaleDateString()}</TableCell>
-                      <TableCell className="font-semibold text-xs md:text-sm">${q.totalAmount?.toLocaleString()}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="bg-purple-50 text-purple-700 text-[10px] capitalize">{q.status}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                {quotations?.map((q) => (
+                  <TableRow key={q.id}>
+                    <TableCell className="font-bold text-purple-700">{q.quotationNumber}</TableCell>
+                    <TableCell>{customers?.find(c => c.id === q.customerId)?.firstName || "Unknown"}</TableCell>
+                    <TableCell className="font-bold">${q.totalAmount?.toLocaleString()}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={cn(q.status === "converted" ? "bg-green-50 text-green-700 border-green-200" : "bg-purple-50 text-purple-700")}>
+                        {q.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right flex justify-end gap-2">
+                      <Button size="sm" variant="outline" className="gap-1 h-8 rounded-full" onClick={() => handleConvertToInvoice(q)} disabled={q.status === "converted"}>
+                        <ShoppingCart className="h-3 w-3" /> Invoice
+                      </Button>
+                      <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </div>
         </Card>
-      ) : (
-        <div className="p-12 bg-white rounded-xl border border-dashed flex flex-col items-center justify-center text-center">
-          <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mb-4 text-purple-500">
-            <FileText className="h-8 w-8" />
-          </div>
-          <h2 className="text-xl font-headline font-bold">No Active Quotations</h2>
-          <p className="text-sm text-muted-foreground max-w-sm mt-2">
-            Create professional quotes to send to your potential leads and customers.
-          </p>
-          <Button className="mt-6 bg-purple-600 rounded-full px-8" onClick={() => setIsAddModalOpen(true)}>Create Quotation</Button>
-        </div>
       )}
 
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-headline text-xl">New Price Quotation</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleAddQuotation} className="space-y-6 pt-4">
-            <div className="space-y-4">
-              <Label className="text-sm font-bold flex items-center gap-2">
-                <Users className="h-4 w-4 text-purple-600" />
-                Customer Details
-              </Label>
-              <Tabs value={customerMode} onValueChange={(v) => setCustomerType(v as any)} className="w-full">
-                <TabsList className="grid grid-cols-2 w-full mb-4">
-                  <TabsTrigger value="select" className="gap-2">Existing Client</TabsTrigger>
-                  <TabsTrigger value="new" className="gap-2">Register New</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="select">
-                  <Select name="customerId" required={customerMode === "select"}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Choose a client" />
-                    </SelectTrigger>
+        <DialogContent className="max-w-4xl w-[95vw]">
+          <DialogHeader><DialogTitle>New Proposal</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 py-4">
+            <div className="lg:col-span-2 space-y-6">
+              <div className="space-y-2">
+                <Label>Customer</Label>
+                <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                  <SelectTrigger><SelectValue placeholder="Choose client" /></SelectTrigger>
+                  <SelectContent>
+                    {customers?.map(c => <SelectItem key={c.id} value={c.id}>{c.firstName} {c.lastName}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="font-bold">Quoted Products</Label>
+                  <Select onValueChange={handleAddLineItem}>
+                    <SelectTrigger className="w-[200px]"><SelectValue placeholder="Add product..." /></SelectTrigger>
                     <SelectContent>
-                      {customers?.map(c => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.firstName} {c.lastName} {c.companyName ? `(${c.companyName})` : ""}
-                        </SelectItem>
-                      ))}
+                      {products?.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
-                </TabsContent>
-
-                <TabsContent value="new" className="space-y-4 animate-in slide-in-from-top-2 duration-200">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-xs">First Name</Label>
-                      <Input name="firstName" required={customerMode === "new"} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Last Name</Label>
-                      <Input name="lastName" required={customerMode === "new"} />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-xs">Email</Label>
-                      <Input name="email" type="email" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Phone</Label>
-                      <Input name="phoneNumber" />
-                    </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
+                </div>
+                <div className="border rounded-xl">
+                  <Table>
+                    <TableHeader><TableRow><TableHead>Item</TableHead><TableHead>Price</TableHead><TableHead className="text-right">Total</TableHead></TableRow></TableHeader>
+                    <TableBody>
+                      {lineItems.map((item, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell className="text-xs">{item.name}</TableCell>
+                          <TableCell className="text-xs">${item.unitPrice}</TableCell>
+                          <TableCell className="text-xs text-right font-bold">${item.total.toLocaleString()}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="amount" className="font-bold">Estimated Total Amount ($)</Label>
-              <Input id="amount" name="amount" type="number" step="0.01" required placeholder="0.00" />
+            <div className="bg-purple-50 p-6 rounded-2xl border border-purple-100 flex flex-col justify-between">
+              <div>
+                <h3 className="font-bold text-purple-800 uppercase text-xs mb-4">Total Estimate</h3>
+                <div className="text-3xl font-bold text-purple-700">${totalValue.toLocaleString()}</div>
+              </div>
+              <Button className="w-full bg-purple-600 hover:bg-purple-700 h-12 font-bold gap-2" onClick={handleSubmitQuote} disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="animate-spin" /> : <ChevronRight />} Save Proposal
+              </Button>
             </div>
-
-            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)} className="rounded-full">Cancel</Button>
-              <Button type="submit" className="bg-purple-600 hover:bg-purple-700 rounded-full px-8">Save Draft Quote</Button>
-            </div>
-          </form>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
