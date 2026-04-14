@@ -21,7 +21,10 @@ import {
   Database,
   Settings,
   ShieldCheck,
-  LogOut
+  LogOut,
+  Target,
+  LifeBuoy,
+  Receipt
 } from "lucide-react"
 
 import {
@@ -42,11 +45,12 @@ import { signOut } from "firebase/auth"
 
 const modules = [
   { name: "Dashboard", icon: LayoutDashboard, color: "text-blue-500", path: "/" },
+  { name: "CRM (Leads)", icon: Target, color: "text-rose-500", path: "/crm" },
   { name: "Sales", icon: ShoppingCart, color: "text-green-500", path: "/sales" },
   { name: "Quotation", icon: FileText, color: "text-purple-500", path: "/quotations" },
   { name: "Purchase", icon: Package, color: "text-orange-500", path: "/purchases" },
-  { name: "returns", icon: RotateCcw, color: "text-red-500", path: "/returns" },
-  { name: "Products & Services", icon: Boxes, color: "text-yellow-600", path: "/inventory" },
+  { name: "Returns", icon: RotateCcw, color: "text-red-500", path: "/returns" },
+  { name: "Inventory", icon: Boxes, color: "text-yellow-600", path: "/inventory" },
   { name: "Serial Inventory", icon: Scan, color: "text-blue-400", path: "/serial-inventory" },
   { name: "Projects", icon: Folder, color: "text-teal-500", path: "/projects" },
   { name: "Project Billing", icon: Layers, color: "text-violet-500", path: "/project-billing" },
@@ -54,6 +58,8 @@ const modules = [
   { name: "Customers", icon: Users, color: "text-cyan-500", path: "/customers" },
   { name: "Suppliers", icon: Truck, color: "text-amber-700", path: "/suppliers" },
   { name: "Accounts", icon: Wallet, color: "text-blue-600", path: "/accounts" },
+  { name: "Expenses", icon: Receipt, color: "text-red-400", path: "/expenses" },
+  { name: "Support", icon: LifeBuoy, color: "text-indigo-500", path: "/support" },
   { name: "HRM", icon: UserRoundCog, color: "text-purple-500", path: "/hrm" },
   { name: "Reports", icon: BarChart3, color: "text-indigo-400", path: "/reports" },
   { name: "AI Forecasting", icon: TrendingUp, color: "text-violet-500", path: "/ai-forecasting" },
@@ -88,7 +94,7 @@ export function AppSidebar() {
           )}
         </div>
       </SidebarHeader>
-      <SidebarContent className="py-2 scrollbar-hide">
+      <SidebarContent className="py-2 scrollbar-hide overflow-y-auto">
         <SidebarGroup>
           <SidebarMenu>
             {modules.map((item) => (
