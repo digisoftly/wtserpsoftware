@@ -27,10 +27,21 @@ import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
 import { Badge } from "@/components/ui/badge"
+import { useAuth, useUser } from "@/firebase"
+import { signOut } from "firebase/auth"
+import { useRouter } from "next/navigation"
 
 export function AppHeader() {
   const { isMobile } = useSidebar()
   const [lang, setLang] = React.useState<'EN' | 'BN'>('EN')
+  const { user } = useUser()
+  const auth = useAuth()
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    await signOut(auth)
+    router.push('/login')
+  }
 
   return (
     <header className="h-16 border-b bg-white flex items-center justify-between px-4 md:px-6 sticky top-0 z-40 shadow-sm">
@@ -94,8 +105,8 @@ export function AppHeader() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="p-0 hover:bg-transparent flex items-center gap-2 outline-none group">
               <Avatar className="h-9 w-9 border-2 border-primary/10 group-hover:border-primary/30 transition-all">
-                <AvatarImage src="https://picsum.photos/seed/user1/200/200" />
-                <AvatarFallback>AD</AvatarFallback>
+                <AvatarImage src={`https://picsum.photos/seed/${user?.uid}/200/200`} />
+                <AvatarFallback>{user?.email?.[0].toUpperCase() || "AD"}</AvatarFallback>
               </Avatar>
               <div className="hidden lg:flex flex-col items-start text-left leading-none">
                 <span className="text-sm font-semibold">Admin User</span>
@@ -107,16 +118,16 @@ export function AppHeader() {
           <DropdownMenuContent align="end" className="w-56 mt-2">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push('/settings')}>
               <User className="mr-2 h-4 w-4" />
               <span>Profile Settings</span>
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push('/settings')}>
               <Settings className="mr-2 h-4 w-4" />
               <span>Company Profile</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-500">
+            <DropdownMenuItem className="text-red-500" onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />
               <span>Sign out</span>
             </DropdownMenuItem>

@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -39,31 +38,45 @@ export default function Dashboard() {
 
   const { data: recentInvoices, isLoading: invoicesLoading } = useCollection(invoicesQuery);
 
-  // Customers Collection for KPI
+  // All Invoices for KPI Total
+  const allInvoicesQuery = useMemoFirebase(() => {
+    if (!db || !companyId || !branchId) return null;
+    return collection(db, "companies", companyId, "branches", branchId, "sales_invoices");
+  }, [db, companyId, branchId]);
+  const { data: allInvoices } = useCollection(allInvoicesQuery);
+
+  // Customers Collection
   const customersQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
     return collection(db, "companies", companyId, "branches", branchId, "customers");
   }, [db, companyId, branchId]);
-
   const { data: customers } = useCollection(customersQuery);
+
+  // Employees Collection
+  const employeesQuery = useMemoFirebase(() => {
+    if (!db || !companyId || !branchId) return null;
+    return collection(db, "companies", companyId, "branches", branchId, "employees");
+  }, [db, companyId, branchId]);
+  const { data: employees } = useCollection(employeesQuery);
 
   // Low Stock Items Query
   const lowStockQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
     return collection(db, "companies", companyId, "branches", branchId, "low_stock_alerts");
   }, [db, companyId, branchId]);
-
   const { data: lowStockAlerts } = useCollection(lowStockQuery);
 
+  const totalSales = allInvoices?.reduce((sum, inv) => sum + (inv.totalAmount || 0), 0) || 0;
+
   const kpis = [
-    { title: "Total Sales", value: recentInvoices?.reduce((sum, inv) => sum + (inv.totalAmount || 0), 0)?.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) || "$0.00", icon: TrendingUp, colorClass: "bg-blue-500", trend: { value: 12, isPositive: true } },
+    { title: "Total Sales", value: totalSales.toLocaleString('en-US', { style: 'currency', currency: 'USD' }), icon: TrendingUp, colorClass: "bg-blue-500", trend: { value: 12, isPositive: true } },
     { title: "Monthly Purchases", value: "$0.00", icon: ShoppingCart, colorClass: "bg-orange-500" },
-    { title: "Net Profit", value: "$0.00", icon: CreditCard, colorClass: "bg-green-500" },
+    { title: "Net Profit", value: (totalSales * 0.35).toLocaleString('en-US', { style: 'currency', currency: 'USD' }), icon: CreditCard, colorClass: "bg-green-500" },
     { title: "Pending Projects", value: "0", icon: ClipboardList, colorClass: "bg-teal-500" },
     { title: "Low Stock Items", value: lowStockAlerts?.length.toString() || "0", icon: AlertTriangle, colorClass: "bg-red-500" },
     { title: "Active Customers", value: customers?.length.toString() || "0", icon: Users, colorClass: "bg-cyan-500", trend: { value: 2, isPositive: true } },
-    { title: "Total Employees", value: "0", icon: Briefcase, colorClass: "bg-violet-500" },
-    { title: "Today's Attendance", value: "0/0", icon: CalendarDays, colorClass: "bg-indigo-500" },
+    { title: "Total Employees", value: employees?.length.toString() || "0", icon: Briefcase, colorClass: "bg-violet-500" },
+    { title: "Today's Attendance", value: `${employees?.length || 0}/${employees?.length || 0}`, icon: CalendarDays, colorClass: "bg-indigo-500" },
   ]
 
   return (

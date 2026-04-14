@@ -36,7 +36,9 @@ import {
   useSidebar
 } from "@/components/ui/sidebar"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { useAuth } from "@/firebase"
+import { signOut } from "firebase/auth"
 
 const modules = [
   { name: "Dashboard", icon: LayoutDashboard, color: "text-blue-500", path: "/" },
@@ -63,6 +65,13 @@ const modules = [
 export function AppSidebar() {
   const pathname = usePathname()
   const { state } = useSidebar()
+  const auth = useAuth()
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    await signOut(auth)
+    router.push('/login')
+  }
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border shadow-xl">
@@ -103,7 +112,10 @@ export function AppSidebar() {
       <SidebarFooter className="border-t border-sidebar-border p-2">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton className="text-red-400 hover:bg-red-400/10 hover:text-red-300">
+            <SidebarMenuButton 
+              onClick={handleLogout}
+              className="text-red-400 hover:bg-red-400/10 hover:text-red-300 w-full"
+            >
               <LogOut className="shrink-0" />
               <span className="ml-3 font-medium">Logout</span>
             </SidebarMenuButton>
