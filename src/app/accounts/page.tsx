@@ -2,16 +2,23 @@
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { Wallet, Landmark, TrendingDown, TrendingUp, Loader2, ArrowUpRight, ArrowDownLeft } from "lucide-react"
+import { Wallet, Landmark, TrendingDown, TrendingUp, Loader2, ArrowUpRight, ArrowDownLeft, Plus } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, query, orderBy } from "firebase/firestore"
+import { collection, query, orderBy, serverTimestamp } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { Card } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { cn } from "@/lib/utils"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 
 export default function AccountsPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
+  const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
 
   const txQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
@@ -26,6 +33,30 @@ export default function AccountsPage() {
   const totalIncome = transactions?.filter(t => t.transactionType === 'income').reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
   const totalExpense = transactions?.filter(t => t.transactionType === 'expense').reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
 
+  const handleAddTransaction = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    if (!db || !companyId || !branchId) return;
+
+    const txData = {
+      companyId,
+      branchId,
+      description: formData.get("description") as string,
+      amount: Number(formData.get("amount")),
+      transactionType: formData.get("type") as string,
+      category: formData.get("category") as string,
+      transactionDate: new Date().toISOString(),
+      accountId: "main-ledger",
+      createdByUserId: "current-user",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    const colRef = collection(db, "companies", companyId, "branches", branchId, "transactions");
+    addDocumentNonBlocking(colRef, txData);
+    setIsAddModalOpen(false);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -35,7 +66,9 @@ export default function AccountsPage() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline">Statement</Button>
-          <Button className="bg-blue-600 hover:bg-blue-700 rounded-full">Add Journal Entry</Button>
+          <Button className="bg-blue-600 hover:bg-blue-700 rounded-full gap-2" onClick={() => setIsAddModalOpen(true)}>
+            <Plus className="h-4 w-4" /> Add Journal Entry
+          </Button>
         </div>
       </div>
 
@@ -91,8 +124,44 @@ export default function AccountsPage() {
           </div>
           <h2 className="text-xl font-headline font-bold">No Transactions Recorded</h2>
           <p className="text-muted-foreground max-w-sm mt-2">Sync your bank statements or add manual entries to begin accurate financial tracking.</p>
+          <Button className="mt-6 bg-blue-600" onClick={() => setIsAddModalOpen(true)}>Add First Transaction</Button>
         </div>
       )}
+
+      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>New Journal Entry</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAddTransaction} className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Input name="description" required placeholder="e.g. Office Rent Payment" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Amount ($)</Label>
+                <Input name="amount" type="number" step="0.01" required />
+              </div>
+              <div className="space-y-2">
+                <Label>Type</Label>
+                <Select name="type" defaultValue="expense">
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="income">Income (+)</SelectItem>
+                    <SelectItem value="expense">Expense (-)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Input name="category" placeholder="e.g. Utilities, Sales, Salary" />
+            </div>
+            <Button type="submit" className="w-full bg-blue-600">Post Transaction</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
