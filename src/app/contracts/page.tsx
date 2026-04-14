@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -87,10 +88,9 @@ export default function ContractsPage() {
   };
 
   const handleDurationChange = (val: number) => {
-    setFormDuration(val);
-    if (val > 0) {
-      setFormTotalAmount(Number((formMonthlyAmount * val).toFixed(2)));
-    }
+    const duration = Math.max(1, val);
+    setFormDuration(duration);
+    setFormTotalAmount(Number((formMonthlyAmount * duration).toFixed(2)));
   };
 
   // --- DATA QUERIES ---
@@ -118,16 +118,14 @@ export default function ContractsPage() {
   }, [db, companyId, branchId]);
   const { data: customers } = useCollection(customersQuery);
 
-  // --- KPI CALCULATIONS ---
-  const activeContracts = contracts?.filter(c => c.status === 'active').length || 0;
-  const totalContractRevenue = contracts?.reduce((s, c) => s + (c.totalAmount || 0), 0) || 0;
-  const totalDues = invoices?.reduce((s, i) => s + ((i.amount || 0) - (i.paidAmount || 0)), 0) || 0;
-
   // --- ACTIONS ---
   const handleAddContract = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    if (!db || !companyId || !branchId) return;
+    if (!db || !companyId || !branchId) {
+      toast({ variant: "destructive", title: "Error", description: "Database context not ready." });
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -206,27 +204,25 @@ export default function ContractsPage() {
 
   const handleUpdateContract = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!selectedRecord || !db || !companyId || !branchId) return;
+    if (!db || !companyId || !branchId || !selectedRecord) return;
     setIsSubmitting(true);
     const formData = new FormData(e.currentTarget);
     
     try {
       const docRef = doc(db, "companies", companyId, "branches", branchId, "service_contracts", selectedRecord.id);
-      const paymentType = formData.get("paymentType") as string;
-
       await updateDoc(docRef, {
         serviceType: formData.get("serviceType"),
         serviceName: formData.get("serviceName"),
         totalAmount: formTotalAmount,
         durationMonths: formDuration,
-        paymentType,
+        paymentType: formData.get("paymentType"),
         monthlyAmount: formMonthlyAmount,
         startDate: formData.get("startDate"),
         endDate: formData.get("endDate"),
         updatedAt: serverTimestamp()
       });
       
-      toast({ title: "Contract Updated", description: "Changes saved successfully." });
+      toast({ title: "Contract Updated" });
       setIsEditModalOpen(false);
       resetForm();
     } catch (err: any) {
@@ -237,16 +233,16 @@ export default function ContractsPage() {
   };
 
   const handleDeleteContract = () => {
-    if (!selectedRecord || !db || !companyId || !branchId) return;
+    if (!db || !companyId || !branchId || !selectedRecord) return;
     const docRef = doc(db, "companies", companyId, "branches", branchId, "service_contracts", selectedRecord.id);
     deleteDocumentNonBlocking(docRef);
-    toast({ title: "Contract Removed", description: "Agreement record deleted." });
+    toast({ title: "Contract Removed" });
     setIsDeleteAlertOpen(false);
     resetForm();
   };
 
   const handleRunBillingEngine = async () => {
-    if (!contracts || !db || !companyId || !branchId) return;
+    if (!db || !companyId || !branchId || !contracts) return;
     setIsGenerating(true);
     const currentMonth = new Date().toISOString().slice(0, 7); 
 
@@ -344,11 +340,6 @@ export default function ContractsPage() {
     setIsEditModalOpen(true);
   };
 
-  const handlePrint = (c: any) => {
-    toast({ title: "Preparing PDF", description: `Contract ${c.contractNumber} is ready.` });
-    setTimeout(() => window.print(), 1000);
-  };
-
   return (
     <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -362,14 +353,14 @@ export default function ContractsPage() {
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <Button 
             variant="outline" 
-            className="rounded-full gap-2 border-emerald-200 hover:bg-emerald-50 text-emerald-700"
+            className="rounded-full gap-2 border-emerald-200 hover:bg-emerald-50 text-emerald-700 h-11"
             onClick={handleRunBillingEngine}
             disabled={isGenerating}
           >
             {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
             Run Billing Engine
           </Button>
-          <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2 rounded-full shadow-lg shadow-emerald-100 px-6" onClick={() => { resetForm(); setIsAddModalOpen(true); }}>
+          <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2 rounded-full shadow-lg shadow-emerald-100 px-6 h-11" onClick={() => { resetForm(); setIsAddModalOpen(true); }}>
             <Plus className="h-4 w-4" />
             New Contract
           </Button>
@@ -377,18 +368,18 @@ export default function ContractsPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Active Subs" value={activeContracts} icon={ShieldCheck} colorClass="bg-emerald-500" />
-        <KPICard title="Contract Value" value={`৳${totalContractRevenue.toLocaleString()}`} icon={TrendingUp} colorClass="bg-blue-500" />
-        <KPICard title="Outstanding Due" value={`৳${totalDues.toLocaleString()}`} icon={AlertCircle} colorClass="bg-red-500" />
+        <KPICard title="Active Subs" value={contracts?.filter(c => c.status === 'active').length || 0} icon={ShieldCheck} colorClass="bg-emerald-500" />
+        <KPICard title="Contract Value" value={`৳${contracts?.reduce((s, c) => s + (c.totalAmount || 0), 0).toLocaleString()}`} icon={TrendingUp} colorClass="bg-blue-500" />
+        <KPICard title="Outstanding Due" value={`৳${invoices?.reduce((s, i) => s + ((i.amount || 0) - (i.paidAmount || 0)), 0).toLocaleString()}`} icon={AlertCircle} colorClass="bg-red-500" />
         <KPICard title="Billing Cycle" value="Monthly" icon={Calendar} colorClass="bg-purple-500" />
       </div>
 
       <Tabs defaultValue="contracts" className="w-full">
         <TabsList className="bg-white border p-1 rounded-xl shadow-sm mb-6 flex h-auto overflow-x-auto">
-          <TabsTrigger value="contracts" className="rounded-lg gap-2 flex-1 py-2">
+          <TabsTrigger value="contracts" className="rounded-lg gap-2 flex-1 py-2 h-10">
             <FileCheck className="h-4 w-4" /> Agreements
           </TabsTrigger>
-          <TabsTrigger value="billing" className="rounded-lg gap-2 flex-1 py-2">
+          <TabsTrigger value="billing" className="rounded-lg gap-2 flex-1 py-2 h-10">
             <Receipt className="h-4 w-4" /> Billing / Invoices
           </TabsTrigger>
         </TabsList>
@@ -434,12 +425,12 @@ export default function ContractsPage() {
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handlePrint(c)}><Eye className="mr-2 h-4 w-4" /> View Details</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => toast({ title: "View Details" })}><Eye className="mr-2 h-4 w-4" /> View Details</DropdownMenuItem>
                               <DropdownMenuItem onClick={() => openEdit(c)}><Edit className="mr-2 h-4 w-4" /> Edit Record</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handlePrint(c)}><Download className="mr-2 h-4 w-4" /> Download PDF</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => window.print()}><Download className="mr-2 h-4 w-4" /> Download PDF</DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem className="text-red-600" onClick={() => { setSelectedRecord(c); setIsDeleteAlertOpen(true); }}>
                                 <Trash2 className="mr-2 h-4 w-4" /> Delete Contract
@@ -454,7 +445,12 @@ export default function ContractsPage() {
               </div>
             </Card>
           ) : (
-            <EmptyState icon={ShieldCheck} title="No Active Contracts" description="Start tracking your recurring revenue by adding your first service agreement." onAdd={() => setIsAddModalOpen(true)} color="emerald" />
+            <div className="p-16 bg-white rounded-2xl border-2 border-dashed flex flex-col items-center justify-center text-center">
+              <ShieldCheck className="h-12 w-12 text-emerald-200 mb-4" />
+              <h2 className="text-xl font-headline font-bold">No Service Agreements</h2>
+              <p className="text-sm text-muted-foreground">Start tracking recurring revenue by adding your first contract.</p>
+              <Button className="mt-6 bg-emerald-600 rounded-full h-11" onClick={() => setIsAddModalOpen(true)}>New Agreement</Button>
+            </div>
           )}
         </TabsContent>
 
@@ -462,8 +458,8 @@ export default function ContractsPage() {
           <div className="bg-blue-50 p-4 rounded-xl flex items-start gap-3 border border-blue-100 mb-4">
             <Clock className="h-5 w-5 text-blue-600 mt-0.5" />
             <div className="text-xs text-blue-800 leading-relaxed">
-              <p className="font-bold mb-1">How it works</p>
-              For monthly contracts, use the "Run Billing Engine" button to generate invoices for the current month. Advance contracts do not generate recurring invoices.
+              <p className="font-bold mb-1">Billing Engine Guide</p>
+              For monthly contracts, use the "Run Billing Engine" button at the top to generate invoices for the current period.
             </div>
           </div>
 
@@ -495,7 +491,7 @@ export default function ContractsPage() {
                         <TableCell className="font-bold text-xs">৳{inv.amount?.toLocaleString()}</TableCell>
                         <TableCell className="text-xs text-green-600">৳{inv.paidAmount?.toLocaleString()}</TableCell>
                         <TableCell>
-                          <Badge className={cn("text-[9px] uppercase", 
+                          <Badge className={cn("text-[9px] uppercase px-2", 
                             inv.status === 'paid' ? "bg-green-50 text-green-700 border-green-200" : 
                             inv.status === 'partial' ? "bg-orange-50 text-orange-700 border-orange-200" : 
                             "bg-red-50 text-red-700 border-red-200")}>
@@ -506,11 +502,11 @@ export default function ContractsPage() {
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            className="h-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-full"
+                            className="h-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-full gap-1 px-3"
                             onClick={() => { setSelectedInvoice(inv); setIsPayModalOpen(true); }}
                             disabled={inv.status === 'paid'}
                           >
-                            <CreditCard className="h-3.5 w-3.5 mr-1" /> Pay
+                            <CreditCard className="h-3.5 w-3.5" /> Pay
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -523,41 +519,41 @@ export default function ContractsPage() {
             <div className="p-16 text-center bg-white rounded-2xl border-2 border-dashed">
               <Receipt className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
               <h3 className="text-lg font-bold">No Monthly Invoices</h3>
-              <p className="text-sm text-muted-foreground">Run the Billing Engine to generate dues for this month.</p>
+              <p className="text-sm text-muted-foreground">Run the Billing Engine to generate dues for the current cycle.</p>
             </div>
           )}
         </TabsContent>
       </Tabs>
 
-      {/* --- ADD/EDIT CONTRACT MODAL --- */}
+      {/* ADD/EDIT MODAL */}
       <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) { setIsAddModalOpen(false); setIsEditModalOpen(false); resetForm(); } }}>
         <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
           <DialogHeader className={cn("p-6 text-white", isEditModalOpen ? "bg-blue-600" : "bg-emerald-600")}>
             <DialogTitle className="text-2xl font-headline flex items-center gap-3">
-              <ShieldCheck className="h-6 w-6" /> {isEditModalOpen ? `Adjust Contract ${selectedRecord?.contractNumber}` : "New Service Agreement"}
+              <ShieldCheck className="h-6 w-6" /> {isEditModalOpen ? `Adjust Agreement ${selectedRecord?.contractNumber}` : "New Service Agreement"}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={isEditModalOpen ? handleUpdateContract : handleAddContract} className="p-6 space-y-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div className="space-y-6">
-                <div className="space-y-4 p-4 bg-muted/20 rounded-2xl">
+                <div className="space-y-4 p-4 bg-muted/20 rounded-2xl border border-dashed">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground tracking-widest">Customer Entity</Label>
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Customer Entity</Label>
                     {!isEditModalOpen && (
                       <div className="flex bg-white rounded-lg p-1 border shadow-sm">
-                        <Button type="button" size="sm" variant={customerMode === 'select' ? 'default' : 'ghost'} className="h-7 text-[10px] rounded-md" onClick={() => setCustomerType('select')}>Existing</Button>
-                        <Button type="button" size="sm" variant={customerMode === 'new' ? 'default' : 'ghost'} className="h-7 text-[10px] rounded-md" onClick={() => setCustomerType('new')}>Register New</Button>
+                        <Button type="button" size="sm" variant={customerMode === 'select' ? 'default' : 'ghost'} className="h-7 text-[9px] rounded-md px-2" onClick={() => setCustomerType('select')}>Existing</Button>
+                        <Button type="button" size="sm" variant={customerMode === 'new' ? 'default' : 'ghost'} className="h-7 text-[9px] rounded-md px-2" onClick={() => setCustomerType('new')}>Register New</Button>
                       </div>
                     )}
                   </div>
 
                   {isEditModalOpen ? (
-                    <div className="p-3 bg-white rounded-lg border font-bold text-sm">
+                    <div className="p-3 bg-white rounded-xl border font-bold text-sm shadow-sm">
                       {customers?.find(c => c.id === selectedRecord?.customerId)?.firstName} {customers?.find(c => c.id === selectedRecord?.customerId)?.lastName}
                     </div>
                   ) : customerMode === "select" ? (
                     <Select name="customerId" required defaultValue={selectedRecord?.customerId}>
-                      <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Search client directory..." /></SelectTrigger>
+                      <SelectTrigger className="h-12 rounded-xl bg-white shadow-sm border-none ring-1 ring-input focus:ring-2 focus:ring-emerald-500"><SelectValue placeholder="Identify client directory..." /></SelectTrigger>
                       <SelectContent>
                         {customers?.map(c => <SelectItem key={c.id} value={c.id}>{c.firstName} {c.lastName}</SelectItem>)}
                       </SelectContent>
@@ -568,7 +564,7 @@ export default function ContractsPage() {
                         <Input name="firstName" placeholder="First Name" className="h-10 text-xs rounded-lg" required />
                         <Input name="lastName" placeholder="Last Name" className="h-10 text-xs rounded-lg" required />
                       </div>
-                      <Input name="phone" placeholder="Phone Number" className="h-10 text-xs rounded-lg" />
+                      <Input name="phone" placeholder="Contact Phone" className="h-10 text-xs rounded-lg" />
                     </div>
                   )}
                 </div>
@@ -582,13 +578,13 @@ export default function ContractsPage() {
                         <SelectItem value="cctv">CCTV Maintenance</SelectItem>
                         <SelectItem value="internet">Internet / ISP</SelectItem>
                         <SelectItem value="software">Software SaaS</SelectItem>
-                        <SelectItem value="other">Other Support</SelectItem>
+                        <SelectItem value="other">General Support</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase text-muted-foreground">Contract Label</Label>
-                    <Input name="serviceName" required defaultValue={selectedRecord?.serviceName} placeholder="e.g. Annual Support" className="h-11 rounded-xl" />
+                    <Input name="serviceName" required defaultValue={selectedRecord?.serviceName} placeholder="e.g. Annual Maintenance" className="h-11 rounded-xl" />
                   </div>
                 </div>
               </div>
@@ -596,15 +592,14 @@ export default function ContractsPage() {
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase text-emerald-600">Monthly Installment (৳)</Label>
+                    <Label className="text-[10px] font-bold uppercase text-emerald-600">Monthly Fee (৳)</Label>
                     <Input 
                       type="number" 
                       step="0.01"
                       required 
                       value={formMonthlyAmount}
                       onChange={(e) => handleMonthlyChange(Number(e.target.value))}
-                      placeholder="0.00" 
-                      className="h-11 rounded-xl font-bold border-emerald-100 focus:border-emerald-500" 
+                      className="h-11 rounded-xl font-bold border-emerald-100 focus:border-emerald-500 shadow-sm" 
                     />
                   </div>
                   <div className="space-y-2">
@@ -614,28 +609,27 @@ export default function ContractsPage() {
                       value={formDuration}
                       onChange={(e) => handleDurationChange(Number(e.target.value))}
                       required 
-                      className="h-11 rounded-xl" 
+                      className="h-11 rounded-xl shadow-sm" 
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-bold uppercase text-blue-600">Total Budget (৳)</Label>
+                  <Label className="text-[10px] font-bold uppercase text-blue-600">Total Contract Budget (৳)</Label>
                   <Input 
                     type="number" 
-                    step="0.01"
+                    step="0.01" 
                     required 
                     value={formTotalAmount}
                     onChange={(e) => handleTotalChange(Number(e.target.value))}
-                    placeholder="0.00" 
-                    className="h-11 rounded-xl font-bold border-blue-100 focus:border-blue-500 bg-blue-50/30" 
+                    className="h-11 rounded-xl font-bold border-blue-100 focus:border-blue-500 bg-blue-50/20 shadow-sm" 
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">Payment Cycle</Label>
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">Billing Schedule</Label>
                   <Select name="paymentType" defaultValue={selectedRecord?.paymentType || "monthly"}>
-                    <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-11 rounded-xl shadow-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="monthly">Monthly Recurring (Installments)</SelectItem>
                       <SelectItem value="advance">Full Advance (Upfront Payment)</SelectItem>
@@ -649,7 +643,7 @@ export default function ContractsPage() {
                     <Input name="startDate" type="date" required defaultValue={selectedRecord?.startDate} className="h-11 rounded-xl" />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase text-muted-foreground">End Date</Label>
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground">Expiry Date</Label>
                     <Input name="endDate" type="date" required defaultValue={selectedRecord?.endDate} className="h-11 rounded-xl" />
                   </div>
                 </div>
@@ -663,14 +657,14 @@ export default function ContractsPage() {
                 </div>
                 <div>
                   <p className="text-sm font-bold text-emerald-900">Billing Activation</p>
-                  <p className="text-[10px] text-emerald-700 max-w-xs">Activating this contract will instantly record the service agreement and prepare the billing cycle logic.</p>
+                  <p className="text-[10px] text-emerald-700 max-w-xs">Initializing this contract will enable automated recurring billing for the selected customer.</p>
                 </div>
               </div>
               <div className="flex gap-3 w-full md:w-auto">
-                <Button type="button" variant="outline" className="flex-1 md:flex-none rounded-full px-8" onClick={() => { setIsAddModalOpen(false); setIsEditModalOpen(false); }}>Cancel</Button>
-                <Button type="submit" className={cn("flex-1 md:flex-none rounded-full px-12 h-12 font-bold shadow-lg gap-2", isEditModalOpen ? "bg-blue-600 hover:bg-blue-700" : "bg-emerald-600 hover:bg-emerald-700")} disabled={isSubmitting}>
+                <Button type="button" variant="outline" className="flex-1 md:flex-none rounded-full px-8 h-12" onClick={() => { setIsAddModalOpen(false); setIsEditModalOpen(false); }}>Cancel</Button>
+                <Button type="submit" className={cn("flex-1 md:flex-none rounded-full px-12 h-12 font-bold shadow-lg gap-2", isEditModalOpen ? "bg-blue-600 hover:bg-blue-700 shadow-blue-100" : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100")} disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
-                  {isEditModalOpen ? "Save Changes" : "Activate Service"}
+                  {isEditModalOpen ? "Save Changes" : "Activate Contract"}
                 </Button>
               </div>
             </div>
@@ -678,26 +672,26 @@ export default function ContractsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* --- RECORD PAYMENT MODAL --- */}
+      {/* RECORD PAYMENT MODAL */}
       <Dialog open={isPayModalOpen} onOpenChange={setIsPayModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>Settle Monthly Due</DialogTitle></DialogHeader>
+        <DialogContent className="sm:max-w-md w-[95vw]">
+          <DialogHeader><DialogTitle className="font-headline">Settle Recurring Bill</DialogTitle></DialogHeader>
           <form onSubmit={handleRecordPayment} className="space-y-4 pt-4">
-            <div className="p-4 bg-muted/20 rounded-xl space-y-1">
-              <p className="text-[10px] uppercase font-bold text-muted-foreground">Billing Month</p>
-              <p className="text-lg font-bold">{selectedInvoice?.billingMonth}</p>
-              <div className="flex justify-between text-xs mt-2 pt-2 border-t border-dashed">
-                <span>Monthly Amount:</span>
-                <span className="font-bold">৳{selectedInvoice?.amount}</span>
+            <div className="p-4 bg-muted/20 rounded-xl space-y-1 border border-dashed">
+              <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Billing Cycle</p>
+              <p className="text-lg font-headline font-bold">{selectedInvoice?.billingMonth}</p>
+              <div className="flex justify-between text-xs mt-3 pt-3 border-t border-dashed">
+                <span>Monthly Due:</span>
+                <span className="font-bold">৳{selectedInvoice?.amount.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between text-xs text-red-600">
-                <span>Remaining:</span>
+              <div className="flex justify-between text-xs text-red-600 font-medium">
+                <span>Remaining Balance:</span>
                 <span className="font-bold">৳{(selectedInvoice?.amount || 0) - (selectedInvoice?.paidAmount || 0)}</span>
               </div>
             </div>
             
             <div className="space-y-2">
-              <Label className="text-xs">Payment Amount (৳)</Label>
+              <Label className="text-[10px] font-bold uppercase text-emerald-600">Payment Amount (৳)</Label>
               <Input 
                 name="amount" 
                 type="number" 
@@ -705,12 +699,12 @@ export default function ContractsPage() {
                 required 
                 max={(selectedInvoice?.amount || 0) - (selectedInvoice?.paidAmount || 0)}
                 defaultValue={(selectedInvoice?.amount || 0) - (selectedInvoice?.paidAmount || 0)}
-                className="h-12 text-lg font-bold text-emerald-600 border-emerald-100" 
+                className="h-12 text-xl font-bold text-emerald-600 border-emerald-100 rounded-xl shadow-sm" 
               />
             </div>
 
-            <Button type="submit" className="w-full bg-emerald-600 rounded-full h-12 font-bold" disabled={isSubmitting}>
-              {isSubmitting ? <Loader2 className="animate-spin" /> : "Confirm Receipt"}
+            <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 rounded-xl h-14 font-bold text-lg shadow-lg shadow-emerald-100" disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="animate-spin h-6 w-6" /> : "Confirm Receipt"}
             </Button>
           </form>
         </DialogContent>
@@ -721,7 +715,7 @@ export default function ContractsPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Terminate Service Agreement?</AlertDialogTitle>
-            <AlertDialogDescription>Are you sure you want to remove the contract for {customers?.find(c => c.id === selectedRecord?.customerId)?.firstName}? This will stop all recurring billing generation.</AlertDialogDescription>
+            <AlertDialogDescription>Are you sure you want to remove the contract for {customers?.find(c => c.id === selectedRecord?.customerId)?.firstName}? This will immediately cease all recurring invoice generation.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -729,21 +723,6 @@ export default function ContractsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  )
-}
-
-function EmptyState({ icon: Icon, title, description, onAdd, color }: any) {
-  return (
-    <div className="p-16 bg-white rounded-2xl border-2 border-dashed flex flex-col items-center justify-center text-center">
-      <div className={cn("w-20 h-20 rounded-full flex items-center justify-center mb-6", `bg-${color}-50 text-${color}-500`)}>
-        <Icon className="h-10 w-10" />
-      </div>
-      <h2 className="text-2xl font-headline font-bold">{title}</h2>
-      <p className="text-muted-foreground max-w-sm mt-2">{description}</p>
-      <Button className={cn("mt-8 px-10 rounded-full h-12 font-bold", `bg-${color}-600 hover:bg-${color}-700 shadow-lg shadow-${color}-100`)} onClick={onAdd}>
-        <Plus className="h-5 w-5 mr-2" /> Add Record
-      </Button>
     </div>
   )
 }

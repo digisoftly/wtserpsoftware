@@ -2,7 +2,22 @@
 "use client"
 
 import * as React from "react"
-import { Plus, FileText, Search, Loader2, MoreVertical, Trash2, Calculator, CheckCircle2, ChevronRight, ShoppingCart, Users, Eye, Edit, Download } from "lucide-react"
+import { 
+  Plus, 
+  FileText, 
+  Search, 
+  Loader2, 
+  MoreVertical, 
+  Trash2, 
+  Calculator, 
+  CheckCircle2, 
+  ChevronRight, 
+  ShoppingCart, 
+  Users, 
+  Eye, 
+  Edit, 
+  Download 
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -80,10 +95,13 @@ export default function QuotationsPage() {
   };
 
   const handleSubmitQuote = async () => {
-    if (!selectedCustomerId || lineItems.length === 0) return;
+    if (!db || !companyId || !branchId || !selectedCustomerId || lineItems.length === 0) {
+      toast({ variant: "destructive", title: "Cannot Save", description: "Initialization pending or form incomplete." });
+      return;
+    }
     setIsSubmitting(true);
     try {
-      const quoteRef = doc(collection(db, "companies", companyId!, "branches", branchId!, "quotations"));
+      const quoteRef = doc(collection(db, "companies", companyId, "branches", branchId, "quotations"));
       await setDoc(quoteRef, {
         id: quoteRef.id,
         companyId,
@@ -108,10 +126,10 @@ export default function QuotationsPage() {
   };
 
   const handleUpdateQuote = async () => {
-    if (!selectedRecord) return;
+    if (!db || !companyId || !branchId || !selectedRecord) return;
     setIsSubmitting(true);
     try {
-      const quoteRef = doc(db, "companies", companyId!, "branches", branchId!, "quotations", selectedRecord.id);
+      const quoteRef = doc(db, "companies", companyId, "branches", branchId, "quotations", selectedRecord.id);
       await updateDoc(quoteRef, {
         customerId: selectedCustomerId,
         items: lineItems,
@@ -129,9 +147,9 @@ export default function QuotationsPage() {
   }
 
   const handleDeleteQuote = async () => {
-    if (!selectedRecord) return;
+    if (!db || !companyId || !branchId || !selectedRecord) return;
     try {
-      const docRef = doc(db, "companies", companyId!, "branches", branchId!, "quotations", selectedRecord.id);
+      const docRef = doc(db, "companies", companyId, "branches", branchId, "quotations", selectedRecord.id);
       deleteDocumentNonBlocking(docRef);
       toast({ title: "Quotation Removed", description: "Record deleted." });
       setIsDeleteAlertOpen(false);
@@ -141,6 +159,7 @@ export default function QuotationsPage() {
   }
 
   const handleConvertToInvoice = async (quote: any) => {
+    if (!db || !companyId || !branchId) return;
     if (quote.status === "converted") {
       toast({ title: "Already Converted", description: "This quotation is already a sales invoice." });
       return;
@@ -148,8 +167,8 @@ export default function QuotationsPage() {
 
     try {
       await runTransaction(db, async (transaction) => {
-        const quoteRef = doc(db, "companies", companyId!, "branches", branchId!, "quotations", quote.id);
-        const invoiceRef = doc(collection(db, "companies", companyId!, "branches", branchId!, "sales_invoices"));
+        const quoteRef = doc(db, "companies", companyId, "branches", branchId, "quotations", quote.id);
+        const invoiceRef = doc(collection(db, "companies", companyId, "branches", branchId, "sales_invoices"));
         
         transaction.set(invoiceRef, {
           ...quote,
@@ -198,7 +217,7 @@ export default function QuotationsPage() {
           <h1 className="text-2xl md:text-3xl font-bold font-headline text-purple-600">Sales Quotations</h1>
           <p className="text-sm text-muted-foreground mt-1">Generate proposals and convert them to invoices</p>
         </div>
-        <Button className="bg-purple-600 hover:bg-purple-700 gap-2 rounded-full px-8 shadow-lg" onClick={() => { resetForm(); setIsAddModalOpen(true); }}>
+        <Button className="bg-purple-600 hover:bg-purple-700 gap-2 rounded-full px-8 shadow-lg h-11" onClick={() => { resetForm(); setIsAddModalOpen(true); }}>
           <Plus className="h-4 w-4" />
           Create Quote
         </Button>
@@ -211,10 +230,10 @@ export default function QuotationsPage() {
         <KPICard title="Pending Clients" value={new Set(quotations?.map(q => q.customerId)).size} icon={Users} colorClass="bg-amber-500" />
       </div>
 
-      <div className="flex items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
+      <div className="flex items-center gap-4 bg-white p-3 rounded-xl border shadow-sm">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search quotation #..." className="pl-9" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          <Input placeholder="Search quotation #..." className="pl-9 h-10 border-none ring-1 ring-input" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
       </div>
 
@@ -237,17 +256,19 @@ export default function QuotationsPage() {
                 {filteredQuotations?.map((q) => (
                   <TableRow key={q.id} className="hover:bg-muted/30">
                     <TableCell className="font-bold text-purple-700">{q.quotationNumber}</TableCell>
-                    <TableCell className="text-xs">{customers?.find(c => c.id === q.customerId)?.firstName || "Unknown"}</TableCell>
+                    <TableCell className="text-xs">
+                      {customers?.find(c => c.id === q.customerId)?.firstName || "Client"}
+                    </TableCell>
                     <TableCell className="font-bold text-xs">৳{q.totalAmount?.toLocaleString()}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={cn("text-[10px]", q.status === "converted" ? "bg-green-50 text-green-700 border-green-200" : "bg-purple-50 text-purple-700")}>
+                      <Badge variant="outline" className={cn("text-[10px] capitalize", q.status === "converted" ? "bg-green-50 text-green-700 border-green-200" : "bg-purple-50 text-purple-700 border-purple-200")}>
                         {q.status}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => handlePrint(q)}><Eye className="mr-2 h-4 w-4" /> View Quote</DropdownMenuItem>
@@ -283,9 +304,9 @@ export default function QuotationsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
             <div className="lg:col-span-2 space-y-6">
               <div className="space-y-2">
-                <Label>Customer</Label>
+                <Label className="text-xs font-bold uppercase text-muted-foreground">Select Customer</Label>
                 <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                  <SelectTrigger><SelectValue placeholder="Choose client" /></SelectTrigger>
+                  <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Identify client directory..." /></SelectTrigger>
                   <SelectContent>
                     {customers?.map(c => <SelectItem key={c.id} value={c.id}>{c.firstName} {c.lastName}</SelectItem>)}
                   </SelectContent>
@@ -293,37 +314,49 @@ export default function QuotationsPage() {
               </div>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label className="font-bold">Quoted Products</Label>
+                  <Label className="font-bold text-xs uppercase tracking-widest">Quoted Items</Label>
                   <Select onValueChange={handleAddLineItem}>
-                    <SelectTrigger className="w-[200px]"><SelectValue placeholder="Add product..." /></SelectTrigger>
+                    <SelectTrigger className="w-[200px] h-9 bg-purple-50 border-purple-100 text-[10px]"><SelectValue placeholder="+ Add product..." /></SelectTrigger>
                     <SelectContent>
                       {products?.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="border rounded-xl">
+                <div className="border rounded-2xl overflow-hidden bg-white shadow-sm">
                   <Table>
-                    <TableHeader><TableRow><TableHead>Item</TableHead><TableHead>Price</TableHead><TableHead className="text-right">Total</TableHead></TableRow></TableHeader>
+                    <TableHeader className="bg-muted/30">
+                      <TableRow>
+                        <TableHead className="text-[10px] uppercase">Description</TableHead>
+                        <TableHead className="text-[10px] uppercase">Unit Price</TableHead>
+                        <TableHead className="text-right text-[10px] uppercase">Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
                     <TableBody>
-                      {lineItems.map((item, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell className="text-xs">{item.name}</TableCell>
-                          <TableCell className="text-xs">৳{item.unitPrice}</TableCell>
-                          <TableCell className="text-xs text-right font-bold">৳{item.total.toLocaleString()}</TableCell>
-                        </TableRow>
-                      ))}
+                      {lineItems.length === 0 ? (
+                        <TableRow><TableCell colSpan={3} className="py-10 text-center text-muted-foreground italic text-xs">No items added to proposal.</TableCell></TableRow>
+                      ) : (
+                        lineItems.map((item, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell className="text-xs font-medium">{item.name}</TableCell>
+                            <TableCell className="text-xs">৳{item.unitPrice.toLocaleString()}</TableCell>
+                            <TableCell className="text-xs text-right font-bold">৳{item.total.toLocaleString()}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
                     </TableBody>
                   </Table>
                 </div>
               </div>
             </div>
-            <div className={cn("p-6 rounded-2xl border flex flex-col justify-between", isEditModalOpen ? "bg-blue-50 border-blue-100" : "bg-purple-50 border-purple-100")}>
+            <div className={cn("p-6 rounded-2xl border flex flex-col justify-between h-fit lg:sticky lg:top-0", isEditModalOpen ? "bg-blue-50 border-blue-100" : "bg-purple-50 border-purple-100")}>
               <div>
-                <h3 className={cn("font-bold uppercase text-xs mb-4", isEditModalOpen ? "text-blue-800" : "text-purple-800")}>Total Estimate</h3>
-                <div className={cn("text-3xl font-bold", isEditModalOpen ? "text-blue-700" : "text-purple-700")}>৳{totalValue.toLocaleString()}</div>
+                <h3 className={cn("font-bold uppercase text-[10px] mb-4 tracking-widest", isEditModalOpen ? "text-blue-800" : "text-purple-800")}>Total Value Estimate</h3>
+                <div className={cn("text-3xl font-headline font-bold", isEditModalOpen ? "text-blue-700" : "text-purple-700")}>৳{totalValue.toLocaleString()}</div>
+                <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">This estimate is valid for 30 days and can be converted to an invoice once the client approves.</p>
               </div>
-              <Button className={cn("w-full h-12 font-bold gap-2", isEditModalOpen ? "bg-blue-600 hover:bg-blue-700" : "bg-purple-600 hover:bg-purple-700")} onClick={isEditModalOpen ? handleUpdateQuote : handleSubmitQuote} disabled={isSubmitting}>
-                {isSubmitting ? <Loader2 className="animate-spin" /> : isEditModalOpen ? <CheckCircle2 /> : <ChevronRight />} {isEditModalOpen ? "Save Changes" : "Save Proposal"}
+              <Button className={cn("w-full h-12 font-bold gap-2 mt-8 rounded-xl shadow-lg", isEditModalOpen ? "bg-blue-600 hover:bg-blue-700" : "bg-purple-600 hover:bg-purple-700")} onClick={isEditModalOpen ? handleUpdateQuote : handleSubmitQuote} disabled={isSubmitting || lineItems.length === 0}>
+                {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : isEditModalOpen ? <CheckCircle2 className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />} 
+                {isEditModalOpen ? "Save Adjustments" : "Record Proposal"}
               </Button>
             </div>
           </div>
@@ -334,14 +367,14 @@ export default function QuotationsPage() {
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Quotation {selectedRecord?.quotationNumber}?</AlertDialogTitle>
+            <AlertDialogTitle>Archive Quotation Record?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove this proposal? This cannot be undone.
+              Are you sure you want to remove proposal {selectedRecord?.quotationNumber}? This action will permanently delete the draft from your pipeline.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={handleDeleteQuote}>Delete Record</AlertDialogAction>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={handleDeleteQuote}>Delete Draft</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
