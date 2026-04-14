@@ -269,6 +269,7 @@ export default function InventoryPage() {
                       </div>
                     ))}
                   </CardContent>
+                </Card>
 
                 <Card className="border-none shadow-md bg-white rounded-xl">
                   <CardHeader>
