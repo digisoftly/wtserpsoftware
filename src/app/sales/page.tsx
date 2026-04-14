@@ -94,13 +94,32 @@ export default function SalesPage() {
   }, [db, companyId, branchId]);
   const { data: availableSerials } = useCollection(serialsQuery);
 
-  const subtotal = lineItems.reduce((sum, item) => sum + item.total, 0);
-  const taxAmount = (subtotal * taxRate) / 100;
-  const grandTotal = subtotal + taxAmount - discount;
+  // OPTIMIZATION: Memoized Map for O(1) serial lookups during scan
+  const serialLookupMap = React.useMemo(() => {
+    const map = new Map<string, any>();
+    availableSerials?.forEach(s => map.set(s.serialNumber.toLowerCase(), s));
+    return map;
+  }, [availableSerials]);
+
+  // OPTIMIZATION: Memoized Financials to prevent heavy computation on every re-render
+  const financials = React.useMemo(() => {
+    const subtotal = lineItems.reduce((sum, item) => sum + item.total, 0);
+    const taxAmount = (subtotal * taxRate) / 100;
+    const grandTotal = subtotal + taxAmount - discount;
+    return { subtotal, taxAmount, grandTotal };
+  }, [lineItems, taxRate, discount]);
+
+  // KPI Memoization
+  const stats = React.useMemo(() => {
+    const revenue = invoices?.reduce((s, i) => s + (i.totalAmount || 0), 0) || 0;
+    const dues = invoices?.filter(i => i.status === 'due').reduce((s, i) => s + (i.totalAmount || 0), 0) || 0;
+    const count = invoices?.length || 0;
+    return { revenue, dues, count };
+  }, [invoices]);
 
   const handleScan = (val: string) => {
     setScanTerm(val);
-    const foundSerial = availableSerials?.find(s => s.serialNumber.toLowerCase() === val.toLowerCase());
+    const foundSerial = serialLookupMap.get(val.toLowerCase());
     if (foundSerial) {
       const product = products?.find(p => p.id === foundSerial.productId);
       if (product) {
@@ -198,7 +217,7 @@ export default function SalesPage() {
           items: lineItems,
           taxRate,
           discount,
-          totalAmount: grandTotal,
+          totalAmount: financials.grandTotal,
           status: "due",
           invoiceDate: new Date().toISOString(),
           createdAt: serverTimestamp(),
@@ -224,7 +243,7 @@ export default function SalesPage() {
         customerId: selectedCustomerId,
         taxRate,
         discount,
-        totalAmount: grandTotal,
+        totalAmount: financials.grandTotal,
         updatedAt: serverTimestamp()
       });
       toast({ title: "Invoice Updated", description: "Financial details have been saved." });
@@ -284,9 +303,9 @@ export default function SalesPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Revenue" value={`৳${invoices?.reduce((s, i) => s + (i.totalAmount || 0), 0).toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-500" />
-        <KPICard title="Outstandings" value={`৳${invoices?.filter(i => i.status === 'due').reduce((s, i) => s + (i.totalAmount || 0), 0).toLocaleString()}`} icon={Clock} colorClass="bg-orange-500" />
-        <KPICard title="Total Sales" value={invoices?.length || 0} icon={FileText} colorClass="bg-blue-500" />
+        <KPICard title="Revenue" value={`৳${stats.revenue.toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-500" />
+        <KPICard title="Outstandings" value={`৳${stats.dues.toLocaleString()}`} icon={Clock} colorClass="bg-orange-500" />
+        <KPICard title="Total Sales" value={stats.count} icon={FileText} colorClass="bg-blue-500" />
         <KPICard title="Daily Growth" value="+12%" icon={CreditCard} colorClass="bg-purple-500" />
       </div>
 
@@ -427,14 +446,14 @@ export default function SalesPage() {
               <div className="space-y-6">
                 <h3 className="font-bold text-sm uppercase tracking-widest text-muted-foreground border-b pb-2">Financials</h3>
                 <div className="space-y-4">
-                  <div className="flex justify-between text-sm"><span>Subtotal</span><span className="font-bold">৳{subtotal.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-sm"><span>Subtotal</span><span className="font-bold">৳{financials.subtotal.toLocaleString()}</span></div>
                   <div className="flex justify-between items-center text-sm">
                     <div className="flex items-center gap-2"><span>VAT</span><Input type="number" className="w-12 h-7 p-1 text-xs" value={taxRate} onChange={e => setTaxRate(Number(e.target.value))} />%</div>
-                    <span>+৳{taxAmount.toLocaleString()}</span>
+                    <span>+৳{financials.taxAmount.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center text-sm"><span>Discounts</span><Input type="number" className="w-24 h-8 text-right font-bold text-red-600" value={discount} onChange={e => setDiscount(Number(e.target.value))} /></div>
                   <div className="pt-4 border-t-2 border-dashed border-green-200">
-                    <div className="flex justify-between items-baseline"><span className="text-xs uppercase font-bold text-muted-foreground">Amount Due</span><span className="text-3xl font-headline font-bold text-green-700">৳{grandTotal.toLocaleString()}</span></div>
+                    <div className="flex justify-between items-baseline"><span className="text-xs uppercase font-bold text-muted-foreground">Amount Due</span><span className="text-3xl font-headline font-bold text-green-700">৳{financials.grandTotal.toLocaleString()}</span></div>
                   </div>
                 </div>
               </div>

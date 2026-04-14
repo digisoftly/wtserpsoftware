@@ -54,11 +54,22 @@ export default function SerialInventoryPage() {
     setIsAddModalOpen(false);
   };
 
-  const filteredSerials = serials?.filter(s => {
-    const matchesSearch = s.serialNumber.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || s.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredSerials = React.useMemo(() => {
+    return serials?.filter(s => {
+      const matchesSearch = s.serialNumber.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === "all" || s.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [serials, searchTerm, statusFilter]);
+
+  const stats = React.useMemo(() => {
+    return {
+      total: serials?.length || 0,
+      available: serials?.filter(s => s.status === 'available').length || 0,
+      sold: serials?.filter(s => s.status === 'sold').length || 0,
+      issues: serials?.filter(s => ['damaged', 'under_service'].includes(s.status)).length || 0
+    };
+  }, [serials]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -86,10 +97,10 @@ export default function SerialInventoryPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Total Serials" value={serials?.length || 0} icon={Barcode} colorClass="bg-purple-500" />
-        <KPICard title="Ready to Sell" value={serials?.filter(s => s.status === 'available').length || 0} icon={Tag} colorClass="bg-green-500" />
-        <KPICard title="Sold Units" value={serials?.filter(s => s.status === 'sold').length || 0} icon={History} colorClass="bg-blue-500" />
-        <KPICard title="Service/Damaged" value={serials?.filter(s => ['damaged', 'under_service'].includes(s.status)).length || 0} icon={Filter} colorClass="bg-red-500" />
+        <KPICard title="Total Serials" value={stats.total} icon={Barcode} colorClass="bg-purple-500" />
+        <KPICard title="Ready to Sell" value={stats.available} icon={Tag} colorClass="bg-green-500" />
+        <KPICard title="Sold Units" value={stats.sold} icon={History} colorClass="bg-blue-500" />
+        <KPICard title="Service/Damaged" value={stats.issues} icon={Filter} colorClass="bg-red-500" />
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
@@ -128,7 +139,9 @@ export default function SerialInventoryPage() {
                       <div className="text-[10px] text-muted-foreground font-mono uppercase">{s.productId.slice(-6)}</div>
                     </TableCell>
                     <TableCell>{getStatusBadge(s.status)}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{new Date(s.createdAt?.toDate()).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {s.createdAt?.toDate ? new Date(s.createdAt.toDate()).toLocaleDateString() : "N/A"}
+                    </TableCell>
                     <TableCell className="text-right"><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></TableCell>
                   </TableRow>
                 ))}

@@ -75,9 +75,9 @@ export default function ContractsPage() {
   const [manualInvoiceContractId, setManualInvoiceContractId] = React.useState<string>("");
   const [manualInvoiceAmount, setManualInvoiceAmount] = React.useState<number>(0);
 
-  // Sync state when editing or opening Contract
+  // OPTIMIZATION: Sync state effect refined to avoid redundant updates
   React.useEffect(() => {
-    if (selectedRecord && (isEditModalOpen)) {
+    if (isEditModalOpen && selectedRecord) {
       setFormTotalAmount(Number(selectedRecord.totalAmount) || 0);
       setFormDuration(Number(selectedRecord.durationMonths) || 12);
       setFormMonthlyAmount(Number(selectedRecord.monthlyAmount) || 0);
@@ -86,7 +86,7 @@ export default function ContractsPage() {
       setFormDuration(12);
       setFormMonthlyAmount(0);
     }
-  }, [selectedRecord, isEditModalOpen, isAddModalOpen]);
+  }, [isEditModalOpen, isAddModalOpen, selectedRecord?.id]); // Only run on ID change or modal toggle
 
   const handleTotalChange = (val: number) => {
     const amount = Number(val);
@@ -132,6 +132,14 @@ export default function ContractsPage() {
     return collection(db, "companies", companyId, "branches", branchId, "customers");
   }, [db, companyId, branchId]);
   const { data: customers } = useCollection(customersQuery);
+
+  // OPTIMIZATION: Memoized KPI stats
+  const stats = React.useMemo(() => {
+    const activeSubs = contracts?.filter(c => c.status === 'active').length || 0;
+    const totalValue = contracts?.reduce((s, c) => s + (Number(c.totalAmount) || 0), 0) || 0;
+    const totalDue = invoices?.reduce((s, i) => s + ((Number(i.amount) || 0) - (Number(i.paidAmount) || 0)), 0) || 0;
+    return { activeSubs, totalValue, totalDue };
+  }, [contracts, invoices]);
 
   // --- ACTIONS ---
   const handleAddContract = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -489,9 +497,9 @@ export default function ContractsPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Active Subs" value={contracts?.filter(c => c.status === 'active').length || 0} icon={ShieldCheck} colorClass="bg-emerald-500" />
-        <KPICard title="Contract Value" value={`৳${contracts?.reduce((s, c) => s + (Number(c.totalAmount) || 0), 0).toLocaleString()}`} icon={TrendingUp} colorClass="bg-blue-500" />
-        <KPICard title="Outstanding Due" value={`৳${invoices?.reduce((s, i) => s + ((Number(i.amount) || 0) - (Number(i.paidAmount) || 0)), 0).toLocaleString()}`} icon={AlertCircle} colorClass="bg-red-500" />
+        <KPICard title="Active Subs" value={stats.activeSubs} icon={ShieldCheck} colorClass="bg-emerald-500" />
+        <KPICard title="Contract Value" value={`৳${stats.totalValue.toLocaleString()}`} icon={TrendingUp} colorClass="bg-blue-500" />
+        <KPICard title="Outstanding Due" value={`৳${stats.totalDue.toLocaleString()}`} icon={AlertCircle} colorClass="bg-red-500" />
         <KPICard title="Billing Cycle" value="Monthly" icon={Calendar} colorClass="bg-purple-500" />
       </div>
 

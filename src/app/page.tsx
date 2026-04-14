@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -64,20 +65,24 @@ export default function Dashboard() {
   }, [db, companyId, branchId]);
   const { data: allInvoices } = useCollection(allInvoicesQuery);
 
-  const totalSales = allInvoices?.reduce((sum, inv) => sum + (inv.totalAmount || 0), 0) || 0;
-  const totalExpenses = expenses?.reduce((sum, e) => sum + (e.amount || 0), 0) || 0;
-  const netProfit = totalSales - totalExpenses;
+  // OPTIMIZATION: Memoized KPI values to prevent lag on dashboard load
+  const financialStats = React.useMemo(() => {
+    const totalSales = allInvoices?.reduce((sum, inv) => sum + (inv.totalAmount || 0), 0) || 0;
+    const totalExpenses = expenses?.reduce((sum, e) => sum + (e.amount || 0), 0) || 0;
+    const netProfit = totalSales - totalExpenses;
+    return { totalSales, totalExpenses, netProfit };
+  }, [allInvoices, expenses]);
 
-  const kpis = [
-    { title: "Total Revenue", value: `৳${totalSales.toLocaleString()}`, icon: TrendingUp, colorClass: "bg-blue-500" },
-    { title: "Net Profit", value: `৳${netProfit.toLocaleString()}`, icon: CreditCard, colorClass: "bg-green-500" },
+  const kpis = React.useMemo(() => [
+    { title: "Total Revenue", value: `৳${financialStats.totalSales.toLocaleString()}`, icon: TrendingUp, colorClass: "bg-blue-500" },
+    { title: "Net Profit", value: `৳${financialStats.netProfit.toLocaleString()}`, icon: CreditCard, colorClass: "bg-green-500" },
     { title: "Pipeline Leads", value: leads?.length || 0, icon: Target, colorClass: "bg-rose-500" },
     { title: "Active Tickets", value: tickets?.filter(t => t.status === 'open').length || 0, icon: LifeBuoy, colorClass: "bg-indigo-500" },
-    { title: "Monthly Expense", value: `৳${totalExpenses.toLocaleString()}`, icon: Receipt, colorClass: "bg-red-500" },
+    { title: "Monthly Expense", value: `৳${financialStats.totalExpenses.toLocaleString()}`, icon: Receipt, colorClass: "bg-red-500" },
     { title: "Active Projects", value: "0", icon: ClipboardList, colorClass: "bg-teal-500" },
     { title: "Active Clients", value: "0", icon: Users, colorClass: "bg-cyan-500" },
     { title: "Employees", value: "0", icon: Briefcase, colorClass: "bg-violet-500" },
-  ]
+  ], [financialStats, leads, tickets]);
 
   return (
     <div className="space-y-6 pb-10">
