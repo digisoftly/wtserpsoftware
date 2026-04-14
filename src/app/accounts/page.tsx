@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { Wallet, Landmark, TrendingDown, TrendingUp, Loader2, ArrowUpRight, ArrowDownLeft, Plus, Filter } from "lucide-react"
+import { Wallet, Landmark, TrendingDown, TrendingUp, Loader2, ArrowUpRight, ArrowDownLeft, Plus, Filter, CreditCard, DollarSign } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, serverTimestamp } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
+import { KPICard } from "@/components/dashboard/kpi-card"
 
 export default function AccountsPage() {
   const { companyId, branchId } = useTenant();
@@ -33,6 +34,7 @@ export default function AccountsPage() {
 
   const totalIncome = transactions?.filter(t => t.transactionType === 'income').reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
   const totalExpense = transactions?.filter(t => t.transactionType === 'expense').reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+  const balance = totalIncome - totalExpense;
 
   const handleAddTransaction = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -73,19 +75,11 @@ export default function AccountsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-        <div className="p-6 bg-white rounded-xl border shadow-sm flex flex-col">
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Main Balance</span>
-          <span className="text-2xl md:text-3xl font-bold font-headline mt-2 text-primary">${(totalIncome - totalExpense).toLocaleString()}</span>
-        </div>
-        <div className="p-6 bg-white rounded-xl border shadow-sm flex flex-col">
-          <span className="text-xs font-medium text-muted-foreground flex items-center gap-1 uppercase tracking-wider"><TrendingUp className="h-3 w-3 text-green-500" /> Total Income</span>
-          <span className="text-2xl md:text-3xl font-bold font-headline mt-2 text-green-600">${totalIncome.toLocaleString()}</span>
-        </div>
-        <div className="p-6 bg-white rounded-xl border shadow-sm flex flex-col">
-          <span className="text-xs font-medium text-muted-foreground flex items-center gap-1 uppercase tracking-wider"><TrendingDown className="h-3 w-3 text-red-500" /> Total Expense</span>
-          <span className="text-2xl md:text-3xl font-bold font-headline mt-2 text-red-600">${totalExpense.toLocaleString()}</span>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard title="Net Balance" value={`$${balance.toLocaleString()}`} icon={Wallet} colorClass="bg-blue-600" />
+        <KPICard title="Total Income" value={`$${totalIncome.toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-600" />
+        <KPICard title="Total Expense" value={`$${totalExpense.toLocaleString()}`} icon={TrendingDown} colorClass="bg-red-600" />
+        <KPICard title="Transactions" value={transactions?.length || 0} icon={Landmark} colorClass="bg-purple-600" />
       </div>
 
       {isLoading ? (

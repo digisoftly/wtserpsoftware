@@ -12,7 +12,11 @@ import {
   ArrowRight,
   Loader2,
   Package,
-  MoreVertical
+  MoreVertical,
+  Boxes,
+  AlertTriangle,
+  Activity,
+  DollarSign
 } from "lucide-react"
 import { inventoryForecasting, type InventoryForecastingOutput } from "@/ai/flows/ai-inventory-forecasting-and-optimization"
 import { Button } from "@/components/ui/button"
@@ -29,6 +33,7 @@ import { useTenant } from "@/context/tenant-context"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
+import { KPICard } from "@/components/dashboard/kpi-card"
 
 export default function InventoryPage() {
   const { companyId, branchId } = useTenant();
@@ -44,6 +49,10 @@ export default function InventoryPage() {
   }, [db, companyId, branchId]);
 
   const { data: products, isLoading } = useCollection(productsQuery);
+
+  const totalItems = products?.length || 0;
+  const totalStockValue = products?.reduce((sum, p) => sum + (p.currentStock * p.costPrice || 0), 0) || 0;
+  const lowStockCount = products?.filter(p => (p.currentStock || 0) <= (p.minStockLevel || 0)).length || 0;
 
   const handleRunForecast = async () => {
     if (!products || products.length === 0) {
@@ -131,6 +140,13 @@ export default function InventoryPage() {
             Add Product
           </Button>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard title="Total SKUs" value={totalItems} icon={Boxes} colorClass="bg-blue-500" />
+        <KPICard title="Stock Value" value={`$${totalStockValue.toLocaleString()}`} icon={DollarSign} colorClass="bg-green-500" />
+        <KPICard title="Low Stock" value={lowStockCount} icon={AlertTriangle} colorClass="bg-red-500" />
+        <KPICard title="Active Items" value={products?.filter(p => p.isActive).length || 0} icon={Activity} colorClass="bg-purple-500" />
       </div>
 
       <Tabs defaultValue="list" className="w-full">

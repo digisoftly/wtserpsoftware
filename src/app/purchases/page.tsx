@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Plus, Package, Search, Loader2, MoreVertical, Filter } from "lucide-react"
+import { Plus, Package, Search, Loader2, MoreVertical, Filter, ShoppingBag, Truck, Clock, DollarSign } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -15,12 +15,13 @@ import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, serverTimestamp, query, orderBy } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
+import { KPICard } from "@/components/dashboard/kpi-card"
 
 export default function PurchasesPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
-  const [searchTerm, setSearchTerm] = React.useState("");
+  const [searchTerm, setSearchTerm] = setSearchTerm("");
 
   const poQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
@@ -37,6 +38,9 @@ export default function PurchasesPage() {
     return collection(db, "companies", companyId, "branches", branchId, "suppliers");
   }, [db, companyId, branchId]);
   const { data: suppliers } = useCollection(suppliersQuery);
+
+  const totalPurchase = purchaseOrders?.reduce((sum, po) => sum + (po.totalAmount || 0), 0) || 0;
+  const pendingOrders = purchaseOrders?.filter(po => po.status === 'pending').length || 0;
 
   const handleAddPO = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -74,6 +78,13 @@ export default function PurchasesPage() {
           <Plus className="h-4 w-4" />
           New Purchase Order
         </Button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard title="Total Orders" value={purchaseOrders?.length || 0} icon={ShoppingBag} colorClass="bg-orange-500" />
+        <KPICard title="Total Spend" value={`$${totalPurchase.toLocaleString()}`} icon={DollarSign} colorClass="bg-green-500" />
+        <KPICard title="Pending Delivery" value={pendingOrders} icon={Clock} colorClass="bg-blue-500" />
+        <KPICard title="Vendors" value={suppliers?.length || 0} icon={Truck} colorClass="bg-purple-500" />
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">

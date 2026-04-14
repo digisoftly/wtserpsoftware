@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { UserRoundCog, UserPlus, Clock, Search, MoreVertical, Mail, Briefcase, Loader2, Filter } from "lucide-react"
+import { UserRoundCog, UserPlus, Clock, Search, MoreVertical, Mail, Briefcase, Loader2, Filter, Users, MapPin, DollarSign } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, serverTimestamp, query, orderBy } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { KPICard } from "@/components/dashboard/kpi-card"
 
 export default function HRMPage() {
   const { companyId, branchId } = useTenant();
@@ -30,6 +31,10 @@ export default function HRMPage() {
   }, [db, companyId, branchId]);
 
   const { data: employees, isLoading } = useCollection(employeesQuery);
+
+  const totalStaff = employees?.length || 0;
+  const totalPayroll = employees?.reduce((sum, emp) => sum + (emp.salary || 0), 0) || 0;
+  const activeStaff = employees?.filter(e => e.employmentStatus === 'active').length || 0;
 
   const handleAddEmployee = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -77,6 +82,13 @@ export default function HRMPage() {
             <UserPlus className="h-4 w-4" /> New Staff
           </Button>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard title="Total Staff" value={totalStaff} icon={Users} colorClass="bg-purple-500" />
+        <KPICard title="Active Status" value={activeStaff} icon={UserRoundCog} colorClass="bg-blue-500" />
+        <KPICard title="Monthly Payroll" value={`$${totalPayroll.toLocaleString()}`} icon={DollarSign} colorClass="bg-green-500" />
+        <KPICard title="Departments" value={new Set(employees?.map(e => e.department)).size} icon={Briefcase} colorClass="bg-orange-500" />
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">

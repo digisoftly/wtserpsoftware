@@ -1,8 +1,9 @@
+
 "use client"
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { Folder, Plus, Search, Loader2, MoreVertical, Calendar, Users } from "lucide-react"
+import { Folder, Plus, Search, Loader2, MoreVertical, Calendar, Users, ClipboardCheck, TrendingUp, DollarSign } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -14,6 +15,7 @@ import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, serverTimestamp, query, orderBy } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
+import { KPICard } from "@/components/dashboard/kpi-card"
 
 export default function ProjectsPage() {
   const { companyId, branchId } = useTenant();
@@ -36,6 +38,9 @@ export default function ProjectsPage() {
     return collection(db, "companies", companyId, "branches", branchId, "customers");
   }, [db, companyId, branchId]);
   const { data: customers } = useCollection(customersQuery);
+
+  const activeProjects = projects?.filter(p => p.status === 'active').length || 0;
+  const totalBudget = projects?.reduce((sum, p) => sum + (p.budget || 0), 0) || 0;
 
   const handleAddProject = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -72,6 +77,13 @@ export default function ProjectsPage() {
           <Plus className="h-4 w-4" />
           Create Project
         </Button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard title="Total Projects" value={projects?.length || 0} icon={Folder} colorClass="bg-teal-500" />
+        <KPICard title="Active Status" value={activeProjects} icon={TrendingUp} colorClass="bg-blue-500" />
+        <KPICard title="Total Budget" value={`$${totalBudget.toLocaleString()}`} icon={DollarSign} colorClass="bg-green-500" />
+        <KPICard title="Completed" value={projects?.filter(p => p.status === 'completed').length || 0} icon={ClipboardCheck} colorClass="bg-purple-500" />
       </div>
 
       <div className="flex items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">

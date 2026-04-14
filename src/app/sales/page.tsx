@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Plus, ShoppingCart, Search, Filter, Loader2, MoreVertical, FileText, UserPlus, Users } from "lucide-react"
+import { Plus, ShoppingCart, Search, Filter, Loader2, MoreVertical, FileText, UserPlus, Users, TrendingUp, CreditCard, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -17,6 +17,7 @@ import { useTenant } from "@/context/tenant-context"
 import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { cn } from "@/lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { KPICard } from "@/components/dashboard/kpi-card"
 
 export default function SalesPage() {
   const { companyId, branchId } = useTenant();
@@ -42,6 +43,10 @@ export default function SalesPage() {
 
   const { data: customers } = useCollection(customersQuery);
 
+  const totalRevenue = invoices?.reduce((sum, inv) => sum + (inv.totalAmount || 0), 0) || 0;
+  const paidRevenue = invoices?.filter(i => i.status === 'paid').reduce((sum, inv) => sum + (inv.totalAmount || 0), 0) || 0;
+  const dueRevenue = totalRevenue - paidRevenue;
+
   const handleAddInvoice = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -50,7 +55,6 @@ export default function SalesPage() {
 
     let targetCustomerId = formData.get("customerId") as string;
 
-    // Handle Manual/New Customer Entry
     if (customerMode === "new") {
       const customerData = {
         companyId,
@@ -106,6 +110,13 @@ export default function SalesPage() {
           <Plus className="h-4 w-4" />
           New Invoice
         </Button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard title="Total Sales" value={`$${totalRevenue.toLocaleString()}`} icon={TrendingUp} colorClass="bg-blue-500" />
+        <KPICard title="Paid Amount" value={`$${paidRevenue.toLocaleString()}`} icon={CreditCard} colorClass="bg-green-500" />
+        <KPICard title="Due Amount" value={`$${dueRevenue.toLocaleString()}`} icon={Clock} colorClass="bg-orange-500" />
+        <KPICard title="Invoices" value={invoices?.length || 0} icon={FileText} colorClass="bg-purple-500" />
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">

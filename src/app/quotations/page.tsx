@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Plus, FileText, Search, Loader2, MoreVertical, Filter, UserPlus, Users } from "lucide-react"
+import { Plus, FileText, Search, Loader2, MoreVertical, Filter, UserPlus, Users, FileCheck, Clock, Calculator } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -17,6 +17,7 @@ import { useTenant } from "@/context/tenant-context"
 import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { cn } from "@/lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { KPICard } from "@/components/dashboard/kpi-card"
 
 export default function QuotationsPage() {
   const { companyId, branchId } = useTenant();
@@ -40,6 +41,9 @@ export default function QuotationsPage() {
     return collection(db, "companies", companyId, "branches", branchId, "customers");
   }, [db, companyId, branchId]);
   const { data: customers } = useCollection(customersQuery);
+
+  const totalQuotesValue = quotations?.reduce((sum, q) => sum + (q.totalAmount || 0), 0) || 0;
+  const draftQuotesCount = quotations?.filter(q => q.status === 'draft').length || 0;
 
   const handleAddQuotation = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -102,6 +106,13 @@ export default function QuotationsPage() {
           <Plus className="h-4 w-4" />
           New Quotation
         </Button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard title="Total Quotes" value={quotations?.length || 0} icon={FileText} colorClass="bg-purple-500" />
+        <KPICard title="Total Value" value={`$${totalQuotesValue.toLocaleString()}`} icon={Calculator} colorClass="bg-blue-500" />
+        <KPICard title="Draft Mode" value={draftQuotesCount} icon={Clock} colorClass="bg-orange-500" />
+        <KPICard title="Accepted" value={quotations?.filter(q => q.status === 'accepted').length || 0} icon={FileCheck} colorClass="bg-green-500" />
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">

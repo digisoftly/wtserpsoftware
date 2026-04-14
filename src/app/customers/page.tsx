@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { Users, UserPlus, Search, MoreVertical, Mail, Phone, MapPin, Loader2, Building2, User, Check, Filter } from "lucide-react"
+import { Users, UserPlus, Search, MoreVertical, Mail, Phone, MapPin, Loader2, Building2, User, Check, Filter, UserCheck, UserX, Building } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, serverTimestamp } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
@@ -16,6 +16,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
+import { KPICard } from "@/components/dashboard/kpi-card"
 
 export default function CustomersPage() {
   const { companyId, branchId } = useTenant();
@@ -30,6 +31,10 @@ export default function CustomersPage() {
   }, [db, companyId, branchId]);
 
   const { data: customers, isLoading } = useCollection(customersQuery);
+
+  const totalCustomers = customers?.length || 0;
+  const companyCount = customers?.filter(c => c.customerType === 'company').length || 0;
+  const individualCount = totalCustomers - companyCount;
 
   const filteredCustomers = customers?.filter(c => 
     `${c.firstName} ${c.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -76,8 +81,14 @@ export default function CustomersPage() {
         </Button>
       </div>
 
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <KPICard title="Total Clients" value={totalCustomers} icon={Users} colorClass="bg-cyan-500" />
+        <KPICard title="Individuals" value={individualCount} icon={UserCheck} colorClass="bg-blue-500" />
+        <KPICard title="Corporate" value={companyCount} icon={Building} colorClass="bg-amber-500" />
+      </div>
+
       <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
-        <div className="relative flex-1 w-full max-w-sm">
+        <div className="relative flex-1 w-full max-sm:max-w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
             placeholder="Search name, email, or company..." 
