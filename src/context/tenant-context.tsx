@@ -1,8 +1,10 @@
+
 'use client';
 
 import * as React from 'react';
 import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { Language } from '@/lib/translations';
 
 interface Role {
   id: string;
@@ -15,6 +17,8 @@ interface TenantContextType {
   companyId: string | null;
   branchId: string | null;
   userRole: Role | null;
+  language: Language;
+  setLanguage: (lang: Language) => void;
   isLoading: boolean;
 }
 
@@ -22,6 +26,8 @@ const TenantContext = React.createContext<TenantContextType>({
   companyId: null,
   branchId: null,
   userRole: null,
+  language: 'EN',
+  setLanguage: () => {},
   isLoading: true,
 });
 
@@ -30,6 +36,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const db = useFirestore();
   const [isInitializing, setIsInitializing] = React.useState(true);
   const [userRole, setUserRole] = React.useState<Role | null>(null);
+  const [language, setLanguage] = React.useState<Language>('EN');
 
   // Mock IDs for the prototype environment
   const companyId = "warrior-demo-corp";
@@ -66,7 +73,6 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
               updatedAt: serverTimestamp(),
             };
             
-            // Non-blocking setDoc
             setDoc(userRef, userData, { merge: true }).catch(async (err) => {
               errorEmitter.emit('permission-error', new FirestorePermissionError({
                 path: userRef.path,
@@ -75,10 +81,13 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
               }));
             });
           } else {
-            roleId = userSnap.data().roleId || "super-admin";
+            const data = userSnap.data();
+            roleId = data.roleId || "super-admin";
+            if (data.preferredLanguage) {
+              setLanguage(data.preferredLanguage as Language);
+            }
           }
 
-          // Fetch Role Permissions
           const roleRef = doc(db, "companies", companyId, "roles", roleId);
           const roleSnap = await getDoc(roleRef).catch(async (err) => {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -91,14 +100,12 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           if (roleSnap.exists()) {
             setUserRole({ id: roleSnap.id, ...roleSnap.data() } as Role);
           } else if (roleId === "super-admin") {
-            // Auto-create Super Admin role if missing
             const superAdminRole = {
               id: "super-admin",
               name: "Super Administrator",
               isSuperAdmin: true,
-              permissions: {} // Super admins bypass check
+              permissions: {} 
             };
-            
             setDoc(roleRef, superAdminRole).catch(async (err) => {
               errorEmitter.emit('permission-error', new FirestorePermissionError({
                 path: roleRef.path,
@@ -106,11 +113,10 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
                 requestResourceData: superAdminRole
               }));
             });
-            
             setUserRole(superAdminRole);
           }
         } catch (error) {
-          // Standard error logging is handled by contextual emitter above
+          // Handled via emitter
         } finally {
           setIsInitializing(false);
         }
@@ -122,11 +128,22 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     initTenant();
   }, [user, isUserLoading, db, companyId, branchId]);
 
+  const handleSetLanguage = (lang: Language) => {
+    setLanguage(lang);
+    // Optionally persist to Firestore user profile
+    if (user && db) {
+      const userRef = doc(db, "companies", companyId, "users", user.uid);
+      setDoc(userRef, { preferredLanguage: lang }, { merge: true });
+    }
+  };
+
   return (
     <TenantContext.Provider value={{ 
       companyId, 
       branchId, 
       userRole,
+      language,
+      setLanguage: handleSetLanguage,
       isLoading: isUserLoading || isInitializing 
     }}>
       {children}
