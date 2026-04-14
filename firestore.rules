@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -9,12 +10,6 @@ service cloud.firestore {
      * This ruleset implements a strict multi-tenant isolation model. Access is governed by a user's 
      * association with a specific Company and Branch. Global access is reserved for Super Admins 
      * verified via an "existence-over-content" check in a dedicated collection.
-     * 
-     * Data Structure:
-     * - /super_admins/{userId}: Global system access.
-     * - /system_settings/...: Global configurations (Roles, Modules, Plans).
-     * - /companies/{companyId}: Tenant-specific data root.
-     * - /companies/{companyId}/branches/{branchId}: Operational data segmentation.
      */
 
     // --- GLOBAL HELPER FUNCTIONS ---
@@ -34,17 +29,15 @@ service cloud.firestore {
     /**
      * Verifies that a user is a member of the specified company.
      * PROTOTYPE EXCEPTION: Allows authenticated users access to the demo company.
+     * OPTIMIZATION: Check hardcoded demo ID first to avoid unnecessary exists() calls.
      */
     function isCompanyMember(companyId) {
       return isSignedIn() && (
-        exists(/databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid)) ||
-        companyId == "warrior-demo-corp"
+        companyId == "warrior-demo-corp" ||
+        exists(/databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid))
       );
     }
 
-    /**
-     * Checks if the data being written has the correct tenant IDs matching the URL path.
-     */
     function matchesTenant(companyId) {
       return request.resource.data.companyId == companyId;
     }
@@ -77,17 +70,18 @@ service cloud.firestore {
     match /companies/{companyId} {
       allow get: if isCompanyMember(companyId) || isSuperAdmin();
       allow list: if isSuperAdmin();
-      // PROTOTYPE: Allow creation of demo corp by signed-in users
+      
+      // ALLOW DEMO CORP CREATION
       allow create: if isSuperAdmin() || (isSignedIn() && companyId == "warrior-demo-corp");
-      allow delete: if isSuperAdmin();
       allow update: if isCompanyMember(companyId) || isSuperAdmin();
 
-      match /roles/{roleId} {
-        allow get, list: if isCompanyMember(companyId) || isSuperAdmin();
-        allow create, update, delete: if isCompanyMember(companyId) || isSuperAdmin();
+      // SYSTEM CONFIG
+      match /system/config {
+        allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
       }
 
-      match /system/{allPaths=**} {
+      // ROLES & PERMISSIONS
+      match /roles/{roleId} {
         allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
       }
 
@@ -109,15 +103,6 @@ service cloud.firestore {
         allow get, list: if isCompanyMember(companyId) || isSuperAdmin();
         allow create: if isSignedIn() && matchesTenant(companyId);
         allow update, delete: if false; 
-      }
-
-      match /backup_records/{backupId} {
-        allow get, list, write: if isSuperAdmin();
-      }
-      
-      match /subscriptions/{subId} {
-        allow get, list: if isCompanyMember(companyId) || isSuperAdmin();
-        allow write: if isSuperAdmin();
       }
     }
 
@@ -148,13 +133,6 @@ service cloud.firestore {
         
         allow delete: if (isCompanyMember(companyId) || isSuperAdmin()) 
                       && isExistingDoc();
-
-        match /{deepSub}/{deepId} {
-          allow get, list: if isCompanyMember(companyId) || isSuperAdmin();
-          allow create: if (isCompanyMember(companyId) || isSuperAdmin()) && (companyId == "warrior-demo-corp" || matchesBranch(companyId, branchId));
-          allow update: if (isCompanyMember(companyId) || isSuperAdmin()) && isExistingDoc();
-          allow delete: if (isCompanyMember(companyId) || isSuperAdmin()) && isExistingDoc();
-        }
       }
     }
 

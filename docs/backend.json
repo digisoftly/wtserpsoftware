@@ -47,6 +47,30 @@
         "purchaseOrderId": { "type": "string", "description": "Reference to PO if purchased." }
       },
       "required": ["id", "productId", "serialNumber", "status"]
+    },
+    "SystemConfig": {
+      "title": "System Configuration",
+      "type": "object",
+      "description": "Global ERP settings and business rules.",
+      "properties": {
+        "companyName": { "type": "string" },
+        "taxRate": { "type": "number" },
+        "currency": { "type": "string" },
+        "invoicePrefix": { "type": "string" },
+        "autoStockUpdate": { "type": "boolean" },
+        "allowNegativeStock": { "type": "boolean" },
+        "notifyEmail": { "type": "boolean" }
+      }
+    },
+    "Role": {
+      "title": "Access Role",
+      "type": "object",
+      "description": "Defines granular permissions for user roles.",
+      "properties": {
+        "name": { "type": "string" },
+        "isSuperAdmin": { "type": "boolean" },
+        "permissions": { "type": "object" }
+      }
     }
   },
   "auth": {
@@ -68,6 +92,22 @@
           "entityName": "ProductSerialNumber",
           "schema": { "$ref": "#/backend/entities/ProductSerialNumber" },
           "description": "Unique serial number records."
+        }
+      },
+      {
+        "path": "/companies/{companyId}/system/config",
+        "definition": {
+          "entityName": "SystemConfig",
+          "schema": { "$ref": "#/backend/entities/SystemConfig" },
+          "description": "Global settings document."
+        }
+      },
+      {
+        "path": "/companies/{companyId}/roles/{roleId}",
+        "definition": {
+          "entityName": "Role",
+          "schema": { "$ref": "#/backend/entities/Role" },
+          "description": "RBAC role definitions."
         }
       }
     ]
