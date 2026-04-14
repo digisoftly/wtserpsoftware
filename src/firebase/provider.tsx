@@ -43,7 +43,7 @@ export interface FirebaseServicesAndUser {
 }
 
 // Return type for useUser() - specific to user auth state
-export interface UserHookResult { // Renamed from UserAuthHookResult for consistency if desired, or keep as UserAuthHookResult
+export interface UserHookResult { 
   user: User | null;
   isUserLoading: boolean;
   userError: Error | null;
@@ -154,15 +154,29 @@ export const useFirebaseApp = (): FirebaseApp => {
   return firebaseApp;
 };
 
-type MemoFirebase <T> = T & {__memo?: boolean};
+// Global store to track memoized Firebase objects without mutating them
+const memoizedStore = new WeakSet<object>();
 
-export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | (MemoFirebase<T>) {
+/**
+ * Hook to memoize Firestore references and queries.
+ * Prevents unnecessary re-subscriptions and infinite render loops.
+ */
+export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
   const memoized = useMemo(factory, deps);
   
-  if(typeof memoized !== 'object' || memoized === null) return memoized;
-  (memoized as MemoFirebase<T>).__memo = true;
+  if(typeof memoized === 'object' && memoized !== null) {
+    memoizedStore.add(memoized);
+  }
   
   return memoized;
+}
+
+/**
+ * Helper to check if a Firebase object was created using useMemoFirebase.
+ */
+export function isMemoized(obj: any): boolean {
+  if (typeof obj !== 'object' || obj === null) return true;
+  return memoizedStore.has(obj);
 }
 
 /**
@@ -170,7 +184,7 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
  * This provides the User object, loading status, and any auth errors.
  * @returns {UserHookResult} Object with user, isUserLoading, userError.
  */
-export const useUser = (): UserHookResult => { // Renamed from useAuthUser
-  const { user, isUserLoading, userError } = useFirebase(); // Leverages the main hook
+export const useUser = (): UserHookResult => { 
+  const { user, isUserLoading, userError } = useFirebase(); 
   return { user, isUserLoading, userError };
 };

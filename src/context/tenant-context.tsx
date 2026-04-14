@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -134,32 +133,34 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     initTenant();
   }, [user, isUserLoading, db, companyId]);
 
-  const handleSetLanguage = (lang: Language) => {
+  const handleSetLanguage = React.useCallback((lang: Language) => {
     setLanguage(lang);
     if (user && db) {
       const userRef = doc(db, "companies", companyId, "users", user.uid);
       setDoc(userRef, { preferredLanguage: lang }, { merge: true });
     }
-  };
+  }, [user, db, companyId]);
 
-  const handleSetBranch = (id: string) => {
+  const handleSetBranch = React.useCallback((id: string) => {
     setBranchId(id);
     if (user && db) {
       const userRef = doc(db, "companies", companyId, "users", user.uid);
       setDoc(userRef, { branchId: id }, { merge: true });
     }
-  };
+  }, [user, db, companyId]);
+
+  const contextValue = React.useMemo(() => ({ 
+    companyId, 
+    branchId, 
+    setBranchId: handleSetBranch,
+    userRole,
+    language,
+    setLanguage: handleSetLanguage,
+    isLoading: isUserLoading || isInitializing 
+  }), [companyId, branchId, handleSetBranch, userRole, language, handleSetLanguage, isUserLoading, isInitializing]);
 
   return (
-    <TenantContext.Provider value={{ 
-      companyId, 
-      branchId, 
-      setBranchId: handleSetBranch,
-      userRole,
-      language,
-      setLanguage: handleSetLanguage,
-      isLoading: isUserLoading || isInitializing 
-    }}>
+    <TenantContext.Provider value={contextValue}>
       {children}
     </TenantContext.Provider>
   );
