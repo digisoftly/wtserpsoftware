@@ -1,7 +1,8 @@
+
 "use client"
 
 import * as React from "react"
-import { Plus, Package, Search, Loader2, MoreVertical, Filter, ShoppingBag, Truck, Clock, DollarSign, Trash2, ChevronRight, Calculator } from "lucide-react"
+import { Plus, Package, Search, Loader2, MoreVertical, ShoppingBag, Truck, DollarSign, Trash2, Calculator, Scan } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -10,10 +11,10 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, serverTimestamp, query, orderBy, doc, increment, runTransaction } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
-import { cn } from "@/lib/utils"
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { toast } from "@/hooks/use-toast"
 
@@ -23,6 +24,8 @@ interface POItem {
   quantity: number;
   unitCost: number;
   total: number;
+  serials?: string[];
+  requiresSerials: boolean;
 }
 
 export default function PurchasesPage() {
@@ -32,7 +35,6 @@ export default function PurchasesPage() {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  // Form State
   const [selectedSupplierId, setSelectedSupplierId] = React.useState("");
   const [lineItems, setLineItems] = React.useState<POItem[]>([]);
 
@@ -77,14 +79,27 @@ export default function PurchasesPage() {
         name: product.name,
         quantity: 1,
         unitCost: product.costPrice || 0,
-        total: product.costPrice || 0
+        total: product.costPrice || 0,
+        requiresSerials: product.serialNumberTrackingRequired || false,
+        serials: []
       }]);
     }
   };
 
+  const handleUpdateSerials = (idx: number, text: string) => {
+    const serials = text.split(/[\n,]+/).map(s => s.trim()).filter(s => s.length > 0);
+    setLineItems(lineItems.map((item, i) => i === idx ? { ...item, serials, quantity: serials.length, total: serials.length * item.unitCost } : item));
+  };
+
   const handleSubmitPO = async () => {
     if (!selectedSupplierId || lineItems.length === 0) {
-      toast({ variant: "destructive", title: "Incomplete Form", description: "Select a supplier and products." });
+      toast({ variant: "destructive", title: "Incomplete", description: "Select supplier and items." });
+      return;
+    }
+
+    const missingSerials = lineItems.find(item => item.requiresSerials && (item.serials?.length || 0) !== item.quantity);
+    if (missingSerials) {
+      toast({ variant: "destructive", title: "Missing Serials", description: `Please provide ${missingSerials.quantity} serials for ${missingSerials.name}.` });
       return;
     }
 
@@ -103,18 +118,31 @@ export default function PurchasesPage() {
           status: "received", 
           orderDate: new Date().toISOString(),
           createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
         });
 
         for (const item of lineItems) {
           const productRef = doc(db, "companies", companyId!, "branches", branchId!, "products", item.productId);
-          transaction.update(productRef, {
-            currentStock: increment(item.quantity)
-          });
+          transaction.update(productRef, { currentStock: increment(item.quantity) });
+
+          if (item.requiresSerials && item.serials) {
+            for (const s of item.serials) {
+              const serialRef = doc(collection(db, "companies", companyId!, "branches", branchId!, "serial_numbers"));
+              transaction.set(serialRef, {
+                id: serialRef.id,
+                companyId,
+                branchId,
+                productId: item.productId,
+                serialNumber: s,
+                status: "available",
+                purchaseOrderId: poRef.id,
+                createdAt: serverTimestamp(),
+              });
+            }
+          }
         }
       });
 
-      toast({ title: "Purchase Recorded", description: "Stock levels increased and order saved." });
+      toast({ title: "Purchase Success", description: "Stock updated and serials registered." });
       setIsAddModalOpen(false);
       setLineItems([]);
       setSelectedSupplierId("");
@@ -130,26 +158,18 @@ export default function PurchasesPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold font-headline text-orange-600">Inventory Sourcing</h1>
-          <p className="text-sm text-muted-foreground mt-1">Increase stock levels through verified supplier orders</p>
+          <p className="text-sm text-muted-foreground mt-1">Intake new stock and register serial numbers</p>
         </div>
         <Button className="bg-orange-600 hover:bg-orange-700 gap-2 rounded-full px-8 shadow-lg" onClick={() => setIsAddModalOpen(true)}>
-          <Plus className="h-4 w-4" />
-          Receive Stock
+          <Plus className="h-4 w-4" /> Receive Inbound
         </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Total Procurement" value={`৳${purchaseOrders?.reduce((s, i) => s + (i.totalAmount || 0), 0).toLocaleString()}`} icon={ShoppingBag} colorClass="bg-orange-500" />
-        <KPICard title="Suppliers" value={suppliers?.length || 0} icon={Truck} colorClass="bg-blue-500" />
-        <KPICard title="Recent Receipts" value={purchaseOrders?.filter(po => po.status === 'received').length || 0} icon={Package} colorClass="bg-green-500" />
-        <KPICard title="Monthly Spend" value={`৳${totalSpend.toLocaleString()}`} icon={DollarSign} colorClass="bg-purple-500" />
-      </div>
-
-      <div className="flex items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search PO #..." className="pl-9" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-        </div>
+        <KPICard title="Procurement" value={`৳${purchaseOrders?.reduce((s, i) => s + (i.totalAmount || 0), 0).toLocaleString()}`} icon={ShoppingBag} colorClass="bg-orange-500" />
+        <KPICard title="Vendors" value={suppliers?.length || 0} icon={Truck} colorClass="bg-blue-500" />
+        <KPICard title="Serials Intake" value={purchaseOrders?.reduce((sum, po) => sum + (po.items?.reduce((s: number, i: any) => s + (i.serials?.length || 0), 0) || 0), 0) || 0} icon={Scan} colorClass="bg-purple-500" />
+        <KPICard title="Inbound Events" value={purchaseOrders?.length || 0} icon={Package} colorClass="bg-green-500" />
       </div>
 
       {isLoading ? (
@@ -162,18 +182,18 @@ export default function PurchasesPage() {
                 <TableRow>
                   <TableHead>PO Number</TableHead>
                   <TableHead>Supplier</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Items Count</TableHead>
+                  <TableHead>Total Value</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {purchaseOrders?.map((po) => (
-                  <TableRow key={po.id}>
-                    <TableCell className="font-bold text-orange-700">{po.orderNumber}</TableCell>
-                    <TableCell>{suppliers?.find(s => s.id === po.supplierId)?.name || "Unknown"}</TableCell>
+                  <TableRow key={po.id} className="hover:bg-muted/20 transition-colors">
+                    <TableCell className="font-bold text-orange-700 uppercase">{po.orderNumber}</TableCell>
+                    <TableCell className="text-sm font-medium">{suppliers?.find(s => s.id === po.supplierId)?.name || "Unknown Vendor"}</TableCell>
+                    <TableCell className="text-xs">{po.items?.length || 0} SKU(s)</TableCell>
                     <TableCell className="font-bold">৳{po.totalAmount?.toLocaleString()}</TableCell>
-                    <TableCell><Badge className="bg-green-50 text-green-700 border-green-200">Received</Badge></TableCell>
                     <TableCell className="text-right"><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></TableCell>
                   </TableRow>
                 ))}
@@ -184,87 +204,75 @@ export default function PurchasesPage() {
       )}
 
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="max-w-4xl w-[95vw]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Calculator className="h-5 w-5 text-orange-600" />
-              Inventory Inbound Record
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 py-4">
-            <div className="lg:col-span-2 space-y-6">
+        <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Truck className="h-5 w-5 text-orange-600" /> Inbound Stock Record</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 py-4">
+            <div className="lg:col-span-8 space-y-6">
               <div className="space-y-2">
-                <Label>Supplier Selection</Label>
+                <Label className="text-xs uppercase font-bold text-muted-foreground">Supplier</Label>
                 <Select value={selectedSupplierId} onValueChange={setSelectedSupplierId}>
-                  <SelectTrigger><SelectValue placeholder="Select vendor" /></SelectTrigger>
-                  <SelectContent>
-                    {suppliers?.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                  </SelectContent>
+                  <SelectTrigger className="h-12 rounded-xl"><SelectValue placeholder="Identify Vendor..." /></SelectTrigger>
+                  <SelectContent>{suppliers?.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label className="font-bold">Items Received</Label>
+                <div className="flex items-center justify-between"><Label className="font-bold">Line Items</Label>
                   <Select onValueChange={handleAddLineItem}>
-                    <SelectTrigger className="w-[200px] bg-orange-50 border-orange-200">
-                      <SelectValue placeholder="Select product..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {products?.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                    </SelectContent>
+                    <SelectTrigger className="w-[250px] bg-orange-50 border-orange-200"><SelectValue placeholder="Search Product to Add..." /></SelectTrigger>
+                    <SelectContent>{products?.map(p => <SelectItem key={p.id} value={p.id}>{p.name} ({p.sku})</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
 
-                <div className="border rounded-xl">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="text-xs">Product</TableHead>
-                        <TableHead className="text-xs w-[80px]">Qty</TableHead>
-                        <TableHead className="text-xs">Unit Cost</TableHead>
-                        <TableHead className="text-xs text-right">Total</TableHead>
-                        <TableHead />
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {lineItems.map((item, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell className="text-xs">{item.name}</TableCell>
-                          <TableCell>
-                            <Input 
-                              type="number" 
-                              value={item.quantity} 
-                              className="h-8" 
-                              onChange={e => setLineItems(lineItems.map((li, i) => i === idx ? { ...li, quantity: Number(e.target.value), total: Number(e.target.value) * li.unitCost } : li))}
-                            />
-                          </TableCell>
-                          <TableCell className="text-xs">৳{item.unitCost}</TableCell>
-                          <TableCell className="text-right font-bold">৳{item.total.toLocaleString()}</TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="icon" onClick={() => setLineItems(lineItems.filter((_, i) => i !== idx))}><Trash2 className="h-4 w-4 text-red-500" /></Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                <div className="space-y-4">
+                  {lineItems.map((item, idx) => (
+                    <Card key={idx} className="p-4 border-dashed bg-muted/10">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <p className="font-bold text-sm">{item.name}</p>
+                          {item.requiresSerials && <Badge variant="outline" className="text-[9px] bg-purple-50 text-purple-700 border-purple-200 uppercase mt-1">Serialized Tracking</Badge>}
+                        </div>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => setLineItems(lineItems.filter((_, i) => i !== idx))}><Trash2 className="h-4 w-4" /></Button>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="space-y-1">
+                          <Label className="text-[10px] uppercase">Unit Cost</Label>
+                          <Input type="number" value={item.unitCost} className="h-8 text-xs" onChange={e => setLineItems(lineItems.map((li, i) => i === idx ? { ...li, unitCost: Number(e.target.value), total: Number(e.target.value) * li.quantity } : li))} />
+                        </div>
+                        <div className="sm:col-span-2 space-y-1">
+                          {item.requiresSerials ? (
+                            <div className="space-y-1">
+                              <Label className="text-[10px] uppercase text-purple-700">Paste / Scan Serials (One per line)</Label>
+                              <Textarea placeholder="SERIAL-001&#10;SERIAL-002" className="text-[10px] min-h-[60px]" onChange={e => handleUpdateSerials(idx, e.target.value)} />
+                              <p className="text-[9px] text-muted-foreground italic">Current count: {item.serials?.length || 0}</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-1">
+                              <Label className="text-[10px] uppercase">Quantity</Label>
+                              <Input type="number" value={item.quantity} className="h-8 text-xs" onChange={e => setLineItems(lineItems.map((li, i) => i === idx ? { ...li, quantity: Number(e.target.value), total: item.unitCost * Number(e.target.value) } : li))} />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
                 </div>
               </div>
             </div>
 
-            <div className="bg-orange-50/50 p-6 rounded-2xl border-2 border-orange-100 flex flex-col justify-between">
-              <div>
-                <h3 className="font-bold text-orange-800 uppercase text-xs mb-4">Total Purchase Value</h3>
-                <div className="text-3xl font-bold text-orange-700">৳{totalSpend.toLocaleString()}</div>
+            <div className="lg:col-span-4 bg-orange-50/50 p-6 rounded-2xl border-2 border-orange-100 flex flex-col justify-between h-fit sticky top-0">
+              <div className="space-y-6">
+                <div className="space-y-1">
+                  <p className="text-xs uppercase font-bold text-orange-800 tracking-wider">Total Purchase Value</p>
+                  <p className="text-4xl font-headline font-bold text-orange-700">৳{totalSpend.toLocaleString()}</p>
+                </div>
+                <div className="p-4 bg-white/80 rounded-xl border border-orange-200 text-[10px] leading-relaxed text-orange-900 italic">
+                  Completing this receipt will instantly update warehouse stock levels and register all provided serial numbers as "Available".
+                </div>
               </div>
-              <Button 
-                className="w-full bg-orange-600 hover:bg-orange-700 h-12 font-bold gap-2"
-                onClick={handleSubmitPO}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <Truck className="h-5 w-5" />}
-                Confirm Receipt
+              <Button className="w-full bg-orange-600 hover:bg-orange-700 h-14 rounded-xl mt-8 font-bold text-lg gap-3 shadow-xl shadow-orange-200" onClick={handleSubmitPO} disabled={isSubmitting || lineItems.length === 0}>
+                {isSubmitting ? <Loader2 className="animate-spin" /> : <Calculator className="h-6 w-6" />} Confirm Receipt
               </Button>
             </div>
           </div>
