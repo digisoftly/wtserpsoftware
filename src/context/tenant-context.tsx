@@ -16,6 +16,7 @@ interface Role {
 interface TenantContextType {
   companyId: string | null;
   branchId: string | null;
+  setBranchId: (id: string) => void;
   userRole: Role | null;
   language: Language;
   setLanguage: (lang: Language) => void;
@@ -25,6 +26,7 @@ interface TenantContextType {
 const TenantContext = React.createContext<TenantContextType>({
   companyId: null,
   branchId: null,
+  setBranchId: () => {},
   userRole: null,
   language: 'EN',
   setLanguage: () => {},
@@ -37,10 +39,10 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const [isInitializing, setIsInitializing] = React.useState(true);
   const [userRole, setUserRole] = React.useState<Role | null>(null);
   const [language, setLanguage] = React.useState<Language>('EN');
+  const [branchId, setBranchId] = React.useState<string | null>(null);
 
-  // Mock IDs for the prototype environment
+  // Mock ID for the prototype environment
   const companyId = "warrior-demo-corp";
-  const branchId = "dhaka-main";
 
   React.useEffect(() => {
     if (isUserLoading) return;
@@ -58,12 +60,13 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           });
           
           let roleId = "super-admin";
+          let activeBranchId = "dhaka-main";
 
           if (!userSnap.exists()) {
             const userData = {
               id: user.uid,
               companyId,
-              branchId,
+              branchId: "dhaka-main",
               firstName: "Guest",
               lastName: "Admin",
               email: user.email || "guest@warrior.com",
@@ -83,10 +86,13 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           } else {
             const data = userSnap.data();
             roleId = data.roleId || "super-admin";
+            activeBranchId = data.branchId || "dhaka-main";
             if (data.preferredLanguage) {
               setLanguage(data.preferredLanguage as Language);
             }
           }
+
+          setBranchId(activeBranchId);
 
           const roleRef = doc(db, "companies", companyId, "roles", roleId);
           const roleSnap = await getDoc(roleRef).catch(async (err) => {
@@ -126,14 +132,21 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     };
 
     initTenant();
-  }, [user, isUserLoading, db, companyId, branchId]);
+  }, [user, isUserLoading, db, companyId]);
 
   const handleSetLanguage = (lang: Language) => {
     setLanguage(lang);
-    // Optionally persist to Firestore user profile
     if (user && db) {
       const userRef = doc(db, "companies", companyId, "users", user.uid);
       setDoc(userRef, { preferredLanguage: lang }, { merge: true });
+    }
+  };
+
+  const handleSetBranch = (id: string) => {
+    setBranchId(id);
+    if (user && db) {
+      const userRef = doc(db, "companies", companyId, "users", user.uid);
+      setDoc(userRef, { branchId: id }, { merge: true });
     }
   };
 
@@ -141,6 +154,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     <TenantContext.Provider value={{ 
       companyId, 
       branchId, 
+      setBranchId: handleSetBranch,
       userRole,
       language,
       setLanguage: handleSetLanguage,

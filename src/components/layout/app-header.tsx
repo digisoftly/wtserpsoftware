@@ -12,7 +12,8 @@ import {
   LogOut,
   ChevronDown,
   Building,
-  UserPlus
+  UserPlus,
+  Loader2
 } from "lucide-react"
 
 import {
@@ -28,13 +29,13 @@ import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
 import { Badge } from "@/components/ui/badge"
-import { useAuth, useUser, useFirestore } from "@/firebase"
+import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { signOut } from "firebase/auth"
 import { useRouter } from "next/navigation"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { useTenant } from "@/context/tenant-context"
-import { collection, serverTimestamp } from "firebase/firestore"
+import { collection, serverTimestamp, query, orderBy } from "firebase/firestore"
 import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { toast } from "@/hooks/use-toast"
 
@@ -43,9 +44,16 @@ export function AppHeader() {
   const { user } = useUser()
   const auth = useAuth()
   const db = useFirestore()
-  const { companyId, branchId, language, setLanguage } = useTenant()
+  const { companyId, branchId, setBranchId, language, setLanguage, userRole } = useTenant()
   const router = useRouter()
   const [isQuickEntryOpen, setIsQuickEntryOpen] = React.useState(false)
+
+  // Fetch branches for the switcher
+  const branchesQuery = useMemoFirebase(() => {
+    if (!db || !companyId) return null;
+    return query(collection(db, "companies", companyId, "branches"), orderBy("name"));
+  }, [db, companyId]);
+  const { data: branches, isLoading: branchesLoading } = useCollection(branchesQuery);
 
   const handleLogout = async () => {
     await signOut(auth)
@@ -75,6 +83,8 @@ export function AppHeader() {
     toast({ title: "Customer Added", description: "The manual entry has been saved to your directory." });
   };
 
+  const activeBranch = branches?.find(b => b.id === branchId) || { name: branchId?.replace('-', ' ') || 'Select Branch' };
+
   return (
     <header className="h-16 border-b bg-white flex items-center justify-between px-4 md:px-6 sticky top-0 z-40 shadow-sm">
       <div className="flex items-center gap-4 flex-1">
@@ -99,26 +109,45 @@ export function AppHeader() {
           <span>{language === 'BN' ? "কুইক এন্ট্রি" : "Quick Entry"}</span>
         </Button>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="hidden lg:flex gap-2 rounded-full border-primary/20 hover:bg-primary/5">
-              <Building className="h-4 w-4 text-primary" />
-              <span>{branchId === 'dhaka-main' ? 'Dhaka Branch' : branchId}</span>
-              <ChevronDown className="h-3 w-3 text-muted-foreground" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuLabel>Switch Branch</DropdownMenuLabel>
-            <DropdownMenuItem className="bg-primary/5">Dhaka Main</DropdownMenuItem>
-            <DropdownMenuItem>Chittagong Branch</DropdownMenuItem>
-            <DropdownMenuItem>Sylhet Center</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {userRole?.isSuperAdmin && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="hidden lg:flex gap-2 rounded-full border-primary/20 hover:bg-primary/5 h-10 px-4">
+                <Building className="h-4 w-4 text-primary" />
+                <span className="font-semibold text-xs">{activeBranch.name}</span>
+                <ChevronDown className="h-3 w-3 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Switch Branch</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {branchesLoading ? (
+                <div className="flex justify-center p-2"><Loader2 className="h-4 w-4 animate-spin" /></div>
+              ) : branches && branches.length > 0 ? (
+                branches.map(b => (
+                  <DropdownMenuItem 
+                    key={b.id} 
+                    onClick={() => setBranchId(b.id)}
+                    className={b.id === branchId ? "bg-primary/5 font-bold" : ""}
+                  >
+                    {b.name}
+                  </DropdownMenuItem>
+                ))
+              ) : (
+                <DropdownMenuItem disabled>No other branches</DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => router.push('/branches')} className="text-primary font-bold">
+                <Settings className="mr-2 h-4 w-4" /> Manage Locations
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
 
         <Button 
           variant="ghost" 
           size="icon" 
-          className="rounded-full"
+          className="rounded-full h-10 w-10"
           onClick={() => setLanguage(language === 'EN' ? 'BN' : 'EN')}
         >
           <Languages className="h-5 w-5 text-muted-foreground" />
@@ -128,7 +157,7 @@ export function AppHeader() {
           </Badge>
         </Button>
 
-        <Button variant="ghost" size="icon" className="rounded-full relative">
+        <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 relative">
           <Bell className="h-5 w-5 text-muted-foreground" />
           <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
         </Button>
@@ -141,8 +170,8 @@ export function AppHeader() {
                 <AvatarFallback>{user?.email?.[0].toUpperCase() || "AD"}</AvatarFallback>
               </Avatar>
               <div className="hidden lg:flex flex-col items-start text-left leading-none">
-                <span className="text-sm font-semibold">Admin User</span>
-                <span className="text-[10px] text-muted-foreground uppercase">Super Admin</span>
+                <span className="text-sm font-semibold">{user?.email?.split('@')[0] || 'Admin'}</span>
+                <span className="text-[10px] text-muted-foreground uppercase">{userRole?.name || 'User'}</span>
               </div>
               <ChevronDown className="h-4 w-4 text-muted-foreground hidden lg:block" />
             </Button>

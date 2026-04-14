@@ -76,7 +76,7 @@ service cloud.firestore {
       allow update: if isCompanyMember(companyId) || isSuperAdmin();
 
       // SYSTEM CONFIG
-      match /system/config {
+      match /system/{allPaths=**} {
         allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
       }
 
@@ -86,9 +86,30 @@ service cloud.firestore {
       }
 
       match /branches/{branchId} {
-        allow get, list: if isCompanyMember(companyId) || isSuperAdmin();
-        allow create: if (isSuperAdmin() || companyId == "warrior-demo-corp") && matchesTenant(companyId);
-        allow update, delete: if (isSuperAdmin() || companyId == "warrior-demo-corp") && isExistingDoc();
+        allow read: if isCompanyMember(companyId) || isSuperAdmin();
+        allow write: if isSuperAdmin() || (companyId == "warrior-demo-corp" && matchesTenant(companyId));
+
+        match /{collection}/{docId} {
+          allow get, list: if isCompanyMember(companyId) || isSuperAdmin();
+          allow create: if (isCompanyMember(companyId) || isSuperAdmin()) 
+                        && (companyId == "warrior-demo-corp" || matchesBranch(companyId, branchId));
+          allow update: if (isCompanyMember(companyId) || isSuperAdmin()) 
+                        && isExistingDoc() 
+                        && (companyId == "warrior-demo-corp" || request.resource.data.companyId == resource.data.companyId);
+          allow delete: if (isCompanyMember(companyId) || isSuperAdmin()) 
+                        && isExistingDoc();
+
+          match /{subCollection}/{subDocId} {
+            allow get, list: if isCompanyMember(companyId) || isSuperAdmin();
+            allow create: if (isCompanyMember(companyId) || isSuperAdmin()) 
+                          && (companyId == "warrior-demo-corp" || matchesBranch(companyId, branchId));
+            allow update: if (isCompanyMember(companyId) || isSuperAdmin()) 
+                          && isExistingDoc() 
+                          && (companyId == "warrior-demo-corp" || request.resource.data.companyId == resource.data.companyId);
+            allow delete: if (isCompanyMember(companyId) || isSuperAdmin()) 
+                          && isExistingDoc();
+          }
+        }
       }
 
       match /users/{userId} {
@@ -103,36 +124,6 @@ service cloud.firestore {
         allow get, list: if isCompanyMember(companyId) || isSuperAdmin();
         allow create: if isSignedIn() && matchesTenant(companyId);
         allow update, delete: if false; 
-      }
-    }
-
-    // --- OPERATIONAL DATA RULES (BRANCH SCOPED) ---
-
-    match /companies/{companyId}/branches/{branchId}/{collection}/{docId} {
-      allow get, list: if isCompanyMember(companyId) || isSuperAdmin();
-      
-      allow create: if (isCompanyMember(companyId) || isSuperAdmin()) 
-                    && (companyId == "warrior-demo-corp" || matchesBranch(companyId, branchId));
-      
-      allow update: if (isCompanyMember(companyId) || isSuperAdmin()) 
-                    && isExistingDoc() 
-                    && (companyId == "warrior-demo-corp" || request.resource.data.companyId == resource.data.companyId);
-      
-      allow delete: if (isCompanyMember(companyId) || isSuperAdmin()) 
-                    && isExistingDoc();
-
-      match /{subCollection}/{subDocId} {
-        allow get, list: if isCompanyMember(companyId) || isSuperAdmin();
-        
-        allow create: if (isCompanyMember(companyId) || isSuperAdmin()) 
-                      && (companyId == "warrior-demo-corp" || matchesBranch(companyId, branchId));
-        
-        allow update: if (isCompanyMember(companyId) || isSuperAdmin()) 
-                      && isExistingDoc() 
-                      && (companyId == "warrior-demo-corp" || request.resource.data.companyId == resource.data.companyId);
-        
-        allow delete: if (isCompanyMember(companyId) || isSuperAdmin()) 
-                      && isExistingDoc();
       }
     }
 

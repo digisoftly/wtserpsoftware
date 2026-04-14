@@ -25,7 +25,8 @@ import {
   LogOut,
   Target,
   LifeBuoy,
-  Receipt
+  Receipt,
+  Building2
 } from "lucide-react"
 
 import {
@@ -63,6 +64,7 @@ const modules = [
   { name: "Expenses", key: "expenses", icon: Receipt, color: "text-red-400", path: "/expenses" },
   { name: "Support", key: "support", icon: LifeBuoy, color: "text-indigo-500", path: "/support" },
   { name: "HRM", key: "hrm", icon: UserRoundCog, color: "text-purple-500", path: "/hrm" },
+  { name: "Branches", key: "branches", icon: Building2, color: "text-blue-600", path: "/branches" },
   { name: "Reports", key: "reports", icon: BarChart3, color: "text-indigo-400", path: "/reports" },
   { name: "AI Forecasting", key: "ai-forecasting", icon: TrendingUp, color: "text-violet-500", path: "/ai-forecasting" },
   { name: "Backup", key: "backup", icon: Database, color: "text-gray-500", path: "/backup" },

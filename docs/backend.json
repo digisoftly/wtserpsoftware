@@ -14,6 +14,22 @@
       },
       "required": ["id", "name", "currencyCode", "isActive", "createdAt"]
     },
+    "Branch": {
+      "title": "Branch",
+      "type": "object",
+      "description": "Represents a physical location or warehouse.",
+      "properties": {
+        "id": { "type": "string" },
+        "companyId": { "type": "string" },
+        "name": { "type": "string" },
+        "code": { "type": "string" },
+        "address": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "managerId": { "type": "string" },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["id", "companyId", "name", "code"]
+    },
     "Product": {
       "title": "Product",
       "type": "object",
@@ -78,6 +94,14 @@
   },
   "firestore": {
     "structure": [
+      {
+        "path": "/companies/{companyId}/branches/{branchId}",
+        "definition": {
+          "entityName": "Branch",
+          "schema": { "$ref": "#/backend/entities/Branch" },
+          "description": "Branch details."
+        }
+      },
       {
         "path": "/companies/{companyId}/branches/{branchId}/products/{productId}",
         "definition": {
