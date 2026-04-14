@@ -1,35 +1,172 @@
 "use client"
 
 import * as React from "react"
+import { Plus, FileText, Search, Loader2, MoreVertical } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Plus, FileText, Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { Card } from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
+import { collection, serverTimestamp, query, orderBy } from "firebase/firestore"
+import { useTenant } from "@/context/tenant-context"
+import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
+import { cn } from "@/lib/utils"
 
 export default function QuotationsPage() {
+  const { companyId, branchId } = useTenant();
+  const db = useFirestore();
+  const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState("");
+
+  const quotationsQuery = useMemoFirebase(() => {
+    if (!db || !companyId || !branchId) return null;
+    return query(
+      collection(db, "companies", companyId, "branches", branchId, "quotations"),
+      orderBy("createdAt", "desc")
+    );
+  }, [db, companyId, branchId]);
+
+  const { data: quotations, isLoading } = useCollection(quotationsQuery);
+
+  const customersQuery = useMemoFirebase(() => {
+    if (!db || !companyId || !branchId) return null;
+    return collection(db, "companies", companyId, "branches", branchId, "customers");
+  }, [db, companyId, branchId]);
+  const { data: customers } = useCollection(customersQuery);
+
+  const handleAddQuotation = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    
+    if (!quotationsQuery || !companyId || !branchId) return;
+
+    const quotationData = {
+      companyId,
+      branchId,
+      quotationNumber: `QT-${Date.now().toString().slice(-6)}`,
+      customerId: formData.get("customerId") as string,
+      quotationDate: new Date().toISOString(),
+      validUntilDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
+      totalAmount: Number(formData.get("amount")),
+      status: "draft",
+      createdByUserId: "current-user",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    addDocumentNonBlocking(quotationsQuery, quotationData);
+    setIsAddModalOpen(false);
+  };
+
+  const filteredQuotations = quotations?.filter(q => 
+    q.quotationNumber?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline">Quotations</h1>
+          <h1 className="text-3xl font-bold font-headline text-purple-600">Quotations</h1>
           <p className="text-muted-foreground mt-1">Generate and manage price quotes for clients</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button className="bg-primary hover:bg-primary/90 gap-2">
-            <Plus className="h-4 w-4" />
-            New Quotation
-          </Button>
+        <Button className="bg-purple-600 hover:bg-purple-700 gap-2 rounded-full" onClick={() => setIsAddModalOpen(true)}>
+          <Plus className="h-4 w-4" />
+          New Quotation
+        </Button>
+      </div>
+
+      <div className="flex items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input 
+            placeholder="Search quotation #..." 
+            className="pl-9" 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
       </div>
 
-      <div className="p-12 bg-white rounded-xl border border-dashed flex flex-col items-center justify-center text-center">
-        <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mb-4 text-purple-500">
-          <FileText className="h-8 w-8" />
+      {isLoading ? (
+        <div className="flex justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
         </div>
-        <h2 className="text-xl font-headline font-bold">No Active Quotations</h2>
-        <p className="text-muted-foreground max-w-sm mt-2">
-          Create professional quotes to send to your potential leads and customers.
-        </p>
-      </div>
+      ) : quotations && quotations.length > 0 ? (
+        <Card className="border-none shadow-sm rounded-xl overflow-hidden">
+          <Table>
+            <TableHeader className="bg-muted/50">
+              <TableRow>
+                <TableHead>Quote #</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredQuotations?.map((q) => {
+                const customer = customers?.find(c => c.id === q.customerId);
+                return (
+                  <TableRow key={q.id} className="hover:bg-muted/30 transition-colors">
+                    <TableCell className="font-bold">{q.quotationNumber}</TableCell>
+                    <TableCell>{customer ? `${customer.firstName} ${customer.lastName}` : "Unknown"}</TableCell>
+                    <TableCell className="text-xs">{new Date(q.quotationDate).toLocaleDateString()}</TableCell>
+                    <TableCell className="font-semibold">${q.totalAmount?.toLocaleString()}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className="bg-purple-50 text-purple-700">{q.status}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </Card>
+      ) : (
+        <div className="p-12 bg-white rounded-xl border border-dashed flex flex-col items-center justify-center text-center">
+          <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mb-4 text-purple-500">
+            <FileText className="h-8 w-8" />
+          </div>
+          <h2 className="text-xl font-headline font-bold">No Active Quotations</h2>
+          <p className="text-muted-foreground max-w-sm mt-2">
+            Create professional quotes to send to your potential leads and customers.
+          </p>
+          <Button className="mt-6 bg-purple-600" onClick={() => setIsAddModalOpen(true)}>Create First Quotation</Button>
+        </div>
+      )}
+
+      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>New Price Quotation</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAddQuotation} className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label>Select Customer</Label>
+              <Select name="customerId" required>
+                <SelectTrigger><SelectValue placeholder="Choose client" /></SelectTrigger>
+                <SelectContent>
+                  {customers?.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.firstName} {c.lastName}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Estimated Total Amount ($)</Label>
+              <Input name="amount" type="number" step="0.01" required placeholder="0.00" />
+            </div>
+            <Button type="submit" className="w-full bg-purple-600">Save Draft Quote</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
