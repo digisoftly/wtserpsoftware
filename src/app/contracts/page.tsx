@@ -65,30 +65,32 @@ export default function ContractsPage() {
   // Sync state when editing or opening
   React.useEffect(() => {
     if (selectedRecord) {
-      setFormTotalAmount(selectedRecord.totalAmount || 0);
-      setFormDuration(selectedRecord.durationMonths || 12);
-      setFormMonthlyAmount(selectedRecord.monthlyAmount || 0);
+      setFormTotalAmount(Number(selectedRecord.totalAmount) || 0);
+      setFormDuration(Number(selectedRecord.durationMonths) || 12);
+      setFormMonthlyAmount(Number(selectedRecord.monthlyAmount) || 0);
     } else {
       setFormTotalAmount(0);
       setFormDuration(12);
       setFormMonthlyAmount(0);
     }
-  }, [selectedRecord]);
+  }, [selectedRecord, isEditModalOpen, isAddModalOpen]);
 
   const handleTotalChange = (val: number) => {
-    setFormTotalAmount(val);
+    const amount = Number(val);
+    setFormTotalAmount(amount);
     if (formDuration > 0) {
-      setFormMonthlyAmount(Number((val / formDuration).toFixed(2)));
+      setFormMonthlyAmount(Number((amount / formDuration).toFixed(2)));
     }
   };
 
   const handleMonthlyChange = (val: number) => {
-    setFormMonthlyAmount(val);
-    setFormTotalAmount(Number((val * formDuration).toFixed(2)));
+    const amount = Number(val);
+    setFormMonthlyAmount(amount);
+    setFormTotalAmount(Number((amount * formDuration).toFixed(2)));
   };
 
   const handleDurationChange = (val: number) => {
-    const duration = Math.max(1, val);
+    const duration = Math.max(1, Number(val));
     setFormDuration(duration);
     setFormTotalAmount(Number((formMonthlyAmount * duration).toFixed(2)));
   };
@@ -162,10 +164,10 @@ export default function ContractsPage() {
           customerId: finalCustomerId,
           serviceType: formData.get("serviceType") as string,
           serviceName: formData.get("serviceName") as string,
-          totalAmount: formTotalAmount,
-          durationMonths: formDuration,
+          totalAmount: Number(formTotalAmount),
+          durationMonths: Number(formDuration),
           paymentType,
-          monthlyAmount: formMonthlyAmount,
+          monthlyAmount: Number(formMonthlyAmount),
           startDate: formData.get("startDate") as string,
           endDate: formData.get("endDate") as string,
           status: "active",
@@ -184,7 +186,7 @@ export default function ContractsPage() {
             branchId,
             contractId: contractRef.id,
             customerId: finalCustomerId,
-            amount: formTotalAmount,
+            amount: Number(formTotalAmount),
             paymentDate: new Date().toISOString(),
             notes: "Full advance payment for contract",
             createdAt: serverTimestamp(),
@@ -194,7 +196,7 @@ export default function ContractsPage() {
 
       toast({ title: "Contract Active", description: "Service agreement has been registered successfully." });
       setIsAddModalOpen(false);
-      setCustomerType("select");
+      resetForm();
     } catch (err: any) {
       toast({ variant: "destructive", title: "Registration Failed", description: err.message });
     } finally {
@@ -213,10 +215,10 @@ export default function ContractsPage() {
       await updateDoc(docRef, {
         serviceType: formData.get("serviceType"),
         serviceName: formData.get("serviceName"),
-        totalAmount: formTotalAmount,
-        durationMonths: formDuration,
+        totalAmount: Number(formTotalAmount),
+        durationMonths: Number(formDuration),
         paymentType: formData.get("paymentType"),
-        monthlyAmount: formMonthlyAmount,
+        monthlyAmount: Number(formMonthlyAmount),
         startDate: formData.get("startDate"),
         endDate: formData.get("endDate"),
         updatedAt: serverTimestamp()
@@ -267,7 +269,7 @@ export default function ContractsPage() {
             contractId: contract.id,
             customerId: contract.customerId,
             invoiceNumber: `INV-${contract.contractNumber.split('-')[1]}-${currentMonth.replace('-', '')}`,
-            amount: contract.monthlyAmount,
+            amount: Number(contract.monthlyAmount),
             paidAmount: 0,
             billingMonth: currentMonth,
             status: "unpaid",
@@ -294,13 +296,18 @@ export default function ContractsPage() {
       const payAmount = Number(formData.get("amount"));
       await runTransaction(db, async (transaction) => {
         const invRef = doc(db, "companies", companyId, "branches", branchId, "contract_invoices", selectedInvoice.id);
+        const invSnap = await transaction.get(invRef);
+        
+        if (!invSnap.exists()) throw new Error("Invoice record lost.");
+        const invData = invSnap.data();
+
         const paymentRef = doc(collection(db, "companies", companyId, "branches", branchId, "contract_payments"));
 
-        const newPaidTotal = (selectedInvoice.paidAmount || 0) + payAmount;
-        const status = newPaidTotal >= selectedInvoice.amount ? "paid" : "partial";
+        const newPaidTotal = (Number(invData.paidAmount) || 0) + payAmount;
+        const status = newPaidTotal >= Number(invData.amount) ? "paid" : "partial";
 
         transaction.update(invRef, {
-          paidAmount: increment(payAmount),
+          paidAmount: newPaidTotal,
           status,
           updatedAt: serverTimestamp()
         });
@@ -310,14 +317,14 @@ export default function ContractsPage() {
           companyId,
           branchId,
           invoiceId: selectedInvoice.id,
-          contractId: selectedInvoice.contractId,
+          contractId: invData.contractId,
           amount: payAmount,
           paymentDate: new Date().toISOString(),
           createdAt: serverTimestamp(),
         });
       });
 
-      toast({ title: "Payment Recorded", description: `৳${payAmount.toLocaleString()} added to invoice.` });
+      toast({ title: "Payment Recorded", description: `৳${payAmount.toLocaleString()} settled.` });
       setIsPayModalOpen(false);
       setSelectedInvoice(null);
     } catch (err: any) {
@@ -369,8 +376,8 @@ export default function ContractsPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard title="Active Subs" value={contracts?.filter(c => c.status === 'active').length || 0} icon={ShieldCheck} colorClass="bg-emerald-500" />
-        <KPICard title="Contract Value" value={`৳${contracts?.reduce((s, c) => s + (c.totalAmount || 0), 0).toLocaleString()}`} icon={TrendingUp} colorClass="bg-blue-500" />
-        <KPICard title="Outstanding Due" value={`৳${invoices?.reduce((s, i) => s + ((i.amount || 0) - (i.paidAmount || 0)), 0).toLocaleString()}`} icon={AlertCircle} colorClass="bg-red-500" />
+        <KPICard title="Contract Value" value={`৳${contracts?.reduce((s, c) => s + (Number(c.totalAmount) || 0), 0).toLocaleString()}`} icon={TrendingUp} colorClass="bg-blue-500" />
+        <KPICard title="Outstanding Due" value={`৳${invoices?.reduce((s, i) => s + ((Number(i.amount) || 0) - (Number(i.paidAmount) || 0)), 0).toLocaleString()}`} icon={AlertCircle} colorClass="bg-red-500" />
         <KPICard title="Billing Cycle" value="Monthly" icon={Calendar} colorClass="bg-purple-500" />
       </div>
 
@@ -421,7 +428,7 @@ export default function ContractsPage() {
                         <TableCell className="text-[10px] text-muted-foreground">
                           {new Date(c.startDate).toLocaleDateString()} - {new Date(c.endDate).toLocaleDateString()}
                         </TableCell>
-                        <TableCell className="text-right font-bold">৳{c.totalAmount?.toLocaleString()}</TableCell>
+                        <TableCell className="text-right font-bold">৳{Number(c.totalAmount || 0).toLocaleString()}</TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -488,8 +495,8 @@ export default function ContractsPage() {
                           {customers?.find(c => c.id === inv.customerId)?.firstName || "Client"}
                         </TableCell>
                         <TableCell className="text-xs font-medium">{inv.billingMonth}</TableCell>
-                        <TableCell className="font-bold text-xs">৳{inv.amount?.toLocaleString()}</TableCell>
-                        <TableCell className="text-xs text-green-600">৳{inv.paidAmount?.toLocaleString()}</TableCell>
+                        <TableCell className="font-bold text-xs">৳{Number(inv.amount || 0).toLocaleString()}</TableCell>
+                        <TableCell className="text-xs text-green-600">৳{Number(inv.paidAmount || 0).toLocaleString()}</TableCell>
                         <TableCell>
                           <Badge className={cn("text-[9px] uppercase px-2", 
                             inv.status === 'paid' ? "bg-green-50 text-green-700 border-green-200" : 
@@ -661,7 +668,7 @@ export default function ContractsPage() {
                 </div>
               </div>
               <div className="flex gap-3 w-full md:w-auto">
-                <Button type="button" variant="outline" className="flex-1 md:flex-none rounded-full px-8 h-12" onClick={() => { setIsAddModalOpen(false); setIsEditModalOpen(false); }}>Cancel</Button>
+                <Button type="button" variant="outline" className="flex-1 md:flex-none rounded-full px-8 h-12" onClick={() => { setIsAddModalOpen(false); setIsEditModalOpen(false); resetForm(); }}>Cancel</Button>
                 <Button type="submit" className={cn("flex-1 md:flex-none rounded-full px-12 h-12 font-bold shadow-lg gap-2", isEditModalOpen ? "bg-blue-600 hover:bg-blue-700 shadow-blue-100" : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100")} disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
                   {isEditModalOpen ? "Save Changes" : "Activate Contract"}
@@ -673,7 +680,7 @@ export default function ContractsPage() {
       </Dialog>
 
       {/* RECORD PAYMENT MODAL */}
-      <Dialog open={isPayModalOpen} onOpenChange={setIsPayModalOpen}>
+      <Dialog open={isPayModalOpen} onOpenChange={(open) => { if(!open) { setIsPayModalOpen(false); setSelectedInvoice(null); } }}>
         <DialogContent className="sm:max-w-md w-[95vw]">
           <DialogHeader><DialogTitle className="font-headline">Settle Recurring Bill</DialogTitle></DialogHeader>
           <form onSubmit={handleRecordPayment} className="space-y-4 pt-4">
@@ -682,11 +689,11 @@ export default function ContractsPage() {
               <p className="text-lg font-headline font-bold">{selectedInvoice?.billingMonth}</p>
               <div className="flex justify-between text-xs mt-3 pt-3 border-t border-dashed">
                 <span>Monthly Due:</span>
-                <span className="font-bold">৳{selectedInvoice?.amount.toLocaleString()}</span>
+                <span className="font-bold">৳{Number(selectedInvoice?.amount || 0).toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-xs text-red-600 font-medium">
                 <span>Remaining Balance:</span>
-                <span className="font-bold">৳{(selectedInvoice?.amount || 0) - (selectedInvoice?.paidAmount || 0)}</span>
+                <span className="font-bold">৳{(Number(selectedInvoice?.amount || 0) - (Number(selectedInvoice?.paidAmount) || 0)).toLocaleString()}</span>
               </div>
             </div>
             
@@ -697,8 +704,8 @@ export default function ContractsPage() {
                 type="number" 
                 step="0.01" 
                 required 
-                max={(selectedInvoice?.amount || 0) - (selectedInvoice?.paidAmount || 0)}
-                defaultValue={(selectedInvoice?.amount || 0) - (selectedInvoice?.paidAmount || 0)}
+                max={Number(selectedInvoice?.amount || 0) - (Number(selectedInvoice?.paidAmount) || 0)}
+                defaultValue={Number(selectedInvoice?.amount || 0) - (Number(selectedInvoice?.paidAmount) || 0)}
                 className="h-12 text-xl font-bold text-emerald-600 border-emerald-100 rounded-xl shadow-sm" 
               />
             </div>
