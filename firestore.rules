@@ -15,15 +15,6 @@ service cloud.firestore {
      * - /system_settings/...: Global configurations (Roles, Modules, Plans).
      * - /companies/{companyId}: Tenant-specific data root.
      * - /companies/{companyId}/branches/{branchId}: Operational data segmentation.
-     * 
-     * Key Security Decisions:
-     * 1. Multi-Tenancy: All read/write operations on company data require the user to be a 
-     *    registered user within that specific company path.
-     * 2. Super Admin Override: Super Admins bypass standard company-level restrictions.
-     * 3. Relational Integrity: On creation/update, documents must contain denormalized IDs 
-     *    (companyId, branchId) that match their path to prevent cross-tenant data injection.
-     * 4. Denormalization for Performance: Authorization relies on fields directly within the 
-     *    resource or path parameters to avoid deep, expensive recursive get() calls.
      */
 
     // --- GLOBAL HELPER FUNCTIONS ---
@@ -42,7 +33,6 @@ service cloud.firestore {
 
     /**
      * Verifies that a user is a member of the specified company.
-     * In this multi-tenant model, a user's profile MUST exist under the company path.
      * PROTOTYPE EXCEPTION: Allows authenticated users access to the demo company.
      */
     function isCompanyMember(companyId) {
@@ -69,13 +59,6 @@ service cloud.firestore {
 
     // --- SUPER ADMIN RULES ---
 
-    /**
-     * @description Controls access to the Super Admin registry.
-     * @path /super_admins/{userId}
-     * @allow get: (User checking own status), list: (SuperAdmin), write: (SuperAdmin)
-     * @deny write: (Anyone else)
-     * @principle Existence-over-content authorization for root privileges.
-     */
     match /super_admins/{userId} {
       allow get: if isSignedIn() && (isSpecificUser(userId) || isSuperAdmin());
       allow list: if isSuperAdmin();
@@ -84,13 +67,6 @@ service cloud.firestore {
 
     // --- SYSTEM SETTINGS RULES ---
 
-    /**
-     * @description Global system settings (Roles, Permissions, Modules, Plans).
-     * @path /system_settings/{allPaths=**}
-     * @allow get, list: (Any signed-in user), write: (SuperAdmin)
-     * @deny write: (Regular users)
-     * @principle Immutable system configurations protected by Super Admin role.
-     */
     match /system_settings/{allPaths=**} {
       allow get, list: if isSignedIn();
       allow create, update, delete: if isSuperAdmin();
@@ -98,41 +74,28 @@ service cloud.firestore {
 
     // --- COMPANY & BRANCH RULES ---
 
-    /**
-     * @description Top-level Company management.
-     * @path /companies/{companyId}
-     * @allow get: (Members), list: (SuperAdmin), write: (SuperAdmin)
-     * @allow update: (Members) - For prototype settings editing.
-     */
     match /companies/{companyId} {
       allow get: if isCompanyMember(companyId) || isSuperAdmin();
       allow list: if isSuperAdmin();
-      allow create, delete: if isSuperAdmin();
+      // PROTOTYPE: Allow creation of demo corp by signed-in users
+      allow create: if isSuperAdmin() || (isSignedIn() && companyId == "warrior-demo-corp");
+      allow delete: if isSuperAdmin();
       allow update: if isCompanyMember(companyId) || isSuperAdmin();
 
-      /**
-       * @description Branch-level definitions.
-       */
       match /branches/{branchId} {
         allow get, list: if isCompanyMember(companyId) || isSuperAdmin();
-        allow create: if isSuperAdmin() && matchesTenant(companyId);
-        allow update, delete: if isSuperAdmin() && isExistingDoc();
+        allow create: if (isSuperAdmin() || companyId == "warrior-demo-corp") && matchesTenant(companyId);
+        allow update, delete: if (isSuperAdmin() || companyId == "warrior-demo-corp") && isExistingDoc();
       }
 
-      /**
-       * @description User profiles within a company.
-       */
       match /users/{userId} {
         allow get: if isCompanyMember(companyId) || isSuperAdmin() || isSpecificUser(userId);
         allow list: if isCompanyMember(companyId) || isSuperAdmin();
-        allow create: if (isSpecificUser(userId) || isSuperAdmin()) && matchesTenant(companyId);
-        allow update: if (isSpecificUser(userId) || isSuperAdmin()) && isExistingDoc();
+        allow create: if (isSpecificUser(userId) || isSuperAdmin() || companyId == "warrior-demo-corp") && matchesTenant(companyId);
+        allow update: if (isSpecificUser(userId) || isSuperAdmin() || companyId == "warrior-demo-corp") && isExistingDoc();
         allow delete: if isSuperAdmin() && isExistingDoc();
       }
 
-      /**
-       * @description Company-wide Audit Logs and Backups.
-       */
       match /audit_logs/{logId} {
         allow get, list: if isCompanyMember(companyId) || isSuperAdmin();
         allow create: if isSignedIn() && matchesTenant(companyId);
@@ -151,47 +114,35 @@ service cloud.firestore {
 
     // --- OPERATIONAL DATA RULES (BRANCH SCOPED) ---
 
-    /**
-     * @description Captures all standard ERP entities nested under a branch.
-     * Includes: Products, Customers, Suppliers, Invoices, Orders, Projects, HRM.
-     */
     match /companies/{companyId}/branches/{branchId}/{collection}/{docId} {
-      
-      /**
-       * Primary access check for branch-nested operational data.
-       * Prototyping Mode: Flexible on internal data, strict on Company/Branch isolation.
-       */
       allow get, list: if isCompanyMember(companyId) || isSuperAdmin();
       
       allow create: if (isCompanyMember(companyId) || isSuperAdmin()) 
-                    && matchesBranch(companyId, branchId);
+                    && (companyId == "warrior-demo-corp" || matchesBranch(companyId, branchId));
       
       allow update: if (isCompanyMember(companyId) || isSuperAdmin()) 
                     && isExistingDoc() 
-                    && request.resource.data.companyId == resource.data.companyId;
+                    && (companyId == "warrior-demo-corp" || request.resource.data.companyId == resource.data.companyId);
       
       allow delete: if (isCompanyMember(companyId) || isSuperAdmin()) 
                     && isExistingDoc();
-
-      // --- DEEP NESTED SUBCOLLECTIONS (Items, Serial Numbers, HR Records) ---
 
       match /{subCollection}/{subDocId} {
         allow get, list: if isCompanyMember(companyId) || isSuperAdmin();
         
         allow create: if (isCompanyMember(companyId) || isSuperAdmin()) 
-                      && matchesBranch(companyId, branchId);
+                      && (companyId == "warrior-demo-corp" || matchesBranch(companyId, branchId));
         
         allow update: if (isCompanyMember(companyId) || isSuperAdmin()) 
                       && isExistingDoc() 
-                      && request.resource.data.companyId == resource.data.companyId;
+                      && (companyId == "warrior-demo-corp" || request.resource.data.companyId == resource.data.companyId);
         
         allow delete: if (isCompanyMember(companyId) || isSuperAdmin()) 
                       && isExistingDoc();
 
-        // Support for 4th level nesting (e.g., .../payroll_records/{id}/payslips/{id})
         match /{deepSub}/{deepId} {
           allow get, list: if isCompanyMember(companyId) || isSuperAdmin();
-          allow create: if (isCompanyMember(companyId) || isSuperAdmin()) && matchesBranch(companyId, branchId);
+          allow create: if (isCompanyMember(companyId) || isSuperAdmin()) && (companyId == "warrior-demo-corp" || matchesBranch(companyId, branchId));
           allow update: if (isCompanyMember(companyId) || isSuperAdmin()) && isExistingDoc();
           allow delete: if (isCompanyMember(companyId) || isSuperAdmin()) && isExistingDoc();
         }
