@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { Target, Plus, Search, Loader2, MoreVertical, Mail, Phone, Building2, Filter, Star } from "lucide-react"
+import { Target, Plus, Search, Loader2, MoreVertical, Mail, Phone, Building2, Filter, Star, TrendingUp } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, serverTimestamp } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"

@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -21,13 +20,15 @@ export default function ContractsPage() {
   const db = useFirestore();
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
 
-  const contractsQuery = useMemoFirebase(() => {
+  const contractsColRef = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
-    return query(
-      collection(db, "companies", companyId, "branches", branchId, "service_contracts"),
-      orderBy("createdAt", "desc")
-    );
+    return collection(db, "companies", companyId, "branches", branchId, "service_contracts");
   }, [db, companyId, branchId]);
+
+  const contractsQuery = useMemoFirebase(() => {
+    if (!contractsColRef) return null;
+    return query(contractsColRef, orderBy("createdAt", "desc"));
+  }, [contractsColRef]);
 
   const { data: contracts, isLoading } = useCollection(contractsQuery);
 
@@ -40,7 +41,7 @@ export default function ContractsPage() {
   const handleAddContract = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    if (!contractsQuery || !companyId || !branchId) return;
+    if (!contractsColRef || !companyId || !branchId) return;
 
     const contractData = {
       companyId,
@@ -55,7 +56,7 @@ export default function ContractsPage() {
       updatedAt: serverTimestamp(),
     };
 
-    addDocumentNonBlocking(contractsQuery, contractData);
+    addDocumentNonBlocking(contractsColRef, contractData);
     setIsAddModalOpen(false);
   };
 
