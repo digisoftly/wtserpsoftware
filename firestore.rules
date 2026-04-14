@@ -102,12 +102,13 @@ service cloud.firestore {
      * @description Top-level Company management.
      * @path /companies/{companyId}
      * @allow get: (Members), list: (SuperAdmin), write: (SuperAdmin)
-     * @deny update: (Non-admins)
+     * @allow update: (Members) - For prototype settings editing.
      */
     match /companies/{companyId} {
       allow get: if isCompanyMember(companyId) || isSuperAdmin();
       allow list: if isSuperAdmin();
-      allow create, update, delete: if isSuperAdmin();
+      allow create, delete: if isSuperAdmin();
+      allow update: if isCompanyMember(companyId) || isSuperAdmin();
 
       /**
        * @description Branch-level definitions.
