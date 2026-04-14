@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -11,7 +12,7 @@ import {
   LogOut,
   ChevronDown,
   Building,
-  Menu
+  UserPlus
 } from "lucide-react"
 
 import {
@@ -27,21 +28,53 @@ import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
 import { Badge } from "@/components/ui/badge"
-import { useAuth, useUser } from "@/firebase"
+import { useAuth, useUser, useFirestore } from "@/firebase"
 import { signOut } from "firebase/auth"
 import { useRouter } from "next/navigation"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { useTenant } from "@/context/tenant-context"
+import { collection, serverTimestamp } from "firebase/firestore"
+import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
+import { toast } from "@/hooks/use-toast"
 
 export function AppHeader() {
   const { isMobile } = useSidebar()
   const [lang, setLang] = React.useState<'EN' | 'BN'>('EN')
   const { user } = useUser()
   const auth = useAuth()
+  const db = useFirestore()
+  const { companyId, branchId } = useTenant()
   const router = useRouter()
+  const [isQuickEntryOpen, setIsQuickEntryOpen] = React.useState(false)
 
   const handleLogout = async () => {
     await signOut(auth)
     router.push('/login')
   }
+
+  const handleQuickAddCustomer = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    if (!db || !companyId || !branchId) return;
+
+    const customerData = {
+      companyId,
+      branchId,
+      customerType: "individual",
+      firstName: formData.get("firstName") as string,
+      lastName: formData.get("lastName") as string,
+      email: (formData.get("email") as string) || "",
+      phoneNumber: (formData.get("phoneNumber") as string) || "",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    const colRef = collection(db, "companies", companyId, "branches", branchId, "customers");
+    addDocumentNonBlocking(colRef, customerData);
+    setIsQuickEntryOpen(false);
+    toast({ title: "Customer Added", description: "The manual entry has been saved to your directory." });
+  };
 
   return (
     <header className="h-16 border-b bg-white flex items-center justify-between px-4 md:px-6 sticky top-0 z-40 shadow-sm">
@@ -59,7 +92,11 @@ export function AppHeader() {
 
       <div className="flex items-center gap-2 md:gap-4">
         {/* Quick Add Floating Button Replacement for Desktop */}
-        <Button size="sm" className="hidden md:flex items-center gap-2 rounded-full px-4 bg-accent hover:bg-accent/90 text-accent-foreground font-semibold">
+        <Button 
+          size="sm" 
+          onClick={() => setIsQuickEntryOpen(true)}
+          className="hidden md:flex items-center gap-2 rounded-full px-4 bg-accent hover:bg-accent/90 text-accent-foreground font-semibold"
+        >
           <Plus className="h-4 w-4" />
           <span>Quick Entry</span>
         </Button>
@@ -134,6 +171,41 @@ export function AppHeader() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <Dialog open={isQuickEntryOpen} onOpenChange={setIsQuickEntryOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-primary" />
+              Quick Customer Entry
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleQuickAddCustomer} className="space-y-4 pt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs">First Name</Label>
+                <Input name="firstName" required />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Last Name</Label>
+                <Input name="lastName" required />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Email Address</Label>
+              <Input name="email" type="email" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Phone Number</Label>
+              <Input name="phoneNumber" />
+            </div>
+            <DialogFooter className="pt-4">
+              <Button type="button" variant="outline" onClick={() => setIsQuickEntryOpen(false)}>Cancel</Button>
+              <Button type="submit">Save Customer</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </header>
   )
 }

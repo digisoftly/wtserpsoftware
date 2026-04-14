@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Plus, ShoppingCart, Search, Filter, Loader2, MoreVertical, FileText, CreditCard } from "lucide-react"
+import { Plus, ShoppingCart, Search, Filter, Loader2, MoreVertical, FileText, UserPlus, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -12,16 +12,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, serverTimestamp, query, orderBy } from "firebase/firestore"
+import { collection, serverTimestamp, query, orderBy, addDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { cn } from "@/lib/utils"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function SalesPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
+  const [customerMode, setCustomerType] = React.useState<"select" | "new">("select");
 
   const invoicesQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
@@ -40,17 +42,38 @@ export default function SalesPage() {
 
   const { data: customers } = useCollection(customersQuery);
 
-  const handleAddInvoice = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAddInvoice = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
     if (!db || !companyId || !branchId) return;
 
+    let targetCustomerId = formData.get("customerId") as string;
+
+    // Handle Manual/New Customer Entry
+    if (customerMode === "new") {
+      const customerData = {
+        companyId,
+        branchId,
+        customerType: "individual",
+        firstName: formData.get("firstName") as string,
+        lastName: formData.get("lastName") as string,
+        email: (formData.get("email") as string) || "",
+        phoneNumber: (formData.get("phoneNumber") as string) || "",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+      const custRef = await addDoc(collection(db, "companies", companyId, "branches", branchId, "customers"), customerData);
+      targetCustomerId = custRef.id;
+    }
+
+    if (!targetCustomerId) return;
+
     const invoiceData = {
       companyId,
       branchId,
       invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
-      customerId: formData.get("customerId") as string,
+      customerId: targetCustomerId,
       invoiceDate: new Date().toISOString(),
       dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       totalAmount: Number(formData.get("amount")),
@@ -65,6 +88,7 @@ export default function SalesPage() {
     const colRef = collection(db, "companies", companyId, "branches", branchId, "sales_invoices");
     addDocumentNonBlocking(colRef, invoiceData);
     setIsAddModalOpen(false);
+    setCustomerType("select");
   };
 
   const filteredInvoices = invoices?.filter(inv => 
@@ -78,12 +102,10 @@ export default function SalesPage() {
           <h1 className="text-2xl md:text-3xl font-bold font-headline text-green-600">Sales Management</h1>
           <p className="text-sm text-muted-foreground mt-1">Track customer orders, invoices, and revenue</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button className="bg-green-600 hover:bg-green-700 gap-2 rounded-full w-full md:w-auto" onClick={() => setIsAddModalOpen(true)}>
-            <Plus className="h-4 w-4" />
-            New Invoice
-          </Button>
-        </div>
+        <Button className="bg-green-600 hover:bg-green-700 gap-2 rounded-full w-full md:w-auto" onClick={() => setIsAddModalOpen(true)}>
+          <Plus className="h-4 w-4" />
+          New Invoice
+        </Button>
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
@@ -175,40 +197,78 @@ export default function SalesPage() {
       )}
 
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="sm:max-w-md w-[95vw] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-headline text-xl">Create New Sales Invoice</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleAddInvoice} className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="customerId">Select Customer</Label>
-              <Select name="customerId" required>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Choose a customer" />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers?.map(c => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.firstName} {c.lastName} {c.companyName ? `(${c.companyName})` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <form onSubmit={handleAddInvoice} className="space-y-6 pt-4">
+            <div className="space-y-4">
+              <Label className="text-sm font-bold flex items-center gap-2">
+                <Users className="h-4 w-4 text-green-600" />
+                Customer Selection
+              </Label>
+              <Tabs value={customerMode} onValueChange={(v) => setCustomerType(v as any)} className="w-full">
+                <TabsList className="grid grid-cols-2 w-full mb-4">
+                  <TabsTrigger value="select" className="gap-2"><Search className="h-3 w-3" /> Select Existing</TabsTrigger>
+                  <TabsTrigger value="new" className="gap-2"><UserPlus className="h-3 w-3" /> Register New</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="select">
+                  <Select name="customerId" required={customerMode === "select"}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Choose a customer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customers?.map(c => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.firstName} {c.lastName} {c.companyName ? `(${c.companyName})` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </TabsContent>
+
+                <TabsContent value="new" className="space-y-4 animate-in slide-in-from-top-2 duration-200">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs">First Name</Label>
+                      <Input name="firstName" required={customerMode === "new"} placeholder="John" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Last Name</Label>
+                      <Input name="lastName" required={customerMode === "new"} placeholder="Doe" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs">Email (Optional)</Label>
+                      <Input name="email" type="email" placeholder="john@example.com" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Phone (Optional)</Label>
+                      <Input name="phoneNumber" placeholder="+880..." />
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="amount">Total Invoice Amount ($)</Label>
+              <Label htmlFor="amount" className="font-bold">Total Invoice Amount ($)</Label>
               <Input id="amount" name="amount" type="number" step="0.01" required placeholder="0.00" />
             </div>
+
             <div className="bg-muted/30 p-4 rounded-lg flex gap-3 items-start border border-dashed">
               <FileText className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
               <div className="text-[11px] text-muted-foreground leading-relaxed">
                 <p className="font-bold text-foreground mb-1">Standard Terms Apply</p>
-                This will generate a due invoice with a 7-day payment window. You can record payments later from the financial ledger.
+                This will generate a due invoice with a 7-day payment window. Manual customer entries will be automatically saved to your master database.
               </div>
             </div>
+
             <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)} className="rounded-full">Cancel</Button>
-              <Button type="submit" className="bg-green-600 rounded-full">Generate Invoice</Button>
+              <Button type="submit" className="bg-green-600 hover:bg-green-700 rounded-full px-8">Generate Invoice</Button>
             </div>
           </form>
         </DialogContent>

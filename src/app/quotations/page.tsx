@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Plus, FileText, Search, Loader2, MoreVertical, Filter } from "lucide-react"
+import { Plus, FileText, Search, Loader2, MoreVertical, Filter, UserPlus, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -12,16 +12,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, serverTimestamp, query, orderBy } from "firebase/firestore"
+import { collection, serverTimestamp, query, orderBy, addDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { cn } from "@/lib/utils"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function QuotationsPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
+  const [customerMode, setCustomerType] = React.useState<"select" | "new">("select");
 
   const quotationsQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
@@ -39,17 +41,37 @@ export default function QuotationsPage() {
   }, [db, companyId, branchId]);
   const { data: customers } = useCollection(customersQuery);
 
-  const handleAddQuotation = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAddQuotation = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
     if (!db || !companyId || !branchId) return;
 
+    let targetCustomerId = formData.get("customerId") as string;
+
+    if (customerMode === "new") {
+      const customerData = {
+        companyId,
+        branchId,
+        customerType: "individual",
+        firstName: formData.get("firstName") as string,
+        lastName: formData.get("lastName") as string,
+        email: (formData.get("email") as string) || "",
+        phoneNumber: (formData.get("phoneNumber") as string) || "",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+      const custRef = await addDoc(collection(db, "companies", companyId, "branches", branchId, "customers"), customerData);
+      targetCustomerId = custRef.id;
+    }
+
+    if (!targetCustomerId) return;
+
     const quotationData = {
       companyId,
       branchId,
       quotationNumber: `QT-${Date.now().toString().slice(-6)}`,
-      customerId: formData.get("customerId") as string,
+      customerId: targetCustomerId,
       quotationDate: new Date().toISOString(),
       validUntilDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
       totalAmount: Number(formData.get("amount")),
@@ -62,6 +84,7 @@ export default function QuotationsPage() {
     const colRef = collection(db, "companies", companyId, "branches", branchId, "quotations");
     addDocumentNonBlocking(colRef, quotationData);
     setIsAddModalOpen(false);
+    setCustomerType("select");
   };
 
   const filteredQuotations = quotations?.filter(q => 
@@ -153,31 +176,70 @@ export default function QuotationsPage() {
       )}
 
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="sm:max-w-md w-[95vw] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-headline text-xl">New Price Quotation</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleAddQuotation} className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="customerId" className="text-xs">Select Customer</Label>
-              <Select name="customerId" required>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Choose client" />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers?.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.firstName} {c.lastName}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <form onSubmit={handleAddQuotation} className="space-y-6 pt-4">
+            <div className="space-y-4">
+              <Label className="text-sm font-bold flex items-center gap-2">
+                <Users className="h-4 w-4 text-purple-600" />
+                Customer Details
+              </Label>
+              <Tabs value={customerMode} onValueChange={(v) => setCustomerType(v as any)} className="w-full">
+                <TabsList className="grid grid-cols-2 w-full mb-4">
+                  <TabsTrigger value="select" className="gap-2">Existing Client</TabsTrigger>
+                  <TabsTrigger value="new" className="gap-2">Register New</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="select">
+                  <Select name="customerId" required={customerMode === "select"}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Choose a client" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customers?.map(c => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.firstName} {c.lastName} {c.companyName ? `(${c.companyName})` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </TabsContent>
+
+                <TabsContent value="new" className="space-y-4 animate-in slide-in-from-top-2 duration-200">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs">First Name</Label>
+                      <Input name="firstName" required={customerMode === "new"} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Last Name</Label>
+                      <Input name="lastName" required={customerMode === "new"} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs">Email</Label>
+                      <Input name="email" type="email" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Phone</Label>
+                      <Input name="phoneNumber" />
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="amount" className="text-xs">Estimated Total Amount ($)</Label>
-              <Input name="amount" type="number" step="0.01" required placeholder="0.00" className="text-sm" />
+              <Label htmlFor="amount" className="font-bold">Estimated Total Amount ($)</Label>
+              <Input id="amount" name="amount" type="number" step="0.01" required placeholder="0.00" />
             </div>
+
             <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)} className="rounded-full w-full sm:w-auto">Cancel</Button>
-              <Button type="submit" className="bg-purple-600 rounded-full w-full sm:w-auto">Save Draft Quote</Button>
+              <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)} className="rounded-full">Cancel</Button>
+              <Button type="submit" className="bg-purple-600 hover:bg-purple-700 rounded-full px-8">Save Draft Quote</Button>
             </div>
           </form>
         </DialogContent>
