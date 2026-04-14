@@ -47,9 +47,8 @@ import { signOut } from "firebase/auth"
 import { usePermissions } from "@/hooks/use-permissions"
 import { useSettings } from "@/hooks/use-settings"
 
-const modules = [
+const ALL_MODULES = [
   { name: "Dashboard", key: "dashboard", icon: LayoutDashboard, color: "text-blue-500", path: "/" },
-  { name: "CRM (Leads)", key: "crm", icon: Target, color: "text-rose-500", path: "/crm" },
   { name: "Sales", key: "sales", icon: ShoppingCart, color: "text-green-500", path: "/sales" },
   { name: "Quotation", key: "quotations", icon: FileText, color: "text-purple-500", path: "/quotations" },
   { name: "Purchase", key: "purchases", icon: Package, color: "text-orange-500", path: "/purchases" },
@@ -64,6 +63,7 @@ const modules = [
   { name: "Accounts", key: "accounts", icon: Wallet, color: "text-blue-600", path: "/accounts" },
   { name: "Expenses", key: "expenses", icon: Receipt, color: "text-red-400", path: "/expenses" },
   { name: "Support", key: "support", icon: LifeBuoy, color: "text-indigo-500", path: "/support" },
+  { name: "CRM (Leads)", key: "crm", icon: Target, color: "text-rose-500", path: "/crm" },
   { name: "HRM", key: "hrm", icon: UserRoundCog, color: "text-purple-500", path: "/hrm" },
   { name: "Branches", key: "branches", icon: Building2, color: "text-blue-600", path: "/branches" },
   { name: "Reports", key: "reports", icon: BarChart3, color: "text-indigo-400", path: "/reports" },
@@ -86,8 +86,28 @@ export function AppSidebar() {
     router.push('/login')
   }
 
+  // Determine menu order from settings or use default ALL_MODULES order
+  const orderedModules = React.useMemo(() => {
+    const customOrder = settings?.sidebarMenuOrder as string[] | undefined;
+    if (!customOrder || !Array.isArray(customOrder)) return ALL_MODULES;
+
+    const moduleMap = new Map(ALL_MODULES.map(m => [m.key, m]));
+    const ordered = customOrder
+      .map(key => moduleMap.get(key))
+      .filter((m): m is typeof ALL_MODULES[0] => !!m);
+
+    // Add any missing modules that are in ALL_MODULES but not in customOrder
+    ALL_MODULES.forEach(m => {
+      if (!customOrder.includes(m.key)) {
+        ordered.push(m);
+      }
+    });
+
+    return ordered;
+  }, [settings?.sidebarMenuOrder]);
+
   // Filter modules based on View permission
-  const allowedModules = modules.filter(m => can(m.key, 'view'))
+  const allowedModules = orderedModules.filter(m => can(m.key, 'view'))
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border shadow-xl">
@@ -114,7 +134,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarMenu>
             {allowedModules.map((item) => (
-              <SidebarMenuItem key={item.name}>
+              <SidebarMenuItem key={item.key}>
                 <SidebarMenuButton
                   asChild
                   isActive={pathname === item.path}

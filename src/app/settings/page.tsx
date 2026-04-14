@@ -32,7 +32,10 @@ import {
   ShieldCheck,
   Zap,
   KeyRound,
-  Server
+  Server,
+  ArrowUp,
+  ArrowDown,
+  Menu
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -48,12 +51,47 @@ import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { toast } from "@/hooks/use-toast"
 import { useTranslation } from "@/hooks/use-translation"
 
+const DEFAULT_MENU_ORDER = [
+  "dashboard", "sales", "quotations", "purchases", "returns", "inventory", 
+  "serial-inventory", "projects", "project-billing", "contracts", 
+  "customers", "suppliers", "accounts", "expenses", "support", 
+  "crm", "hrm", "branches", "reports", "ai-forecasting", "backup", 
+  "settings", "users"
+];
+
+const MODULE_LABELS: Record<string, string> = {
+  dashboard: "Dashboard",
+  sales: "Sales",
+  quotations: "Quotations",
+  purchases: "Purchases",
+  returns: "Returns",
+  inventory: "Inventory",
+  "serial-inventory": "Serial Inventory",
+  projects: "Projects",
+  "project-billing": "Project Billing",
+  contracts: "Service Contracts",
+  customers: "Customers",
+  suppliers: "Suppliers",
+  accounts: "Accounts",
+  expenses: "Expenses",
+  support: "Support Tickets",
+  crm: "CRM (Leads)",
+  hrm: "HRM",
+  branches: "Branches",
+  reports: "Reports",
+  "ai-forecasting": "AI Forecasting",
+  backup: "Backup",
+  settings: "Settings",
+  users: "Users & Roles"
+};
+
 export default function SettingsPage() {
   const { companyId } = useTenant();
   const db = useFirestore();
   const { t } = useTranslation();
   const [isSaving, setIsSaving] = React.useState(false);
   const [logoPreview, setLogoPreview] = React.useState<string | null>(null);
+  const [menuOrder, setMenuOrder] = React.useState<string[]>(DEFAULT_MENU_ORDER);
 
   const settingsRef = useMemoFirebase(() => {
     if (!db || !companyId) return null;
@@ -65,6 +103,9 @@ export default function SettingsPage() {
   React.useEffect(() => {
     if (settings?.companyLogo) {
       setLogoPreview(settings.companyLogo);
+    }
+    if (settings?.sidebarMenuOrder && Array.isArray(settings.sidebarMenuOrder)) {
+      setMenuOrder(settings.sidebarMenuOrder);
     }
   }, [settings]);
 
@@ -88,6 +129,19 @@ export default function SettingsPage() {
     setLogoPreview(null);
   };
 
+  const moveMenuItem = (index: number, direction: 'up' | 'down') => {
+    const newOrder = [...menuOrder];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    
+    if (targetIndex < 0 || targetIndex >= newOrder.length) return;
+    
+    const temp = newOrder[index];
+    newOrder[index] = newOrder[targetIndex];
+    newOrder[targetIndex] = temp;
+    
+    setMenuOrder(newOrder);
+  };
+
   const handleSaveSettings = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!settingsRef) return;
@@ -98,6 +152,7 @@ export default function SettingsPage() {
     const updates: Record<string, any> = {
       updatedAt: serverTimestamp(),
       companyLogo: logoPreview,
+      sidebarMenuOrder: menuOrder,
     };
 
     formData.forEach((value, key) => {
@@ -162,6 +217,9 @@ export default function SettingsPage() {
           <TabsList className="bg-white border rounded-xl p-1 mb-6 shadow-sm flex overflow-x-auto h-auto no-scrollbar">
             <TabsTrigger value="general" className="rounded-lg gap-2 flex-1 min-w-[120px] py-2">
               <Building2 className="h-4 w-4" /> {t('general')}
+            </TabsTrigger>
+            <TabsTrigger value="navigation" className="rounded-lg gap-2 flex-1 min-w-[120px] py-2">
+              <Menu className="h-4 w-4" /> Navigation
             </TabsTrigger>
             <TabsTrigger value="business" className="rounded-lg gap-2 flex-1 min-w-[120px] py-2">
               <Warehouse className="h-4 w-4" /> {t('businessRules')}
@@ -249,6 +307,49 @@ export default function SettingsPage() {
                 <p className="text-[10px] text-muted-foreground mt-4">Transparent PNG, 512x512 recommended (Max 2MB)</p>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="navigation" className="space-y-6">
+            <Card className="border-none shadow-sm rounded-xl">
+              <CardHeader>
+                <CardTitle className="text-lg font-headline">Sidebar Menu Order</CardTitle>
+                <CardDescription>Drag or use buttons to manage navigation positions</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 max-w-2xl">
+                  {menuOrder.map((key, index) => (
+                    <div key={key} className="flex items-center justify-between p-3 bg-muted/30 rounded-xl border border-dashed group hover:border-primary/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] font-black text-muted-foreground w-4">{index + 1}</span>
+                        <span className="font-bold text-sm">{MODULE_LABELS[key] || key}</span>
+                      </div>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 rounded-full hover:bg-primary/10 hover:text-primary"
+                          onClick={() => moveMenuItem(index, 'up')}
+                          disabled={index === 0}
+                        >
+                          <ArrowUp className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 rounded-full hover:bg-primary/10 hover:text-primary"
+                          onClick={() => moveMenuItem(index, 'down')}
+                          disabled={index === menuOrder.length - 1}
+                        >
+                          <ArrowDown className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="business" className="space-y-6">
