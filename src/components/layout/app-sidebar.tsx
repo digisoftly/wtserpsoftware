@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -42,30 +43,31 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useAuth } from "@/firebase"
 import { signOut } from "firebase/auth"
+import { usePermissions } from "@/hooks/use-permissions"
 
 const modules = [
-  { name: "Dashboard", icon: LayoutDashboard, color: "text-blue-500", path: "/" },
-  { name: "CRM (Leads)", icon: Target, color: "text-rose-500", path: "/crm" },
-  { name: "Sales", icon: ShoppingCart, color: "text-green-500", path: "/sales" },
-  { name: "Quotation", icon: FileText, color: "text-purple-500", path: "/quotations" },
-  { name: "Purchase", icon: Package, color: "text-orange-500", path: "/purchases" },
-  { name: "Returns", icon: RotateCcw, color: "text-red-500", path: "/returns" },
-  { name: "Inventory", icon: Boxes, color: "text-yellow-600", path: "/inventory" },
-  { name: "Serial Inventory", icon: Scan, color: "text-blue-400", path: "/serial-inventory" },
-  { name: "Projects", icon: Folder, color: "text-teal-500", path: "/projects" },
-  { name: "Project Billing", icon: Layers, color: "text-violet-500", path: "/project-billing" },
-  { name: "Service Contracts", icon: Wrench, color: "text-emerald-500", path: "/contracts" },
-  { name: "Customers", icon: Users, color: "text-cyan-500", path: "/customers" },
-  { name: "Suppliers", icon: Truck, color: "text-amber-700", path: "/suppliers" },
-  { name: "Accounts", icon: Wallet, color: "text-blue-600", path: "/accounts" },
-  { name: "Expenses", icon: Receipt, color: "text-red-400", path: "/expenses" },
-  { name: "Support", icon: LifeBuoy, color: "text-indigo-500", path: "/support" },
-  { name: "HRM", icon: UserRoundCog, color: "text-purple-500", path: "/hrm" },
-  { name: "Reports", icon: BarChart3, color: "text-indigo-400", path: "/reports" },
-  { name: "AI Forecasting", icon: TrendingUp, color: "text-violet-500", path: "/ai-forecasting" },
-  { name: "Backup", icon: Database, color: "text-gray-500", path: "/backup" },
-  { name: "Settings", icon: Settings, color: "text-rose-500", path: "/settings" },
-  { name: "Users & Roles", icon: ShieldCheck, color: "text-violet-600", path: "/users" },
+  { name: "Dashboard", key: "dashboard", icon: LayoutDashboard, color: "text-blue-500", path: "/" },
+  { name: "CRM (Leads)", key: "crm", icon: Target, color: "text-rose-500", path: "/crm" },
+  { name: "Sales", key: "sales", icon: ShoppingCart, color: "text-green-500", path: "/sales" },
+  { name: "Quotation", key: "quotations", icon: FileText, color: "text-purple-500", path: "/quotations" },
+  { name: "Purchase", key: "purchases", icon: Package, color: "text-orange-500", path: "/purchases" },
+  { name: "Returns", key: "returns", icon: RotateCcw, color: "text-red-500", path: "/returns" },
+  { name: "Inventory", key: "inventory", icon: Boxes, color: "text-yellow-600", path: "/inventory" },
+  { name: "Serial Inventory", key: "serial-inventory", icon: Scan, color: "text-blue-400", path: "/serial-inventory" },
+  { name: "Projects", key: "projects", icon: Folder, color: "text-teal-500", path: "/projects" },
+  { name: "Project Billing", key: "project-billing", icon: Layers, color: "text-violet-500", path: "/project-billing" },
+  { name: "Service Contracts", key: "contracts", icon: Wrench, color: "text-emerald-500", path: "/contracts" },
+  { name: "Customers", key: "customers", icon: Users, color: "text-cyan-500", path: "/customers" },
+  { name: "Suppliers", key: "suppliers", icon: Truck, color: "text-amber-700", path: "/suppliers" },
+  { name: "Accounts", key: "accounts", icon: Wallet, color: "text-blue-600", path: "/accounts" },
+  { name: "Expenses", key: "expenses", icon: Receipt, color: "text-red-400", path: "/expenses" },
+  { name: "Support", key: "support", icon: LifeBuoy, color: "text-indigo-500", path: "/support" },
+  { name: "HRM", key: "hrm", icon: UserRoundCog, color: "text-purple-500", path: "/hrm" },
+  { name: "Reports", key: "reports", icon: BarChart3, color: "text-indigo-400", path: "/reports" },
+  { name: "AI Forecasting", key: "ai-forecasting", icon: TrendingUp, color: "text-violet-500", path: "/ai-forecasting" },
+  { name: "Backup", key: "backup", icon: Database, color: "text-gray-500", path: "/backup" },
+  { name: "Settings", key: "settings", icon: Settings, color: "text-rose-500", path: "/settings" },
+  { name: "Users & Roles", key: "users", icon: ShieldCheck, color: "text-violet-600", path: "/users" },
 ]
 
 export function AppSidebar() {
@@ -73,11 +75,15 @@ export function AppSidebar() {
   const { state } = useSidebar()
   const auth = useAuth()
   const router = useRouter()
+  const { can } = usePermissions()
 
   const handleLogout = async () => {
     await signOut(auth)
     router.push('/login')
   }
+
+  // Filter modules based on View permission
+  const allowedModules = modules.filter(m => can(m.key, 'view'))
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border shadow-xl">
@@ -97,7 +103,7 @@ export function AppSidebar() {
       <SidebarContent className="py-2 scrollbar-hide overflow-y-auto">
         <SidebarGroup>
           <SidebarMenu>
-            {modules.map((item) => (
+            {allowedModules.map((item) => (
               <SidebarMenuItem key={item.name}>
                 <SidebarMenuButton
                   asChild

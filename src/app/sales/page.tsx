@@ -41,6 +41,7 @@ import { cn } from "@/lib/utils"
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { toast } from "@/hooks/use-toast"
 import { deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates"
+import { usePermissions } from "@/hooks/use-permissions"
 
 interface InvoiceItem {
   productId: string;
@@ -56,6 +57,8 @@ interface InvoiceItem {
 export default function SalesPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
+  const { can } = usePermissions();
+  
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
@@ -297,9 +300,11 @@ export default function SalesPage() {
           <h1 className="text-2xl md:text-3xl font-bold font-headline text-green-600">Sales & Invoicing</h1>
           <p className="text-sm text-muted-foreground mt-1">POS workflow with real-time serial tracking</p>
         </div>
-        <Button className="bg-green-600 hover:bg-green-700 gap-2 rounded-full px-8 shadow-lg h-12 font-bold" onClick={() => { resetForm(); setIsAddModalOpen(true); }}>
-          <Plus className="h-5 w-5" /> New POS Transaction
-        </Button>
+        {can('sales', 'create') && (
+          <Button className="bg-green-600 hover:bg-green-700 gap-2 rounded-full px-8 shadow-lg h-12 font-bold" onClick={() => { resetForm(); setIsAddModalOpen(true); }}>
+            <Plus className="h-5 w-5" /> New POS Transaction
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -344,12 +349,18 @@ export default function SalesPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => handlePrint(inv)}><Eye className="mr-2 h-4 w-4" /> View Details</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => openEdit(inv)}><Edit className="mr-2 h-4 w-4" /> Edit Record</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handlePrint(inv)}><Download className="mr-2 h-4 w-4" /> Download PDF</DropdownMenuItem>
+                          {can('sales', 'edit') && (
+                            <DropdownMenuItem onClick={() => openEdit(inv)}><Edit className="mr-2 h-4 w-4" /> Edit Record</DropdownMenuItem>
+                          )}
+                          {can('sales', 'export') && (
+                            <DropdownMenuItem onClick={() => handlePrint(inv)}><Download className="mr-2 h-4 w-4" /> Download PDF</DropdownMenuItem>
+                          )}
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600" onClick={() => { setSelectedRecord(inv); setIsDeleteAlertOpen(true); }}>
-                            <Trash2 className="mr-2 h-4 w-4" /> Delete Invoice
-                          </DropdownMenuItem>
+                          {can('sales', 'delete') && (
+                            <DropdownMenuItem className="text-red-600" onClick={() => { setSelectedRecord(inv); setIsDeleteAlertOpen(true); }}>
+                              <Trash2 className="mr-2 h-4 w-4" /> Delete Invoice
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
