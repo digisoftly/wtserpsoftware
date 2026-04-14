@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Plus, FileText, Search, Loader2, MoreVertical, Trash2, Calculator, CheckCircle2, ChevronRight, ShoppingCart } from "lucide-react"
+import { Plus, FileText, Search, Loader2, MoreVertical, Trash2, Calculator, CheckCircle2, ChevronRight, ShoppingCart, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -15,6 +15,7 @@ import { collection, serverTimestamp, query, orderBy, doc, runTransaction, setDo
 import { useTenant } from "@/context/tenant-context"
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { toast } from "@/hooks/use-toast"
+import { cn } from "@/lib/utils"
 
 interface QuoteItem {
   productId: string;
@@ -128,6 +129,10 @@ export default function QuotationsPage() {
     }
   };
 
+  const filteredQuotations = quotations?.filter(q => 
+    q.quotationNumber?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -148,6 +153,13 @@ export default function QuotationsPage() {
         <KPICard title="Pending Clients" value={new Set(quotations?.map(q => q.customerId)).size} icon={Users} colorClass="bg-amber-500" />
       </div>
 
+      <div className="flex items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Search quotation #..." className="pl-9" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+        </div>
+      </div>
+
       {isLoading ? (
         <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-purple-600" /></div>
       ) : (
@@ -164,8 +176,8 @@ export default function QuotationsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {quotations?.map((q) => (
-                  <TableRow key={q.id}>
+                {filteredQuotations?.map((q) => (
+                  <TableRow key={q.id} className="hover:bg-muted/30">
                     <TableCell className="font-bold text-purple-700">{q.quotationNumber}</TableCell>
                     <TableCell>{customers?.find(c => c.id === q.customerId)?.firstName || "Unknown"}</TableCell>
                     <TableCell className="font-bold">৳{q.totalAmount?.toLocaleString()}</TableCell>
@@ -189,7 +201,7 @@ export default function QuotationsPage() {
       )}
 
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="max-w-4xl w-[95vw]">
+        <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>New Proposal</DialogTitle></DialogHeader>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 py-4">
             <div className="lg:col-span-2 space-y-6">
