@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -21,7 +20,7 @@ export default function PurchasesPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
-  const [searchTerm, setSearchTerm] = setSearchTerm("");
+  const [searchTerm, setSearchTerm] = React.useState("");
 
   const poQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
@@ -66,6 +65,10 @@ export default function PurchasesPage() {
     addDocumentNonBlocking(colRef, poData);
     setIsAddModalOpen(false);
   };
+
+  const filteredPurchaseOrders = purchaseOrders?.filter(po => 
+    po.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="space-y-6 pb-10">
@@ -121,7 +124,7 @@ export default function PurchasesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {purchaseOrders?.map((po) => {
+                {filteredPurchaseOrders?.map((po) => {
                   const supplier = suppliers?.find(s => s.id === po.supplierId);
                   return (
                     <TableRow key={po.id} className="hover:bg-muted/30 transition-colors">
