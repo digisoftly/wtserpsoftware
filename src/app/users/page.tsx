@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { ShieldCheck, UserPlus, Lock, Loader2, MoreVertical, Shield, Plus, Check, X, Settings2, Trash2, Edit } from "lucide-react"
+import { ShieldCheck, UserPlus, Lock, Loader2, MoreVertical, Shield, Plus, Check, X, Settings2, Trash2, Edit, Users } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, doc, setDoc, deleteDoc, updateDoc, serverTimestamp } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
