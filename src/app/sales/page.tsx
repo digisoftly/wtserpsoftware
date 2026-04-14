@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -22,7 +21,8 @@ import {
   Eye,
   Edit,
   Download,
-  CheckCircle2
+  CheckCircle2,
+  X
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -42,6 +42,7 @@ import { KPICard } from "@/components/dashboard/kpi-card"
 import { toast } from "@/hooks/use-toast"
 import { deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { usePermissions } from "@/hooks/use-permissions"
+import { DocumentTemplate } from "@/components/documents/document-template"
 
 interface InvoiceItem {
   productId: string;
@@ -61,6 +62,7 @@ export default function SalesPage() {
   
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
   const [selectedRecord, setSelectedRecord] = React.useState<any>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -97,14 +99,12 @@ export default function SalesPage() {
   }, [db, companyId, branchId]);
   const { data: availableSerials } = useCollection(serialsQuery);
 
-  // OPTIMIZATION: Memoized Map for O(1) serial lookups during scan
   const serialLookupMap = React.useMemo(() => {
     const map = new Map<string, any>();
     availableSerials?.forEach(s => map.set(s.serialNumber.toLowerCase(), s));
     return map;
   }, [availableSerials]);
 
-  // OPTIMIZATION: Memoized Financials to prevent heavy computation on every re-render
   const financials = React.useMemo(() => {
     const subtotal = lineItems.reduce((sum, item) => sum + item.total, 0);
     const taxAmount = (subtotal * taxRate) / 100;
@@ -112,7 +112,6 @@ export default function SalesPage() {
     return { subtotal, taxAmount, grandTotal };
   }, [lineItems, taxRate, discount]);
 
-  // KPI Memoization
   const stats = React.useMemo(() => {
     const revenue = invoices?.reduce((s, i) => s + (i.totalAmount || 0), 0) || 0;
     const dues = invoices?.filter(i => i.status === 'due').reduce((s, i) => s + (i.totalAmount || 0), 0) || 0;
@@ -288,14 +287,22 @@ export default function SalesPage() {
     setIsEditModalOpen(true);
   };
 
-  const handlePrint = (inv: any) => {
-    toast({ title: "PDF Engine Initialized", description: `Generating document for ${inv.invoiceNumber}...` });
-    setTimeout(() => window.print(), 1000);
+  const openView = (inv: any) => {
+    setSelectedRecord(inv);
+    setIsViewModalOpen(true);
   };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const filteredInvoices = invoices?.filter(inv => 
+    inv.invoiceNumber?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="space-y-6 pb-10">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold font-headline text-green-600">Sales & Invoicing</h1>
           <p className="text-sm text-muted-foreground mt-1">POS workflow with real-time serial tracking</p>
@@ -307,7 +314,7 @@ export default function SalesPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 no-print">
         <KPICard title="Revenue" value={`৳${stats.revenue.toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-500" />
         <KPICard title="Outstandings" value={`৳${stats.dues.toLocaleString()}`} icon={Clock} colorClass="bg-orange-500" />
         <KPICard title="Total Sales" value={stats.count} icon={FileText} colorClass="bg-blue-500" />
@@ -315,9 +322,12 @@ export default function SalesPage() {
       </div>
 
       {isInvoicesLoading ? (
-        <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-green-600" /></div>
+        <div className="flex justify-center py-20 no-print"><Loader2 className="h-8 w-8 animate-spin text-green-600" /></div>
       ) : (
-        <Card className="border-none shadow-sm rounded-xl overflow-hidden">
+        <Card className="border-none shadow-sm rounded-xl overflow-hidden no-print">
+          <div className="p-4 border-b bg-muted/20 flex items-center justify-between">
+            <div className="relative max-w-sm w-full"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="Search Invoice #..." className="pl-9" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
+          </div>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader className="bg-muted/50">
@@ -331,7 +341,7 @@ export default function SalesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {invoices?.map((inv) => (
+                {filteredInvoices?.map((inv) => (
                   <TableRow key={inv.id} className="hover:bg-muted/20">
                     <TableCell className="font-bold text-green-700 uppercase">{inv.invoiceNumber}</TableCell>
                     <TableCell className="text-xs">{customers?.find(c => c.id === inv.customerId)?.firstName || "Guest"}</TableCell>
@@ -348,13 +358,11 @@ export default function SalesPage() {
                           <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handlePrint(inv)}><Eye className="mr-2 h-4 w-4" /> View Details</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openView(inv)}><Eye className="mr-2 h-4 w-4" /> View Details</DropdownMenuItem>
                           {can('sales', 'edit') && (
                             <DropdownMenuItem onClick={() => openEdit(inv)}><Edit className="mr-2 h-4 w-4" /> Edit Record</DropdownMenuItem>
                           )}
-                          {can('sales', 'export') && (
-                            <DropdownMenuItem onClick={() => handlePrint(inv)}><Download className="mr-2 h-4 w-4" /> Download PDF</DropdownMenuItem>
-                          )}
+                          <DropdownMenuItem onClick={() => openView(inv)}><Download className="mr-2 h-4 w-4" /> Download PDF</DropdownMenuItem>
                           <DropdownMenuSeparator />
                           {can('sales', 'delete') && (
                             <DropdownMenuItem className="text-red-600" onClick={() => { setSelectedRecord(inv); setIsDeleteAlertOpen(true); }}>
@@ -371,6 +379,41 @@ export default function SalesPage() {
           </div>
         </Card>
       )}
+
+      {/* VIEW DOCUMENT MODAL */}
+      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+        <DialogContent className="max-w-[21cm] w-[95vw] p-0 border-none bg-transparent shadow-none overflow-y-auto max-h-[95vh]">
+          <div className="flex justify-end gap-2 mb-4 no-print fixed top-4 right-4 z-50">
+            <Button onClick={handlePrint} className="bg-primary shadow-lg"><Printer className="mr-2 h-4 w-4" /> Print / PDF</Button>
+            <Button variant="outline" size="icon" onClick={() => setIsViewModalOpen(false)} className="bg-white"><X className="h-4 w-4" /></Button>
+          </div>
+          {selectedRecord && (
+            <div className="bg-white shadow-2xl rounded-none md:rounded-xl overflow-hidden">
+              <DocumentTemplate
+                title="Sales Invoice"
+                type="invoice"
+                docNumber={selectedRecord.invoiceNumber}
+                date={selectedRecord.invoiceDate}
+                customerName={customers?.find(c => c.id === selectedRecord.customerId)?.firstName + " " + customers?.find(c => c.id === selectedRecord.customerId)?.lastName}
+                customerInfo={customers?.find(c => c.id === selectedRecord.customerId)?.email + "\n" + customers?.find(c => c.id === selectedRecord.customerId)?.phoneNumber}
+                items={selectedRecord.items.map((i: any) => ({
+                  name: i.name,
+                  quantity: i.quantity,
+                  unitPrice: i.unitPrice,
+                  total: i.total,
+                  serialNumber: i.serialNumber
+                }))}
+                subtotal={selectedRecord.items.reduce((s: number, i: any) => s + i.total, 0)}
+                taxRate={selectedRecord.taxRate}
+                taxAmount={(selectedRecord.items.reduce((s: number, i: any) => s + i.total, 0) * selectedRecord.taxRate) / 100}
+                discount={selectedRecord.discount}
+                grandTotal={selectedRecord.totalAmount}
+                status={selectedRecord.status}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* NEW/EDIT INVOICE MODAL */}
       <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) { setIsAddModalOpen(false); setIsEditModalOpen(false); resetForm(); } }}>

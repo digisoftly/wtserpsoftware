@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -16,7 +15,9 @@ import {
   Users, 
   Eye, 
   Edit, 
-  Download 
+  Download,
+  Printer,
+  X
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -35,6 +36,7 @@ import { KPICard } from "@/components/dashboard/kpi-card"
 import { toast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates"
+import { DocumentTemplate } from "@/components/documents/document-template"
 
 interface QuoteItem {
   productId: string;
@@ -49,6 +51,7 @@ export default function QuotationsPage() {
   const db = useFirestore();
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
   const [selectedRecord, setSelectedRecord] = React.useState<any>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -201,9 +204,13 @@ export default function QuotationsPage() {
     setIsEditModalOpen(true);
   };
 
-  const handlePrint = (q: any) => {
-    toast({ title: "Preparing Document", description: `Quotation ${q.quotationNumber} is ready.` });
-    setTimeout(() => window.print(), 500);
+  const openView = (q: any) => {
+    setSelectedRecord(q);
+    setIsViewModalOpen(true);
+  };
+
+  const handlePrint = () => {
+    window.print();
   }
 
   const filteredQuotations = quotations?.filter(q => 
@@ -212,7 +219,7 @@ export default function QuotationsPage() {
 
   return (
     <div className="space-y-6 pb-10">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold font-headline text-purple-600">Sales Quotations</h1>
           <p className="text-sm text-muted-foreground mt-1">Generate proposals and convert them to invoices</p>
@@ -223,14 +230,14 @@ export default function QuotationsPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 no-print">
         <KPICard title="Draft Proposals" value={quotations?.filter(q => q.status === 'draft').length || 0} icon={FileText} colorClass="bg-purple-500" />
         <KPICard title="Total Value" value={`৳${quotations?.reduce((s, q) => s + (q.totalAmount || 0), 0).toLocaleString()}`} icon={Calculator} colorClass="bg-blue-500" />
         <KPICard title="Converted" value={quotations?.filter(q => q.status === 'converted').length || 0} icon={CheckCircle2} colorClass="bg-green-500" />
         <KPICard title="Pending Clients" value={new Set(quotations?.map(q => q.customerId)).size} icon={Users} colorClass="bg-amber-500" />
       </div>
 
-      <div className="flex items-center gap-4 bg-white p-3 rounded-xl border shadow-sm">
+      <div className="flex items-center gap-4 bg-white p-3 rounded-xl border shadow-sm no-print">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search quotation #..." className="pl-9 h-10 border-none ring-1 ring-input" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
@@ -238,9 +245,9 @@ export default function QuotationsPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-purple-600" /></div>
+        <div className="flex justify-center py-20 no-print"><Loader2 className="h-8 w-8 animate-spin text-purple-600" /></div>
       ) : (
-        <Card className="border-none shadow-sm rounded-xl overflow-hidden">
+        <Card className="border-none shadow-sm rounded-xl overflow-hidden no-print">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader className="bg-muted/50">
@@ -271,9 +278,9 @@ export default function QuotationsPage() {
                           <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handlePrint(q)}><Eye className="mr-2 h-4 w-4" /> View Quote</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openView(q)}><Eye className="mr-2 h-4 w-4" /> View Details</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => openEdit(q)} disabled={q.status === 'converted'}><Edit className="mr-2 h-4 w-4" /> Edit Record</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handlePrint(q)}><Download className="mr-2 h-4 w-4" /> Download PDF</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openView(q)}><Download className="mr-2 h-4 w-4" /> Download PDF</DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-green-600" onClick={() => handleConvertToInvoice(q)} disabled={q.status === "converted"}>
                             <ShoppingCart className="mr-2 h-4 w-4" /> Convert to Invoice
@@ -292,6 +299,37 @@ export default function QuotationsPage() {
           </div>
         </Card>
       )}
+
+      {/* VIEW DOCUMENT MODAL */}
+      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+        <DialogContent className="max-w-[21cm] w-[95vw] p-0 border-none bg-transparent shadow-none overflow-y-auto max-h-[95vh]">
+          <div className="flex justify-end gap-2 mb-4 no-print fixed top-4 right-4 z-50">
+            <Button onClick={handlePrint} className="bg-primary shadow-lg"><Printer className="mr-2 h-4 w-4" /> Print / PDF</Button>
+            <Button variant="outline" size="icon" onClick={() => setIsViewModalOpen(false)} className="bg-white"><X className="h-4 w-4" /></Button>
+          </div>
+          {selectedRecord && (
+            <div className="bg-white shadow-2xl rounded-none md:rounded-xl overflow-hidden">
+              <DocumentTemplate
+                title="Quotation / Proposal"
+                type="quotation"
+                docNumber={selectedRecord.quotationNumber}
+                date={selectedRecord.quotationDate}
+                customerName={customers?.find(c => c.id === selectedRecord.customerId)?.firstName + " " + customers?.find(c => c.id === selectedRecord.customerId)?.lastName}
+                customerInfo={customers?.find(c => c.id === selectedRecord.customerId)?.email + "\n" + customers?.find(c => c.id === selectedRecord.customerId)?.phoneNumber}
+                items={selectedRecord.items.map((i: any) => ({
+                  name: i.name,
+                  quantity: i.quantity,
+                  unitPrice: i.unitPrice,
+                  total: i.total
+                }))}
+                subtotal={selectedRecord.totalAmount}
+                grandTotal={selectedRecord.totalAmount}
+                status={selectedRecord.status}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* NEW/EDIT MODAL */}
       <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) { setIsAddModalOpen(false); setIsEditModalOpen(false); resetForm(); } }}>

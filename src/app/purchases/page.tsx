@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Plus, Package, Search, Loader2, MoreVertical, ShoppingBag, Truck, DollarSign, Trash2, Calculator, Scan, Edit, Eye, Download } from "lucide-react"
+import { Plus, Package, Search, Loader2, MoreVertical, ShoppingBag, Truck, DollarSign, Trash2, Calculator, Scan, Edit, Eye, Download, Printer, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -19,6 +19,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { toast } from "@/hooks/use-toast"
+import { DocumentTemplate } from "@/components/documents/document-template"
 
 interface POItem {
   productId: string;
@@ -35,6 +36,7 @@ export default function PurchasesPage() {
   const db = useFirestore();
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
   const [selectedRecord, setSelectedRecord] = React.useState<any>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -166,9 +168,13 @@ export default function PurchasesPage() {
     setIsEditModalOpen(true);
   };
 
-  const handlePrint = (po: any) => {
-    toast({ title: "Preparing Document", description: `PO ${po.orderNumber} is ready for export.` });
-    setTimeout(() => window.print(), 500);
+  const openView = (po: any) => {
+    setSelectedRecord(po);
+    setIsViewModalOpen(true);
+  };
+
+  const handlePrint = () => {
+    window.print();
   };
 
   const filteredPOs = purchaseOrders?.filter(po => 
@@ -177,7 +183,7 @@ export default function PurchasesPage() {
 
   return (
     <div className="space-y-6 pb-10">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold font-headline text-orange-600">Inventory Sourcing</h1>
           <p className="text-sm text-muted-foreground mt-1">Intake new stock and register serial numbers</p>
@@ -187,14 +193,14 @@ export default function PurchasesPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 no-print">
         <KPICard title="Procurement" value={`৳${purchaseOrders?.reduce((s, i) => s + (i.totalAmount || 0), 0).toLocaleString()}`} icon={ShoppingBag} colorClass="bg-orange-500" />
         <KPICard title="Vendors" value={suppliers?.length || 0} icon={Truck} colorClass="bg-blue-500" />
         <KPICard title="Inbound Events" value={purchaseOrders?.length || 0} icon={Package} colorClass="bg-green-500" />
         <KPICard title="Active Orders" value={purchaseOrders?.length || 0} icon={Calculator} colorClass="bg-purple-500" />
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
+      <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border shadow-sm no-print">
         <div className="relative flex-1 w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search PO #..." className="pl-9" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
@@ -202,9 +208,9 @@ export default function PurchasesPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-orange-600" /></div>
+        <div className="flex justify-center py-20 no-print"><Loader2 className="h-8 w-8 animate-spin text-orange-600" /></div>
       ) : (
-        <Card className="border-none shadow-sm rounded-xl overflow-hidden">
+        <Card className="border-none shadow-sm rounded-xl overflow-hidden no-print">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader className="bg-muted/50">
@@ -229,9 +235,9 @@ export default function PurchasesPage() {
                           <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handlePrint(po)}><Eye className="mr-2 h-4 w-4" /> View Details</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openView(po)}><Eye className="mr-2 h-4 w-4" /> View Details</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => openEdit(po)}><Edit className="mr-2 h-4 w-4" /> Edit Record</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handlePrint(po)}><Download className="mr-2 h-4 w-4" /> Download PDF</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openView(po)}><Download className="mr-2 h-4 w-4" /> Download PDF</DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-red-600" onClick={() => { setSelectedRecord(po); setIsDeleteAlertOpen(true); }}>
                             <Trash2 className="mr-2 h-4 w-4" /> Delete PO
@@ -246,6 +252,37 @@ export default function PurchasesPage() {
           </div>
         </Card>
       )}
+
+      {/* VIEW DOCUMENT MODAL */}
+      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+        <DialogContent className="max-w-[21cm] w-[95vw] p-0 border-none bg-transparent shadow-none overflow-y-auto max-h-[95vh]">
+          <div className="flex justify-end gap-2 mb-4 no-print fixed top-4 right-4 z-50">
+            <Button onClick={handlePrint} className="bg-primary shadow-lg"><Printer className="mr-2 h-4 w-4" /> Print / PDF</Button>
+            <Button variant="outline" size="icon" onClick={() => setIsViewModalOpen(false)} className="bg-white"><X className="h-4 w-4" /></Button>
+          </div>
+          {selectedRecord && (
+            <div className="bg-white shadow-2xl rounded-none md:rounded-xl overflow-hidden">
+              <DocumentTemplate
+                title="Purchase Order"
+                type="po"
+                docNumber={selectedRecord.orderNumber}
+                date={selectedRecord.orderDate}
+                customerName={suppliers?.find(s => s.id === selectedRecord.supplierId)?.name}
+                customerInfo={suppliers?.find(s => s.id === selectedRecord.supplierId)?.email + "\n" + suppliers?.find(s => s.id === selectedRecord.supplierId)?.phoneNumber}
+                items={selectedRecord.items.map((i: any) => ({
+                  name: i.name,
+                  quantity: i.quantity,
+                  unitPrice: i.unitCost,
+                  total: i.total
+                }))}
+                subtotal={selectedRecord.totalAmount}
+                grandTotal={selectedRecord.totalAmount}
+                status={selectedRecord.status}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* NEW/EDIT PO MODAL */}
       <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) { setIsAddModalOpen(false); setIsEditModalOpen(false); resetForm(); } }}>
