@@ -1,7 +1,8 @@
+
 "use client"
 
 import * as React from "react"
-import { Plus, FileText, Search, Loader2, MoreVertical, Trash2, Calculator, CheckCircle2, ChevronRight, ShoppingCart, Users } from "lucide-react"
+import { Plus, FileText, Search, Loader2, MoreVertical, Trash2, Calculator, CheckCircle2, ChevronRight, ShoppingCart, Users, Eye, Edit, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -10,12 +11,15 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, serverTimestamp, query, orderBy, doc, runTransaction, setDoc } from "firebase/firestore"
+import { collection, serverTimestamp, query, orderBy, doc, runTransaction, setDoc, updateDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { toast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
+import { deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 
 interface QuoteItem {
   productId: string;
@@ -29,6 +33,9 @@ export default function QuotationsPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
+  const [selectedRecord, setSelectedRecord] = React.useState<any>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
@@ -92,13 +99,46 @@ export default function QuotationsPage() {
       });
       toast({ title: "Quotation Saved", description: "The proposal has been recorded as draft." });
       setIsAddModalOpen(false);
-      setLineItems([]);
+      resetForm();
     } catch (e: any) {
       toast({ variant: "destructive", title: "Error", description: e.message });
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const handleUpdateQuote = async () => {
+    if (!selectedRecord) return;
+    setIsSubmitting(true);
+    try {
+      const quoteRef = doc(db, "companies", companyId!, "branches", branchId!, "quotations", selectedRecord.id);
+      await updateDoc(quoteRef, {
+        customerId: selectedCustomerId,
+        items: lineItems,
+        totalAmount: totalValue,
+        updatedAt: serverTimestamp()
+      });
+      toast({ title: "Quotation Updated", description: "Changes saved successfully." });
+      setIsEditModalOpen(false);
+      resetForm();
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Update Failed", description: e.message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  const handleDeleteQuote = async () => {
+    if (!selectedRecord) return;
+    try {
+      const docRef = doc(db, "companies", companyId!, "branches", branchId!, "quotations", selectedRecord.id);
+      deleteDocumentNonBlocking(docRef);
+      toast({ title: "Quotation Removed", description: "Record deleted." });
+      setIsDeleteAlertOpen(false);
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Delete Error", description: e.message });
+    }
+  }
 
   const handleConvertToInvoice = async (quote: any) => {
     if (quote.status === "converted") {
@@ -129,6 +169,24 @@ export default function QuotationsPage() {
     }
   };
 
+  const resetForm = () => {
+    setSelectedCustomerId("");
+    setLineItems([]);
+    setSelectedRecord(null);
+  };
+
+  const openEdit = (q: any) => {
+    setSelectedRecord(q);
+    setSelectedCustomerId(q.customerId);
+    setLineItems(q.items || []);
+    setIsEditModalOpen(true);
+  };
+
+  const handlePrint = (q: any) => {
+    toast({ title: "Preparing Document", description: `Quotation ${q.quotationNumber} is ready.` });
+    setTimeout(() => window.print(), 500);
+  }
+
   const filteredQuotations = quotations?.filter(q => 
     q.quotationNumber?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -140,7 +198,7 @@ export default function QuotationsPage() {
           <h1 className="text-2xl md:text-3xl font-bold font-headline text-purple-600">Sales Quotations</h1>
           <p className="text-sm text-muted-foreground mt-1">Generate proposals and convert them to invoices</p>
         </div>
-        <Button className="bg-purple-600 hover:bg-purple-700 gap-2 rounded-full px-8 shadow-lg" onClick={() => setIsAddModalOpen(true)}>
+        <Button className="bg-purple-600 hover:bg-purple-700 gap-2 rounded-full px-8 shadow-lg" onClick={() => { resetForm(); setIsAddModalOpen(true); }}>
           <Plus className="h-4 w-4" />
           Create Quote
         </Button>
@@ -179,18 +237,32 @@ export default function QuotationsPage() {
                 {filteredQuotations?.map((q) => (
                   <TableRow key={q.id} className="hover:bg-muted/30">
                     <TableCell className="font-bold text-purple-700">{q.quotationNumber}</TableCell>
-                    <TableCell>{customers?.find(c => c.id === q.customerId)?.firstName || "Unknown"}</TableCell>
-                    <TableCell className="font-bold">৳{q.totalAmount?.toLocaleString()}</TableCell>
+                    <TableCell className="text-xs">{customers?.find(c => c.id === q.customerId)?.firstName || "Unknown"}</TableCell>
+                    <TableCell className="font-bold text-xs">৳{q.totalAmount?.toLocaleString()}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={cn(q.status === "converted" ? "bg-green-50 text-green-700 border-green-200" : "bg-purple-50 text-purple-700")}>
+                      <Badge variant="outline" className={cn("text-[10px]", q.status === "converted" ? "bg-green-50 text-green-700 border-green-200" : "bg-purple-50 text-purple-700")}>
                         {q.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right flex justify-end gap-2">
-                      <Button size="sm" variant="outline" className="gap-1 h-8 rounded-full" onClick={() => handleConvertToInvoice(q)} disabled={q.status === "converted"}>
-                        <ShoppingCart className="h-3 w-3" /> Invoice
-                      </Button>
-                      <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handlePrint(q)}><Eye className="mr-2 h-4 w-4" /> View Quote</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openEdit(q)} disabled={q.status === 'converted'}><Edit className="mr-2 h-4 w-4" /> Edit Record</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handlePrint(q)}><Download className="mr-2 h-4 w-4" /> Download PDF</DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-green-600" onClick={() => handleConvertToInvoice(q)} disabled={q.status === "converted"}>
+                            <ShoppingCart className="mr-2 h-4 w-4" /> Convert to Invoice
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-red-600" onClick={() => { setSelectedRecord(q); setIsDeleteAlertOpen(true); }}>
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete Quote
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -200,10 +272,15 @@ export default function QuotationsPage() {
         </Card>
       )}
 
-      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>New Proposal</DialogTitle></DialogHeader>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 py-4">
+      {/* NEW/EDIT MODAL */}
+      <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) { setIsAddModalOpen(false); setIsEditModalOpen(false); resetForm(); } }}>
+        <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
+          <DialogHeader className={cn("p-6 text-white", isEditModalOpen ? "bg-blue-600" : "bg-purple-600")}>
+            <DialogTitle className="text-2xl font-headline flex items-center gap-3">
+              <FileText className="h-6 w-6" /> {isEditModalOpen ? `Adjust Quote ${selectedRecord?.quotationNumber}` : "New Proposal"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
             <div className="lg:col-span-2 space-y-6">
               <div className="space-y-2">
                 <Label>Customer</Label>
@@ -240,18 +317,34 @@ export default function QuotationsPage() {
                 </div>
               </div>
             </div>
-            <div className="bg-purple-50 p-6 rounded-2xl border border-purple-100 flex flex-col justify-between">
+            <div className={cn("p-6 rounded-2xl border flex flex-col justify-between", isEditModalOpen ? "bg-blue-50 border-blue-100" : "bg-purple-50 border-purple-100")}>
               <div>
-                <h3 className="font-bold text-purple-800 uppercase text-xs mb-4">Total Estimate</h3>
-                <div className="text-3xl font-bold text-purple-700">৳{totalValue.toLocaleString()}</div>
+                <h3 className={cn("font-bold uppercase text-xs mb-4", isEditModalOpen ? "text-blue-800" : "text-purple-800")}>Total Estimate</h3>
+                <div className={cn("text-3xl font-bold", isEditModalOpen ? "text-blue-700" : "text-purple-700")}>৳{totalValue.toLocaleString()}</div>
               </div>
-              <Button className="w-full bg-purple-600 hover:bg-purple-700 h-12 font-bold gap-2" onClick={handleSubmitQuote} disabled={isSubmitting}>
-                {isSubmitting ? <Loader2 className="animate-spin" /> : <ChevronRight />} Save Proposal
+              <Button className={cn("w-full h-12 font-bold gap-2", isEditModalOpen ? "bg-blue-600 hover:bg-blue-700" : "bg-purple-600 hover:bg-purple-700")} onClick={isEditModalOpen ? handleUpdateQuote : handleSubmitQuote} disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="animate-spin" /> : isEditModalOpen ? <CheckCircle2 /> : <ChevronRight />} {isEditModalOpen ? "Save Changes" : "Save Proposal"}
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* DELETE CONFIRMATION */}
+      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Quotation {selectedRecord?.quotationNumber}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove this proposal? This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={handleDeleteQuote}>Delete Record</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -6,17 +6,18 @@ import {
   Search, 
   Plus, 
   Filter, 
-  BarChart, 
   Zap, 
   RefreshCw,
   Loader2,
-  Package,
-  MoreVertical,
   Boxes,
   AlertTriangle,
-  Activity,
   DollarSign,
-  Scan
+  Scan,
+  MoreVertical,
+  Edit,
+  Trash2,
+  Eye,
+  CheckCircle2
 } from "lucide-react"
 import { inventoryForecasting, type InventoryForecastingOutput } from "@/ai/flows/ai-inventory-forecasting-and-optimization"
 import { Button } from "@/components/ui/button"
@@ -28,12 +29,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, serverTimestamp, doc, setDoc } from "firebase/firestore"
+import { collection, serverTimestamp, doc, setDoc, updateDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { KPICard } from "@/components/dashboard/kpi-card"
+import { deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 
 export default function InventoryPage() {
   const { companyId, branchId } = useTenant();
@@ -41,6 +45,9 @@ export default function InventoryPage() {
   const [isForecasting, setIsForecasting] = React.useState(false)
   const [forecast, setForecast] = React.useState<InventoryForecastingOutput | null>(null)
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
+  const [selectedRecord, setSelectedRecord] = React.useState<any>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [serialRequired, setSerialRequired] = React.useState(false);
@@ -52,41 +59,6 @@ export default function InventoryPage() {
 
   const { data: products, isLoading } = useCollection(productsQuery);
 
-  const totalItems = products?.length || 0;
-  const totalStockValue = products?.reduce((sum, p) => sum + ((p.currentStock || 0) * (p.costPrice || 0)), 0) || 0;
-  const lowStockCount = products?.filter(p => (p.currentStock || 0) <= (p.minStockLevel || 0)).length || 0;
-
-  const handleRunForecast = async () => {
-    if (!products || products.length === 0) {
-      toast({ variant: "destructive", title: "Missing Data", description: "Add products before running AI forecasting." });
-      return;
-    }
-    setIsForecasting(true);
-    try {
-      const result = await inventoryForecasting({
-        historicalSalesData: [{ date: new Date().toISOString(), productId: products[0].id, quantitySold: 45 }],
-        currentInventory: products.map(p => ({
-          productId: p.id,
-          currentStock: p.currentStock || 0,
-          reorderPoint: p.minStockLevel || 0,
-          maxStockLevel: (p.minStockLevel || 0) * 3
-        })),
-        productCatalog: products.map(p => ({
-          productId: p.id,
-          productName: p.name,
-          unitCost: p.costPrice || 0,
-          unitPrice: p.unitPrice || 0
-        }))
-      });
-      setForecast(result);
-      toast({ title: "Intelligence Generated", description: "Optimization strategies updated." });
-    } catch (error) {
-      toast({ variant: "destructive", title: "Flow Error", description: "AI service unreachable." });
-    } finally {
-      setIsForecasting(false);
-    }
-  }
-
   const handleAddProduct = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -95,7 +67,7 @@ export default function InventoryPage() {
     setIsSubmitting(true);
     try {
       const productRef = doc(collection(db, "companies", companyId, "branches", branchId, "products"));
-      const productData = {
+      await setDoc(productRef, {
         id: productRef.id,
         companyId,
         branchId,
@@ -109,16 +81,60 @@ export default function InventoryPage() {
         isActive: true,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-      };
-      await setDoc(productRef, productData);
-      toast({ title: "Product Created", description: serialRequired ? "Serialized product added." : "Standard product added." });
+      });
+      toast({ title: "Product Created" });
       setIsAddModalOpen(false);
-      setSerialRequired(false);
+      resetForm();
     } catch (err: any) {
       toast({ variant: "destructive", title: "Save Failed", description: err.message });
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleUpdateProduct = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedRecord || !db) return;
+    setIsSubmitting(true);
+    const formData = new FormData(e.currentTarget);
+    try {
+      const docRef = doc(db, "companies", companyId!, "branches", branchId!, "products", selectedRecord.id);
+      await updateDoc(docRef, {
+        name: formData.get("name"),
+        sku: formData.get("sku"),
+        unitPrice: Number(formData.get("unitPrice")),
+        costPrice: Number(formData.get("costPrice")),
+        minStockLevel: Number(formData.get("minStockLevel")),
+        serialNumberTrackingRequired: serialRequired,
+        updatedAt: serverTimestamp()
+      });
+      toast({ title: "Inventory Updated" });
+      setIsEditModalOpen(false);
+      resetForm();
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Error", description: e.message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteProduct = () => {
+    if (!selectedRecord || !db) return;
+    const docRef = doc(db, "companies", companyId!, "branches", branchId!, "products", selectedRecord.id);
+    deleteDocumentNonBlocking(docRef);
+    toast({ title: "Product Removed" });
+    setIsDeleteAlertOpen(false);
+  };
+
+  const resetForm = () => {
+    setSelectedRecord(null);
+    setSerialRequired(false);
+  };
+
+  const openEdit = (p: any) => {
+    setSelectedRecord(p);
+    setSerialRequired(p.serialNumberTrackingRequired || false);
+    setIsEditModalOpen(true);
   };
 
   const filteredProducts = products?.filter(p => 
@@ -133,158 +149,99 @@ export default function InventoryPage() {
           <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary">Warehouse Management</h1>
           <p className="text-sm text-muted-foreground mt-1">Stock control & serial tracking</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={handleRunForecast} disabled={isForecasting} className="bg-accent hover:bg-accent/90 text-accent-foreground rounded-full gap-2 font-semibold shadow-lg">
-            {isForecasting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />} AI Intelligence
-          </Button>
-          <Button className="bg-primary hover:bg-primary/90 rounded-full gap-2 px-6" onClick={() => setIsAddModalOpen(true)}>
-            <Plus className="h-4 w-4" /> Add Product
-          </Button>
-        </div>
+        <Button className="bg-primary hover:bg-primary/90 rounded-full gap-2 px-6" onClick={() => { resetForm(); setIsAddModalOpen(true); }}>
+          <Plus className="h-4 w-4" /> Add Product
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Assets" value={totalItems} icon={Boxes} colorClass="bg-blue-500" />
-        <KPICard title="Valuation" value={`৳${totalStockValue.toLocaleString()}`} icon={DollarSign} colorClass="bg-green-500" />
-        <KPICard title="Low Stock" value={lowStockCount} icon={AlertTriangle} colorClass="bg-red-500" />
+        <KPICard title="Assets" value={products?.length || 0} icon={Boxes} colorClass="bg-blue-500" />
+        <KPICard title="Valuation" value={`৳${products?.reduce((s, p) => s + ((p.currentStock || 0) * (p.costPrice || 0)), 0).toLocaleString()}`} icon={DollarSign} colorClass="bg-green-500" />
+        <KPICard title="Low Stock" value={products?.filter(p => (p.currentStock || 0) <= (p.minStockLevel || 0)).length || 0} icon={AlertTriangle} colorClass="bg-red-500" />
         <KPICard title="Serialized" value={products?.filter(p => p.serialNumberTrackingRequired).length || 0} icon={Scan} colorClass="bg-purple-500" />
       </div>
 
-      <Tabs defaultValue="list" className="w-full">
-        <TabsList className="bg-white p-1 rounded-xl shadow-sm border mb-6 flex h-auto">
-          <TabsTrigger value="list" className="rounded-lg flex-1">Catalog</TabsTrigger>
-          <TabsTrigger value="ai-insights" className="rounded-lg flex-1">AI Insights</TabsTrigger>
-        </TabsList>
+      <Card className="border-none shadow-sm rounded-xl overflow-hidden">
+        <div className="p-4 border-b bg-muted/20 flex items-center justify-between">
+          <div className="relative max-w-sm w-full"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="Search SKU or Name..." className="pl-9" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
+        </div>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader className="bg-muted/50">
+              <TableRow>
+                <TableHead>Product</TableHead>
+                <TableHead>SKU</TableHead>
+                <TableHead>Stock Status</TableHead>
+                <TableHead>Pricing</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredProducts?.map((p) => (
+                <TableRow key={p.id} className="hover:bg-muted/30">
+                  <TableCell>
+                    <div className="font-bold text-primary text-xs md:text-sm">{p.name}</div>
+                    {p.serialNumberTrackingRequired && <Badge variant="outline" className="text-[9px] bg-purple-50 text-purple-700 mt-1">Serialized</Badge>}
+                  </TableCell>
+                  <TableCell className="font-mono text-xs">{p.sku}</TableCell>
+                  <TableCell>
+                    <div className={cn("text-xs font-bold", (p.currentStock || 0) <= (p.minStockLevel || 0) ? "text-red-600" : "text-foreground")}>{p.currentStock || 0} Units</div>
+                    <div className="text-[10px] text-muted-foreground">Min Alert: {p.minStockLevel}</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-xs font-bold">৳{p.unitPrice?.toLocaleString()}</div>
+                    <div className="text-[10px] text-muted-foreground">Cost: ৳{p.costPrice?.toLocaleString()}</div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openEdit(p)}><Edit className="mr-2 h-4 w-4" /> Edit Product</DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-600" onClick={() => { setSelectedRecord(p); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </Card>
 
-        <TabsContent value="list" className="space-y-4">
-          <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
-            <div className="relative flex-1 w-full max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search SKU, Name..." className="pl-9" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-            </div>
-            <Button variant="outline" className="gap-2 rounded-lg w-full sm:w-auto"><Filter className="h-4 w-4" /> Filters</Button>
-          </div>
-
-          {isLoading ? (
-            <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-          ) : (
-            <Card className="border-none shadow-sm rounded-xl overflow-hidden">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader className="bg-muted/50">
-                    <TableRow>
-                      <TableHead>Product</TableHead>
-                      <TableHead>SKU</TableHead>
-                      <TableHead>Tracking</TableHead>
-                      <TableHead>In Stock</TableHead>
-                      <TableHead>Pricing</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredProducts?.map((p) => (
-                      <TableRow key={p.id} className="hover:bg-muted/30 transition-colors">
-                        <TableCell>
-                          <div className="font-bold text-primary">{p.name}</div>
-                          <div className="text-[10px] text-muted-foreground font-mono uppercase">{p.id.slice(-8)}</div>
-                        </TableCell>
-                        <TableCell className="font-mono text-xs">{p.sku}</TableCell>
-                        <TableCell>
-                          {p.serialNumberTrackingRequired ? (
-                            <Badge variant="outline" className="border-purple-200 text-purple-700 bg-purple-50 gap-1 text-[10px]">
-                              <Scan className="h-3 w-3" /> Serialized
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="border-slate-200 text-slate-600 text-[10px]">Qty Based</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className={cn("text-xs md:text-sm font-bold", (p.currentStock || 0) <= (p.minStockLevel || 0) ? "text-red-600" : "text-foreground")}>
-                            {p.currentStock || 0} Units
-                          </div>
-                          <div className="text-[10px] text-muted-foreground">Min: {p.minStockLevel}</div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-xs font-bold">৳{p.unitPrice?.toFixed(2)}</div>
-                          <div className="text-[10px] text-muted-foreground">Cost: ৳{p.costPrice?.toFixed(2)}</div>
-                        </TableCell>
-                        <TableCell className="text-right"><Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button></TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </Card>
-          )}
-        </TabsContent>
-
-        <TabsContent value="ai-insights">
-          {forecast ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="rounded-xl border-none shadow-md">
-                <CardHeader className="bg-accent/5 border-b"><CardTitle className="text-lg">Demand Analysis</CardTitle></CardHeader>
-                <CardContent className="pt-6 space-y-4">
-                  {forecast.forecasts.map((f, i) => (
-                    <div key={i} className="flex items-center justify-between p-4 bg-muted/20 rounded-xl border border-dashed">
-                      <div><p className="font-bold">{f.productName}</p><p className="text-xs text-muted-foreground">Forecast: {f.predictedDemandNextPeriod} Units</p></div>
-                      <Badge className="bg-primary">{f.recommendedReorderPoint} Reorder</Badge>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-              <Card className="rounded-xl border-none shadow-md bg-primary text-white">
-                <CardHeader><CardTitle className="text-lg">Strategy</CardTitle></CardHeader>
-                <CardContent className="space-y-3">
-                  {forecast.recommendations.map((rec, i) => (
-                    <div key={i} className="flex gap-2 items-start bg-white/10 p-3 rounded-lg"><Zap className="h-4 w-4 mt-1 shrink-0" /><p className="text-sm">{rec}</p></div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-            <div className="py-20 text-center bg-white rounded-xl border border-dashed">
-              <Zap className="h-12 w-12 text-accent mx-auto mb-4" />
-              <h3 className="font-bold">No Data Points</h3>
-              <p className="text-sm text-muted-foreground mt-1">Run AI Intelligence to generate insights.</p>
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-
-      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+      {/* ADD/EDIT MODAL */}
+      <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) { setIsAddModalOpen(false); setIsEditModalOpen(false); resetForm(); } }}>
         <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle>New Product Entry</DialogTitle></DialogHeader>
-          <form onSubmit={handleAddProduct} className="space-y-4 pt-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Product Name</Label><Input name="name" required placeholder="e.g. Hikvision 4K Camera" /></div>
-              <div className="space-y-2"><Label>SKU / Model</Label><Input name="sku" required placeholder="HIK-4K-PRO" /></div>
+          <DialogHeader><DialogTitle>{isEditModalOpen ? "Adjust Product Data" : "New Inventory Item"}</DialogTitle></DialogHeader>
+          <form onSubmit={isEditModalOpen ? handleUpdateProduct : handleAddProduct} className="space-y-4 pt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2"><Label>Product Name</Label><Input name="name" defaultValue={selectedRecord?.name} required /></div>
+              <div className="space-y-2"><Label>SKU / ID</Label><Input name="sku" defaultValue={selectedRecord?.sku} required /></div>
             </div>
-            
             <div className="flex items-center justify-between p-4 bg-purple-50 rounded-xl border border-purple-100">
-              <div className="space-y-0.5">
-                <Label className="text-purple-900 font-bold">Enable Serial Tracking</Label>
-                <p className="text-[10px] text-purple-700">Track every unit uniquely by IMEI/ID</p>
-              </div>
+              <div className="space-y-0.5"><Label className="text-purple-900 font-bold">Serial Tracking</Label><p className="text-[10px] text-purple-700">Required for unique item monitoring</p></div>
               <Switch checked={serialRequired} onCheckedChange={setSerialRequired} />
             </div>
-
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Unit Cost (৳)</Label><Input name="costPrice" type="number" step="0.01" required /></div>
-              <div className="space-y-2"><Label>Selling Price (৳)</Label><Input name="unitPrice" type="number" step="0.01" required /></div>
+              <div className="space-y-2"><Label>Unit Cost (৳)</Label><Input name="costPrice" type="number" defaultValue={selectedRecord?.costPrice} required /></div>
+              <div className="space-y-2"><Label>Selling Price (৳)</Label><Input name="unitPrice" type="number" defaultValue={selectedRecord?.unitPrice} required /></div>
             </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Opening Qty</Label><Input name="currentStock" type="number" required defaultValue="0" /></div>
-              <div className="space-y-2"><Label>Min Stock Level</Label><Input name="minStockLevel" type="number" required defaultValue="5" /></div>
-            </div>
-
+            {!isEditModalOpen && <div className="space-y-2"><Label>Opening Stock</Label><Input name="currentStock" type="number" defaultValue="0" /></div>}
+            <div className="space-y-2"><Label>Low Stock Warning Level</Label><Input name="minStockLevel" type="number" defaultValue={selectedRecord?.minStockLevel || 5} /></div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={isSubmitting}>{isSubmitting ? <Loader2 className="animate-spin" /> : "Save to Database"}</Button>
+              <Button type="button" variant="outline" onClick={() => { setIsAddModalOpen(false); setIsEditModalOpen(false); }}>Cancel</Button>
+              <Button type="submit" disabled={isSubmitting}>{isSubmitting ? <Loader2 className="animate-spin" /> : "Save to Inventory"}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* DELETE ALERT */}
+      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader><AlertDialogTitle>Remove Product?</AlertDialogTitle><AlertDialogDescription>This will delete {selectedRecord?.name}. Stock records and existing transactions using this ID may be affected.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={handleDeleteProduct}>Delete</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

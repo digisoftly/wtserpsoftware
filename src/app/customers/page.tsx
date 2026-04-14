@@ -3,9 +3,9 @@
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { Users, UserPlus, Search, MoreVertical, Mail, Phone, MapPin, Loader2, Building2, User, Check, Filter, UserCheck, UserX, Building } from "lucide-react"
+import { Users, UserPlus, Search, MoreVertical, Mail, Phone, MapPin, Loader2, Building2, User, Check, Filter, UserCheck, UserX, Building, Eye, Edit, Trash2 } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, serverTimestamp } from "firebase/firestore"
+import { collection, serverTimestamp, doc, updateDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -13,17 +13,24 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { addDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { KPICard } from "@/components/dashboard/kpi-card"
+import { toast } from "@/hooks/use-toast"
 
 export default function CustomersPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
+  const [selectedCustomer, setSelectedCustomer] = React.useState<any>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [customerType, setCustomerType] = React.useState<"individual" | "company">("individual");
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const customersQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
@@ -32,20 +39,15 @@ export default function CustomersPage() {
 
   const { data: customers, isLoading } = useCollection(customersQuery);
 
-  const totalCustomers = customers?.length || 0;
-  const companyCount = customers?.filter(c => c.customerType === 'company').length || 0;
-  const individualCount = totalCustomers - companyCount;
-
   const filteredCustomers = customers?.filter(c => 
     `${c.firstName} ${c.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.companyName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleAddCustomer = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAddCustomer = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    
     if (!db || !companyId || !branchId) return;
 
     const customerData = {
@@ -62,10 +64,50 @@ export default function CustomersPage() {
       updatedAt: serverTimestamp(),
     };
 
-    const colRef = collection(db, "companies", companyId, "branches", branchId, "customers");
-    addDocumentNonBlocking(colRef, customerData);
+    addDocumentNonBlocking(collection(db, "companies", companyId, "branches", branchId, "customers"), customerData);
     setIsAddModalOpen(false);
-    setCustomerType("individual");
+    toast({ title: "Customer Registered", description: `${customerData.firstName} added to directory.` });
+  };
+
+  const handleUpdateCustomer = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedCustomer || !db) return;
+    setIsSubmitting(true);
+    const formData = new FormData(e.currentTarget);
+    
+    try {
+      const docRef = doc(db, "companies", companyId!, "branches", branchId!, "customers", selectedCustomer.id);
+      await updateDoc(docRef, {
+        customerType,
+        firstName: formData.get("firstName"),
+        lastName: formData.get("lastName"),
+        email: formData.get("email"),
+        phoneNumber: formData.get("phoneNumber"),
+        companyName: customerType === "company" ? formData.get("companyName") : "",
+        city: formData.get("city"),
+        updatedAt: serverTimestamp()
+      });
+      toast({ title: "Customer Updated", description: "Profile details saved." });
+      setIsEditModalOpen(false);
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Update Error", description: err.message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteCustomer = () => {
+    if (!selectedCustomer || !db) return;
+    const docRef = doc(db, "companies", companyId!, "branches", branchId!, "customers", selectedCustomer.id);
+    deleteDocumentNonBlocking(docRef);
+    toast({ title: "Record Deleted", description: "Customer removed from directory." });
+    setIsDeleteAlertOpen(false);
+  };
+
+  const openEdit = (cust: any) => {
+    setSelectedCustomer(cust);
+    setCustomerType(cust.customerType || "individual");
+    setIsEditModalOpen(true);
   };
 
   return (
@@ -82,32 +124,21 @@ export default function CustomersPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <KPICard title="Total Clients" value={totalCustomers} icon={Users} colorClass="bg-cyan-500" />
-        <KPICard title="Individuals" value={individualCount} icon={UserCheck} colorClass="bg-blue-500" />
-        <KPICard title="Corporate" value={companyCount} icon={Building} colorClass="bg-amber-500" />
+        <KPICard title="Total Clients" value={customers?.length || 0} icon={Users} colorClass="bg-cyan-500" />
+        <KPICard title="Individuals" value={customers?.filter(c => c.customerType !== 'company').length || 0} icon={UserCheck} colorClass="bg-blue-500" />
+        <KPICard title="Corporate" value={customers?.filter(c => c.customerType === 'company').length || 0} icon={Building} colorClass="bg-amber-500" />
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
         <div className="relative flex-1 w-full max-sm:max-w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search name, email, or company..." 
-            className="pl-9 bg-background border-none ring-1 ring-input" 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+          <Input placeholder="Search name, email, or company..." className="pl-9" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
-        <Button variant="outline" className="gap-2 w-full sm:w-auto">
-          <Filter className="h-4 w-4" />
-          Filters
-        </Button>
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-cyan-600" />
-        </div>
-      ) : customers && customers.length > 0 ? (
+        <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-cyan-600" /></div>
+      ) : (
         <Card className="border-none shadow-sm rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
@@ -115,54 +146,38 @@ export default function CustomersPage() {
                 <TableRow>
                   <TableHead>Type</TableHead>
                   <TableHead>Customer Name</TableHead>
-                  <TableHead>Organization</TableHead>
                   <TableHead>Contact</TableHead>
-                  <TableHead>Location</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredCustomers?.map((customer) => (
-                  <TableRow key={customer.id} className="hover:bg-muted/30 transition-colors">
+                  <TableRow key={customer.id} className="hover:bg-muted/30">
                     <TableCell>
-                      {customer.customerType === "company" ? (
-                        <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700 gap-1 text-[10px]">
-                          <Building2 className="h-3 w-3" /> Company
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="border-cyan-200 bg-cyan-50 text-cyan-700 gap-1 text-[10px]">
-                          <User className="h-3 w-3" /> Individual
-                        </Badge>
-                      )}
+                      {customer.customerType === "company" ? <Badge variant="outline" className="text-[10px]">Company</Badge> : <Badge variant="outline" className="text-[10px]">Indiv</Badge>}
                     </TableCell>
                     <TableCell>
                       <div className="font-bold text-xs md:text-sm">{customer.firstName} {customer.lastName}</div>
-                      <div className="text-[10px] text-muted-foreground uppercase font-mono">ID: {customer.id.slice(-6)}</div>
+                      <div className="text-[10px] text-muted-foreground uppercase">{customer.companyName || "Personal"}</div>
                     </TableCell>
                     <TableCell>
-                      <span className={cn("text-xs", customer.customerType === "company" ? "font-semibold text-foreground" : "text-muted-foreground italic")}>
-                        {customer.companyName || "N/A"}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                          <Mail className="h-3 w-3" /> {customer.email || "No email"}
-                        </div>
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                          <Phone className="h-3 w-3" /> {customer.phoneNumber || "No phone"}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-[10px]">
-                        <MapPin className="h-3 w-3 text-muted-foreground" /> {customer.city || "N/A"}
+                      <div className="text-[10px] text-muted-foreground">
+                        <div>{customer.email || "No Email"}</div>
+                        <div>{customer.phoneNumber || "No Phone"}</div>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openEdit(customer)}><Edit className="mr-2 h-4 w-4" /> Edit Profile</DropdownMenuItem>
+                          <DropdownMenuItem className="text-red-600" onClick={() => { setSelectedCustomer(customer); setIsDeleteAlertOpen(true); }}>
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete Customer
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -170,99 +185,51 @@ export default function CustomersPage() {
             </Table>
           </div>
         </Card>
-      ) : (
-        <div className="p-12 bg-white rounded-xl border border-dashed flex flex-col items-center justify-center text-center">
-          <div className="w-16 h-16 bg-cyan-50 rounded-full flex items-center justify-center mb-4 text-cyan-500">
-            <Users className="h-8 w-8" />
-          </div>
-          <h2 className="text-xl font-headline font-bold">Customer Directory Empty</h2>
-          <p className="text-sm text-muted-foreground max-w-sm mt-2">
-            Build your client base by adding new contacts or importing your existing CRM list.
-          </p>
-          <Button className="mt-6 bg-cyan-600 rounded-full px-8" onClick={() => setIsAddModalOpen(true)}>Add Your First Customer</Button>
-        </div>
       )}
 
-      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-headline text-xl md:text-2xl text-cyan-600">Register New Customer</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleAddCustomer} className="space-y-6 pt-4">
+      {/* ADD/EDIT MODAL */}
+      <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) { setIsAddModalOpen(false); setIsEditModalOpen(false); setSelectedCustomer(null); } }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle>{isEditModalOpen ? "Edit Customer Details" : "Register New Customer"}</DialogTitle></DialogHeader>
+          <form onSubmit={isEditModalOpen ? handleUpdateCustomer : handleAddCustomer} className="space-y-6 pt-4">
             <div className="space-y-3">
-              <Label className="text-sm md:text-base">What type of customer are you adding?</Label>
-              <RadioGroup 
-                defaultValue="individual" 
-                value={customerType}
-                onValueChange={(val) => setCustomerType(val as "individual" | "company")}
-                className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-              >
-                <div>
-                  <RadioGroupItem value="individual" id="individual" className="peer sr-only" />
-                  <Label
-                    htmlFor="individual"
-                    className="flex flex-col items-center justify-between rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-cyan-600 cursor-pointer transition-all"
-                  >
-                    <User className="mb-2 h-6 w-6" />
-                    <span className="font-bold text-sm">Individual</span>
-                    <span className="text-[10px] text-muted-foreground text-center mt-1">Single person or walk-in client</span>
-                  </Label>
-                </div>
-                <div>
-                  <RadioGroupItem value="company" id="company" className="peer sr-only" />
-                  <Label
-                    htmlFor="company"
-                    className="flex flex-col items-center justify-between rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-amber-600 cursor-pointer transition-all"
-                  >
-                    <Building2 className="mb-2 h-6 w-6" />
-                    <span className="font-bold text-sm">Company</span>
-                    <span className="text-[10px] text-muted-foreground text-center mt-1">Corporate entity or business partner</span>
-                  </Label>
-                </div>
+              <Label>Customer Type</Label>
+              <RadioGroup value={customerType} onValueChange={(v: any) => setCustomerType(v)} className="grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2 border p-3 rounded-lg"><RadioGroupItem value="individual" id="individual" /><Label htmlFor="individual">Individual</Label></div>
+                <div className="flex items-center space-x-2 border p-3 rounded-lg"><RadioGroupItem value="company" id="company" /><Label htmlFor="company">Company</Label></div>
               </RadioGroup>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName" className="text-xs">First Name</Label>
-                <Input id="firstName" name="firstName" required placeholder="John" className="text-sm" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName" className="text-xs">Last Name</Label>
-                <Input id="lastName" name="lastName" required placeholder="Doe" className="text-sm" />
-              </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2"><Label>First Name</Label><Input name="firstName" defaultValue={selectedCustomer?.firstName} required /></div>
+              <div className="space-y-2"><Label>Last Name</Label><Input name="lastName" defaultValue={selectedCustomer?.lastName} required /></div>
             </div>
-
-            {customerType === "company" && (
-              <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
-                <Label htmlFor="companyName" className="text-xs">Legal Company Name</Label>
-                <Input id="companyName" name="companyName" required placeholder="Acme Corporation Ltd." className="text-sm" />
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-xs">Email Address (Optional)</Label>
-                <Input id="email" name="email" type="email" placeholder="john@example.com" className="text-sm" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phoneNumber" className="text-xs">Phone Number (Optional)</Label>
-                <Input id="phoneNumber" name="phoneNumber" placeholder="+880 1700-000000" className="text-sm" />
-              </div>
+            {customerType === 'company' && <div className="space-y-2"><Label>Company Name</Label><Input name="companyName" defaultValue={selectedCustomer?.companyName} required /></div>}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2"><Label>Email</Label><Input name="email" defaultValue={selectedCustomer?.email} type="email" /></div>
+              <div className="space-y-2"><Label>Phone</Label><Input name="phoneNumber" defaultValue={selectedCustomer?.phoneNumber} /></div>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="city" className="text-xs">City / Location</Label>
-              <Input id="city" name="city" placeholder="Dhaka, Bangladesh" className="text-sm" />
-            </div>
-
-            <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
-              <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)} className="rounded-full w-full sm:w-auto">Cancel</Button>
-              <Button type="submit" className="bg-cyan-600 hover:bg-cyan-700 rounded-full px-8 w-full sm:w-auto">Save Record</Button>
+            <div className="space-y-2"><Label>City</Label><Input name="city" defaultValue={selectedCustomer?.city} /></div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => { setIsAddModalOpen(false); setIsEditModalOpen(false); }}>Cancel</Button>
+              <Button type="submit" disabled={isSubmitting}>{isSubmitting ? <Loader2 className="animate-spin" /> : "Save Profile"}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* DELETE ALERT */}
+      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>This will permanently delete the customer record for {selectedCustomer?.firstName}. All transaction history for this client will be unlinked.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={handleDeleteCustomer}>Confirm Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
