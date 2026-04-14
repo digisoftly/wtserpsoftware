@@ -1,10 +1,8 @@
-
 'use client';
 
 import * as React from 'react';
-import { useUser, useFirestore } from '@/firebase';
-import { doc, getDoc, serverTimestamp, collection, query, limit, getDocs, setDoc } from 'firebase/firestore';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 
 interface Role {
   id: string;
@@ -44,7 +42,13 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       if (user && db) {
         try {
           const userRef = doc(db, "companies", companyId, "users", user.uid);
-          const userSnap = await getDoc(userRef);
+          const userSnap = await getDoc(userRef).catch(async (err) => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+              path: userRef.path,
+              operation: 'get'
+            }));
+            throw err;
+          });
           
           let roleId = "super-admin";
 
@@ -61,14 +65,28 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp(),
             };
-            await setDoc(userRef, userData, { merge: true });
+            
+            // Non-blocking setDoc
+            setDoc(userRef, userData, { merge: true }).catch(async (err) => {
+              errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: userRef.path,
+                operation: 'write',
+                requestResourceData: userData
+              }));
+            });
           } else {
             roleId = userSnap.data().roleId || "super-admin";
           }
 
           // Fetch Role Permissions
           const roleRef = doc(db, "companies", companyId, "roles", roleId);
-          const roleSnap = await getDoc(roleRef);
+          const roleSnap = await getDoc(roleRef).catch(async (err) => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+              path: roleRef.path,
+              operation: 'get'
+            }));
+            throw err;
+          });
 
           if (roleSnap.exists()) {
             setUserRole({ id: roleSnap.id, ...roleSnap.data() } as Role);
@@ -80,11 +98,19 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
               isSuperAdmin: true,
               permissions: {} // Super admins bypass check
             };
-            await setDoc(roleRef, superAdminRole);
+            
+            setDoc(roleRef, superAdminRole).catch(async (err) => {
+              errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: roleRef.path,
+                operation: 'create',
+                requestResourceData: superAdminRole
+              }));
+            });
+            
             setUserRole(superAdminRole);
           }
         } catch (error) {
-          console.error("Tenant Init Error:", error);
+          // Standard error logging is handled by contextual emitter above
         } finally {
           setIsInitializing(false);
         }
