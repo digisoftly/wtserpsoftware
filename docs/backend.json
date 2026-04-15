@@ -79,7 +79,7 @@
         "categoryId": { "type": "string" },
         "productType": { 
           "type": "string",
-          "enum": ["hardware", "service", "software", "other"]
+          "enum": ["hardware", "software", "service", "subscription", "accessory", "consumable", "license", "other"]
         },
         "name": { "type": "string" },
         "sku": { "type": "string" },

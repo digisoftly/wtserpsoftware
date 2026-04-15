@@ -355,8 +355,12 @@ export default function InventoryPage() {
                     <SelectContent>
                       <SelectItem value="all">All Types</SelectItem>
                       <SelectItem value="hardware">Hardware</SelectItem>
-                      <SelectItem value="service">Service</SelectItem>
                       <SelectItem value="software">Software</SelectItem>
+                      <SelectItem value="service">Service</SelectItem>
+                      <SelectItem value="subscription">Subscription</SelectItem>
+                      <SelectItem value="accessory">Accessory</SelectItem>
+                      <SelectItem value="consumable">Consumable</SelectItem>
+                      <SelectItem value="license">License</SelectItem>
                     </SelectContent>
                   </Select>
                   <Select value={brandFilter} onValueChange={setBrandFilter}>
@@ -592,8 +596,12 @@ export default function InventoryPage() {
                         <SelectTrigger className="h-12 rounded-2xl bg-white border-slate-200 shadow-sm"><SelectValue placeholder="Type..." /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="hardware">Hardware</SelectItem>
-                          <SelectItem value="service">Service</SelectItem>
                           <SelectItem value="software">Software</SelectItem>
+                          <SelectItem value="service">Labor/Service</SelectItem>
+                          <SelectItem value="subscription">Subscription</SelectItem>
+                          <SelectItem value="accessory">Accessory</SelectItem>
+                          <SelectItem value="consumable">Consumable</SelectItem>
+                          <SelectItem value="license">License</SelectItem>
                           <SelectItem value="other">Other</SelectItem>
                         </SelectContent>
                       </Select>
