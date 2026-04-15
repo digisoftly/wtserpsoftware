@@ -26,7 +26,9 @@ import {
   PlusCircle,
   X,
   PlusSquare,
-  AlertCircle
+  AlertCircle,
+  Layers,
+  LayoutGrid
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -58,12 +60,15 @@ export default function InventoryPage() {
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
   const [isBrandModalOpen, setIsBrandModalOpen] = React.useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = React.useState(false);
   
   // Inline Model Creation State
   const [isInlineModelOpen, setIsInlineModelOpen] = React.useState(false);
   const [newModelName, setNewModelName] = React.useState("");
   const [formSelectedBrand, setFormSelectedBrand] = React.useState<string>("");
   const [selectedModelId, setSelectedModelId] = React.useState<string>("");
+  const [selectedCategoryId, setSelectedCategoryId] = React.useState<string>("");
+  const [selectedProductType, setSelectedProductType] = React.useState<string>("hardware");
 
   // Selection States
   const [selectedRecord, setSelectedRecord] = React.useState<any>(null);
@@ -74,6 +79,8 @@ export default function InventoryPage() {
   // Filters
   const [brandFilter, setBrandFilter] = React.useState("all");
   const [modelFilter, setModelFilter] = React.useState("all");
+  const [categoryFilter, setCategoryFilter] = React.useState("all");
+  const [typeFilter, setTypeFilter] = React.useState("all");
 
   // --- DATA QUERIES ---
   const productsQuery = useMemoFirebase(() => {
@@ -94,6 +101,12 @@ export default function InventoryPage() {
   }, [db, companyId]);
   const { data: models } = useCollection(modelsQuery);
 
+  const categoriesQuery = useMemoFirebase(() => {
+    if (!db || !companyId) return null;
+    return query(collection(db, "companies", companyId, "categories"), orderBy("name"));
+  }, [db, companyId]);
+  const { data: categories } = useCollection(categoriesQuery);
+
   // --- ACTIONS ---
   const handleAddProduct = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -109,6 +122,8 @@ export default function InventoryPage() {
         branchId,
         brandId: formSelectedBrand,
         modelId: selectedModelId,
+        categoryId: selectedCategoryId,
+        productType: selectedProductType,
         name: formData.get("name") as string,
         sku: formData.get("sku") as string,
         unitPrice: Number(formData.get("unitPrice")),
@@ -140,6 +155,8 @@ export default function InventoryPage() {
       await updateDoc(docRef, {
         brandId: formSelectedBrand,
         modelId: selectedModelId,
+        categoryId: selectedCategoryId,
+        productType: selectedProductType,
         name: formData.get("name"),
         sku: formData.get("sku"),
         unitPrice: Number(formData.get("unitPrice")),
@@ -189,6 +206,29 @@ export default function InventoryPage() {
     }
   };
 
+  const handleAddCategory = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    if (!db || !companyId) return;
+    setIsSubmitting(true);
+    try {
+      const catRef = doc(collection(db, "companies", companyId, "categories"));
+      await setDoc(catRef, {
+        id: catRef.id,
+        companyId,
+        name: formData.get("name") as string,
+        description: formData.get("description") as string,
+        createdAt: serverTimestamp()
+      });
+      toast({ title: "Category Registered" });
+      setIsCategoryModalOpen(false);
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Failed", description: e.message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleQuickAddModel = async () => {
     if (!db || !companyId || !formSelectedBrand || !newModelName) {
       toast({ variant: "destructive", title: "Missing Context", description: "Please select a brand before creating a new model." });
@@ -231,6 +271,8 @@ export default function InventoryPage() {
     setSerialRequired(false);
     setFormSelectedBrand("");
     setSelectedModelId("");
+    setSelectedCategoryId("");
+    setSelectedProductType("hardware");
     setNewModelName("");
     setIsInlineModelOpen(false);
   };
@@ -240,6 +282,8 @@ export default function InventoryPage() {
     setSerialRequired(p.serialNumberTrackingRequired || false);
     setFormSelectedBrand(p.brandId || "");
     setSelectedModelId(p.modelId || "");
+    setSelectedCategoryId(p.categoryId || "");
+    setSelectedProductType(p.productType || "hardware");
     setIsEditModalOpen(true);
   };
 
@@ -248,9 +292,11 @@ export default function InventoryPage() {
       const matchesSearch = p.name?.toLowerCase().includes(searchTerm.toLowerCase()) || p.sku?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesBrand = brandFilter === "all" || p.brandId === brandFilter;
       const matchesModel = modelFilter === "all" || p.modelId === modelFilter;
-      return matchesSearch && matchesBrand && matchesModel;
+      const matchesCategory = categoryFilter === "all" || p.categoryId === categoryFilter;
+      const matchesType = typeFilter === "all" || p.productType === typeFilter;
+      return matchesSearch && matchesBrand && matchesModel && matchesCategory && matchesType;
     });
-  }, [products, searchTerm, brandFilter, modelFilter]);
+  }, [products, searchTerm, brandFilter, modelFilter, categoryFilter, typeFilter]);
 
   return (
     <div className="space-y-6 pb-10">
@@ -259,7 +305,7 @@ export default function InventoryPage() {
           <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary flex items-center gap-2">
             <Boxes className="h-8 w-8" /> Warehouse Management
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Real-time stock monitoring and brand tracking</p>
+          <p className="text-sm text-muted-foreground mt-1">Real-time stock monitoring and categorization</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" className="rounded-full gap-2 px-6" asChild>
@@ -277,38 +323,57 @@ export default function InventoryPage() {
         <KPICard title="Total Assets" value={products?.length || 0} icon={Boxes} colorClass="bg-blue-500" />
         <KPICard title="Warehouse Valuation" value={`৳${products?.reduce((s, p) => s + ((p.currentStock || 0) * (p.costPrice || 0)), 0).toLocaleString()}`} icon={DollarSign} colorClass="bg-green-500" />
         <KPICard title="Low Stock Alerts" value={products?.filter(p => (p.currentStock || 0) <= (p.minStockLevel || 0)).length || 0} icon={AlertTriangle} colorClass="bg-red-500" />
-        <KPICard title="Brands" value={brands?.length || 0} icon={Tag} colorClass="bg-orange-500" />
+        <KPICard title="Categories" value={categories?.length || 0} icon={Layers} colorClass="bg-orange-500" />
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="bg-white border rounded-xl p-1 mb-6 shadow-sm flex h-auto overflow-x-auto no-scrollbar">
           <TabsTrigger value="products" className="rounded-lg gap-2 flex-1 py-2 font-bold"><Boxes className="h-4 w-4" /> Products</TabsTrigger>
+          <TabsTrigger value="categories" className="rounded-lg gap-2 flex-1 py-2 font-bold"><Layers className="h-4 w-4" /> Categories</TabsTrigger>
           <TabsTrigger value="brands" className="rounded-lg gap-2 flex-1 py-2 font-bold"><Tag className="h-4 w-4" /> Brands</TabsTrigger>
           <TabsTrigger value="models" className="rounded-lg gap-2 flex-1 py-2 font-bold"><Cpu className="h-4 w-4" /> Models</TabsTrigger>
         </TabsList>
 
         <TabsContent value="products" className="space-y-4">
           <Card className="border-none shadow-sm rounded-xl overflow-hidden">
-            <div className="p-4 border-b bg-muted/20 flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="relative max-w-sm w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search SKU, Name or Serial..." className="pl-9 h-10 border-none ring-1 ring-input bg-background shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-              </div>
-              <div className="flex gap-2 w-full md:w-auto">
-                <Select value={brandFilter} onValueChange={setBrandFilter}>
-                  <SelectTrigger className="h-10 bg-background min-w-[140px] rounded-lg"><SelectValue placeholder="Brand" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Brands</SelectItem>
-                    {brands?.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                <Select value={modelFilter} onValueChange={setModelFilter}>
-                  <SelectTrigger className="h-10 bg-background min-w-[140px] rounded-lg"><SelectValue placeholder="Model" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Models</SelectItem>
-                    {models?.filter(m => brandFilter === 'all' || m.brandId === brandFilter).map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+            <div className="p-4 border-b bg-muted/20 flex flex-col items-stretch gap-4">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="relative max-w-sm w-full">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="Search SKU, Name or Serial..." className="pl-9 h-10 border-none ring-1 ring-input bg-background shadow-inner" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                </div>
+                <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger className="h-10 bg-background min-w-[120px] rounded-lg"><SelectValue placeholder="Category" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {categories?.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger className="h-10 bg-background min-w-[120px] rounded-lg"><SelectValue placeholder="Type" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="hardware">Hardware</SelectItem>
+                      <SelectItem value="service">Service</SelectItem>
+                      <SelectItem value="software">Software</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={brandFilter} onValueChange={setBrandFilter}>
+                    <SelectTrigger className="h-10 bg-background min-w-[120px] rounded-lg"><SelectValue placeholder="Brand" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Brands</SelectItem>
+                      {brands?.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Select value={modelFilter} onValueChange={setModelFilter}>
+                    <SelectTrigger className="h-10 bg-background min-w-[120px] rounded-lg"><SelectValue placeholder="Model" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Models</SelectItem>
+                      {models?.filter(m => brandFilter === 'all' || m.brandId === brandFilter).map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
             <div className="overflow-x-auto">
@@ -319,6 +384,7 @@ export default function InventoryPage() {
                   <TableHeader className="bg-muted/50">
                     <TableRow>
                       <TableHead>Identity</TableHead>
+                      <TableHead>Category & Type</TableHead>
                       <TableHead>SKU</TableHead>
                       <TableHead>Availability</TableHead>
                       <TableHead>Commercials</TableHead>
@@ -327,7 +393,7 @@ export default function InventoryPage() {
                   </TableHeader>
                   <TableBody>
                     {filteredProducts?.length === 0 ? (
-                      <TableRow><TableCell colSpan={5} className="text-center py-16 text-muted-foreground italic">No products matched your criteria.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={6} className="text-center py-16 text-muted-foreground italic">No products matched your criteria.</TableCell></TableRow>
                     ) : (
                       filteredProducts?.map((p) => (
                         <TableRow key={p.id} className="hover:bg-muted/30 transition-colors group">
@@ -343,6 +409,12 @@ export default function InventoryPage() {
                                 </Badge>
                               )}
                               {p.serialNumberTrackingRequired && <Badge className="text-[8px] bg-purple-50 text-purple-700 border-purple-100">SN-TRACKED</Badge>}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[10px] font-bold text-muted-foreground uppercase">{categories?.find(c => c.id === p.categoryId)?.name || "Uncategorized"}</span>
+                              <Badge variant="secondary" className="w-fit text-[8px] uppercase">{p.productType || "hardware"}</Badge>
                             </div>
                           </TableCell>
                           <TableCell className="font-mono text-[10px] uppercase text-muted-foreground">{p.sku}</TableCell>
@@ -379,6 +451,39 @@ export default function InventoryPage() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="categories">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card className="lg:col-span-2 border-none shadow-sm rounded-xl overflow-hidden">
+              <Table>
+                <TableHeader className="bg-muted/50">
+                  <TableRow><TableHead>Category Name</TableHead><TableHead>Products</TableHead><TableHead className="text-right">Actions</TableHead></TableRow>
+                </TableHeader>
+                <TableBody>
+                  {categories?.map(c => (
+                    <TableRow key={c.id} className="hover:bg-muted/20">
+                      <TableCell className="font-bold">{c.name}</TableCell>
+                      <TableCell><Badge variant="secondary" className="rounded-md font-bold">{products?.filter(p => p.categoryId === c.id).length || 0} items</Badge></TableCell>
+                      <TableCell className="text-right"><Button variant="ghost" size="icon" className="text-muted-foreground hover:text-red-600 rounded-full"><Trash2 className="h-4 w-4" /></Button></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+            <Card className="border-none shadow-md rounded-xl h-fit">
+              <CardHeader className="bg-orange-50/30 border-b"><CardTitle className="text-lg flex items-center gap-2"><PlusSquare className="h-5 w-5 text-orange-600" /> New Category</CardTitle></CardHeader>
+              <CardContent className="pt-6">
+                <form onSubmit={handleAddCategory} className="space-y-4">
+                  <div className="space-y-2"><Label className="text-xs uppercase font-bold text-muted-foreground">Category Name</Label><Input name="name" required placeholder="e.g. Surveillance" className="h-11 rounded-xl" /></div>
+                  <div className="space-y-2"><Label className="text-xs uppercase font-bold text-muted-foreground">Description</Label><Input name="description" placeholder="Brief info..." className="h-11 rounded-xl" /></div>
+                  <Button type="submit" className="w-full h-12 rounded-xl shadow-lg bg-orange-600 hover:bg-orange-700 font-bold" disabled={isSubmitting}>
+                    {isSubmitting ? <Loader2 className="animate-spin" /> : "Save Category"}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
         <TabsContent value="brands">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-2 border-none shadow-sm rounded-xl overflow-hidden">
@@ -398,12 +503,12 @@ export default function InventoryPage() {
               </Table>
             </Card>
             <Card className="border-none shadow-md rounded-xl h-fit">
-              <CardHeader className="bg-orange-50/30 border-b"><CardTitle className="text-lg flex items-center gap-2"><PlusSquare className="h-5 w-5 text-orange-600" /> Register Brand</CardTitle></CardHeader>
+              <CardHeader className="bg-blue-50/30 border-b"><CardTitle className="text-lg flex items-center gap-2"><PlusSquare className="h-5 w-5 text-blue-600" /> Register Brand</CardTitle></CardHeader>
               <CardContent className="pt-6">
                 <form onSubmit={handleAddBrand} className="space-y-4">
                   <div className="space-y-2"><Label className="text-xs uppercase font-bold text-muted-foreground">Manufacturer Label</Label><Input name="name" required placeholder="e.g. Hikvision" className="h-11 rounded-xl" /></div>
                   <div className="space-y-2"><Label className="text-xs uppercase font-bold text-muted-foreground">Corporate Description</Label><Input name="description" placeholder="Brief info..." className="h-11 rounded-xl" /></div>
-                  <Button type="submit" className="w-full h-12 rounded-xl shadow-lg bg-orange-600 hover:bg-orange-700 font-bold" disabled={isSubmitting}>
+                  <Button type="submit" className="w-full h-12 rounded-xl shadow-lg bg-blue-600 hover:bg-blue-700 font-bold" disabled={isSubmitting}>
                     {isSubmitting ? <Loader2 className="animate-spin" /> : "Authorize Brand"}
                   </Button>
                 </form>
@@ -457,7 +562,7 @@ export default function InventoryPage() {
 
       {/* ADD/EDIT PRODUCT MODAL */}
       <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) { setIsAddModalOpen(false); setIsEditModalOpen(false); resetForm(); } }}>
-        <DialogContent className="max-w-4xl w-[95vw] max-h-[95vh] overflow-y-auto p-0 border-none shadow-2xl rounded-3xl">
+        <DialogContent className="max-w-5xl w-[95vw] max-h-[95vh] overflow-y-auto p-0 border-none shadow-2xl rounded-3xl">
           <DialogHeader className={cn("p-8 text-white", isEditModalOpen ? "bg-blue-600" : "bg-primary")}>
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -480,6 +585,28 @@ export default function InventoryPage() {
                     <Badge className="bg-primary/10 text-primary border-none text-[9px] uppercase font-black">Step 1</Badge>
                   </div>
                   
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold text-slate-700">Classification</Label>
+                      <Select name="productType" required value={selectedProductType} onValueChange={setSelectedProductType}>
+                        <SelectTrigger className="h-12 rounded-2xl bg-white border-slate-200 shadow-sm"><SelectValue placeholder="Type..." /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="hardware">Hardware</SelectItem>
+                          <SelectItem value="service">Service</SelectItem>
+                          <SelectItem value="software">Software</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold text-slate-700">Category</Label>
+                      <Select name="categoryId" required value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
+                        <SelectTrigger className="h-12 rounded-2xl bg-white border-slate-200 shadow-sm"><SelectValue placeholder="Category..." /></SelectTrigger>
+                        <SelectContent>{categories?.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
                   <div className="space-y-5">
                     <div className="space-y-2">
                       <Label className="text-xs font-bold text-slate-700">Manufacturer Brand</Label>
@@ -517,8 +644,8 @@ export default function InventoryPage() {
 
                       {isInlineModelOpen ? (
                         <div className="flex gap-2 animate-in slide-in-from-top-4 duration-300">
-                          <Input 
-                            className="h-12 rounded-2xl bg-white border-2 border-primary/20 text-sm font-bold shadow-md shadow-primary/5 focus:border-primary" 
+                          <input 
+                            className="flex h-12 w-full rounded-2xl border-2 border-primary/20 bg-white px-3 py-2 text-sm font-bold shadow-md shadow-primary/5 focus:outline-none focus:border-primary placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
                             placeholder="Enter new model code..." 
                             value={newModelName} 
                             autoFocus

@@ -38,6 +38,18 @@
       },
       "required": ["id", "companyId", "brandId", "name"]
     },
+    "Category": {
+      "title": "Product Category",
+      "type": "object",
+      "description": "Categorization for products (e.g., CCTV, Networking).",
+      "properties": {
+        "id": { "type": "string" },
+        "companyId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "required": ["id", "companyId", "name"]
+    },
     "Branch": {
       "title": "Branch",
       "type": "object",
@@ -57,13 +69,18 @@
     "Product": {
       "title": "Product",
       "type": "object",
-      "description": "Represents a physical product with brand and model tracking.",
+      "description": "Represents a physical product or service.",
       "properties": {
         "id": { "type": "string" },
         "companyId": { "type": "string" },
         "branchId": { "type": "string" },
         "brandId": { "type": "string" },
         "modelId": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "productType": { 
+          "type": "string",
+          "enum": ["hardware", "service", "software", "other"]
+        },
         "name": { "type": "string" },
         "sku": { "type": "string" },
         "unitPrice": { "type": "number" },
@@ -73,7 +90,7 @@
         "serialNumberTrackingRequired": { "type": "boolean" },
         "isActive": { "type": "boolean" }
       },
-      "required": ["id", "name", "sku", "unitPrice", "serialNumberTrackingRequired"]
+      "required": ["id", "name", "sku", "unitPrice", "productType", "serialNumberTrackingRequired"]
     },
     "ProductSerialNumber": {
       "title": "ProductSerialNumber",
@@ -133,6 +150,14 @@
           "entityName": "Model",
           "schema": { "$ref": "#/backend/entities/Model" },
           "description": "Global product models."
+        }
+      },
+      {
+        "path": "/companies/{companyId}/categories/{categoryId}",
+        "definition": {
+          "entityName": "Category",
+          "schema": { "$ref": "#/backend/entities/Category" },
+          "description": "Global product categories."
         }
       },
       {
