@@ -2,12 +2,12 @@
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { Folder, Plus, Search, Loader2, MoreVertical, ClipboardCheck, TrendingUp, DollarSign, Calendar, ListTodo, Edit, Trash2, Eye, Download } from "lucide-react"
+import { Folder, Plus, Search, Loader2, MoreVertical, ClipboardCheck, TrendingUp, DollarSign, Calendar, ListTodo, Edit, Trash2, Eye, Download, Clock } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
@@ -44,6 +44,13 @@ export default function ProjectsPage() {
     return collection(db, "companies", companyId, "branches", branchId, "customers");
   }, [db, companyId, branchId]);
   const { data: customers } = useCollection(customersQuery);
+
+  const stats = React.useMemo(() => ({
+    total: projects?.length || 0,
+    running: projects?.filter(p => p.status === 'active').length || 0,
+    completed: projects?.filter(p => p.status === 'completed').length || 0,
+    pending: projects?.filter(p => p.status === 'pending').length || 0
+  }), [projects]);
 
   const handleAddProject = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -118,27 +125,23 @@ export default function ProjectsPage() {
   return (
     <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold font-headline text-teal-600">Operations & Projects</h1>
-          <p className="text-sm text-muted-foreground mt-1">Track implementation timelines, tasks, and budgets</p>
-        </div>
-        <Button className="bg-teal-600 hover:bg-teal-700 gap-2 rounded-full px-8 shadow-lg" onClick={() => setIsAddModalOpen(true)}>
-          <Plus className="h-4 w-4" />
-          Initialize Project
+        <h1 className="text-xl font-bold font-headline">Projects</h1>
+        <Button className="bg-teal-600 hover:bg-teal-700 gap-2 rounded-full px-8 shadow-lg h-9 text-[10px] uppercase font-bold shadow-teal-100" onClick={() => setIsAddModalOpen(true)}>
+          <Plus className="h-4 w-4" /> Initialize
         </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Active Work" value={projects?.filter(p => p.status === 'active').length || 0} icon={Folder} colorClass="bg-teal-500" />
-        <KPICard title="Completions" value={projects?.filter(p => p.status === 'completed').length || 0} icon={ClipboardCheck} colorClass="bg-green-500" />
-        <KPICard title="Budget Pool" value={`৳${projects?.reduce((s, p) => s + (p.budget || 0), 0).toLocaleString()}`} icon={DollarSign} colorClass="bg-blue-500" />
-        <KPICard title="Deadlines Today" value="0" icon={Calendar} colorClass="bg-red-500" />
+        <KPICard title="Total Projects" value={stats.total} icon={Folder} colorClass="bg-blue-600" subtext="All tracks" />
+        <KPICard title="Running" value={stats.running} icon={TrendingUp} colorClass="bg-teal-600" subtext="Active work" />
+        <KPICard title="Completed" value={stats.completed} icon={ClipboardCheck} colorClass="bg-green-600" subtext="Delivered" />
+        <KPICard title="Pending" value={stats.pending} icon={Clock} colorClass="bg-orange-600" subtext="Queue" />
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
-        <div className="relative flex-1 w-full max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search project name..." className="pl-9" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+      <div className="flex items-center gap-4 bg-white p-3 rounded-xl border shadow-sm ring-1 ring-slate-100">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input placeholder="Search project name..." className="pl-9 h-9 border-none bg-background text-xs ring-1 ring-slate-200" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
       </div>
 
@@ -148,41 +151,42 @@ export default function ProjectsPage() {
         <Card className="border-none shadow-sm rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader className="bg-muted/50">
+              <TableHeader className="bg-muted/20">
                 <TableRow>
-                  <TableHead>Project Name</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Budget</TableHead>
-                  <TableHead>Deadline</TableHead>
-                  <TableHead>Progress</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold h-9">Project</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold h-9">Customer</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold h-9">Budget</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold h-9">Status</TableHead>
+                  <TableHead className="text-right h-9"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredProjects?.map((p) => (
-                  <TableRow key={p.id} className="hover:bg-muted/30">
-                    <TableCell className="font-bold text-teal-700">{p.name}</TableCell>
-                    <TableCell className="text-sm">{customers?.find(c => c.id === p.customerId)?.firstName || "Client"}</TableCell>
-                    <TableCell className="font-bold text-xs">৳{p.budget?.toLocaleString()}</TableCell>
-                    <TableCell className="text-[10px] md:text-xs">{new Date(p.deadline).toLocaleDateString()}</TableCell>
-                    <TableCell className="w-[120px]">
-                      <div className="w-full bg-muted rounded-full h-1.5">
-                        <div className="bg-teal-500 h-1.5 rounded-full" style={{ width: `${p.progress || 0}%` }} />
+                  <TableRow key={p.id} className="h-12 hover:bg-muted/10 transition-colors">
+                    <TableCell className="font-bold text-xs truncate max-w-[200px]">{p.name}</TableCell>
+                    <TableCell className="text-xs truncate max-w-[150px]">
+                      {customers?.find(c => c.id === p.customerId)?.firstName || "Client"}
+                    </TableCell>
+                    <TableCell className="font-black text-xs text-slate-900">৳{p.budget?.toLocaleString()}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 bg-muted rounded-full h-1.5 overflow-hidden">
+                          <div className="bg-teal-500 h-full rounded-full" style={{ width: `${p.progress || 0}%` }} />
+                        </div>
+                        <span className="text-[9px] font-bold text-muted-foreground">{p.progress || 0}%</span>
                       </div>
-                      <span className="text-[9px] text-muted-foreground">{p.progress || 0}% Complete</span>
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-teal-50 text-teal-600 transition-colors"><MoreVertical className="h-3.5 w-3.5" /></Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => { setSelectedRecord(p); toast({ title: "Loading Board" }); }}><ListTodo className="mr-2 h-4 w-4" /> Task Board</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => openEdit(p)}><Edit className="mr-2 h-4 w-4" /> Edit Project</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => { setSelectedRecord(p); toast({ title: "Printing Summary" }); }}><Download className="mr-2 h-4 w-4" /> Download Brief</DropdownMenuItem>
+                        <DropdownMenuContent align="end" className="w-32">
+                          <DropdownMenuItem className="text-xs"><Eye className="mr-2 h-3.5 w-3.5" /> View</DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs" onClick={() => openEdit(p)}><Edit className="mr-2 h-3.5 w-3.5" /> Edit</DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600" onClick={() => { setSelectedRecord(p); setIsDeleteAlertOpen(true); }}>
-                            <Trash2 className="mr-2 h-4 w-4" /> Delete Record
+                          <DropdownMenuItem className="text-red-600 text-xs" onClick={() => { setSelectedRecord(p); setIsDeleteAlertOpen(true); }}>
+                            <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -197,42 +201,38 @@ export default function ProjectsPage() {
 
       {/* ADD/EDIT MODAL */}
       <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) { setIsAddModalOpen(false); setIsEditModalOpen(false); setSelectedRecord(null); } }}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle>{isEditModalOpen ? "Adjust Project Details" : "New Implementation Project"}</DialogTitle></DialogHeader>
-          <form onSubmit={isEditModalOpen ? handleUpdateProject : handleAddProject} className="space-y-4 pt-4">
-            <div className="space-y-2"><Label>Project Name</Label><Input name="name" required defaultValue={selectedRecord?.name} placeholder="e.g. Head Office CCTV Setup" /></div>
-            <div className="space-y-2">
-              <Label>Customer Link</Label>
+        <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl">
+          <DialogHeader className="bg-teal-600 p-6 text-white flex-row items-center gap-3">
+            <Folder className="h-6 w-6" />
+            <DialogTitle className="text-xl font-bold font-headline uppercase">{isEditModalOpen ? "Edit Project" : "New Project"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={isEditModalOpen ? handleUpdateProject : handleAddProject} className="p-6 space-y-4 bg-slate-50">
+            <div className="space-y-1">
+              <Label className="text-[10px] font-bold uppercase text-muted-foreground">Title</Label>
+              <Input name="name" required defaultValue={selectedRecord?.name} placeholder="Describe engagement..." className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[10px] font-bold uppercase text-muted-foreground">Client</Label>
               <Select name="customerId" required defaultValue={selectedRecord?.customerId}>
-                <SelectTrigger><SelectValue placeholder="Choose project client" /></SelectTrigger>
-                <SelectContent>{customers?.map(c => <SelectItem key={c.id} value={c.id}>{c.firstName} {c.lastName}</SelectItem>)}</SelectContent>
+                <SelectTrigger className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 shadow-sm"><SelectValue placeholder="Identify client..." /></SelectTrigger>
+                <SelectContent>{customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs">{c.firstName} {c.lastName}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Contract Budget (৳)</Label><Input name="budget" type="number" required defaultValue={selectedRecord?.budget} /></div>
-              <div className="space-y-2"><Label>Completion Deadline</Label><Input name="deadline" type="date" required defaultValue={selectedRecord?.deadline} /></div>
+              <div className="space-y-1"><Label className="text-[10px] font-bold uppercase text-muted-foreground">Budget (৳)</Label><Input name="budget" type="number" required defaultValue={selectedRecord?.budget} className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs" /></div>
+              <div className="space-y-1"><Label className="text-[10px] font-bold uppercase text-muted-foreground">Deadline</Label><Input name="deadline" type="date" required defaultValue={selectedRecord?.deadline} className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs" /></div>
             </div>
-            <DialogFooter className="pt-4">
-              <Button type="button" variant="outline" onClick={() => { setIsAddModalOpen(false); setIsEditModalOpen(false); }}>Cancel</Button>
-              <Button type="submit" disabled={isSubmitting} className="bg-teal-600 hover:bg-teal-700">
-                {isSubmitting ? <Loader2 className="animate-spin" /> : isEditModalOpen ? "Save Changes" : "Start Tracking"}
-              </Button>
-            </DialogFooter>
+            <Button type="submit" disabled={isSubmitting} className="w-full bg-teal-600 hover:bg-teal-700 h-12 rounded-2xl text-[10px] font-black uppercase mt-4 tracking-widest shadow-xl shadow-teal-100 active:scale-95 transition-all">
+              {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : "Finalize Initializer"}
+            </Button>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* DELETE ALERT */}
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Archive Project Record?</AlertDialogTitle>
-            <AlertDialogDescription>This will remove {selectedRecord?.name} from active operations. Billing history will be detached.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={handleDeleteProject}>Confirm Delete</AlertDialogAction>
-          </AlertDialogFooter>
+          <AlertDialogHeader><AlertDialogTitle className="font-headline">Delete Project?</AlertDialogTitle><AlertDialogDescription className="text-xs">Record will be permanently archived. Billing tracks may be detached.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel className="rounded-full text-[10px] uppercase font-bold h-9">Cancel</AlertDialogCancel><AlertDialogAction className="bg-red-600 rounded-full text-[10px] uppercase font-bold h-9" onClick={handleDeleteProject}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>

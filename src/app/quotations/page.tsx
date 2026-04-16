@@ -17,7 +17,8 @@ import {
   Edit, 
   Download,
   Printer,
-  X
+  X,
+  Clock
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -57,7 +58,6 @@ export default function QuotationsPage() {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  // Form State
   const [selectedCustomerId, setSelectedCustomerId] = React.useState("");
   const [lineItems, setLineItems] = React.useState<QuoteItem[]>([]);
 
@@ -82,6 +82,13 @@ export default function QuotationsPage() {
     return collection(db, "companies", companyId, "branches", branchId, "products");
   }, [db, companyId, branchId]);
   const { data: products } = useCollection(productsQuery);
+
+  const stats = React.useMemo(() => ({
+    total: quotations?.length || 0,
+    pending: quotations?.filter(q => q.status === 'draft').length || 0,
+    converted: quotations?.filter(q => q.status === 'converted').length || 0,
+    approved: quotations?.filter(q => q.status === 'approved').length || 0
+  }), [quotations]);
 
   const totalValue = lineItems.reduce((sum, item) => sum + item.total, 0);
 
@@ -218,29 +225,27 @@ export default function QuotationsPage() {
   );
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold font-headline text-purple-600">Sales Quotations</h1>
-          <p className="text-sm text-muted-foreground mt-1">Generate proposals and convert them to invoices</p>
+          <h1 className="text-xl font-bold font-headline">Quotations</h1>
         </div>
-        <Button className="bg-purple-600 hover:bg-purple-700 gap-2 rounded-full px-8 shadow-lg h-11" onClick={() => { resetForm(); setIsAddModalOpen(true); }}>
-          <Plus className="h-4 w-4" />
-          Create Quote
+        <Button className="bg-purple-600 hover:bg-purple-700 gap-2 rounded-full px-8 shadow-lg h-9 text-[10px] uppercase font-bold shadow-purple-100" onClick={() => { resetForm(); setIsAddModalOpen(true); }}>
+          <Plus className="h-4 w-4" /> Create Quote
         </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 no-print">
-        <KPICard title="Draft Proposals" value={quotations?.filter(q => q.status === 'draft').length || 0} icon={FileText} colorClass="bg-purple-500" />
-        <KPICard title="Total Value" value={`৳${quotations?.reduce((s, q) => s + (q.totalAmount || 0), 0).toLocaleString()}`} icon={Calculator} colorClass="bg-blue-500" />
-        <KPICard title="Converted" value={quotations?.filter(q => q.status === 'converted').length || 0} icon={CheckCircle2} colorClass="bg-green-500" />
-        <KPICard title="Pending Clients" value={new Set(quotations?.map(q => q.customerId)).size} icon={Users} colorClass="bg-amber-500" />
+        <KPICard title="Total Quotations" value={stats.total} icon={FileText} colorClass="bg-blue-600" subtext="All time" />
+        <KPICard title="Pending" value={stats.pending} icon={Clock} colorClass="bg-orange-600" subtext="Draft status" />
+        <KPICard title="Approved" value={stats.approved} icon={CheckCircle2} colorClass="bg-green-600" subtext="Customer ready" />
+        <KPICard title="Converted" value={stats.converted} icon={ShoppingCart} colorClass="bg-purple-600" subtext="Became Invoices" />
       </div>
 
       <div className="flex items-center gap-4 bg-white p-3 rounded-xl border shadow-sm no-print">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search quotation #..." className="pl-9 h-10 border-none ring-1 ring-input" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          <Input placeholder="Search quotation #..." className="pl-9 h-10 border-none ring-1 ring-input text-xs" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
       </div>
 
@@ -252,42 +257,40 @@ export default function QuotationsPage() {
             <Table>
               <TableHeader className="bg-muted/50">
                 <TableRow>
-                  <TableHead>Quote #</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Value</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold">Quote #</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold">Customer</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold">Value</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold">Status</TableHead>
+                  <TableHead className="text-right"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredQuotations?.map((q) => (
-                  <TableRow key={q.id} className="hover:bg-muted/30">
-                    <TableCell className="font-bold text-purple-700">{q.quotationNumber}</TableCell>
-                    <TableCell className="text-xs">
+                  <TableRow key={q.id} className="hover:bg-muted/30 transition-colors">
+                    <TableCell className="font-bold text-xs">{q.quotationNumber}</TableCell>
+                    <TableCell className="text-xs truncate max-w-[150px]">
                       {customers?.find(c => c.id === q.customerId)?.firstName || "Client"}
                     </TableCell>
                     <TableCell className="font-bold text-xs">৳{q.totalAmount?.toLocaleString()}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={cn("text-[10px] capitalize", q.status === "converted" ? "bg-green-50 text-green-700 border-green-200" : "bg-purple-50 text-purple-700 border-purple-200")}>
+                      <Badge variant="outline" className={cn("text-[9px] h-5 uppercase border-none", q.status === "converted" ? "bg-green-50 text-green-700" : "bg-purple-50 text-purple-700")}>
                         {q.status}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-purple-50 text-purple-600 transition-colors"><MoreVertical className="h-3.5 w-3.5" /></Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openView(q)}><Eye className="mr-2 h-4 w-4" /> View Details</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => openEdit(q)} disabled={q.status === 'converted'}><Edit className="mr-2 h-4 w-4" /> Edit Record</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => openView(q)}><Download className="mr-2 h-4 w-4" /> Download PDF</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-green-600" onClick={() => handleConvertToInvoice(q)} disabled={q.status === "converted"}>
-                            <ShoppingCart className="mr-2 h-4 w-4" /> Convert to Invoice
+                        <DropdownMenuContent align="end" className="w-32">
+                          <DropdownMenuItem className="text-xs"><Eye className="mr-2 h-3.5 w-3.5" /> View</DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs" disabled={q.status === 'converted'} onClick={() => openEdit(q)}><Edit className="mr-2 h-3.5 w-3.5" /> Edit</DropdownMenuItem>
+                          <DropdownMenuItem className="text-green-600 text-xs" onClick={() => handleConvertToInvoice(q)} disabled={q.status === "converted"}>
+                            <ShoppingCart className="mr-2 h-3.5 w-3.5" /> Invoice
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600" onClick={() => { setSelectedRecord(q); setIsDeleteAlertOpen(true); }}>
-                            <Trash2 className="mr-2 h-4 w-4" /> Delete Quote
+                          <DropdownMenuItem className="text-red-600 text-xs" onClick={() => { setSelectedRecord(q); setIsDeleteAlertOpen(true); }}>
+                            <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -303,19 +306,20 @@ export default function QuotationsPage() {
       {/* VIEW DOCUMENT MODAL */}
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
         <DialogContent className="max-w-[21cm] w-[95vw] p-0 border-none bg-transparent shadow-none overflow-y-auto max-h-[95vh]">
+          <DialogHeader className="sr-only"><DialogTitle>Quotation Details</DialogTitle></DialogHeader>
           <div className="flex justify-end gap-2 mb-4 no-print fixed top-4 right-4 z-50">
-            <Button onClick={handlePrint} className="bg-primary shadow-lg"><Printer className="mr-2 h-4 w-4" /> Print / PDF</Button>
-            <Button variant="outline" size="icon" onClick={() => setIsViewModalOpen(false)} className="bg-white"><X className="h-4 w-4" /></Button>
+            <Button onClick={handlePrint} size="sm" className="bg-primary shadow-lg text-[10px] uppercase font-bold rounded-full"><Printer className="mr-2 h-3.5 w-3.5" /> Print</Button>
+            <Button variant="outline" size="icon" onClick={() => setIsViewModalOpen(false)} className="bg-white rounded-full h-8 w-8"><X className="h-3.5 w-3.5" /></Button>
           </div>
           {selectedRecord && (
             <div className="bg-white shadow-2xl rounded-none md:rounded-xl overflow-hidden">
               <DocumentTemplate
-                title="Quotation / Proposal"
+                title="Quotation"
                 type="quotation"
                 docNumber={selectedRecord.quotationNumber}
                 date={selectedRecord.quotationDate}
-                customerName={customers?.find(c => c.id === selectedRecord.customerId)?.firstName + " " + customers?.find(c => c.id === selectedRecord.customerId)?.lastName}
-                customerInfo={customers?.find(c => c.id === selectedRecord.customerId)?.email + "\n" + customers?.find(c => c.id === selectedRecord.customerId)?.phoneNumber}
+                customerName={customers?.find(c => c.id === selectedRecord.customerId)?.firstName + " " + (customers?.find(c => c.id === selectedRecord.customerId)?.lastName || "")}
+                customerInfo={customers?.find(c => c.id === selectedRecord.customerId)?.email + "\n" + (customers?.find(c => c.id === selectedRecord.customerId)?.phoneNumber || "")}
                 items={selectedRecord.items.map((i: any) => ({
                   name: i.name,
                   quantity: i.quantity,
@@ -333,51 +337,50 @@ export default function QuotationsPage() {
 
       {/* NEW/EDIT MODAL */}
       <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) { setIsAddModalOpen(false); setIsEditModalOpen(false); resetForm(); } }}>
-        <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl">
-          <DialogHeader className={cn("p-6 text-white", isEditModalOpen ? "bg-blue-600" : "bg-purple-600")}>
-            <DialogTitle className="text-2xl font-headline flex items-center gap-3">
-              <FileText className="h-6 w-6" /> {isEditModalOpen ? `Adjust Quote ${selectedRecord?.quotationNumber}` : "New Proposal"}
-            </DialogTitle>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden border-none shadow-2xl">
+          <DialogHeader className={cn("p-6 text-white flex-row items-center gap-3", isEditModalOpen ? "bg-blue-600" : "bg-purple-600")}>
+            <FileText className="h-6 w-6" />
+            <DialogTitle className="text-xl font-bold font-headline uppercase">{isEditModalOpen ? "Edit Proposal" : "New Proposal"}</DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6 bg-slate-50">
             <div className="lg:col-span-2 space-y-6">
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase text-muted-foreground">Select Customer</Label>
+                <Label className="text-[10px] font-bold uppercase text-muted-foreground">Select Customer</Label>
                 <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                  <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Identify client directory..." /></SelectTrigger>
+                  <SelectTrigger className="h-11 rounded-xl bg-white border-none shadow-sm ring-1 ring-slate-200"><SelectValue placeholder="Identify client..." /></SelectTrigger>
                   <SelectContent>
-                    {customers?.map(c => <SelectItem key={c.id} value={c.id}>{c.firstName} {c.lastName}</SelectItem>)}
+                    {customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs">{c.firstName} {c.lastName}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label className="font-bold text-xs uppercase tracking-widest">Quoted Items</Label>
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">Items</Label>
                   <Select onValueChange={handleAddLineItem}>
-                    <SelectTrigger className="w-[200px] h-9 bg-purple-50 border-purple-100 text-[10px]"><SelectValue placeholder="+ Add product..." /></SelectTrigger>
+                    <SelectTrigger className="w-[200px] h-9 bg-purple-50 border-purple-100 text-[10px] font-bold rounded-lg uppercase tracking-wider"><SelectValue placeholder="+ Add product..." /></SelectTrigger>
                     <SelectContent>
-                      {products?.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                      {products?.map(p => <SelectItem key={p.id} value={p.id} className="text-xs">{p.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="border rounded-2xl overflow-hidden bg-white shadow-sm">
+                <div className="border rounded-2xl overflow-hidden bg-white shadow-sm ring-1 ring-slate-100">
                   <Table>
-                    <TableHeader className="bg-muted/30">
+                    <TableHeader className="bg-slate-50">
                       <TableRow>
-                        <TableHead className="text-[10px] uppercase">Description</TableHead>
-                        <TableHead className="text-[10px] uppercase">Unit Price</TableHead>
-                        <TableHead className="text-right text-[10px] uppercase">Total</TableHead>
+                        <TableHead className="text-[10px] uppercase font-bold h-9">Description</TableHead>
+                        <TableHead className="text-[10px] uppercase font-bold h-9">Unit Price</TableHead>
+                        <TableHead className="text-right text-[10px] uppercase font-bold h-9">Total</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {lineItems.length === 0 ? (
-                        <TableRow><TableCell colSpan={3} className="py-10 text-center text-muted-foreground italic text-xs">No items added to proposal.</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={3} className="py-10 text-center text-muted-foreground italic text-[10px] uppercase font-bold tracking-widest">No items added</TableCell></TableRow>
                       ) : (
                         lineItems.map((item, idx) => (
-                          <TableRow key={idx}>
+                          <TableRow key={idx} className="h-10">
                             <TableCell className="text-xs font-medium">{item.name}</TableCell>
                             <TableCell className="text-xs">৳{item.unitPrice.toLocaleString()}</TableCell>
-                            <TableCell className="text-xs text-right font-bold">৳{item.total.toLocaleString()}</TableCell>
+                            <TableCell className="text-xs text-right font-bold text-slate-900">৳{item.total.toLocaleString()}</TableCell>
                           </TableRow>
                         ))
                       )}
@@ -386,33 +389,30 @@ export default function QuotationsPage() {
                 </div>
               </div>
             </div>
-            <div className={cn("p-6 rounded-2xl border flex flex-col justify-between h-fit lg:sticky lg:top-0", isEditModalOpen ? "bg-blue-50 border-blue-100" : "bg-purple-50 border-purple-100")}>
+            <div className={cn("p-6 rounded-3xl border border-transparent flex flex-col justify-between h-fit lg:sticky lg:top-0 shadow-xl", isEditModalOpen ? "bg-blue-600 text-white" : "bg-purple-600 text-white")}>
               <div>
-                <h3 className={cn("font-bold uppercase text-[10px] mb-4 tracking-widest", isEditModalOpen ? "text-blue-800" : "text-purple-800")}>Total Value Estimate</h3>
-                <div className={cn("text-3xl font-headline font-bold", isEditModalOpen ? "text-blue-700" : "text-purple-700")}>৳{totalValue.toLocaleString()}</div>
-                <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">This estimate is valid for 30 days and can be converted to an invoice once the client approves.</p>
+                <h3 className="font-bold uppercase text-[10px] mb-4 tracking-widest opacity-80">Estimated Value</h3>
+                <div className="text-4xl font-headline font-black">৳{totalValue.toLocaleString()}</div>
+                <p className="text-[10px] opacity-60 mt-4 leading-relaxed font-medium">Valid for 30 days. Convertible to active invoice on approval.</p>
               </div>
-              <Button className={cn("w-full h-12 font-bold gap-2 mt-8 rounded-xl shadow-lg", isEditModalOpen ? "bg-blue-600 hover:bg-blue-700" : "bg-purple-600 hover:bg-purple-700")} onClick={isEditModalOpen ? handleUpdateQuote : handleSubmitQuote} disabled={isSubmitting || lineItems.length === 0}>
-                {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : isEditModalOpen ? <CheckCircle2 className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />} 
-                {isEditModalOpen ? "Save Adjustments" : "Record Proposal"}
+              <Button className={cn("w-full h-12 font-bold gap-2 mt-10 rounded-2xl text-[10px] uppercase tracking-widest", isEditModalOpen ? "bg-white text-blue-600 hover:bg-blue-50" : "bg-white text-purple-600 hover:bg-purple-50")} onClick={isEditModalOpen ? handleUpdateQuote : handleSubmitQuote} disabled={isSubmitting || lineItems.length === 0}>
+                {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : isEditModalOpen ? <CheckCircle2 className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />} 
+                {isEditModalOpen ? "Save Changes" : "Record Proposal"}
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* DELETE CONFIRMATION */}
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Archive Quotation Record?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to remove proposal {selectedRecord?.quotationNumber}? This action will permanently delete the draft from your pipeline.
-            </AlertDialogDescription>
+            <AlertDialogTitle className="font-headline">Delete Proposal?</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs">Record will be permanently removed.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={handleDeleteQuote}>Delete Draft</AlertDialogAction>
+            <AlertDialogCancel className="rounded-full text-[10px] uppercase font-bold h-9">Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 rounded-full text-[10px] uppercase font-bold h-9" onClick={handleDeleteQuote}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

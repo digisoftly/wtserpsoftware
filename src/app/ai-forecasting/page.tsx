@@ -1,12 +1,13 @@
 "use client"
 
 import * as React from "react"
-import { Zap, RefreshCw, BarChart, TrendingUp, ArrowRight } from "lucide-react"
+import { Zap, RefreshCw, BarChart, TrendingUp, ArrowRight, BrainCircuit, LineChart } from "lucide-react"
 import { inventoryForecasting, type InventoryForecastingOutput } from "@/ai/flows/ai-inventory-forecasting-and-optimization"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "@/hooks/use-toast"
+import { KPICard } from "@/components/dashboard/kpi-card"
 
 export default function AIForecastingPage() {
   const [isForecasting, setIsForecasting] = React.useState(false)
@@ -33,9 +34,9 @@ export default function AIForecastingPage() {
         ]
       })
       setForecast(result)
-      toast({ title: "Intelligence Generated", description: "Market-aware forecasting complete." })
+      toast({ title: "Intelligence Generated" })
     } catch (error) {
-      toast({ variant: "destructive", title: "Flow Error", description: "AI service is temporarily unreachable." })
+      toast({ variant: "destructive", title: "AI Unavailable" })
     } finally {
       setIsForecasting(false)
     }
@@ -44,98 +45,66 @@ export default function AIForecastingPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold font-headline text-violet-600">AI Demand Center</h1>
-          <p className="text-muted-foreground mt-1">Predictive analysis using Gemini GenAI</p>
-        </div>
+        <h1 className="text-xl font-bold font-headline text-violet-600 uppercase tracking-tight">AI Forecasting</h1>
         <Button 
           onClick={handleRunForecast} 
           disabled={isForecasting}
           size="lg"
-          className="bg-violet-600 hover:bg-violet-700 text-white gap-2 rounded-full font-bold shadow-xl shadow-violet-200 transition-all active:scale-95"
+          className="bg-violet-600 hover:bg-violet-700 text-white gap-2 rounded-full font-bold shadow-xl shadow-violet-100 h-9 text-[10px] uppercase transition-all active:scale-95"
         >
-          {isForecasting ? <RefreshCw className="h-5 w-5 animate-spin" /> : <Zap className="h-5 w-5" />}
+          {isForecasting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
           Run Market Forecast
         </Button>
       </div>
 
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <KPICard title="Forecast Sales" value={forecast ? "৳1.2M" : "---"} icon={LineChart} colorClass="bg-violet-600" subtext="Projected Next Period" />
+        <KPICard title="Trend Indicator" value={forecast ? "BULLISH" : "---"} icon={BrainCircuit} colorClass="bg-indigo-600" subtext="Market Sentiment" />
+      </div>
+
       {forecast ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <Card className="lg:col-span-2 border-none shadow-md bg-white rounded-xl">
-            <CardHeader className="border-b bg-violet-50/30">
+          <Card className="lg:col-span-2 border-none shadow-sm bg-white rounded-xl">
+            <CardHeader className="bg-slate-50/50 py-4">
               <div className="flex items-center gap-2">
-                <BarChart className="h-5 w-5 text-violet-600" />
-                <CardTitle className="font-headline text-lg">Inventory Optimization Strategies</CardTitle>
+                <BarChart className="h-4 w-4 text-violet-600" />
+                <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Intelligence Report</CardTitle>
               </div>
             </CardHeader>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                {forecast.forecasts.map((f, i) => (
-                  <div key={i} className="flex items-center justify-between p-5 bg-muted/20 rounded-2xl border border-dashed border-violet-200">
-                    <div>
-                      <p className="font-bold text-violet-700 text-lg">{f.productName}</p>
-                      <div className="flex gap-6 mt-2 text-sm text-muted-foreground">
-                        <span className="flex flex-col">
-                          Predicted Demand
-                          <strong className="text-foreground text-base">{f.predictedDemandNextPeriod} Units</strong>
-                        </span>
-                        <span className="flex flex-col">
-                          Optimal Reorder
-                          <strong className="text-foreground text-base">{f.recommendedReorderPoint} Units</strong>
-                        </span>
-                      </div>
+            <CardContent className="p-4 space-y-3">
+              {forecast.forecasts.map((f, i) => (
+                <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl ring-1 ring-slate-100">
+                  <div>
+                    <p className="font-black text-xs text-slate-900 uppercase">{f.productName}</p>
+                    <div className="flex gap-4 mt-1">
+                      <span className="text-[9px] uppercase font-bold text-muted-foreground">Demand: <strong className="text-slate-900">{f.predictedDemandNextPeriod}</strong></span>
+                      <span className="text-[9px] uppercase font-bold text-muted-foreground">Optimal: <strong className="text-slate-900">{f.recommendedReorderPoint}</strong></span>
                     </div>
-                    <Badge className="bg-violet-600 text-white px-4 py-1 text-sm rounded-lg">High Priority</Badge>
                   </div>
-                ))}
-              </div>
+                  <Badge className="bg-violet-600 text-[8px] uppercase font-black px-2 py-0.5 rounded-full">Priority</Badge>
+                </div>
+              ))}
             </CardContent>
           </Card>
 
           <div className="space-y-6">
-            <Card className="border-none shadow-md bg-gradient-to-br from-violet-600 to-indigo-700 text-white rounded-xl">
-              <CardHeader>
-                <CardTitle className="font-headline text-lg">Strategic Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <Card className="border-none shadow-xl bg-violet-600 text-white rounded-[2rem]">
+              <CardHeader><CardTitle className="text-[10px] font-black uppercase tracking-widest opacity-80">Strategic Actions</CardTitle></CardHeader>
+              <CardContent className="p-6 space-y-3 pt-0">
                 {forecast.recommendations.map((rec, i) => (
-                  <div key={i} className="flex gap-3 items-start bg-white/10 p-3 rounded-lg backdrop-blur-sm">
-                    <TrendingUp className="h-4 w-4 shrink-0 mt-1" />
-                    <p className="text-sm font-medium leading-relaxed">{rec}</p>
+                  <div key={i} className="flex gap-3 items-start bg-white/10 p-3 rounded-2xl backdrop-blur-sm">
+                    <TrendingUp className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                    <p className="text-[10px] font-bold leading-tight uppercase">{rec}</p>
                   </div>
                 ))}
               </CardContent>
             </Card>
-
-            <Card className="border-none shadow-md bg-white rounded-xl">
-              <CardHeader>
-                <CardTitle className="font-headline text-lg">AI Explanation</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground italic leading-relaxed border-l-4 border-violet-200 pl-4 py-1">
-                  {forecast.explanation}
-                </p>
-              </CardContent>
-              <CardFooter>
-                <Button variant="ghost" className="w-full text-violet-600 hover:text-violet-700 hover:bg-violet-50 gap-2">
-                  View Full Analysis <ArrowRight className="h-4 w-4" />
-                </Button>
-              </CardFooter>
-            </Card>
           </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-24 bg-white rounded-2xl border-2 border-dashed shadow-sm">
-          <div className="w-24 h-24 rounded-full bg-violet-50 flex items-center justify-center mb-6">
-            <Zap className="h-12 w-12 text-violet-600" />
-          </div>
-          <h3 className="text-2xl font-headline font-bold">Intelligent Forecasting</h3>
-          <p className="text-muted-foreground max-w-md text-center mt-2 mb-8 text-lg">
-            Let AI analyze your sales patterns, lead times, and current stock to optimize your entire supply chain.
-          </p>
-          <Button onClick={handleRunForecast} size="lg" className="bg-violet-600 text-white font-bold rounded-full px-12 h-12 shadow-lg shadow-violet-200 transition-transform active:scale-95">
-            Initialize AI Flow
-          </Button>
+        <div className="p-24 bg-white rounded-[3rem] border border-dashed text-center flex flex-col items-center ring-1 ring-slate-100">
+          <Zap className="h-12 w-12 text-violet-200 mb-6" />
+          <p className="text-[10px] uppercase font-black text-muted-foreground tracking-[0.3em]">Initialize Market Logic</p>
         </div>
       )}
     </div>

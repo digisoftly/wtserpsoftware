@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { Receipt, Plus, Search, Loader2, MoreVertical, Filter, ArrowDownCircle, Landmark, CreditCard, Tag } from "lucide-react"
+import { Receipt, Plus, Search, Loader2, MoreVertical, Filter, ArrowDownCircle, Landmark, CreditCard, Tag, Calendar } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, serverTimestamp } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
@@ -10,7 +10,7 @@ import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { Card } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -32,7 +32,15 @@ export default function ExpensesPage() {
 
   const { data: expenses, isLoading } = useCollection(expensesQuery);
 
-  const totalExpense = expenses?.reduce((sum, e) => sum + (e.amount || 0), 0) || 0;
+  const stats = React.useMemo(() => {
+    if (!expenses) return { today: 0, monthly: 0 };
+    const today = new Date().toISOString().split('T')[0];
+    const thisMonth = new Date().toISOString().slice(0, 7);
+    return {
+      today: expenses.filter(e => e.expenseDate?.startsWith(today)).reduce((s, e) => s + (e.amount || 0), 0),
+      monthly: expenses.filter(e => e.expenseDate?.startsWith(thisMonth)).reduce((s, e) => s + (e.amount || 0), 0)
+    };
+  }, [expenses]);
 
   const handleAddExpense = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -59,29 +67,22 @@ export default function ExpensesPage() {
   return (
     <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold font-headline text-red-500">Operating Expenses</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage office costs, utilities, and minor spending</p>
-        </div>
-        <Button className="bg-red-500 hover:bg-red-600 gap-2 rounded-full px-8 shadow-lg" onClick={() => setIsAddModalOpen(true)}>
-          <Plus className="h-4 w-4" />
-          Record Expense
+        <h1 className="text-xl font-bold font-headline text-red-500">Expenses</h1>
+        <Button className="bg-red-500 hover:bg-red-600 gap-2 rounded-full px-8 shadow-lg h-9 text-[10px] uppercase font-bold shadow-red-100" onClick={() => setIsAddModalOpen(true)}>
+          <Plus className="h-4 w-4" /> Record Bill
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Total Spending" value={`৳${totalExpense.toLocaleString()}`} icon={ArrowDownCircle} colorClass="bg-red-500" />
-        <KPICard title="Monthly Budget" value="৳50,000" icon={Landmark} colorClass="bg-blue-500" />
-        <KPICard title="Major Category" value="Rent" icon={Tag} colorClass="bg-orange-500" />
-        <KPICard title="Transactions" value={expenses?.length || 0} icon={CreditCard} colorClass="bg-purple-500" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <KPICard title="Today Expense" value={`৳${stats.today.toLocaleString()}`} icon={CreditCard} colorClass="bg-red-600" subtext="Current day" />
+        <KPICard title="Monthly Expense" value={`৳${stats.monthly.toLocaleString()}`} icon={Calendar} colorClass="bg-blue-600" subtext="Current month" />
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
-        <div className="relative flex-1 w-full max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search expenses..." className="pl-9" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input placeholder="Search expenses..." className="pl-9 h-9 text-xs border-none bg-white shadow-sm ring-1 ring-slate-100" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
-        <Button variant="outline" className="gap-2 w-full sm:w-auto"><Filter className="h-4 w-4" /> Filters</Button>
       </div>
 
       {isLoading ? (
@@ -90,23 +91,22 @@ export default function ExpensesPage() {
         <Card className="border-none shadow-sm rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader className="bg-muted/50">
+              <TableHeader className="bg-muted/20">
                 <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Method</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold h-9">Date</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold h-9">Vendor/Label</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold h-9 text-right">Amount</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {expenses?.map((exp) => (
-                  <TableRow key={exp.id} className="hover:bg-muted/30">
-                    <TableCell className="text-xs">{new Date(exp.expenseDate).toLocaleDateString()}</TableCell>
-                    <TableCell className="font-medium text-xs md:text-sm">{exp.description}</TableCell>
-                    <TableCell><Badge variant="secondary" className="text-[10px] uppercase">{exp.category}</Badge></TableCell>
-                    <TableCell className="text-[10px] text-muted-foreground uppercase">{exp.paymentMethod}</TableCell>
-                    <TableCell className="text-right font-bold text-red-600">৳{exp.amount?.toLocaleString()}</TableCell>
+                  <TableRow key={exp.id} className="h-12 hover:bg-muted/10 transition-colors">
+                    <TableCell className="text-[10px] font-bold uppercase">{new Date(exp.expenseDate).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <div className="font-bold text-xs">{exp.description}</div>
+                      <div className="text-[9px] uppercase text-muted-foreground font-black">{exp.category}</div>
+                    </TableCell>
+                    <TableCell className="text-right font-black text-xs text-red-600">৳{exp.amount?.toLocaleString()}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -114,52 +114,31 @@ export default function ExpensesPage() {
           </div>
         </Card>
       ) : (
-        <div className="p-16 bg-white rounded-xl border border-dashed flex flex-col items-center justify-center text-center">
-          <Receipt className="h-12 w-12 text-red-200 mb-4" />
-          <h2 className="text-xl font-headline font-bold">No Expenses Recorded</h2>
-          <p className="text-muted-foreground max-w-sm mt-2">Track your daily business expenditures here for accurate profit reports.</p>
-          <Button className="mt-6 bg-red-500 rounded-full px-8" onClick={() => setIsAddModalOpen(true)}>Add Expense</Button>
+        <div className="p-16 bg-white rounded-3xl border border-dashed text-center flex flex-col items-center ring-1 ring-slate-100">
+          <Receipt className="h-10 w-10 text-red-200 mb-4" />
+          <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">No Expenses Found</p>
         </div>
       )}
 
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>New Expense Entry</DialogTitle></DialogHeader>
-          <form onSubmit={handleAddExpense} className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label className="text-xs">Description</Label>
-              <Input name="description" required placeholder="e.g. Monthly Electricity Bill" />
-            </div>
+        <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl">
+          <DialogHeader className="bg-red-500 p-6 text-white flex-row items-center gap-3">
+            <Plus className="h-6 w-6" />
+            <DialogTitle className="text-xl font-bold font-headline uppercase">New Expense</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAddExpense} className="p-6 space-y-4 bg-slate-50">
+            <div className="space-y-1"><Label className="text-[10px] font-bold uppercase text-muted-foreground">Label</Label><Input name="description" required placeholder="Describe cost..." className="h-11 rounded-xl border-none ring-1 ring-slate-200 text-xs" /></div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label className="text-xs">Amount (৳)</Label><Input name="amount" type="number" step="0.01" required /></div>
-              <div className="space-y-2">
-                <Label className="text-xs">Category</Label>
+              <div className="space-y-1"><Label className="text-[10px] font-bold uppercase text-muted-foreground">Amount (৳)</Label><Input name="amount" type="number" step="0.01" required className="h-11 rounded-xl border-none ring-1 ring-slate-200 text-xs" /></div>
+              <div className="space-y-1">
+                <Label className="text-[10px] font-bold uppercase text-muted-foreground">Type</Label>
                 <Select name="category" defaultValue="utility">
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="utility">Utilities</SelectItem>
-                    <SelectItem value="rent">Rent</SelectItem>
-                    <SelectItem value="office">Office Supplies</SelectItem>
-                    <SelectItem value="salary">HR / Salary</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
+                  <SelectTrigger className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 shadow-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="utility" className="text-xs">Utility</SelectItem><SelectItem value="rent" className="text-xs">Rent</SelectItem><SelectItem value="salary" className="text-xs">Salary</SelectItem></SelectContent>
                 </Select>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-xs">Payment Method</Label>
-              <Select name="paymentMethod" defaultValue="cash">
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cash">Cash in Hand</SelectItem>
-                  <SelectItem value="bank">Bank Transfer</SelectItem>
-                  <SelectItem value="bkash">bKash / Mobile Banking</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <DialogFooter>
-              <Button type="submit" className="bg-red-500 rounded-full w-full">Post Expense</Button>
-            </DialogFooter>
+            <Button type="submit" className="w-full bg-red-500 hover:bg-red-600 h-12 rounded-2xl text-[10px] font-black uppercase mt-4 tracking-widest shadow-xl shadow-red-100 active:scale-95 transition-all">Record Entry</Button>
           </form>
         </DialogContent>
       </Dialog>

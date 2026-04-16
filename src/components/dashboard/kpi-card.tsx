@@ -5,38 +5,44 @@ import { cn } from "@/lib/utils"
 interface KPICardProps {
   title: string
   value: string | number
-  icon: LucideIcon
+  icon?: LucideIcon
   colorClass: string
+  subtext?: string
   trend?: {
     value: number
     isPositive: boolean
   }
 }
 
-export function KPICard({ title, value, icon: Icon, colorClass, trend }: KPICardProps) {
+export function KPICard({ title, value, icon: Icon, colorClass, subtext, trend }: KPICardProps) {
   return (
-    <Card className="overflow-hidden border-none shadow-sm hover:shadow-md transition-all group rounded-xl">
-      <CardContent className="p-6">
+    <Card className="overflow-hidden border-none shadow-sm hover:shadow-md transition-all group rounded-xl bg-white">
+      <CardContent className="p-5">
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>
-            <h3 className="text-2xl font-bold font-headline tracking-tight">{value}</h3>
+          <div className="space-y-1">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{title}</p>
+            <h3 className="text-2xl font-bold font-headline tracking-tight text-slate-900">{value}</h3>
+            {subtext && (
+              <p className="text-[10px] font-medium text-muted-foreground/80">{subtext}</p>
+            )}
             {trend && (
               <p className={cn(
-                "text-xs font-medium mt-1 flex items-center gap-1",
-                trend.isPositive ? "text-green-500" : "text-red-500"
+                "text-[10px] font-bold mt-1 flex items-center gap-1",
+                trend.isPositive ? "text-green-600" : "text-red-600"
               )}>
                 {trend.isPositive ? "+" : "-"}{trend.value}%
-                <span className="text-muted-foreground">vs last period</span>
               </p>
             )}
           </div>
-          <div className={cn(
-            "p-3 rounded-xl transition-all duration-300 group-hover:scale-110",
-            colorClass
-          )}>
-            <Icon className="h-6 w-6 text-white" />
-          </div>
+          {Icon && (
+            <div className={cn(
+              "p-2.5 rounded-xl transition-all duration-300 group-hover:scale-110",
+              colorClass,
+              "text-white shadow-lg"
+            )}>
+              <Icon className="h-5 w-5" />
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

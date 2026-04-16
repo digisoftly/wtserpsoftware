@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Plus, Package, Search, Loader2, MoreVertical, ShoppingBag, Truck, DollarSign, Trash2, Calculator, Scan, Edit, Eye, Download, Printer, X } from "lucide-react"
+import { Plus, Package, Search, Loader2, MoreVertical, ShoppingBag, Truck, DollarSign, Trash2, Calculator, Scan, Edit, Eye, Download, Printer, X, ShoppingCart, Calendar, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -10,7 +10,6 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, serverTimestamp, query, orderBy, doc, increment, runTransaction, updateDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
@@ -66,6 +65,16 @@ export default function PurchasesPage() {
     return collection(db, "companies", companyId, "branches", branchId, "products");
   }, [db, companyId, branchId]);
   const { data: products } = useCollection(productsQuery);
+
+  const stats = React.useMemo(() => {
+    if (!purchaseOrders) return { total: 0, monthly: 0, due: 0 };
+    const thisMonth = new Date().toISOString().slice(0, 7);
+    return {
+      total: purchaseOrders.reduce((s, i) => s + (i.totalAmount || 0), 0),
+      monthly: purchaseOrders.filter(i => i.orderDate?.startsWith(thisMonth)).reduce((s, i) => s + (i.totalAmount || 0), 0),
+      due: 0 // Placeholder until expense/payable link
+    };
+  }, [purchaseOrders]);
 
   const totalSpend = lineItems.reduce((sum, item) => sum + item.total, 0);
 
@@ -182,28 +191,24 @@ export default function PurchasesPage() {
   );
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold font-headline text-orange-600">Inventory Sourcing</h1>
-          <p className="text-sm text-muted-foreground mt-1">Intake new stock and register serial numbers</p>
-        </div>
-        <Button className="bg-orange-600 hover:bg-orange-700 gap-2 rounded-full px-8 shadow-lg" onClick={() => { resetForm(); setIsAddModalOpen(true); }}>
-          <Plus className="h-4 w-4" /> Receive Inbound
+        <h1 className="text-xl font-bold font-headline">Purchases</h1>
+        <Button className="bg-orange-600 hover:bg-orange-700 gap-2 rounded-full px-8 shadow-lg h-9 text-[10px] uppercase font-bold shadow-orange-100" onClick={() => { resetForm(); setIsAddModalOpen(true); }}>
+          <Plus className="h-4 w-4" /> Receive Stock
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 no-print">
-        <KPICard title="Procurement" value={`৳${purchaseOrders?.reduce((s, i) => s + (i.totalAmount || 0), 0).toLocaleString()}`} icon={ShoppingBag} colorClass="bg-orange-500" />
-        <KPICard title="Vendors" value={suppliers?.length || 0} icon={Truck} colorClass="bg-blue-500" />
-        <KPICard title="Inbound Events" value={purchaseOrders?.length || 0} icon={Package} colorClass="bg-green-500" />
-        <KPICard title="Active Orders" value={purchaseOrders?.length || 0} icon={Calculator} colorClass="bg-purple-500" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 no-print">
+        <KPICard title="Total Purchase" value={`৳${stats.total.toLocaleString()}`} icon={ShoppingCart} colorClass="bg-blue-600" subtext="Inbound Lifetime" />
+        <KPICard title="Monthly Purchase" value={`৳${stats.monthly.toLocaleString()}`} icon={Calendar} colorClass="bg-green-600" subtext="Current Cycle" />
+        <KPICard title="Suppliers Due" value={`৳${stats.due.toLocaleString()}`} icon={AlertCircle} colorClass="bg-red-600" subtext="Unsettled Payable" />
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border shadow-sm no-print">
+      <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-3 rounded-xl border shadow-sm no-print">
         <div className="relative flex-1 w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search PO #..." className="pl-9" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          <Input placeholder="Search PO #..." className="pl-9 h-10 border-none ring-1 ring-slate-200 text-xs" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
       </div>
 
@@ -215,32 +220,33 @@ export default function PurchasesPage() {
             <Table>
               <TableHeader className="bg-muted/50">
                 <TableRow>
-                  <TableHead>PO Number</TableHead>
-                  <TableHead>Supplier</TableHead>
-                  <TableHead>Items Count</TableHead>
-                  <TableHead>Total Value</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold h-9">PO Number</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold h-9">Supplier</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold h-9">Items</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold h-9">Total Value</TableHead>
+                  <TableHead className="text-right h-9"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredPOs?.map((po) => (
-                  <TableRow key={po.id} className="hover:bg-muted/20">
-                    <TableCell className="font-bold text-orange-700 uppercase">{po.orderNumber}</TableCell>
-                    <TableCell className="text-sm">{suppliers?.find(s => s.id === po.supplierId)?.name || "Vendor"}</TableCell>
-                    <TableCell className="text-xs">{po.items?.length || 0} SKU(s)</TableCell>
+                  <TableRow key={po.id} className="h-12 hover:bg-muted/20 transition-colors">
+                    <TableCell className="font-bold text-xs uppercase">{po.orderNumber}</TableCell>
+                    <TableCell className="text-xs truncate max-w-[150px]">
+                      {suppliers?.find(s => s.id === po.supplierId)?.name || "Vendor"}
+                    </TableCell>
+                    <TableCell className="text-[10px] font-bold text-muted-foreground">{po.items?.length || 0} SKU</TableCell>
                     <TableCell className="font-bold text-xs">৳{po.totalAmount?.toLocaleString()}</TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-orange-50 text-orange-600 transition-colors"><MoreVertical className="h-3.5 w-3.5" /></Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openView(po)}><Eye className="mr-2 h-4 w-4" /> View Details</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => openEdit(po)}><Edit className="mr-2 h-4 w-4" /> Edit Record</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => openView(po)}><Download className="mr-2 h-4 w-4" /> Download PDF</DropdownMenuItem>
+                        <DropdownMenuContent align="end" className="w-32">
+                          <DropdownMenuItem className="text-xs" onClick={() => openView(po)}><Eye className="mr-2 h-3.5 w-3.5" /> View</DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs" onClick={() => openEdit(po)}><Edit className="mr-2 h-3.5 w-3.5" /> Edit</DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600" onClick={() => { setSelectedRecord(po); setIsDeleteAlertOpen(true); }}>
-                            <Trash2 className="mr-2 h-4 w-4" /> Delete PO
+                          <DropdownMenuItem className="text-red-600 text-xs" onClick={() => { setSelectedRecord(po); setIsDeleteAlertOpen(true); }}>
+                            <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -256,9 +262,10 @@ export default function PurchasesPage() {
       {/* VIEW DOCUMENT MODAL */}
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
         <DialogContent className="max-w-[21cm] w-[95vw] p-0 border-none bg-transparent shadow-none overflow-y-auto max-h-[95vh]">
+          <DialogHeader className="sr-only"><DialogTitle>Order Summary</DialogTitle></DialogHeader>
           <div className="flex justify-end gap-2 mb-4 no-print fixed top-4 right-4 z-50">
-            <Button onClick={handlePrint} className="bg-primary shadow-lg"><Printer className="mr-2 h-4 w-4" /> Print / PDF</Button>
-            <Button variant="outline" size="icon" onClick={() => setIsViewModalOpen(false)} className="bg-white"><X className="h-4 w-4" /></Button>
+            <Button onClick={handlePrint} size="sm" className="bg-primary shadow-lg text-[10px] uppercase font-bold rounded-full"><Printer className="mr-2 h-3.5 w-3.5" /> Print</Button>
+            <Button variant="outline" size="icon" onClick={() => setIsViewModalOpen(false)} className="bg-white rounded-full h-8 w-8"><X className="h-3.5 w-3.5" /></Button>
           </div>
           {selectedRecord && (
             <div className="bg-white shadow-2xl rounded-none md:rounded-xl overflow-hidden">
@@ -286,60 +293,64 @@ export default function PurchasesPage() {
 
       {/* NEW/EDIT PO MODAL */}
       <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) { setIsAddModalOpen(false); setIsEditModalOpen(false); resetForm(); } }}>
-        <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Truck className="h-5 w-5 text-orange-600" /> {isEditModalOpen ? `Adjust PO ${selectedRecord?.orderNumber}` : "Inbound Stock Record"}</DialogTitle></DialogHeader>
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 py-4">
+        <DialogContent className="max-w-5xl p-0 overflow-hidden border-none shadow-2xl">
+          <DialogHeader className="bg-orange-600 p-6 text-white flex-row items-center gap-3">
+            <Truck className="h-6 w-6" />
+            <DialogTitle className="text-xl font-bold font-headline uppercase">{isEditModalOpen ? "Edit PO" : "Inbound Stock"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 bg-slate-50">
             <div className="lg:col-span-8 space-y-6">
               <div className="space-y-2">
-                <Label className="text-xs uppercase font-bold text-muted-foreground">Supplier</Label>
+                <Label className="text-[10px] font-bold uppercase text-muted-foreground">Select Supplier</Label>
                 <Select value={selectedSupplierId} onValueChange={setSelectedSupplierId}>
-                  <SelectTrigger className="h-12 rounded-xl"><SelectValue placeholder="Identify Vendor..." /></SelectTrigger>
-                  <SelectContent>{suppliers?.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                  <SelectTrigger className="h-11 rounded-xl bg-white border-none shadow-sm ring-1 ring-slate-200"><SelectValue placeholder="Identify Vendor..." /></SelectTrigger>
+                  <SelectContent>{suppliers?.map(s => <SelectItem key={s.id} value={s.id} className="text-xs">{s.name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-4">
                 {!isEditModalOpen && (
-                  <div className="flex items-center justify-between"><Label className="font-bold">Add Line Item</Label>
+                  <div className="flex items-center justify-between"><Label className="text-[10px] font-bold uppercase text-muted-foreground">Add Line Items</Label>
                     <Select onValueChange={handleAddLineItem}>
-                      <SelectTrigger className="w-[250px] bg-orange-50 border-orange-200"><SelectValue placeholder="Search Product..." /></SelectTrigger>
-                      <SelectContent>{products?.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                      <SelectTrigger className="w-[250px] bg-orange-50 border-orange-200 text-[10px] font-bold uppercase rounded-lg shadow-sm"><SelectValue placeholder="Search Product..." /></SelectTrigger>
+                      <SelectContent>{products?.map(p => <SelectItem key={p.id} value={p.id} className="text-xs">{p.name}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                 )}
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {lineItems.map((item, idx) => (
-                    <Card key={idx} className="p-4 border-dashed bg-muted/10">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="font-bold text-sm">{item.name}</div>
-                        {!isEditModalOpen && <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => setLineItems(lineItems.filter((_, i) => i !== idx))}><Trash2 className="h-4 w-4" /></Button>}
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                        <div className="space-y-1"><Label className="text-[10px] uppercase">Unit Cost</Label><Input type="number" value={item.unitCost} className="h-8 text-xs font-bold" onChange={e => setLineItems(lineItems.map((li, i) => i === idx ? { ...li, unitCost: Number(e.target.value), total: Number(e.target.value) * li.quantity } : li))} /></div>
-                        <div className="space-y-1"><Label className="text-[10px] uppercase">Quantity</Label><Input type="number" disabled={isEditModalOpen} value={item.quantity} className="h-8 text-xs font-bold" onChange={e => setLineItems(lineItems.map((li, i) => i === idx ? { ...li, quantity: Number(e.target.value), total: item.unitCost * Number(e.target.value) } : li))} /></div>
-                        <div className="hidden sm:block space-y-1"><Label className="text-[10px] uppercase">Total</Label><div className="h-8 flex items-center font-bold text-xs">৳{item.total.toLocaleString()}</div></div>
+                    <Card key={idx} className="p-4 border-none shadow-sm bg-white rounded-2xl group relative">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <p className="text-xs font-black text-slate-900 uppercase tracking-tighter">{item.name}</p>
+                          <div className="flex gap-4">
+                            <div><Label className="text-[8px] uppercase opacity-50 block mb-1">Cost</Label><Input type="number" value={item.unitCost} className="h-8 text-[10px] font-bold w-20 px-2" onChange={e => setLineItems(lineItems.map((li, i) => i === idx ? { ...li, unitCost: Number(e.target.value), total: Number(e.target.value) * li.quantity } : li))} /></div>
+                            <div><Label className="text-[8px] uppercase opacity-50 block mb-1">Qty</Label><Input type="number" disabled={isEditModalOpen} value={item.quantity} className="h-8 text-[10px] font-bold w-16 px-2" onChange={e => setLineItems(lineItems.map((li, i) => i === idx ? { ...li, quantity: Number(e.target.value), total: item.unitCost * Number(e.target.value) } : li))} /></div>
+                            <div><Label className="text-[8px] uppercase opacity-50 block mb-1">Total</Label><div className="h-8 flex items-center font-bold text-xs text-orange-600">৳{item.total.toLocaleString()}</div></div>
+                          </div>
+                        </div>
+                        {!isEditModalOpen && <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 rounded-full hover:bg-red-50 transition-colors" onClick={() => setLineItems(lineItems.filter((_, i) => i !== idx))}><Trash2 className="h-3.5 w-3.5" /></Button>}
                       </div>
                     </Card>
                   ))}
                 </div>
               </div>
             </div>
-            <div className="lg:col-span-4 bg-orange-50/50 p-6 rounded-2xl border-2 border-orange-100 flex flex-col justify-between h-fit sticky top-0">
+            <div className="lg:col-span-4 bg-white p-8 rounded-[2rem] shadow-xl ring-1 ring-slate-100 flex flex-col justify-between h-fit lg:sticky lg:top-0">
               <div className="space-y-6">
-                <div className="space-y-1"><p className="text-xs uppercase font-bold text-orange-800 tracking-wider">Total PO Value</p><p className="text-4xl font-headline font-bold text-orange-700">৳{totalSpend.toLocaleString()}</p></div>
+                <div className="space-y-1"><p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Total Valuation</p><p className="text-4xl font-headline font-black text-orange-600">৳{totalSpend.toLocaleString()}</p></div>
               </div>
-              <Button className="w-full bg-orange-600 hover:bg-orange-700 h-14 rounded-xl mt-8 font-bold text-lg gap-2 shadow-lg" onClick={isEditModalOpen ? handleUpdatePO : handleSubmitPO} disabled={isSubmitting || lineItems.length === 0}>
-                {isSubmitting ? <Loader2 className="animate-spin" /> : isEditModalOpen ? <Calculator /> : <Truck />} {isEditModalOpen ? "Save Adjustments" : "Confirm Receipt"}
+              <Button className="w-full bg-orange-600 hover:bg-orange-700 h-14 rounded-2xl mt-10 font-bold text-[10px] uppercase tracking-widest gap-2 shadow-2xl shadow-orange-100 transition-all active:scale-95" onClick={isEditModalOpen ? handleUpdatePO : handleSubmitPO} disabled={isSubmitting || lineItems.length === 0}>
+                {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : isEditModalOpen ? <Calculator className="h-4 w-4" /> : <Package className="h-4 w-4" />} {isEditModalOpen ? "Save Adjustments" : "Initialize Intake"}
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* DELETE ALERT */}
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Delete Purchase Record?</AlertDialogTitle><AlertDialogDescription>This removes the record for {selectedRecord?.orderNumber}. Note: Existing stock will NOT be automatically reversed.</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={handleDeletePO}>Confirm Delete</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogHeader><AlertDialogTitle className="font-headline">Delete PO?</AlertDialogTitle><AlertDialogDescription className="text-xs">Record will be permanently deleted. Stock levels are not automatically reversed.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel className="rounded-full text-[10px] uppercase font-bold h-9">Cancel</AlertDialogCancel><AlertDialogAction className="bg-red-600 rounded-full text-[10px] uppercase font-bold h-9" onClick={handleDeletePO}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>

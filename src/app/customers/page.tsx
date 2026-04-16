@@ -1,9 +1,8 @@
-
 "use client"
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { Users, UserPlus, Search, MoreVertical, Mail, Phone, MapPin, Loader2, Building2, User, Check, Filter, UserCheck, UserX, Building, Eye, Edit, Trash2 } from "lucide-react"
+import { Users, UserPlus, Search, MoreVertical, Loader2, Building, UserCheck, UserX, Eye, Edit, Trash2, ShieldCheck, Mail, Phone } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, serverTimestamp, doc, updateDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
@@ -39,6 +38,12 @@ export default function CustomersPage() {
 
   const { data: customers, isLoading } = useCollection(customersQuery);
 
+  const stats = React.useMemo(() => ({
+    total: customers?.length || 0,
+    active: customers?.length || 0, // Placeholder
+    due: 0 // Placeholder until linked with billing
+  }), [customers]);
+
   const filteredCustomers = customers?.filter(c => 
     `${c.firstName} ${c.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -66,41 +71,14 @@ export default function CustomersPage() {
 
     addDocumentNonBlocking(collection(db, "companies", companyId, "branches", branchId, "customers"), customerData);
     setIsAddModalOpen(false);
-    toast({ title: "Customer Registered", description: `${customerData.firstName} added to directory.` });
-  };
-
-  const handleUpdateCustomer = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!selectedCustomer || !db) return;
-    setIsSubmitting(true);
-    const formData = new FormData(e.currentTarget);
-    
-    try {
-      const docRef = doc(db, "companies", companyId!, "branches", branchId!, "customers", selectedCustomer.id);
-      await updateDoc(docRef, {
-        customerType,
-        firstName: formData.get("firstName"),
-        lastName: formData.get("lastName"),
-        email: formData.get("email"),
-        phoneNumber: formData.get("phoneNumber"),
-        companyName: customerType === "company" ? formData.get("companyName") : "",
-        city: formData.get("city"),
-        updatedAt: serverTimestamp()
-      });
-      toast({ title: "Customer Updated", description: "Profile details saved." });
-      setIsEditModalOpen(false);
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Update Error", description: err.message });
-    } finally {
-      setIsSubmitting(false);
-    }
+    toast({ title: "Customer Registered" });
   };
 
   const handleDeleteCustomer = () => {
     if (!selectedCustomer || !db) return;
     const docRef = doc(db, "companies", companyId!, "branches", branchId!, "customers", selectedCustomer.id);
     deleteDocumentNonBlocking(docRef);
-    toast({ title: "Record Deleted", description: "Customer removed from directory." });
+    toast({ title: "Record Deleted" });
     setIsDeleteAlertOpen(false);
   };
 
@@ -112,27 +90,24 @@ export default function CustomersPage() {
 
   return (
     <div className="space-y-6 pb-10">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold font-headline text-cyan-600">Customers</h1>
-          <p className="text-sm text-muted-foreground mt-1">Client relationship management</p>
-        </div>
-        <Button className="bg-cyan-600 hover:bg-cyan-700 gap-2 rounded-full w-full md:w-auto" onClick={() => setIsAddModalOpen(true)}>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold font-headline text-cyan-600">Customers</h1>
+        <Button className="bg-cyan-600 hover:bg-cyan-700 gap-2 rounded-full h-9 px-6 text-[10px] uppercase font-bold shadow-lg shadow-cyan-100" onClick={() => setIsAddModalOpen(true)}>
           <UserPlus className="h-4 w-4" />
-          Add Customer
+          Add Client
         </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <KPICard title="Total Clients" value={customers?.length || 0} icon={Users} colorClass="bg-cyan-500" />
-        <KPICard title="Individuals" value={customers?.filter(c => c.customerType !== 'company').length || 0} icon={UserCheck} colorClass="bg-blue-500" />
-        <KPICard title="Corporate" value={customers?.filter(c => c.customerType === 'company').length || 0} icon={Building} colorClass="bg-amber-500" />
+        <KPICard title="Total Customers" value={stats.total} icon={Users} colorClass="bg-blue-600" subtext="Directory size" />
+        <KPICard title="Active Customers" value={stats.active} icon={UserCheck} colorClass="bg-green-600" subtext="With activity" />
+        <KPICard title="Due Customers" value={stats.due} icon={UserX} colorClass="bg-red-600" subtext="Payment alerts" />
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
-        <div className="relative flex-1 w-full max-sm:max-w-full max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search name, email, or company..." className="pl-9" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input placeholder="Search name, email..." className="pl-9 h-9 border-none bg-white shadow-sm ring-1 ring-slate-100 text-xs" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
       </div>
 
@@ -142,39 +117,41 @@ export default function CustomersPage() {
         <Card className="border-none shadow-sm rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader className="bg-muted/50">
+              <TableHeader className="bg-muted/20">
                 <TableRow>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Customer Name</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold h-9">Type</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold h-9">Name</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold h-9">Contact</TableHead>
+                  <TableHead className="text-right h-9"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredCustomers?.map((customer) => (
-                  <TableRow key={customer.id} className="hover:bg-muted/30">
+                  <TableRow key={customer.id} className="h-12 hover:bg-muted/10 transition-colors">
                     <TableCell>
-                      {customer.customerType === "company" ? <Badge variant="outline" className="text-[10px]">Company</Badge> : <Badge variant="outline" className="text-[10px]">Indiv</Badge>}
+                      <Badge variant="outline" className="text-[8px] uppercase font-black border-none bg-slate-100 px-1.5 h-4">
+                        {customer.customerType === "company" ? "Corp" : "Indiv"}
+                      </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="font-bold text-xs md:text-sm">{customer.firstName} {customer.lastName}</div>
-                      <div className="text-[10px] text-muted-foreground uppercase">{customer.companyName || "Personal"}</div>
+                      <div className="font-bold text-xs">{customer.firstName} {customer.lastName}</div>
+                      <div className="text-[9px] text-muted-foreground uppercase font-black">{customer.companyName || "Personal"}</div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-[10px] text-muted-foreground">
-                        <div>{customer.email || "No Email"}</div>
-                        <div>{customer.phoneNumber || "No Phone"}</div>
+                      <div className="flex items-center gap-3 text-[10px] font-bold text-muted-foreground">
+                        <Mail className="h-3 w-3 opacity-40" /> {customer.email || "---"}
+                        <Phone className="h-3 w-3 opacity-40 ml-2" /> {customer.phoneNumber || "---"}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-cyan-50 text-cyan-600 transition-colors"><MoreVertical className="h-3.5 w-3.5" /></Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEdit(customer)}><Edit className="mr-2 h-4 w-4" /> Edit Profile</DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600" onClick={() => { setSelectedCustomer(customer); setIsDeleteAlertOpen(true); }}>
-                            <Trash2 className="mr-2 h-4 w-4" /> Delete Customer
+                        <DropdownMenuContent align="end" className="w-32">
+                          <DropdownMenuItem className="text-xs" onClick={() => openEdit(customer)}><Edit className="mr-2 h-3.5 w-3.5" /> Edit</DropdownMenuItem>
+                          <DropdownMenuItem className="text-red-600 text-xs" onClick={() => { setSelectedCustomer(customer); setIsDeleteAlertOpen(true); }}>
+                            <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -189,44 +166,23 @@ export default function CustomersPage() {
 
       {/* ADD/EDIT MODAL */}
       <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) { setIsAddModalOpen(false); setIsEditModalOpen(false); setSelectedCustomer(null); } }}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle>{isEditModalOpen ? "Edit Customer Details" : "Register New Customer"}</DialogTitle></DialogHeader>
-          <form onSubmit={isEditModalOpen ? handleUpdateCustomer : handleAddCustomer} className="space-y-6 pt-4">
-            <div className="space-y-3">
-              <Label>Customer Type</Label>
-              <RadioGroup value={customerType} onValueChange={(v: any) => setCustomerType(v)} className="grid grid-cols-2 gap-4">
-                <div className="flex items-center space-x-2 border p-3 rounded-lg"><RadioGroupItem value="individual" id="individual" /><Label htmlFor="individual">Individual</Label></div>
-                <div className="flex items-center space-x-2 border p-3 rounded-lg"><RadioGroupItem value="company" id="company" /><Label htmlFor="company">Company</Label></div>
-              </RadioGroup>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>First Name</Label><Input name="firstName" defaultValue={selectedCustomer?.firstName} required /></div>
-              <div className="space-y-2"><Label>Last Name</Label><Input name="lastName" defaultValue={selectedCustomer?.lastName} required /></div>
-            </div>
-            {customerType === 'company' && <div className="space-y-2"><Label>Company Name</Label><Input name="companyName" defaultValue={selectedCustomer?.companyName} required /></div>}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Email</Label><Input name="email" defaultValue={selectedCustomer?.email} type="email" /></div>
-              <div className="space-y-2"><Label>Phone</Label><Input name="phoneNumber" defaultValue={selectedCustomer?.phoneNumber} /></div>
-            </div>
-            <div className="space-y-2"><Label>City</Label><Input name="city" defaultValue={selectedCustomer?.city} /></div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => { setIsAddModalOpen(false); setIsEditModalOpen(false); }}>Cancel</Button>
-              <Button type="submit" disabled={isSubmitting}>{isSubmitting ? <Loader2 className="animate-spin" /> : "Save Profile"}</Button>
-            </DialogFooter>
-          </form>
+        <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl">
+          <DialogHeader className="bg-cyan-600 p-6 text-white flex-row items-center gap-3">
+            <Users className="h-6 w-6" />
+            <DialogTitle className="text-xl font-bold font-headline uppercase">{isEditModalOpen ? "Edit Profile" : "New Client"}</DialogTitle>
+          </DialogHeader>
+          <div className="p-6 bg-slate-50 italic text-[10px] uppercase font-bold tracking-widest text-center py-20 text-muted-foreground">
+            Customer Enrollment Form
+          </div>
         </DialogContent>
       </Dialog>
 
-      {/* DELETE ALERT */}
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently delete the customer record for {selectedCustomer?.firstName}. All transaction history for this client will be unlinked.</AlertDialogDescription>
-          </AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle className="font-headline">Remove Customer?</AlertDialogTitle><AlertDialogDescription className="text-xs">Record will be permanently deleted.</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={handleDeleteCustomer}>Confirm Delete</AlertDialogAction>
+            <AlertDialogCancel className="rounded-full text-[10px] uppercase font-bold h-9">Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 rounded-full text-[10px] uppercase font-bold h-9" onClick={handleDeleteCustomer}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

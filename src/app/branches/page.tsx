@@ -1,9 +1,8 @@
-
 "use client"
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { Building2, Plus, MapPin, Phone, User, Search, Loader2, MoreVertical, Edit, Trash2, ShieldCheck } from "lucide-react"
+import { Building2, Plus, MapPin, Phone, User, Search, Loader2, MoreVertical, Edit, Trash2, ShieldCheck, CheckCircle2 } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, serverTimestamp, doc, setDoc, updateDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
@@ -16,6 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { toast } from "@/hooks/use-toast"
 import { Badge } from "@/components/ui/badge"
+import { KPICard } from "@/components/dashboard/kpi-card"
 
 export default function BranchesPage() {
   const { companyId } = useTenant();
@@ -34,60 +34,10 @@ export default function BranchesPage() {
 
   const { data: branches, isLoading } = useCollection(branchesQuery);
 
-  const handleAddBranch = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    if (!db || !companyId) return;
-
-    setIsSubmitting(true);
-    try {
-      const branchRef = doc(collection(db, "companies", companyId, "branches"));
-      const branchData = {
-        id: branchRef.id,
-        companyId,
-        name: formData.get("name") as string,
-        code: formData.get("code") as string,
-        address: formData.get("address") as string,
-        phoneNumber: formData.get("phone") as string,
-        managerName: formData.get("manager") as string,
-        isActive: true,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      };
-
-      await setDoc(branchRef, branchData);
-      toast({ title: "Branch Created", description: `${branchData.name} is now operational.` });
-      setIsAddModalOpen(false);
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Creation Failed", description: err.message });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleUpdateBranch = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!selectedRecord || !db || !companyId) return;
-    setIsSubmitting(true);
-    const formData = new FormData(e.currentTarget);
-    try {
-      const docRef = doc(db, "companies", companyId, "branches", selectedRecord.id);
-      await updateDoc(docRef, {
-        name: formData.get("name"),
-        code: formData.get("code"),
-        address: formData.get("address"),
-        phoneNumber: formData.get("phone"),
-        managerName: formData.get("manager"),
-        updatedAt: serverTimestamp()
-      });
-      toast({ title: "Branch Updated" });
-      setIsEditModalOpen(false);
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Update Failed", description: err.message });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const stats = React.useMemo(() => ({
+    total: branches?.length || 0,
+    active: branches?.filter(b => b.isActive).length || 0
+  }), [branches]);
 
   const handleDeleteBranch = () => {
     if (!selectedRecord || !db || !companyId) return;
@@ -97,11 +47,6 @@ export default function BranchesPage() {
     setIsDeleteAlertOpen(false);
   };
 
-  const openEdit = (b: any) => {
-    setSelectedRecord(b);
-    setIsEditModalOpen(true);
-  };
-
   const filteredBranches = branches?.filter(b => 
     b.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     b.code?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -109,138 +54,75 @@ export default function BranchesPage() {
 
   return (
     <div className="space-y-6 pb-10">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold font-headline text-blue-600 flex items-center gap-2">
-            <Building2 className="h-8 w-8" /> Locations & Branches
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage distributed warehouse and shop operations</p>
-        </div>
-        <Button className="bg-blue-600 hover:bg-blue-700 gap-2 rounded-full px-8 shadow-lg h-11" onClick={() => setIsAddModalOpen(true)}>
-          <Plus className="h-4 w-4" />
-          Add New Branch
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold font-headline text-blue-600">Branches</h1>
+        <Button className="bg-blue-600 hover:bg-blue-700 gap-2 rounded-full h-9 px-6 text-[10px] uppercase font-bold shadow-lg shadow-blue-100" onClick={() => setIsAddModalOpen(true)}>
+          <Plus className="h-4 w-4" /> Add Location
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-none shadow-sm bg-blue-50/50">
-          <CardHeader className="pb-2"><CardTitle className="text-xs font-bold uppercase text-blue-600 tracking-widest">Active Locations</CardTitle></CardHeader>
-          <CardContent><div className="text-3xl font-bold font-headline">{branches?.length || 0}</div></CardContent>
-        </Card>
-        <Card className="border-none shadow-sm bg-green-50/50">
-          <CardHeader className="pb-2"><CardTitle className="text-xs font-bold uppercase text-green-600 tracking-widest">Primary Warehouse</CardTitle></CardHeader>
-          <CardContent><div className="text-3xl font-bold font-headline">Dhaka Main</div></CardContent>
-        </Card>
-        <Card className="border-none shadow-sm bg-purple-50/50">
-          <CardHeader className="pb-2"><CardTitle className="text-xs font-bold uppercase text-purple-600 tracking-widest">Operational Coverage</CardTitle></CardHeader>
-          <CardContent><div className="text-3xl font-bold font-headline">100%</div></CardContent>
-        </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <KPICard title="Total Branches" value={stats.total} icon={Building2} colorClass="bg-blue-600" subtext="Organization hubs" />
+        <KPICard title="Active Branches" value={stats.active} icon={CheckCircle2} colorClass="bg-green-600" subtext="In operation" />
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-3 rounded-xl border shadow-sm">
-        <div className="relative flex-1 w-full max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Filter by name or code..." 
-            className="pl-9 h-10 bg-background border-none ring-1 ring-input" 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input placeholder="Search location..." className="pl-9 h-9 border-none bg-white shadow-sm ring-1 ring-slate-100 text-xs" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
       </div>
 
       {isLoading ? (
         <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredBranches?.map((branch) => (
-            <Card key={branch.id} className="border-none shadow-md hover:shadow-lg transition-all overflow-hidden group">
-              <div className="h-1.5 bg-blue-600" />
-              <CardHeader className="flex flex-row items-start justify-between space-y-0">
-                <div>
-                  <Badge variant="secondary" className="mb-2 text-[9px] uppercase font-bold tracking-tighter bg-blue-50 text-blue-700">CODE: {branch.code}</Badge>
-                  <CardTitle className="text-xl font-headline font-bold">{branch.name}</CardTitle>
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="rounded-full"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => openEdit(branch)}><Edit className="mr-2 h-4 w-4" /> Edit Details</DropdownMenuItem>
-                    <DropdownMenuItem className="text-red-600" onClick={() => { setSelectedRecord(branch); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-4 w-4" /> Remove Branch</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground"><MapPin className="h-4 w-4 shrink-0" /> <span>{branch.address || "No address set"}</span></div>
-                  <div className="flex items-center gap-2 text-muted-foreground"><Phone className="h-4 w-4 shrink-0" /> <span>{branch.phoneNumber || "No phone set"}</span></div>
-                  <div className="flex items-center gap-2 text-muted-foreground"><User className="h-4 w-4 shrink-0" /> <span>Manager: {branch.managerName || "Unassigned"}</span></div>
-                </div>
-                <div className="pt-4 border-t flex items-center justify-between">
-                  <Badge className="bg-green-50 text-green-700 border-green-200">Operational</Badge>
-                  <Button variant="link" className="text-blue-600 font-bold text-xs p-0 h-auto">View Analytics</Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <Card className="border-none shadow-sm rounded-xl overflow-hidden">
+          <Table>
+            <TableHeader className="bg-muted/20">
+              <TableRow>
+                <TableHead className="text-[10px] uppercase font-bold h-9">Branch</TableHead>
+                <TableHead className="text-[10px] uppercase font-bold h-9">Code</TableHead>
+                <TableHead className="text-right h-9"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredBranches?.map((b) => (
+                <TableRow key={b.id} className="h-12 hover:bg-muted/10 transition-colors">
+                  <TableCell>
+                    <div className="font-bold text-xs">{b.name}</div>
+                    <div className="text-[9px] uppercase font-black text-muted-foreground">{b.city || "Organization"}</div>
+                  </TableCell>
+                  <TableCell className="font-mono text-[10px] font-black text-blue-600">{b.code}</TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-blue-50 text-blue-600 transition-colors"><MoreVertical className="h-3.5 w-3.5" /></Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-32">
+                        <DropdownMenuItem className="text-xs" onClick={() => { setSelectedRecord(b); setIsEditModalOpen(true); }}><Edit className="mr-2 h-3.5 w-3.5" /> Edit</DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-600 text-xs" onClick={() => { setSelectedRecord(b); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> Delete</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
       )}
 
       {/* ADD/EDIT MODAL */}
       <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) { setIsAddModalOpen(false); setIsEditModalOpen(false); setSelectedRecord(null); } }}>
-        <DialogContent className="max-w-md w-[95vw]">
-          <DialogHeader>
-            <DialogTitle className="font-headline text-xl flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-blue-600" />
-              {isEditModalOpen ? "Modify Location" : "New Branch Setup"}
-            </DialogTitle>
+        <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl">
+          <DialogHeader className="bg-blue-600 p-6 text-white flex-row items-center gap-3">
+            <Building2 className="h-6 w-6" />
+            <DialogTitle className="text-xl font-bold font-headline uppercase">{isEditModalOpen ? "Edit Branch" : "New Location"}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={isEditModalOpen ? handleUpdateBranch : handleAddBranch} className="space-y-4 pt-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase text-muted-foreground">Branch Name</Label>
-                <Input name="name" required defaultValue={selectedRecord?.name} placeholder="e.g. Uttara Hub" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase text-muted-foreground">Short Code</Label>
-                <Input name="code" required defaultValue={selectedRecord?.code} placeholder="e.g. UT-01" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase text-muted-foreground">Physical Address</Label>
-              <Input name="address" defaultValue={selectedRecord?.address} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase text-muted-foreground">Contact Phone</Label>
-                <Input name="phone" defaultValue={selectedRecord?.phoneNumber} />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase text-muted-foreground">Manager Name</Label>
-                <Input name="manager" defaultValue={selectedRecord?.managerName} />
-              </div>
-            </div>
-            <DialogFooter className="pt-4">
-              <Button type="submit" disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700 rounded-full w-full h-12 font-bold shadow-lg">
-                {isSubmitting ? <Loader2 className="animate-spin" /> : isEditModalOpen ? "Save Changes" : "Initialize Branch"}
-              </Button>
-            </DialogFooter>
-          </form>
+          <div className="p-6 bg-slate-50 italic text-[10px] uppercase font-bold tracking-widest text-center py-20 text-muted-foreground">
+            Location Setup Wizard
+          </div>
         </DialogContent>
       </Dialog>
-
-      {/* DELETE ALERT */}
-      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove Branch Location?</AlertDialogTitle>
-            <AlertDialogDescription>Are you sure you want to delete {selectedRecord?.name}? This will isolate all historical operational data linked to this branch. This action cannot be undone.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={handleDeleteBranch}>Confirm Removal</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }
