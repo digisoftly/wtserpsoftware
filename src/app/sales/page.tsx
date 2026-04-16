@@ -30,7 +30,7 @@ export default function SalesPage() {
     if (!db || !companyId || !branchId) return null;
     return query(collection(db, "companies", companyId, "branches", branchId, "sales_invoices"), orderBy("createdAt", "desc"));
   }, [db, companyId, branchId]);
-  const { data: invoices, isLoading: invoicesLoading } = useCollection(invoicesQuery);
+  const { data: invoices, isLoading } = useCollection(invoicesQuery);
 
   const customersQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
