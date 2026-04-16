@@ -1,19 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { 
-  Bell, 
-  Search, 
-  Languages, 
-  Plus, 
-  Settings, 
-  User, 
-  LogOut,
-  ChevronDown,
-  Building,
-  UserPlus,
-  Loader2
-} from "lucide-react"
+import { Search, Languages, Plus, User, LogOut, ChevronDown, Building, Loader2 } from "lucide-react"
 
 import {
   DropdownMenu,
@@ -24,32 +12,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
-import { Badge } from "@/components/ui/badge"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { signOut } from "firebase/auth"
 import { useRouter } from "next/navigation"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
 import { useTenant } from "@/context/tenant-context"
-import { collection, serverTimestamp, query, orderBy } from "firebase/firestore"
-import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
-import { toast } from "@/hooks/use-toast"
-import { useSettings } from "@/hooks/use-settings"
+import { collection, query, orderBy } from "firebase/firestore"
 
 export function AppHeader() {
-  const { isMobile } = useSidebar()
   const { user } = useUser()
   const auth = useAuth()
   const db = useFirestore()
   const { companyId, branchId, setBranchId, language, setLanguage, userRole } = useTenant()
-  const { settings } = useSettings()
   const router = useRouter()
-  const [isQuickEntryOpen, setIsQuickEntryOpen] = React.useState(false)
 
-  // Fetch branches for the switcher
   const branchesQuery = useMemoFirebase(() => {
     if (!db || !companyId) return null;
     return query(collection(db, "companies", companyId, "branches"), orderBy("name"));
@@ -61,176 +38,59 @@ export function AppHeader() {
     router.push('/login')
   }
 
-  const handleQuickAddCustomer = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    if (!db || !companyId || !branchId) return;
-
-    const customerData = {
-      companyId,
-      branchId,
-      customerType: "individual",
-      firstName: formData.get("firstName") as string,
-      lastName: formData.get("lastName") as string,
-      email: (formData.get("email") as string) || "",
-      phoneNumber: (formData.get("phoneNumber") as string) || "",
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-
-    const colRef = collection(db, "companies", companyId, "branches", branchId, "customers");
-    addDocumentNonBlocking(colRef, customerData);
-    setIsQuickEntryOpen(false);
-    toast({ title: "Customer Added", description: "The manual entry has been saved to your directory." });
-  };
-
-  const activeBranch = branches?.find(b => b.id === branchId) || { name: branchId?.replace('-', ' ') || 'Select Branch' };
+  const activeBranch = branches?.find(b => b.id === branchId) || { name: 'Main' };
 
   return (
-    <header className="h-16 border-b bg-white flex items-center justify-between px-4 md:px-6 sticky top-0 z-40 shadow-sm">
+    <header className="h-14 border-b bg-white flex items-center justify-between px-4 sticky top-0 z-40">
       <div className="flex items-center gap-4 flex-1">
         <SidebarTrigger />
-        
-        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-background rounded-full border border-input focus-within:ring-2 focus-within:ring-primary w-full max-w-md transition-all">
-          <Search className="h-4 w-4 text-muted-foreground" />
-          <input 
-            placeholder={language === 'BN' ? "মডিউল বা ডেটা খুঁজুন..." : "Search module or data..."}
-            className="bg-transparent border-none outline-none text-sm w-full"
-          />
+        <div className="hidden md:flex items-center gap-2 px-3 h-8 bg-muted/50 rounded-full w-full max-w-xs border border-transparent focus-within:border-blue-500/50 transition-all">
+          <Search className="h-3.5 w-3.5 text-muted-foreground" />
+          <input placeholder="Search..." className="bg-transparent border-none outline-none text-xs w-full" />
         </div>
       </div>
 
-      <div className="flex items-center gap-2 md:gap-4">
-        <Button 
-          size="sm" 
-          onClick={() => setIsQuickEntryOpen(true)}
-          className="hidden md:flex items-center gap-2 rounded-full px-4 bg-accent hover:bg-accent/90 text-accent-foreground font-semibold"
-        >
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setIsAddOpen(true)}>
           <Plus className="h-4 w-4" />
-          <span>{language === 'BN' ? "কুইক এন্ট্রি" : "Quick Entry"}</span>
         </Button>
 
         {userRole?.isSuperAdmin && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="hidden lg:flex gap-2 rounded-full border-primary/20 hover:bg-primary/5 h-10 px-4">
-                <Building className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-xs">{activeBranch.name}</span>
-                <ChevronDown className="h-3 w-3 text-muted-foreground" />
+              <Button variant="ghost" size="sm" className="h-8 gap-2 rounded-full px-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:bg-blue-50 hover:text-blue-600">
+                <Building className="h-3.5 w-3.5" /> {activeBranch.name} <ChevronDown className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Switch Branch</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {branchesLoading ? (
-                <div className="flex justify-center p-2"><Loader2 className="h-4 w-4 animate-spin" /></div>
-              ) : branches && branches.length > 0 ? (
-                branches.map(b => (
-                  <DropdownMenuItem 
-                    key={b.id} 
-                    onClick={() => setBranchId(b.id)}
-                    className={b.id === branchId ? "bg-primary/5 font-bold" : ""}
-                  >
-                    {b.name}
-                  </DropdownMenuItem>
-                ))
-              ) : (
-                <DropdownMenuItem disabled>No other branches</DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push('/branches')} className="text-primary font-bold">
-                <Settings className="mr-2 h-4 w-4" /> Manage Locations
-              </DropdownMenuItem>
+            <DropdownMenuContent align="end" className="w-48">
+              {branchesLoading ? <div className="p-4 text-center"><Loader2 className="animate-spin h-4 w-4 mx-auto" /></div> : branches?.map(b => (
+                <DropdownMenuItem key={b.id} onClick={() => setBranchId(b.id)} className="text-xs font-medium">{b.name}</DropdownMenuItem>
+              ))}
             </DropdownMenuContent>
           </DropdownMenu>
         )}
 
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="rounded-full h-10 w-10"
-          onClick={() => setLanguage(language === 'EN' ? 'BN' : 'EN')}
-        >
-          <Languages className="h-5 w-5 text-muted-foreground" />
-          <span className="sr-only">Toggle Language</span>
-          <Badge variant="outline" className="absolute -top-1 -right-1 text-[8px] h-4 w-6 p-0 flex items-center justify-center bg-white">
-            {language}
-          </Badge>
-        </Button>
-
-        <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 relative">
-          <Bell className="h-5 w-5 text-muted-foreground" />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
+        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-[10px] font-bold" onClick={() => setLanguage(language === 'EN' ? 'BN' : 'EN')}>
+          {language}
         </Button>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="p-0 hover:bg-transparent flex items-center gap-2 outline-none group">
-              <Avatar className="h-9 w-9 border-2 border-primary/10 group-hover:border-primary/30 transition-all">
-                <AvatarImage src={`https://picsum.photos/seed/${user?.uid}/200/200`} />
-                <AvatarFallback>{user?.email?.[0].toUpperCase() || "AD"}</AvatarFallback>
+            <Button variant="ghost" className="p-0 h-8 hover:bg-transparent flex items-center outline-none">
+              <Avatar className="h-7 w-7 border shadow-sm">
+                <AvatarImage src={`https://picsum.photos/seed/${user?.uid}/100/100`} />
+                <AvatarFallback className="text-[10px] font-bold">AD</AvatarFallback>
               </Avatar>
-              <div className="hidden lg:flex flex-col items-start text-left leading-none">
-                <span className="text-sm font-semibold">{user?.email?.split('@')[0] || 'Admin'}</span>
-                <span className="text-[10px] text-muted-foreground uppercase">{userRole?.name || 'User'}</span>
-              </div>
-              <ChevronDown className="h-4 w-4 text-muted-foreground hidden lg:block" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 mt-2">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+          <DropdownMenuContent align="end" className="w-48 mt-2">
+            <DropdownMenuLabel className="text-xs font-bold text-muted-foreground uppercase">Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push('/profile')}>
-              <User className="mr-2 h-4 w-4" />
-              <span>Profile Settings</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push('/settings')}>
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Company Profile</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-500" onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Sign out</span>
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push('/profile')} className="text-xs">Profile</DropdownMenuItem>
+            <DropdownMenuItem className="text-xs text-red-500" onClick={handleLogout}><LogOut className="mr-2 h-3.5 w-3.5" /> Sign out</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-
-      <Dialog open={isQuickEntryOpen} onOpenChange={setIsQuickEntryOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <UserPlus className="h-5 w-5 text-primary" />
-              Quick Customer Entry
-            </DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleQuickAddCustomer} className="space-y-4 pt-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-xs">First Name</Label>
-                <Input name="firstName" required />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs">Last Name</Label>
-                <Input name="lastName" required />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs">Email Address</Label>
-              <Input name="email" type="email" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs">Phone Number</Label>
-              <Input name="phoneNumber" />
-            </div>
-            <DialogFooter className="pt-4">
-              <Button type="button" variant="outline" onClick={() => setIsQuickEntryOpen(false)}>Cancel</Button>
-              <Button type="submit">Save Customer</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </header>
   )
 }
