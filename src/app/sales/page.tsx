@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, query, orderBy } from "firebase/firestore"
+import { collection, query, orderBy, doc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { cn } from "@/lib/utils"
 import { toast } from "@/hooks/use-toast"
@@ -30,7 +30,7 @@ export default function SalesPage() {
     if (!db || !companyId || !branchId) return null;
     return query(collection(db, "companies", companyId, "branches", branchId, "sales_invoices"), orderBy("createdAt", "desc"));
   }, [db, companyId, branchId]);
-  const { data: invoices, isLoading } = useCollection(invoicesQuery);
+  const { data: invoices, isLoading: invoicesLoading } = useCollection(invoicesQuery);
 
   const customersQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
@@ -39,8 +39,8 @@ export default function SalesPage() {
   const { data: customers } = useCollection(customersQuery);
 
   const handleDelete = () => {
-    if (!selectedRecord) return;
-    const docRef = doc(db, "companies", companyId!, "branches", branchId!, "sales_invoices", selectedRecord.id);
+    if (!selectedRecord || !db || !companyId || !branchId) return;
+    const docRef = doc(db, "companies", companyId, "branches", branchId, "sales_invoices", selectedRecord.id);
     deleteDocumentNonBlocking(docRef);
     toast({ title: "Deleted" });
     setIsDeleteAlertOpen(false);
@@ -113,10 +113,10 @@ export default function SalesPage() {
       {/* POS Placeholder Modal */}
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
         <DialogContent className="max-w-4xl p-0 overflow-hidden border-none shadow-2xl">
-          <div className="bg-blue-600 p-6 text-white flex items-center gap-3">
+          <DialogHeader className="bg-blue-600 p-6 text-white flex-row items-center gap-3 space-y-0">
             <ShoppingCart className="h-6 w-6" />
-            <h2 className="text-xl font-bold">New Sale</h2>
-          </div>
+            <DialogTitle className="text-xl font-bold">New Sale</DialogTitle>
+          </DialogHeader>
           <div className="p-6 h-[400px] flex items-center justify-center bg-muted/10 text-muted-foreground italic text-sm">
             POS Terminal Interface
           </div>

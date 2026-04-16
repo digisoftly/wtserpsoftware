@@ -13,6 +13,7 @@ import { useTenant } from "@/context/tenant-context"
 import { cn } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 
 export default function InventoryPage() {
   const { companyId, branchId } = useTenant();
@@ -61,7 +62,7 @@ export default function InventoryPage() {
             </TableHeader>
             <TableBody>
               {filtered?.map((p) => (
-                <TableRow key={p.id} className="h-12 hover:bg-muted/10">
+                <TableRow key={p.id} className="h-12 hover:bg-muted/10 transition-colors">
                   <TableCell>
                     <div className="font-bold text-xs">{p.name}</div>
                     <div className="text-[9px] text-muted-foreground uppercase">{p.productType}</div>
@@ -93,15 +94,15 @@ export default function InventoryPage() {
 
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
         <DialogContent className="max-w-lg p-0 overflow-hidden border-none shadow-2xl">
-          <div className="bg-blue-600 p-6 text-white flex items-center gap-3">
+          <DialogHeader className="bg-blue-600 p-6 text-white flex-row items-center gap-3 space-y-0">
             <Boxes className="h-6 w-6" />
-            <h2 className="text-xl font-bold">New Item</h2>
-          </div>
+            <DialogTitle className="text-xl font-bold">New Item</DialogTitle>
+          </DialogHeader>
           <div className="p-6 grid grid-cols-2 gap-4">
-             <div className="space-y-1"><label className="text-[10px] font-bold uppercase">Name</label><Input className="h-9" placeholder="Product name" /></div>
-             <div className="space-y-1"><label className="text-[10px] font-bold uppercase">SKU</label><Input className="h-9" placeholder="ID" /></div>
-             <div className="space-y-1"><label className="text-[10px] font-bold uppercase">Price</label><Input className="h-9" type="number" /></div>
-             <div className="space-y-1"><label className="text-[10px] font-bold uppercase">Stock</label><Input className="h-9" type="number" /></div>
+             <div className="space-y-1"><Label className="text-[10px] font-bold uppercase">Name</Label><Input className="h-9" placeholder="Product name" /></div>
+             <div className="space-y-1"><Label className="text-[10px] font-bold uppercase">SKU</Label><Input className="h-9" placeholder="ID" /></div>
+             <div className="space-y-1"><Label className="text-[10px] font-bold uppercase">Price</Label><Input className="h-9" type="number" /></div>
+             <div className="space-y-1"><Label className="text-[10px] font-bold uppercase">Stock</Label><Input className="h-9" type="number" /></div>
           </div>
           <div className="p-4 bg-muted/20 flex justify-end gap-2">
             <Button variant="ghost" size="sm" onClick={() => setIsAddOpen(false)}>Cancel</Button>
