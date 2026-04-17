@@ -1,15 +1,17 @@
 "use client"
 
 import * as React from "react"
-import { Zap, RefreshCw, BarChart, TrendingUp, ArrowRight, BrainCircuit, LineChart } from "lucide-react"
+import { Zap, RefreshCw, BarChart, TrendingUp, BrainCircuit, LineChart } from "lucide-react"
 import { inventoryForecasting, type InventoryForecastingOutput } from "@/ai/flows/ai-inventory-forecasting-and-optimization"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "@/hooks/use-toast"
 import { KPICard } from "@/components/dashboard/kpi-card"
+import { useTranslation } from "@/hooks/use-translation"
 
 export default function AIForecastingPage() {
+  const { t } = useTranslation();
   const [isForecasting, setIsForecasting] = React.useState(false)
   const [forecast, setForecast] = React.useState<InventoryForecastingOutput | null>(null)
 
@@ -34,9 +36,9 @@ export default function AIForecastingPage() {
         ]
       })
       setForecast(result)
-      toast({ title: "Intelligence Generated" })
+      toast({ title: t('success') })
     } catch (error) {
-      toast({ variant: "destructive", title: "AI Unavailable" })
+      toast({ variant: "destructive", title: t('error') })
     } finally {
       setIsForecasting(false)
     }
@@ -45,7 +47,7 @@ export default function AIForecastingPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <h1 className="text-xl font-bold font-headline text-violet-600 uppercase tracking-tight">AI Forecasting</h1>
+        <h1 className="text-xl font-bold font-headline text-violet-600 uppercase tracking-tight">{t('ai')}</h1>
         <Button 
           onClick={handleRunForecast} 
           disabled={isForecasting}
@@ -53,22 +55,22 @@ export default function AIForecastingPage() {
           className="bg-violet-600 hover:bg-violet-700 text-white gap-2 rounded-full font-bold shadow-xl shadow-violet-100 h-9 text-[10px] uppercase transition-all active:scale-95"
         >
           {isForecasting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
-          Run Market Forecast
+          {t('runMarketForecast')}
         </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <KPICard title="Forecast Sales" value={forecast ? "৳1.2M" : "---"} icon={LineChart} colorClass="bg-violet-600" subtext="Projected Next Period" />
-        <KPICard title="Trend Indicator" value={forecast ? "BULLISH" : "---"} icon={BrainCircuit} colorClass="bg-indigo-600" subtext="Market Sentiment" />
+        <KPICard title={t('forecastSales')} value={forecast ? "৳1.2M" : "---"} icon={LineChart} colorClass="bg-violet-600" />
+        <KPICard title={t('trendIndicator')} value={forecast ? "BULLISH" : "---"} icon={BrainCircuit} colorClass="bg-indigo-600" />
       </div>
 
       {forecast ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <Card className="lg:col-span-2 border-none shadow-sm bg-white rounded-xl">
-            <CardHeader className="bg-slate-50/50 py-4">
+          <Card className="lg:col-span-2 border-none shadow-sm bg-white rounded-xl ring-1 ring-slate-100">
+            <CardHeader className="bg-slate-50/50 py-4 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <BarChart className="h-4 w-4 text-violet-600" />
-                <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Intelligence Report</CardTitle>
+                <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{t('intelligenceReport')}</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="p-4 space-y-3">
@@ -88,11 +90,11 @@ export default function AIForecastingPage() {
           </Card>
 
           <div className="space-y-6">
-            <Card className="border-none shadow-xl bg-violet-600 text-white rounded-[2rem]">
-              <CardHeader><CardTitle className="text-[10px] font-black uppercase tracking-widest opacity-80">Strategic Actions</CardTitle></CardHeader>
-              <CardContent className="p-6 space-y-3 pt-0">
+            <Card className="border-none shadow-xl bg-violet-600 text-white rounded-[2rem] overflow-hidden">
+              <CardHeader className="p-6 pb-0"><CardTitle className="text-[10px] font-black uppercase tracking-widest opacity-80">{t('strategicActions')}</CardTitle></CardHeader>
+              <CardContent className="p-6 space-y-3 pt-4">
                 {forecast.recommendations.map((rec, i) => (
-                  <div key={i} className="flex gap-3 items-start bg-white/10 p-3 rounded-2xl backdrop-blur-sm">
+                  <div key={i} className="flex gap-3 items-start bg-white/10 p-3 rounded-2xl backdrop-blur-sm ring-1 ring-white/20">
                     <TrendingUp className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                     <p className="text-[10px] font-bold leading-tight uppercase">{rec}</p>
                   </div>
@@ -104,7 +106,7 @@ export default function AIForecastingPage() {
       ) : (
         <div className="p-24 bg-white rounded-[3rem] border border-dashed text-center flex flex-col items-center ring-1 ring-slate-100">
           <Zap className="h-12 w-12 text-violet-200 mb-6" />
-          <p className="text-[10px] uppercase font-black text-muted-foreground tracking-[0.3em]">Initialize Market Logic</p>
+          <p className="text-[10px] uppercase font-black text-muted-foreground tracking-[0.3em]">{t('initializeMarketLogic')}</p>
         </div>
       )}
     </div>
