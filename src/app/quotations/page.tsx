@@ -38,6 +38,7 @@ import { toast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { DocumentTemplate } from "@/components/documents/document-template"
+import { useTranslation } from "@/hooks/use-translation"
 
 interface QuoteItem {
   productId: string;
@@ -50,6 +51,8 @@ interface QuoteItem {
 export default function QuotationsPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
+  const { t } = useTranslation();
+  
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
@@ -106,7 +109,7 @@ export default function QuotationsPage() {
 
   const handleSubmitQuote = async () => {
     if (!db || !companyId || !branchId || !selectedCustomerId || lineItems.length === 0) {
-      toast({ variant: "destructive", title: "Cannot Save", description: "Initialization pending or form incomplete." });
+      toast({ variant: "destructive", title: t('error'), description: t('errorSub') });
       return;
     }
     setIsSubmitting(true);
@@ -125,11 +128,11 @@ export default function QuotationsPage() {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-      toast({ title: "Quotation Saved", description: "The proposal has been recorded as draft." });
+      toast({ title: t('success'), description: t('recordProposalSub') });
       setIsAddModalOpen(false);
       resetForm();
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Error", description: e.message });
+      toast({ variant: "destructive", title: t('error'), description: e.message });
     } finally {
       setIsSubmitting(false);
     }
@@ -146,11 +149,11 @@ export default function QuotationsPage() {
         totalAmount: totalValue,
         updatedAt: serverTimestamp()
       });
-      toast({ title: "Quotation Updated", description: "Changes saved successfully." });
+      toast({ title: t('success'), description: t('successSub') });
       setIsEditModalOpen(false);
       resetForm();
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Update Failed", description: e.message });
+      toast({ variant: "destructive", title: t('error'), description: e.message });
     } finally {
       setIsSubmitting(false);
     }
@@ -161,17 +164,17 @@ export default function QuotationsPage() {
     try {
       const docRef = doc(db, "companies", companyId, "branches", branchId, "quotations", selectedRecord.id);
       deleteDocumentNonBlocking(docRef);
-      toast({ title: "Quotation Removed", description: "Record deleted." });
+      toast({ title: t('success'), description: t('successSub') });
       setIsDeleteAlertOpen(false);
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Delete Error", description: e.message });
+      toast({ variant: "destructive", title: t('error'), description: e.message });
     }
   }
 
   const handleConvertToInvoice = async (quote: any) => {
     if (!db || !companyId || !branchId) return;
     if (quote.status === "converted") {
-      toast({ title: "Already Converted", description: "This quotation is already a sales invoice." });
+      toast({ title: t('error'), description: t('errorSub') });
       return;
     }
 
@@ -192,9 +195,9 @@ export default function QuotationsPage() {
 
         transaction.update(quoteRef, { status: "converted", convertedToInvoiceId: invoiceRef.id });
       });
-      toast({ title: "Quotation Converted", description: "New invoice generated from this proposal." });
+      toast({ title: t('success'), description: t('successSub') });
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Conversion Failed", description: e.message });
+      toast({ variant: "destructive", title: t('error'), description: e.message });
     }
   };
 
@@ -228,24 +231,24 @@ export default function QuotationsPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">
         <div>
-          <h1 className="text-xl font-bold font-headline">Quotations</h1>
+          <h1 className="text-xl font-bold font-headline text-purple-600">{t('quotations')}</h1>
         </div>
         <Button className="bg-purple-600 hover:bg-purple-700 gap-2 rounded-full px-8 shadow-lg h-9 text-[10px] uppercase font-bold shadow-purple-100" onClick={() => { resetForm(); setIsAddModalOpen(true); }}>
-          <Plus className="h-4 w-4" /> Create Quote
+          <Plus className="h-4 w-4" /> {t('createQuote')}
         </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 no-print">
-        <KPICard title="Total Quotations" value={stats.total} icon={FileText} colorClass="bg-blue-600" subtext="All time" />
-        <KPICard title="Pending" value={stats.pending} icon={Clock} colorClass="bg-orange-600" subtext="Draft status" />
-        <KPICard title="Approved" value={stats.approved} icon={CheckCircle2} colorClass="bg-green-600" subtext="Customer ready" />
-        <KPICard title="Converted" value={stats.converted} icon={ShoppingCart} colorClass="bg-purple-600" subtext="Became Invoices" />
+        <KPICard title={t('totalQuotations')} value={stats.total} icon={FileText} colorClass="bg-blue-600" />
+        <KPICard title={t('pendingQuotes')} value={stats.pending} icon={Clock} colorClass="bg-orange-600" />
+        <KPICard title={t('approvedQuotes')} value={stats.approved} icon={CheckCircle2} colorClass="bg-green-600" />
+        <KPICard title={t('convertedQuotes')} value={stats.converted} icon={ShoppingCart} colorClass="bg-purple-600" />
       </div>
 
       <div className="flex items-center gap-4 bg-white p-3 rounded-xl border shadow-sm no-print">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search quotation #..." className="pl-9 h-10 border-none ring-1 ring-input text-xs" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          <Input placeholder={t('search')} className="pl-9 h-10 border-none ring-1 ring-input text-xs" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
       </div>
 
@@ -257,10 +260,10 @@ export default function QuotationsPage() {
             <Table>
               <TableHeader className="bg-muted/50">
                 <TableRow>
-                  <TableHead className="text-[10px] uppercase font-bold">Quote #</TableHead>
-                  <TableHead className="text-[10px] uppercase font-bold">Customer</TableHead>
-                  <TableHead className="text-[10px] uppercase font-bold">Value</TableHead>
-                  <TableHead className="text-[10px] uppercase font-bold">Status</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold">{t('quoteNumber')}</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold">{t('customer')}</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold">{t('amount')}</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold">{t('status')}</TableHead>
                   <TableHead className="text-right"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -268,13 +271,13 @@ export default function QuotationsPage() {
                 {filteredQuotations?.map((q) => (
                   <TableRow key={q.id} className="hover:bg-muted/30 transition-colors">
                     <TableCell className="font-bold text-xs">{q.quotationNumber}</TableCell>
-                    <TableCell className="text-xs truncate max-w-[150px]">
-                      {customers?.find(c => c.id === q.customerId)?.firstName || "Client"}
+                    <TableCell className="text-xs font-bold truncate max-w-[150px]">
+                      {customers?.find(c => c.id === q.customerId)?.firstName || t('customer')}
                     </TableCell>
                     <TableCell className="font-bold text-xs">৳{q.totalAmount?.toLocaleString()}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={cn("text-[9px] h-5 uppercase border-none", q.status === "converted" ? "bg-green-50 text-green-700" : "bg-purple-50 text-purple-700")}>
-                        {q.status}
+                      <Badge variant="outline" className={cn("text-[8px] h-5 uppercase border-none px-2 font-black", q.status === "converted" ? "bg-green-50 text-green-700" : "bg-purple-50 text-purple-700")}>
+                        {t(`${q.status}_status` as any)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -283,14 +286,14 @@ export default function QuotationsPage() {
                           <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-purple-50 text-purple-600 transition-colors"><MoreVertical className="h-3.5 w-3.5" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-32">
-                          <DropdownMenuItem className="text-xs"><Eye className="mr-2 h-3.5 w-3.5" /> View</DropdownMenuItem>
-                          <DropdownMenuItem className="text-xs" disabled={q.status === 'converted'} onClick={() => openEdit(q)}><Edit className="mr-2 h-3.5 w-3.5" /> Edit</DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs" onClick={() => openView(q)}><Eye className="mr-2 h-3.5 w-3.5" /> {t('view')}</DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs" disabled={q.status === 'converted'} onClick={() => openEdit(q)}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
                           <DropdownMenuItem className="text-green-600 text-xs" onClick={() => handleConvertToInvoice(q)} disabled={q.status === "converted"}>
-                            <ShoppingCart className="mr-2 h-3.5 w-3.5" /> Invoice
+                            <ShoppingCart className="mr-2 h-3.5 w-3.5" /> {t('sales')}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-red-600 text-xs" onClick={() => { setSelectedRecord(q); setIsDeleteAlertOpen(true); }}>
-                            <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
+                            <Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -306,15 +309,15 @@ export default function QuotationsPage() {
       {/* VIEW DOCUMENT MODAL */}
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
         <DialogContent className="max-w-[21cm] w-[95vw] p-0 border-none bg-transparent shadow-none overflow-y-auto max-h-[95vh]">
-          <DialogHeader className="sr-only"><DialogTitle>Quotation Details</DialogTitle></DialogHeader>
+          <DialogHeader className="sr-only"><DialogTitle>{t('view')}</DialogTitle></DialogHeader>
           <div className="flex justify-end gap-2 mb-4 no-print fixed top-4 right-4 z-50">
-            <Button onClick={handlePrint} size="sm" className="bg-primary shadow-lg text-[10px] uppercase font-bold rounded-full"><Printer className="mr-2 h-3.5 w-3.5" /> Print</Button>
+            <Button onClick={handlePrint} size="sm" className="bg-primary shadow-lg text-[10px] uppercase font-bold rounded-full"><Printer className="mr-2 h-3.5 w-3.5" /> {t('print')}</Button>
             <Button variant="outline" size="icon" onClick={() => setIsViewModalOpen(false)} className="bg-white rounded-full h-8 w-8"><X className="h-3.5 w-3.5" /></Button>
           </div>
           {selectedRecord && (
             <div className="bg-white shadow-2xl rounded-none md:rounded-xl overflow-hidden">
               <DocumentTemplate
-                title="Quotation"
+                title={t('quotations')}
                 type="quotation"
                 docNumber={selectedRecord.quotationNumber}
                 date={selectedRecord.quotationDate}
@@ -340,26 +343,26 @@ export default function QuotationsPage() {
         <DialogContent className="max-w-4xl p-0 overflow-hidden border-none shadow-2xl">
           <DialogHeader className={cn("p-6 text-white flex-row items-center gap-3", isEditModalOpen ? "bg-blue-600" : "bg-purple-600")}>
             <FileText className="h-6 w-6" />
-            <DialogTitle className="text-xl font-bold font-headline uppercase">{isEditModalOpen ? "Edit Proposal" : "New Proposal"}</DialogTitle>
+            <DialogTitle className="text-xl font-bold font-headline uppercase">{isEditModalOpen ? t('edit') : t('newQuotation')}</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6 bg-slate-50">
             <div className="lg:col-span-2 space-y-6">
               <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase text-muted-foreground">Select Customer</Label>
+                <Label className="text-[10px] font-bold uppercase text-muted-foreground">{t('customer')}</Label>
                 <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                  <SelectTrigger className="h-11 rounded-xl bg-white border-none shadow-sm ring-1 ring-slate-200"><SelectValue placeholder="Identify client..." /></SelectTrigger>
+                  <SelectTrigger className="h-11 rounded-xl bg-white border-none shadow-sm ring-1 ring-slate-200"><SelectValue placeholder={t('search')} /></SelectTrigger>
                   <SelectContent>
-                    {customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs">{c.firstName} {c.lastName}</SelectItem>)}
+                    {customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-bold">{c.firstName} {c.lastName}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">Items</Label>
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">{t('addItem')}</Label>
                   <Select onValueChange={handleAddLineItem}>
-                    <SelectTrigger className="w-[200px] h-9 bg-purple-50 border-purple-100 text-[10px] font-bold rounded-lg uppercase tracking-wider"><SelectValue placeholder="+ Add product..." /></SelectTrigger>
+                    <SelectTrigger className="w-[200px] h-9 bg-purple-50 border-purple-100 text-[10px] font-bold rounded-lg uppercase tracking-wider"><SelectValue placeholder={t('addProduct')} /></SelectTrigger>
                     <SelectContent>
-                      {products?.map(p => <SelectItem key={p.id} value={p.id} className="text-xs">{p.name}</SelectItem>)}
+                      {products?.map(p => <SelectItem key={p.id} value={p.id} className="text-xs font-bold">{p.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
@@ -367,20 +370,20 @@ export default function QuotationsPage() {
                   <Table>
                     <TableHeader className="bg-slate-50">
                       <TableRow>
-                        <TableHead className="text-[10px] uppercase font-bold h-9">Description</TableHead>
-                        <TableHead className="text-[10px] uppercase font-bold h-9">Unit Price</TableHead>
-                        <TableHead className="text-right text-[10px] uppercase font-bold h-9">Total</TableHead>
+                        <TableHead className="text-[10px] uppercase font-bold h-9">{t('itemDescription')}</TableHead>
+                        <TableHead className="text-[10px] uppercase font-bold h-9">{t('unitPrice')}</TableHead>
+                        <TableHead className="text-right text-[10px] uppercase font-bold h-9">{t('total')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {lineItems.length === 0 ? (
-                        <TableRow><TableCell colSpan={3} className="py-10 text-center text-muted-foreground italic text-[10px] uppercase font-bold tracking-widest">No items added</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={3} className="py-10 text-center text-muted-foreground italic text-[10px] uppercase font-bold tracking-widest">{t('noItemsSelected')}</TableCell></TableRow>
                       ) : (
                         lineItems.map((item, idx) => (
                           <TableRow key={idx} className="h-10">
-                            <TableCell className="text-xs font-medium">{item.name}</TableCell>
-                            <TableCell className="text-xs">৳{item.unitPrice.toLocaleString()}</TableCell>
-                            <TableCell className="text-xs text-right font-bold text-slate-900">৳{item.total.toLocaleString()}</TableCell>
+                            <TableCell className="text-xs font-bold uppercase truncate max-w-[150px]">{item.name}</TableCell>
+                            <TableCell className="text-xs font-bold">৳{item.unitPrice.toLocaleString()}</TableCell>
+                            <TableCell className="text-xs text-right font-black text-slate-900">৳{item.total.toLocaleString()}</TableCell>
                           </TableRow>
                         ))
                       )}
@@ -391,13 +394,13 @@ export default function QuotationsPage() {
             </div>
             <div className={cn("p-6 rounded-3xl border border-transparent flex flex-col justify-between h-fit lg:sticky lg:top-0 shadow-xl", isEditModalOpen ? "bg-blue-600 text-white" : "bg-purple-600 text-white")}>
               <div>
-                <h3 className="font-bold uppercase text-[10px] mb-4 tracking-widest opacity-80">Estimated Value</h3>
+                <h3 className="font-bold uppercase text-[10px] mb-4 tracking-widest opacity-80">{t('grandTotal')}</h3>
                 <div className="text-4xl font-headline font-black">৳{totalValue.toLocaleString()}</div>
-                <p className="text-[10px] opacity-60 mt-4 leading-relaxed font-medium">Valid for 30 days. Convertible to active invoice on approval.</p>
+                <p className="text-[10px] opacity-60 mt-4 leading-relaxed font-medium uppercase">{t('validUntil')}: 30 Days</p>
               </div>
               <Button className={cn("w-full h-12 font-bold gap-2 mt-10 rounded-2xl text-[10px] uppercase tracking-widest", isEditModalOpen ? "bg-white text-blue-600 hover:bg-blue-50" : "bg-white text-purple-600 hover:bg-purple-50")} onClick={isEditModalOpen ? handleUpdateQuote : handleSubmitQuote} disabled={isSubmitting || lineItems.length === 0}>
                 {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : isEditModalOpen ? <CheckCircle2 className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />} 
-                {isEditModalOpen ? "Save Changes" : "Record Proposal"}
+                {isEditModalOpen ? t('save') : t('recordProposal')}
               </Button>
             </div>
           </div>
@@ -407,12 +410,12 @@ export default function QuotationsPage() {
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-headline">Delete Proposal?</AlertDialogTitle>
-            <AlertDialogDescription className="text-xs">Record will be permanently removed.</AlertDialogDescription>
+            <AlertDialogTitle className="font-headline">{t('delete')}?</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs">{t('errorSub')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-full text-[10px] uppercase font-bold h-9">Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 rounded-full text-[10px] uppercase font-bold h-9" onClick={handleDeleteQuote}>Delete</AlertDialogAction>
+            <AlertDialogCancel className="rounded-full text-[10px] uppercase font-bold h-9">{t('cancel')}</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 rounded-full text-[10px] uppercase font-bold h-9" onClick={handleDeleteQuote}>{t('delete')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

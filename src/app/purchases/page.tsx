@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Plus, Package, Search, Loader2, MoreVertical, ShoppingBag, Truck, DollarSign, Trash2, Calculator, Scan, Edit, Eye, Download, Printer, X, ShoppingCart, Calendar, AlertCircle } from "lucide-react"
+import { Plus, Package, Search, Loader2, MoreVertical, Truck, ShoppingCart, Calendar, AlertCircle, Eye, Edit, Trash2, Printer, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -19,6 +19,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { toast } from "@/hooks/use-toast"
 import { DocumentTemplate } from "@/components/documents/document-template"
+import { useTranslation } from "@/hooks/use-translation"
 
 interface POItem {
   productId: string;
@@ -33,6 +34,8 @@ interface POItem {
 export default function PurchasesPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
+  const { t } = useTranslation();
+
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
@@ -72,7 +75,7 @@ export default function PurchasesPage() {
     return {
       total: purchaseOrders.reduce((s, i) => s + (i.totalAmount || 0), 0),
       monthly: purchaseOrders.filter(i => i.orderDate?.startsWith(thisMonth)).reduce((s, i) => s + (i.totalAmount || 0), 0),
-      due: 0 // Placeholder until expense/payable link
+      due: 0 
     };
   }, [purchaseOrders]);
 
@@ -130,11 +133,11 @@ export default function PurchasesPage() {
           }
         }
       });
-      toast({ title: "Purchase Recorded", description: "Warehouse levels updated." });
+      toast({ title: t('success'), description: t('successSub') });
       setIsAddModalOpen(false);
       resetForm();
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Error", description: e.message });
+      toast({ variant: "destructive", title: t('error'), description: e.message });
     } finally {
       setIsSubmitting(false);
     }
@@ -146,11 +149,11 @@ export default function PurchasesPage() {
     try {
       const docRef = doc(db, "companies", companyId!, "branches", branchId!, "purchase_orders", selectedRecord.id);
       await updateDoc(docRef, { supplierId: selectedSupplierId, totalAmount: totalSpend, items: lineItems, updatedAt: serverTimestamp() });
-      toast({ title: "Purchase Record Adjusted" });
+      toast({ title: t('success'), description: t('successSub') });
       setIsEditModalOpen(false);
       resetForm();
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Update Failed", description: e.message });
+      toast({ variant: "destructive", title: t('error'), description: e.message });
     } finally {
       setIsSubmitting(false);
     }
@@ -160,7 +163,7 @@ export default function PurchasesPage() {
     if (!selectedRecord || !db) return;
     const docRef = doc(db, "companies", companyId!, "branches", branchId!, "purchase_orders", selectedRecord.id);
     deleteDocumentNonBlocking(docRef);
-    toast({ title: "Purchase Record Deleted" });
+    toast({ title: t('success'), description: t('successSub') });
     setIsDeleteAlertOpen(false);
   };
 
@@ -193,22 +196,22 @@ export default function PurchasesPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">
-        <h1 className="text-xl font-bold font-headline">Purchases</h1>
+        <h1 className="text-xl font-bold font-headline text-orange-600">{t('purchases')}</h1>
         <Button className="bg-orange-600 hover:bg-orange-700 gap-2 rounded-full px-8 shadow-lg h-9 text-[10px] uppercase font-bold shadow-orange-100" onClick={() => { resetForm(); setIsAddModalOpen(true); }}>
-          <Plus className="h-4 w-4" /> Receive Stock
+          <Plus className="h-4 w-4" /> {t('receiveStock')}
         </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 no-print">
-        <KPICard title="Total Purchase" value={`৳${stats.total.toLocaleString()}`} icon={ShoppingCart} colorClass="bg-blue-600" subtext="Inbound Lifetime" />
-        <KPICard title="Monthly Purchase" value={`৳${stats.monthly.toLocaleString()}`} icon={Calendar} colorClass="bg-green-600" subtext="Current Cycle" />
-        <KPICard title="Suppliers Due" value={`৳${stats.due.toLocaleString()}`} icon={AlertCircle} colorClass="bg-red-600" subtext="Unsettled Payable" />
+        <KPICard title={t('totalPurchase')} value={`৳${stats.total.toLocaleString()}`} icon={ShoppingCart} colorClass="bg-blue-600" />
+        <KPICard title={t('monthlyPurchase')} value={`৳${stats.monthly.toLocaleString()}`} icon={Calendar} colorClass="bg-green-600" />
+        <KPICard title={t('suppliersDue')} value={`৳${stats.due.toLocaleString()}`} icon={AlertCircle} colorClass="bg-red-600" />
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-3 rounded-xl border shadow-sm no-print">
         <div className="relative flex-1 w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search PO #..." className="pl-9 h-10 border-none ring-1 ring-slate-200 text-xs" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          <Input placeholder={t('search')} className="pl-9 h-10 border-none ring-1 ring-slate-200 text-xs" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
       </div>
 
@@ -220,33 +223,37 @@ export default function PurchasesPage() {
             <Table>
               <TableHeader className="bg-muted/50">
                 <TableRow>
-                  <TableHead className="text-[10px] uppercase font-bold h-9">PO Number</TableHead>
-                  <TableHead className="text-[10px] uppercase font-bold h-9">Supplier</TableHead>
-                  <TableHead className="text-[10px] uppercase font-bold h-9">Items</TableHead>
-                  <TableHead className="text-[10px] uppercase font-bold h-9">Total Value</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold h-9">{t('poNumber')}</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold h-9">{t('supplier')}</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold h-9">{t('amount')}</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold h-9">{t('status')}</TableHead>
                   <TableHead className="text-right h-9"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredPOs?.map((po) => (
                   <TableRow key={po.id} className="h-12 hover:bg-muted/20 transition-colors">
-                    <TableCell className="font-bold text-xs uppercase">{po.orderNumber}</TableCell>
-                    <TableCell className="text-xs truncate max-w-[150px]">
-                      {suppliers?.find(s => s.id === po.supplierId)?.name || "Vendor"}
+                    <TableCell className="font-bold text-xs uppercase text-orange-600">{po.orderNumber}</TableCell>
+                    <TableCell className="text-xs font-bold truncate max-w-[150px]">
+                      {suppliers?.find(s => s.id === po.supplierId)?.name || t('supplier')}
                     </TableCell>
-                    <TableCell className="text-[10px] font-bold text-muted-foreground">{po.items?.length || 0} SKU</TableCell>
                     <TableCell className="font-bold text-xs">৳{po.totalAmount?.toLocaleString()}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-[8px] h-5 uppercase border-none px-2 font-black bg-green-50 text-green-700">
+                        {t(`${po.status}_status` as any)}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-orange-50 text-orange-600 transition-colors"><MoreVertical className="h-3.5 w-3.5" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-32">
-                          <DropdownMenuItem className="text-xs" onClick={() => openView(po)}><Eye className="mr-2 h-3.5 w-3.5" /> View</DropdownMenuItem>
-                          <DropdownMenuItem className="text-xs" onClick={() => openEdit(po)}><Edit className="mr-2 h-3.5 w-3.5" /> Edit</DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs" onClick={() => openView(po)}><Eye className="mr-2 h-3.5 w-3.5" /> {t('view')}</DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs" onClick={() => openEdit(po)}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-red-600 text-xs" onClick={() => { setSelectedRecord(po); setIsDeleteAlertOpen(true); }}>
-                            <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
+                            <Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -262,15 +269,15 @@ export default function PurchasesPage() {
       {/* VIEW DOCUMENT MODAL */}
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
         <DialogContent className="max-w-[21cm] w-[95vw] p-0 border-none bg-transparent shadow-none overflow-y-auto max-h-[95vh]">
-          <DialogHeader className="sr-only"><DialogTitle>Order Summary</DialogTitle></DialogHeader>
+          <DialogHeader className="sr-only"><DialogTitle>{t('view')}</DialogTitle></DialogHeader>
           <div className="flex justify-end gap-2 mb-4 no-print fixed top-4 right-4 z-50">
-            <Button onClick={handlePrint} size="sm" className="bg-primary shadow-lg text-[10px] uppercase font-bold rounded-full"><Printer className="mr-2 h-3.5 w-3.5" /> Print</Button>
+            <Button onClick={handlePrint} size="sm" className="bg-primary shadow-lg text-[10px] uppercase font-bold rounded-full"><Printer className="mr-2 h-3.5 w-3.5" /> {t('print')}</Button>
             <Button variant="outline" size="icon" onClick={() => setIsViewModalOpen(false)} className="bg-white rounded-full h-8 w-8"><X className="h-3.5 w-3.5" /></Button>
           </div>
           {selectedRecord && (
             <div className="bg-white shadow-2xl rounded-none md:rounded-xl overflow-hidden">
               <DocumentTemplate
-                title="Purchase Order"
+                title={t('purchases')}
                 type="po"
                 docNumber={selectedRecord.orderNumber}
                 date={selectedRecord.orderDate}
@@ -296,23 +303,23 @@ export default function PurchasesPage() {
         <DialogContent className="max-w-5xl p-0 overflow-hidden border-none shadow-2xl">
           <DialogHeader className="bg-orange-600 p-6 text-white flex-row items-center gap-3">
             <Truck className="h-6 w-6" />
-            <DialogTitle className="text-xl font-bold font-headline uppercase">{isEditModalOpen ? "Edit PO" : "Inbound Stock"}</DialogTitle>
+            <DialogTitle className="text-xl font-bold font-headline uppercase">{isEditModalOpen ? t('edit') : t('receiveStock')}</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 bg-slate-50">
             <div className="lg:col-span-8 space-y-6">
               <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase text-muted-foreground">Select Supplier</Label>
+                <Label className="text-[10px] font-bold uppercase text-muted-foreground">{t('supplier')}</Label>
                 <Select value={selectedSupplierId} onValueChange={setSelectedSupplierId}>
-                  <SelectTrigger className="h-11 rounded-xl bg-white border-none shadow-sm ring-1 ring-slate-200"><SelectValue placeholder="Identify Vendor..." /></SelectTrigger>
-                  <SelectContent>{suppliers?.map(s => <SelectItem key={s.id} value={s.id} className="text-xs">{s.name}</SelectItem>)}</SelectContent>
+                  <SelectTrigger className="h-11 rounded-xl bg-white border-none shadow-sm ring-1 ring-slate-200"><SelectValue placeholder={t('search')} /></SelectTrigger>
+                  <SelectContent>{suppliers?.map(s => <SelectItem key={s.id} value={s.id} className="text-xs font-bold">{s.name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-4">
                 {!isEditModalOpen && (
-                  <div className="flex items-center justify-between"><Label className="text-[10px] font-bold uppercase text-muted-foreground">Add Line Items</Label>
+                  <div className="flex items-center justify-between"><Label className="text-[10px] font-bold uppercase text-muted-foreground">{t('addItem')}</Label>
                     <Select onValueChange={handleAddLineItem}>
-                      <SelectTrigger className="w-[250px] bg-orange-50 border-orange-200 text-[10px] font-bold uppercase rounded-lg shadow-sm"><SelectValue placeholder="Search Product..." /></SelectTrigger>
-                      <SelectContent>{products?.map(p => <SelectItem key={p.id} value={p.id} className="text-xs">{p.name}</SelectItem>)}</SelectContent>
+                      <SelectTrigger className="w-[250px] bg-orange-50 border-orange-200 text-[10px] font-bold uppercase rounded-lg shadow-sm"><SelectValue placeholder={t('addProduct')} /></SelectTrigger>
+                      <SelectContent>{products?.map(p => <SelectItem key={p.id} value={p.id} className="text-xs font-bold">{p.name}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                 )}
@@ -323,9 +330,9 @@ export default function PurchasesPage() {
                         <div className="space-y-1">
                           <p className="text-xs font-black text-slate-900 uppercase tracking-tighter">{item.name}</p>
                           <div className="flex gap-4">
-                            <div><Label className="text-[8px] uppercase opacity-50 block mb-1">Cost</Label><Input type="number" value={item.unitCost} className="h-8 text-[10px] font-bold w-20 px-2" onChange={e => setLineItems(lineItems.map((li, i) => i === idx ? { ...li, unitCost: Number(e.target.value), total: Number(e.target.value) * li.quantity } : li))} /></div>
-                            <div><Label className="text-[8px] uppercase opacity-50 block mb-1">Qty</Label><Input type="number" disabled={isEditModalOpen} value={item.quantity} className="h-8 text-[10px] font-bold w-16 px-2" onChange={e => setLineItems(lineItems.map((li, i) => i === idx ? { ...li, quantity: Number(e.target.value), total: item.unitCost * Number(e.target.value) } : li))} /></div>
-                            <div><Label className="text-[8px] uppercase opacity-50 block mb-1">Total</Label><div className="h-8 flex items-center font-bold text-xs text-orange-600">৳{item.total.toLocaleString()}</div></div>
+                            <div><Label className="text-[8px] uppercase opacity-50 block mb-1">{t('unitPrice')}</Label><Input type="number" value={item.unitCost} className="h-8 text-[10px] font-bold w-20 px-2" onChange={e => setLineItems(lineItems.map((li, i) => i === idx ? { ...li, unitCost: Number(e.target.value), total: Number(e.target.value) * li.quantity } : li))} /></div>
+                            <div><Label className="text-[8px] uppercase opacity-50 block mb-1">{t('qty')}</Label><Input type="number" disabled={isEditModalOpen} value={item.quantity} className="h-8 text-[10px] font-bold w-16 px-2" onChange={e => setLineItems(lineItems.map((li, i) => i === idx ? { ...li, quantity: Number(e.target.value), total: item.unitCost * Number(e.target.value) } : li))} /></div>
+                            <div><Label className="text-[8px] uppercase opacity-50 block mb-1">{t('total')}</Label><div className="h-8 flex items-center font-black text-xs text-orange-600">৳{item.total.toLocaleString()}</div></div>
                           </div>
                         </div>
                         {!isEditModalOpen && <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 rounded-full hover:bg-red-50 transition-colors" onClick={() => setLineItems(lineItems.filter((_, i) => i !== idx))}><Trash2 className="h-3.5 w-3.5" /></Button>}
@@ -336,11 +343,11 @@ export default function PurchasesPage() {
               </div>
             </div>
             <div className="lg:col-span-4 bg-white p-8 rounded-[2rem] shadow-xl ring-1 ring-slate-100 flex flex-col justify-between h-fit lg:sticky lg:top-0">
-              <div className="space-y-6">
-                <div className="space-y-1"><p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Total Valuation</p><p className="text-4xl font-headline font-black text-orange-600">৳{totalSpend.toLocaleString()}</p></div>
+              <div className="space-y-6 text-center">
+                <div className="space-y-1"><p className="text-[10px] uppercase font-black text-slate-400 tracking-widest">{t('grandTotal')}</p><p className="text-4xl font-headline font-black text-orange-600">৳{totalSpend.toLocaleString()}</p></div>
               </div>
-              <Button className="w-full bg-orange-600 hover:bg-orange-700 h-14 rounded-2xl mt-10 font-bold text-[10px] uppercase tracking-widest gap-2 shadow-2xl shadow-orange-100 transition-all active:scale-95" onClick={isEditModalOpen ? handleUpdatePO : handleSubmitPO} disabled={isSubmitting || lineItems.length === 0}>
-                {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : isEditModalOpen ? <Calculator className="h-4 w-4" /> : <Package className="h-4 w-4" />} {isEditModalOpen ? "Save Adjustments" : "Initialize Intake"}
+              <Button className="w-full bg-orange-600 hover:bg-orange-700 h-14 rounded-2xl mt-10 font-black text-[10px] uppercase tracking-widest gap-2 shadow-2xl shadow-orange-100 transition-all active:scale-95" onClick={isEditModalOpen ? handleUpdatePO : handleSubmitPO} disabled={isSubmitting || lineItems.length === 0}>
+                {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : isEditModalOpen ? <Calculator className="h-4 w-4" /> : <Package className="h-4 w-4" />} {isEditModalOpen ? t('save') : t('initializeIntake')}
               </Button>
             </div>
           </div>
@@ -349,8 +356,8 @@ export default function PurchasesPage() {
 
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle className="font-headline">Delete PO?</AlertDialogTitle><AlertDialogDescription className="text-xs">Record will be permanently deleted. Stock levels are not automatically reversed.</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel className="rounded-full text-[10px] uppercase font-bold h-9">Cancel</AlertDialogCancel><AlertDialogAction className="bg-red-600 rounded-full text-[10px] uppercase font-bold h-9" onClick={handleDeletePO}>Delete</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogHeader><AlertDialogTitle className="font-headline">{t('delete')}?</AlertDialogTitle><AlertDialogDescription className="text-xs">{t('errorSub')}</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel className="rounded-full text-[10px] uppercase font-bold h-9">{t('cancel')}</AlertDialogCancel><AlertDialogAction className="bg-red-600 rounded-full text-[10px] uppercase font-bold h-9" onClick={handleDeletePO}>{t('delete')}</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>

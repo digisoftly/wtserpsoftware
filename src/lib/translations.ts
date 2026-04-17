@@ -143,6 +143,35 @@ export const translations = {
     dropFiles: "Drop files here",
     timeline: "Timeline",
 
+    // Quotations
+    quoteNumber: "Quote #",
+    validUntil: "Valid Until",
+    createQuote: "Create Quote",
+    totalQuotations: "Total Quotations",
+    pendingQuotes: "Pending Proposals",
+    approvedQuotes: "Approved Quotes",
+    convertedQuotes: "Converted to Invoice",
+    recordProposal: "Record Proposal",
+    recordProposalSub: "Proposal recorded as draft",
+
+    // Purchases
+    poNumber: "PO Number",
+    receiveStock: "Receive Stock",
+    totalPurchase: "Total Purchase",
+    monthlyPurchase: "Monthly Purchase",
+    suppliersDue: "Suppliers Due",
+    expectedDelivery: "Expected Delivery",
+    deliveryTo: "Delivery To",
+    initializeIntake: "Initialize Intake",
+
+    // Returns
+    salesReturn: "Sales Return",
+    purchaseReturn: "Purchase Return",
+    returnAmount: "Return Value",
+    reason: "Reason",
+    returnDate: "Return Date",
+    noReturns: "No returns found",
+
     // Module Specific: Customer & Suppliers
     customerName: "Customer Name",
     customerType: "Type",
@@ -191,6 +220,9 @@ export const translations = {
     damaged_status: "Damaged",
     received_status: "Received",
     ordered_status: "Ordered",
+    sent_status: "Sent",
+    accepted_status: "Accepted",
+    converted_status: "Converted",
 
     // Settings & Profile
     general: "General",
@@ -358,6 +390,35 @@ export const translations = {
     dropFiles: "ফাইল এখানে ছাড়ুন",
     timeline: "টাইমলাইন",
 
+    // Quotations
+    quoteNumber: "কোটেশন #",
+    validUntil: "মেয়াদের শেষ তারিখ",
+    createQuote: "কোটেশন তৈরি করুন",
+    totalQuotations: "মোট কোটেশন",
+    pendingQuotes: "পেন্ডিং কোটেশন",
+    approvedQuotes: "অনুমোদিত কোটেশন",
+    convertedQuotes: "ইনভয়েসে রূপান্তরিত",
+    recordProposal: "প্রস্তাব রেকর্ড করুন",
+    recordProposalSub: "প্রস্তাবটি ড্রাফট হিসেবে রেকর্ড করা হয়েছে",
+
+    // Purchases
+    poNumber: "পিও নম্বর",
+    receiveStock: "স্টক গ্রহণ",
+    totalPurchase: "মোট ক্রয়",
+    monthlyPurchase: "মাসিক ক্রয়",
+    suppliersDue: "সরবরাহকারী বকেয়া",
+    expectedDelivery: "প্রত্যাশিত সরবরাহ",
+    deliveryTo: "সরবরাহ গন্তব্য",
+    initializeIntake: "স্টক গ্রহণ শুরু করুন",
+
+    // Returns
+    salesReturn: "বিক্রয় রিটার্ন",
+    purchaseReturn: "ক্রয় রিটার্ন",
+    returnAmount: "রিটার্ন পরিমাণ",
+    reason: "কারণ",
+    returnDate: "রিটার্ন তারিখ",
+    noReturns: "কোন রিটার্ন পাওয়া যায়নি",
+
     // Module Specific: Customer & Suppliers
     customerName: "গ্রাহকের নাম",
     customerType: "ধরন",
@@ -376,7 +437,7 @@ export const translations = {
     // Branches & Projects
     branch: "শাখা",
     code: "কোড",
-    location: "অবস্থান",
+    location: " অবস্থান",
     organization: "প্রতিষ্ঠান",
     editBranch: "শাখা সম্পাদনা",
     newLocation: "নতুন অবস্থান",
@@ -406,6 +467,9 @@ export const translations = {
     damaged_status: "ক্ষতিগ্রস্ত",
     received_status: "গৃহীত",
     ordered_status: "অর্ডার করা",
+    sent_status: "পাঠানো হয়েছে",
+    accepted_status: "গৃহীত",
+    converted_status: "রূপান্তরিত",
 
     // Settings & Profile
     general: "সাধারণ",
@@ -421,7 +485,7 @@ export const translations = {
     language: "ভাষা",
     systemLanguage: "সিস্টেম ভাষা",
     systemLanguageSub: "নতুন সকল ব্যবহারকারীর জন্য ডিফল্ট ভাষা পরিবর্তন করে।",
-    timezone: "টাইমজোন",
+    timezone: "Timezone",
     saveSystem: "সেটিংস সংরক্ষণ",
     controlCenter: "কন্ট্রোল সেন্টার",
     configSub: "গ্লোবাল সিস্টেম কনফিগারেশন এবং অপারেশনাল লজিক।",
