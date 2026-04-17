@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { Wallet, Landmark, TrendingDown, TrendingUp, Loader2, ArrowUpRight, ArrowDownLeft, Plus, Filter, CreditCard, DollarSign } from "lucide-react"
+import { Wallet, Landmark, TrendingDown, TrendingUp, Loader2, ArrowUpRight, ArrowDownLeft, Plus, MoreVertical } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, serverTimestamp } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
@@ -15,10 +15,12 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { KPICard } from "@/components/dashboard/kpi-card"
+import { useTranslation } from "@/hooks/use-translation"
 
 export default function AccountsPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
+  const { t } = useTranslation();
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
 
   const txQuery = useMemoFirebase(() => {
@@ -48,10 +50,7 @@ export default function AccountsPage() {
       description: formData.get("description") as string,
       amount: Number(formData.get("amount")),
       transactionType: formData.get("type") as string,
-      category: formData.get("category") as string,
       transactionDate: new Date().toISOString(),
-      accountId: "main-ledger",
-      createdByUserId: "current-user",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -64,29 +63,28 @@ export default function AccountsPage() {
   return (
     <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <h1 className="text-xl font-bold font-headline text-blue-600">Financial Accounts</h1>
+        <h1 className="text-xl font-bold font-headline text-blue-600">{t('accounts')}</h1>
         <Button className="bg-blue-600 hover:bg-blue-700 rounded-full gap-2 shadow-lg h-9 px-6 text-[10px] uppercase font-bold" onClick={() => setIsAddModalOpen(true)}>
-          <Plus className="h-4 w-4" /> Add Journal
+          <Plus className="h-4 w-4" /> {t('addJournal')}
         </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <KPICard title="Cash Balance" value={`৳${stats.balance.toLocaleString()}`} icon={Wallet} colorClass="bg-blue-600" subtext="Net Liquid" />
-        <KPICard title="Total Income" value={`৳${stats.income.toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-600" subtext="Current Cycle" />
-        <KPICard title="Total Expense" value={`৳${stats.expense.toLocaleString()}`} icon={TrendingDown} colorClass="bg-red-600" subtext="Operating Costs" />
+        <KPICard title={t('cashBalance')} value={`৳${stats.balance.toLocaleString()}`} icon={Wallet} colorClass="bg-blue-600" />
+        <KPICard title={t('totalIncome')} value={`৳${stats.income.toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-600" />
+        <KPICard title={t('totalExpense')} value={`৳${stats.expense.toLocaleString()}`} icon={TrendingDown} colorClass="bg-red-600" />
       </div>
 
       {isLoading ? (
         <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
       ) : transactions && transactions.length > 0 ? (
         <Card className="border-none shadow-sm rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
             <Table>
               <TableHeader className="bg-muted/20">
                 <TableRow>
-                  <TableHead className="text-[10px] uppercase font-bold h-9">Date</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold h-9">{t('date')}</TableHead>
                   <TableHead className="text-[10px] uppercase font-bold h-9">Label</TableHead>
-                  <TableHead className="text-[10px] uppercase font-bold h-9">Amount</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold h-9">{t('amount')}</TableHead>
                   <TableHead className="text-right h-9"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -96,7 +94,6 @@ export default function AccountsPage() {
                     <TableCell className="text-[10px] font-bold uppercase">{new Date(t.transactionDate).toLocaleDateString()}</TableCell>
                     <TableCell>
                       <div className="font-bold text-xs">{t.description}</div>
-                      <div className="text-[9px] uppercase text-muted-foreground font-black">{t.category || "General"}</div>
                     </TableCell>
                     <TableCell>
                       <span className={cn("font-black text-xs flex items-center gap-1", t.transactionType === 'income' ? 'text-green-600' : 'text-red-600')}>
@@ -111,7 +108,6 @@ export default function AccountsPage() {
                 ))}
               </TableBody>
             </Table>
-          </div>
         </Card>
       ) : (
         <div className="p-16 bg-white rounded-3xl border border-dashed text-center flex flex-col items-center ring-1 ring-slate-100">
@@ -124,21 +120,21 @@ export default function AccountsPage() {
         <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl">
           <DialogHeader className="bg-blue-600 p-6 text-white flex-row items-center gap-3">
             <Plus className="h-6 w-6" />
-            <DialogTitle className="text-xl font-bold font-headline uppercase">New Journal Entry</DialogTitle>
+            <DialogTitle className="text-xl font-bold font-headline uppercase">{t('addJournal')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleAddTransaction} className="p-6 space-y-4 bg-slate-50">
-            <div className="space-y-1"><Label className="text-[10px] font-bold uppercase text-muted-foreground">Label</Label><Input name="description" required placeholder="Describe entry..." className="h-11 rounded-xl border-none ring-1 ring-slate-200 text-xs" /></div>
+            <div className="space-y-1"><Label className="text-[10px] font-bold uppercase">Label</Label><Input name="description" required className="h-11 text-xs" /></div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1"><Label className="text-[10px] font-bold uppercase text-muted-foreground">Amount (৳)</Label><Input name="amount" type="number" step="0.01" required className="h-11 rounded-xl border-none ring-1 ring-slate-200 text-xs" /></div>
+              <div className="space-y-1"><Label className="text-[10px] font-bold uppercase">{t('amount')}</Label><Input name="amount" type="number" step="0.01" required className="h-11 text-xs" /></div>
               <div className="space-y-1">
-                <Label className="text-[10px] font-bold uppercase text-muted-foreground">Flow</Label>
+                <Label className="text-[10px] font-bold uppercase">Type</Label>
                 <Select name="type" defaultValue="expense">
-                  <SelectTrigger className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 shadow-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="income" className="text-xs">Income (+)</SelectItem><SelectItem value="expense" className="text-xs">Expense (-)</SelectItem></SelectContent>
+                  <SelectTrigger className="h-11 rounded-xl bg-white"><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="income">Income (+)</SelectItem><SelectItem value="expense">Expense (-)</SelectItem></SelectContent>
                 </Select>
               </div>
             </div>
-            <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 h-12 rounded-2xl text-[10px] font-black uppercase mt-4 tracking-widest shadow-xl shadow-blue-100 active:scale-95 transition-all">Post Transaction</Button>
+            <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 h-12 rounded-2xl text-[10px] font-black uppercase mt-4 shadow-xl">{t('save')}</Button>
           </form>
         </DialogContent>
       </Dialog>
