@@ -158,6 +158,24 @@ export const translations = {
     nid: "NID / Business Reg",
     vendorName: "Vendor Name",
 
+    // Branches & Projects
+    branch: "Branch",
+    code: "Code",
+    location: "Location",
+    organization: "Organization",
+    editBranch: "Edit Branch",
+    newLocation: "New Location",
+    locationSetup: "Location Setup Wizard",
+    project: "Project",
+    running: "Running",
+    completed: "Completed",
+    budget: "Budget",
+    deadline: "Deadline",
+    progress: "Progress",
+    initialize: "Initialize",
+    deleteProject: "Delete Project?",
+    projectArchived: "Record will be permanently archived.",
+
     // Statuses
     paid_status: "Paid",
     pending_status: "Pending",
@@ -354,6 +372,24 @@ export const translations = {
     taxExempt: "ট্যাক্স অব্যাহতি",
     nid: "এনআইডি / ট্রেড লাইসেন্স",
     vendorName: "সরবরাহকারীর নাম",
+
+    // Branches & Projects
+    branch: "শাখা",
+    code: "কোড",
+    location: "অবস্থান",
+    organization: "প্রতিষ্ঠান",
+    editBranch: "শাখা সম্পাদনা",
+    newLocation: "নতুন অবস্থান",
+    locationSetup: "শাখা সেটআপ উইজার্ড",
+    project: "প্রকল্প",
+    running: "চলমান",
+    completed: "সম্পন্ন",
+    budget: "বাজেট",
+    deadline: "শেষ সময়",
+    progress: "অগ্রগতি",
+    initialize: "শুরু করুন",
+    deleteProject: "প্রকল্প মুছবেন?",
+    projectArchived: "রেকর্ডটি স্থায়ীভাবে আর্কাইভ করা হবে।",
 
     // Statuses
     paid_status: "পরিশোধিত",

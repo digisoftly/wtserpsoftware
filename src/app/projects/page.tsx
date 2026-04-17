@@ -18,10 +18,12 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { toast } from "@/hooks/use-toast"
+import { useTranslation } from "@/hooks/use-translation"
 
 export default function ProjectsPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
+  const { t } = useTranslation();
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
@@ -73,10 +75,10 @@ export default function ProjectsPage() {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-      toast({ title: "Project Initialized" });
+      toast({ title: t('success') });
       setIsAddModalOpen(false);
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Error", description: e.message });
+      toast({ variant: "destructive", title: t('error'), description: e.message });
     } finally {
       setIsSubmitting(false);
     }
@@ -96,10 +98,10 @@ export default function ProjectsPage() {
         deadline: formData.get("deadline"),
         updatedAt: serverTimestamp()
       });
-      toast({ title: "Project Data Adjusted" });
+      toast({ title: t('success') });
       setIsEditModalOpen(false);
     } catch (err: any) {
-      toast({ variant: "destructive", title: "Error", description: err.message });
+      toast({ variant: "destructive", title: t('error'), description: err.message });
     } finally {
       setIsSubmitting(false);
     }
@@ -109,7 +111,7 @@ export default function ProjectsPage() {
     if (!selectedRecord || !db) return;
     const docRef = doc(db, "companies", companyId!, "branches", branchId!, "projects", selectedRecord.id);
     deleteDocumentNonBlocking(docRef);
-    toast({ title: "Project Track Removed" });
+    toast({ title: t('success') });
     setIsDeleteAlertOpen(false);
   };
 
@@ -125,23 +127,23 @@ export default function ProjectsPage() {
   return (
     <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <h1 className="text-xl font-bold font-headline">Projects</h1>
+        <h1 className="text-xl font-bold font-headline">{t('projects')}</h1>
         <Button className="bg-teal-600 hover:bg-teal-700 gap-2 rounded-full px-8 shadow-lg h-9 text-[10px] uppercase font-bold shadow-teal-100" onClick={() => setIsAddModalOpen(true)}>
-          <Plus className="h-4 w-4" /> Initialize
+          <Plus className="h-4 w-4" /> {t('initialize')}
         </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Total Projects" value={stats.total} icon={Folder} colorClass="bg-blue-600" subtext="All tracks" />
-        <KPICard title="Running" value={stats.running} icon={TrendingUp} colorClass="bg-teal-600" subtext="Active work" />
-        <KPICard title="Completed" value={stats.completed} icon={ClipboardCheck} colorClass="bg-green-600" subtext="Delivered" />
-        <KPICard title="Pending" value={stats.pending} icon={Clock} colorClass="bg-orange-600" subtext="Queue" />
+        <KPICard title={t('projects')} value={stats.total} icon={Folder} colorClass="bg-blue-600" />
+        <KPICard title={t('running')} value={stats.running} icon={TrendingUp} colorClass="bg-teal-600" />
+        <KPICard title={t('completed')} value={stats.completed} icon={ClipboardCheck} colorClass="bg-green-600" />
+        <KPICard title={t('pending_status')} value={stats.pending} icon={Clock} colorClass="bg-orange-600" />
       </div>
 
       <div className="flex items-center gap-4 bg-white p-3 rounded-xl border shadow-sm ring-1 ring-slate-100">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input placeholder="Search project name..." className="pl-9 h-9 border-none bg-background text-xs ring-1 ring-slate-200" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          <Input placeholder={t('search')} className="pl-9 h-9 border-none bg-background text-xs ring-1 ring-slate-200" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
       </div>
 
@@ -153,10 +155,10 @@ export default function ProjectsPage() {
             <Table>
               <TableHeader className="bg-muted/20">
                 <TableRow>
-                  <TableHead className="text-[10px] uppercase font-bold h-9">Project</TableHead>
-                  <TableHead className="text-[10px] uppercase font-bold h-9">Customer</TableHead>
-                  <TableHead className="text-[10px] uppercase font-bold h-9">Budget</TableHead>
-                  <TableHead className="text-[10px] uppercase font-bold h-9">Status</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold h-9">{t('project')}</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold h-9">{t('customer')}</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold h-9">{t('budget')}</TableHead>
+                  <TableHead className="text-[10px] uppercase font-bold h-9">{t('status')}</TableHead>
                   <TableHead className="text-right h-9"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -165,7 +167,7 @@ export default function ProjectsPage() {
                   <TableRow key={p.id} className="h-12 hover:bg-muted/10 transition-colors">
                     <TableCell className="font-bold text-xs truncate max-w-[200px]">{p.name}</TableCell>
                     <TableCell className="text-xs truncate max-w-[150px]">
-                      {customers?.find(c => c.id === p.customerId)?.firstName || "Client"}
+                      {customers?.find(c => c.id === p.customerId)?.firstName || t('customer')}
                     </TableCell>
                     <TableCell className="font-black text-xs text-slate-900">৳{p.budget?.toLocaleString()}</TableCell>
                     <TableCell>
@@ -182,11 +184,11 @@ export default function ProjectsPage() {
                           <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-teal-50 text-teal-600 transition-colors"><MoreVertical className="h-3.5 w-3.5" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-32">
-                          <DropdownMenuItem className="text-xs"><Eye className="mr-2 h-3.5 w-3.5" /> View</DropdownMenuItem>
-                          <DropdownMenuItem className="text-xs" onClick={() => openEdit(p)}><Edit className="mr-2 h-3.5 w-3.5" /> Edit</DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs"><Eye className="mr-2 h-3.5 w-3.5" /> {t('view')}</DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs" onClick={() => openEdit(p)}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-red-600 text-xs" onClick={() => { setSelectedRecord(p); setIsDeleteAlertOpen(true); }}>
-                            <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
+                            <Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -204,26 +206,26 @@ export default function ProjectsPage() {
         <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl">
           <DialogHeader className="bg-teal-600 p-6 text-white flex-row items-center gap-3">
             <Folder className="h-6 w-6" />
-            <DialogTitle className="text-xl font-bold font-headline uppercase">{isEditModalOpen ? "Edit Project" : "New Project"}</DialogTitle>
+            <DialogTitle className="text-xl font-bold font-headline uppercase">{isEditModalOpen ? t('edit') : t('newQuotation')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={isEditModalOpen ? handleUpdateProject : handleAddProject} className="p-6 space-y-4 bg-slate-50">
             <div className="space-y-1">
-              <Label className="text-[10px] font-bold uppercase text-muted-foreground">Title</Label>
-              <Input name="name" required defaultValue={selectedRecord?.name} placeholder="Describe engagement..." className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs" />
+              <Label className="text-[10px] font-bold uppercase text-muted-foreground">{t('itemDescription')}</Label>
+              <Input name="name" required defaultValue={selectedRecord?.name} placeholder={t('search')} className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs" />
             </div>
             <div className="space-y-1">
-              <Label className="text-[10px] font-bold uppercase text-muted-foreground">Client</Label>
+              <Label className="text-[10px] font-bold uppercase text-muted-foreground">{t('customer')}</Label>
               <Select name="customerId" required defaultValue={selectedRecord?.customerId}>
-                <SelectTrigger className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 shadow-sm"><SelectValue placeholder="Identify client..." /></SelectTrigger>
+                <SelectTrigger className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 shadow-sm"><SelectValue placeholder={t('search')} /></SelectTrigger>
                 <SelectContent>{customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs">{c.firstName} {c.lastName}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1"><Label className="text-[10px] font-bold uppercase text-muted-foreground">Budget (৳)</Label><Input name="budget" type="number" required defaultValue={selectedRecord?.budget} className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs" /></div>
-              <div className="space-y-1"><Label className="text-[10px] font-bold uppercase text-muted-foreground">Deadline</Label><Input name="deadline" type="date" required defaultValue={selectedRecord?.deadline} className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs" /></div>
+              <div className="space-y-1"><Label className="text-[10px] font-bold uppercase text-muted-foreground">{t('budget')} (৳)</Label><Input name="budget" type="number" required defaultValue={selectedRecord?.budget} className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs" /></div>
+              <div className="space-y-1"><Label className="text-[10px] font-bold uppercase text-muted-foreground">{t('deadline')}</Label><Input name="deadline" type="date" required defaultValue={selectedRecord?.deadline} className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs" /></div>
             </div>
             <Button type="submit" disabled={isSubmitting} className="w-full bg-teal-600 hover:bg-teal-700 h-12 rounded-2xl text-[10px] font-black uppercase mt-4 tracking-widest shadow-xl shadow-teal-100 active:scale-95 transition-all">
-              {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : "Finalize Initializer"}
+              {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : t('initialize')}
             </Button>
           </form>
         </DialogContent>
@@ -231,8 +233,8 @@ export default function ProjectsPage() {
 
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle className="font-headline">Delete Project?</AlertDialogTitle><AlertDialogDescription className="text-xs">Record will be permanently archived. Billing tracks may be detached.</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel className="rounded-full text-[10px] uppercase font-bold h-9">Cancel</AlertDialogCancel><AlertDialogAction className="bg-red-600 rounded-full text-[10px] uppercase font-bold h-9" onClick={handleDeleteProject}>Delete</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogHeader><AlertDialogTitle className="font-headline">{t('deleteProject')}</AlertDialogTitle><AlertDialogDescription className="text-xs">{t('projectArchived')}</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel className="rounded-full text-[10px] uppercase font-bold h-9">{t('cancel')}</AlertDialogCancel><AlertDialogAction className="bg-red-600 rounded-full text-[10px] uppercase font-bold h-9" onClick={handleDeleteProject}>{t('delete')}</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
