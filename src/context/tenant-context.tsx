@@ -27,7 +27,7 @@ const TenantContext = React.createContext<TenantContextType>({
   branchId: null,
   setBranchId: () => {},
   userRole: null,
-  language: 'EN',
+  language: 'BN', // Defaulting to Bangla as per requirements
   setLanguage: () => {},
   isLoading: true,
 });
@@ -37,11 +37,9 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const db = useFirestore();
   const [isInitializing, setIsInitializing] = React.useState(true);
   const [userRole, setUserRole] = React.useState<Role | null>(null);
-  const [language, setLanguage] = React.useState<Language>('EN');
+  const [language, setLanguage] = React.useState<Language>('BN'); // Start with Bangla
   const [branchId, setBranchId] = React.useState<string | null>(null);
 
-  // Use a derived companyId that is only present when a user is authenticated.
-  // This prevents hooks from attempting to fetch data before auth is resolved.
   const companyId = user ? "warrior-demo-corp" : null;
 
   React.useEffect(() => {
@@ -50,6 +48,19 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     const initTenant = async () => {
       if (user && db && companyId) {
         try {
+          // 1. Fetch System-wide settings first to check for default language
+          const settingsRef = doc(db, "companies", companyId, "system", "config");
+          const settingsSnap = await getDoc(settingsRef);
+          let systemDefaultLang: Language = 'BN';
+          
+          if (settingsSnap.exists()) {
+            const settingsData = settingsSnap.data();
+            if (settingsData.systemDefaultLanguage) {
+              systemDefaultLang = settingsData.systemDefaultLanguage as Language;
+            }
+          }
+
+          // 2. Fetch User profile
           const userRef = doc(db, "companies", companyId, "users", user.uid);
           const userSnap = await getDoc(userRef).catch(async (err) => {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -63,45 +74,36 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           let activeBranchId = "dhaka-main";
 
           if (!userSnap.exists()) {
+            // New User Setup: Use System Default Language
             const userData = {
               id: user.uid,
               companyId,
               branchId: "dhaka-main",
-              firstName: "Guest",
-              lastName: "Admin",
-              email: user.email || "guest@warrior.com",
+              firstName: "User",
+              lastName: user.uid.slice(-4),
+              email: user.email || `${user.uid}@warrior.com`,
               roleId: "super-admin",
               isActive: true,
+              preferredLanguage: systemDefaultLang,
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp(),
             };
             
-            setDoc(userRef, userData, { merge: true }).catch(async (err) => {
-              errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: userRef.path,
-                operation: 'write',
-                requestResourceData: userData
-              }));
-            });
+            setDoc(userRef, userData, { merge: true });
+            setLanguage(systemDefaultLang);
           } else {
             const data = userSnap.data();
             roleId = data.roleId || "super-admin";
             activeBranchId = data.branchId || "dhaka-main";
-            if (data.preferredLanguage) {
-              setLanguage(data.preferredLanguage as Language);
-            }
+            // Prefer user choice, fallback to system default
+            setLanguage((data.preferredLanguage || systemDefaultLang) as Language);
           }
 
           setBranchId(activeBranchId);
 
+          // 3. Fetch Role
           const roleRef = doc(db, "companies", companyId, "roles", roleId);
-          const roleSnap = await getDoc(roleRef).catch(async (err) => {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-              path: roleRef.path,
-              operation: 'get'
-            }));
-            throw err;
-          });
+          const roleSnap = await getDoc(roleRef);
 
           if (roleSnap.exists()) {
             setUserRole({ id: roleSnap.id, ...roleSnap.data() } as Role);
@@ -112,17 +114,11 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
               isSuperAdmin: true,
               permissions: {} 
             };
-            setDoc(roleRef, superAdminRole).catch(async (err) => {
-              errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: roleRef.path,
-                operation: 'create',
-                requestResourceData: superAdminRole
-              }));
-            });
+            setDoc(roleRef, superAdminRole);
             setUserRole(superAdminRole);
           }
         } catch (error) {
-          // Handled via emitter
+          console.error("Initialization Error:", error);
         } finally {
           setIsInitializing(false);
         }

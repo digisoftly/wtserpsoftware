@@ -9,6 +9,20 @@ export const translations = {
     quotations: "Quotations",
     purchases: "Purchases",
     inventory: "Inventory",
+    returns: "Returns",
+    serialTracking: "Serial Tracking",
+    projects: "Projects",
+    billing: "Billing",
+    contracts: "Contracts",
+    customers: "Customers",
+    suppliers: "Suppliers",
+    accounts: "Accounts",
+    expenses: "Expenses",
+    support: "Support",
+    hrm: "HRM",
+    branches: "Branches",
+    reports: "Reports",
+    ai: "AI Assistant",
     settings: "Settings",
     users: "Users",
     
@@ -25,6 +39,26 @@ export const translations = {
     loginError: "Auth failed.",
     roleRedirecting: "Redirecting...",
     
+    // Dashboard
+    goodMorning: "Good Morning",
+    happeningToday: "Here's what's happening with your business today",
+    newInvoice: "New Invoice",
+    thisMonth: "This Month",
+    lastMonth: "Last Month",
+    thisQuarter: "This Quarter",
+    revenueOverview: "Revenue Overview",
+    monthlyRevenue: "Monthly revenue for current year",
+    recentTransactions: "Recent Transactions",
+    quickActions: "Quick Actions",
+    stockAlerts: "Stock Alerts",
+    recentActivity: "Recent Activity",
+
+    // KPI
+    totalRevenue: "Total Revenue",
+    totalOrders: "Total Orders",
+    pendingInvoices: "Pending Invoices",
+    activeCustomers: "Active Customers",
+    
     // Settings
     general: "General",
     businessRules: "Rules",
@@ -33,6 +67,9 @@ export const translations = {
     integrations: "Integrations",
     security: "Security",
     backup: "Backup",
+    navigation: "Navigation",
+    systemLanguage: "System Default Language",
+    systemLanguageSub: "Set the default language for all new users",
     
     // Labels
     companyName: "Company",
@@ -69,7 +106,12 @@ export const translations = {
     success: "Success",
     successSub: "Settings updated.",
     error: "Error",
-    errorSub: "Failed to update."
+    errorSub: "Failed to update.",
+    view: "View",
+    edit: "Edit",
+    delete: "Delete",
+    export: "Export",
+    filter: "Filter"
   },
   BN: {
     // Navigation
@@ -79,6 +121,20 @@ export const translations = {
     quotations: "কোটেশন",
     purchases: "ক্রয়",
     inventory: "ইনভেন্টরি",
+    returns: "রিটার্নস",
+    serialTracking: "সিরিয়াল ট্র্যাকিং",
+    projects: "প্রকল্প",
+    billing: "বিলিং",
+    contracts: "চুক্তি",
+    customers: "গ্রাহক",
+    suppliers: "সরবরাহকারী",
+    accounts: "হিসাব",
+    expenses: "ব্যয়",
+    support: "সাপোর্ট",
+    hrm: "এইচআরএম",
+    branches: "শাখা",
+    reports: "রিপোর্ট",
+    ai: "এআই অ্যাসিস্ট্যান্ট",
     settings: "সেটিংস",
     users: "ব্যবহারকারী",
 
@@ -94,6 +150,26 @@ export const translations = {
     guestAdmin: "গেস্ট লগইন",
     loginError: "ব্যর্থ হয়েছে।",
     roleRedirecting: "অপেক্ষা করুন...",
+
+    // Dashboard
+    goodMorning: "শুভ সকাল",
+    happeningToday: "আপনার ব্যবসার আজকের বর্তমান অবস্থা এখানে দেখুন",
+    newInvoice: "নতুন ইনভয়েস",
+    thisMonth: "এই মাস",
+    lastMonth: "গত মাস",
+    thisQuarter: "এই কোয়ার্টার",
+    revenueOverview: "রাজস্ব চিত্র",
+    monthlyRevenue: "চলতি বছরের মাসিক রাজস্ব চিত্র",
+    recentTransactions: "সাম্প্রতিক লেনদেন",
+    quickActions: "দ্রুত অ্যাকশন",
+    stockAlerts: "স্টক অ্যালার্ট",
+    recentActivity: "সাম্প্রতিক কার্যক্রম",
+
+    // KPI
+    totalRevenue: "মোট রাজস্ব",
+    totalOrders: "মোট অর্ডার",
+    pendingInvoices: "বকেয়া ইনভয়েস",
+    activeCustomers: "সক্রিয় গ্রাহক",
     
     // Labels
     general: "সাধারণ",
@@ -103,6 +179,9 @@ export const translations = {
     integrations: "ইন্টিগ্রেশন",
     security: "নিরাপত্তা",
     backup: "ব্যাকআপ",
+    navigation: "ন্যাভিগেশন",
+    systemLanguage: "সিস্টেম ডিফল্ট ভাষা",
+    systemLanguageSub: "নতুন ব্যবহারকারীদের জন্য ডিফল্ট ভাষা সেট করুন",
     
     companyName: "কোম্পানি",
     address: "ঠিকানা",
@@ -136,6 +215,11 @@ export const translations = {
     success: "সফল",
     successSub: "আপডেট হয়েছে।",
     error: "ত্রুটি",
-    errorSub: "ব্যর্থ হয়েছে।"
+    errorSub: "ব্যর্থ হয়েছে।",
+    view: "দেখুন",
+    edit: "সম্পাদনা",
+    delete: "মুছুন",
+    export: "এক্সপোর্ট",
+    filter: "ফিল্টার"
   }
 };
