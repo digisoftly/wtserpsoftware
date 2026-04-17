@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Search, ChevronDown, Building, Loader2, User, LogOut } from "lucide-react"
+import { Search, ChevronDown, Building, Loader2, User, LogOut, Languages } from "lucide-react"
 
 import {
   DropdownMenu,
@@ -19,6 +19,7 @@ import { signOut } from "firebase/auth"
 import { useRouter } from "next/navigation"
 import { useTenant } from "@/context/tenant-context"
 import { collection, query, orderBy } from "firebase/firestore"
+import { useTranslation } from "@/hooks/use-translation"
 
 export function AppHeader() {
   const { user } = useUser()
@@ -26,6 +27,7 @@ export function AppHeader() {
   const db = useFirestore()
   const { companyId, branchId, setBranchId, language, setLanguage, userRole } = useTenant()
   const router = useRouter()
+  const { t } = useTranslation()
 
   const branchesQuery = useMemoFirebase(() => {
     if (!db || !companyId) return null;
@@ -46,7 +48,7 @@ export function AppHeader() {
         <SidebarTrigger />
         <div className="hidden md:flex items-center gap-2 px-3 h-8 bg-muted/50 rounded-full w-full max-w-xs border border-transparent focus-within:border-blue-500/50 transition-all">
           <Search className="h-3.5 w-3.5 text-muted-foreground" />
-          <input placeholder="Search..." className="bg-transparent border-none outline-none text-xs w-full" />
+          <input placeholder={t('search')} className="bg-transparent border-none outline-none text-xs w-full" />
         </div>
       </div>
 
@@ -72,8 +74,14 @@ export function AppHeader() {
           </DropdownMenu>
         )}
 
-        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-[10px] font-bold" onClick={() => setLanguage(language === 'EN' ? 'BN' : 'EN')}>
-          {language}
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-8 gap-2 rounded-full px-4 text-[10px] font-bold uppercase transition-all hover:bg-slate-100 text-slate-600" 
+          onClick={() => setLanguage(language === 'EN' ? 'BN' : 'EN')}
+        >
+          <Languages className="h-3.5 w-3.5 text-blue-600" />
+          {language === 'EN' ? 'বাংলা' : 'English'}
         </Button>
 
         <DropdownMenu>
@@ -86,10 +94,14 @@ export function AppHeader() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48 mt-2">
-            <DropdownMenuLabel className="text-xs font-bold text-muted-foreground uppercase">Account</DropdownMenuLabel>
+            <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{t('identity')}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push('/profile')} className="text-xs">Profile</DropdownMenuItem>
-            <DropdownMenuItem className="text-xs text-red-500" onClick={handleLogout}><LogOut className="mr-2 h-3.5 w-3.5" /> Sign out</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push('/profile')} className="text-xs font-medium cursor-pointer">
+              <User className="mr-2 h-3.5 w-3.5" /> {t('profile')}
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-xs font-medium text-red-500 cursor-pointer" onClick={handleLogout}>
+              <LogOut className="mr-2 h-3.5 w-3.5" /> Sign out
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

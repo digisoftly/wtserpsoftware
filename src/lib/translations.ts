@@ -43,6 +43,7 @@ export const translations = {
     search: "Search...",
     actions: "Actions",
     back: "Back",
+    print: "Print",
     
     // Add Actions
     addItem: "Add Item",
@@ -59,11 +60,13 @@ export const translations = {
     addReturn: "New Return",
     addContract: "New Agreement",
     addProject: "Initialize Project",
+    newInvoice: "New Invoice",
+    newQuotation: "New Quote",
+    newPO: "New PO",
 
     // Dashboard
     goodMorning: "Good Morning",
     happeningToday: "Here's what's happening today",
-    newInvoice: "New Invoice",
     thisMonth: "This Month",
     lastMonth: "Last Month",
     thisQuarter: "This Quarter",
@@ -101,7 +104,7 @@ export const translations = {
     totalBranches: "Total Branches",
     activeBranches: "Active Branches",
 
-    // Module Specific
+    // Module Specific: Sales & Procurement
     sku: "SKU",
     price: "Price",
     stock: "Stock",
@@ -125,8 +128,35 @@ export const translations = {
     postTransaction: "Post Transaction",
     voidInvoice: "Void Invoice?",
     confirmVoid: "Confirm Void",
-    searchProduct: "Search product / Scan...",
-    noItemsSelected: "No items selected",
+    itemDescription: "Description",
+    qty: "Qty",
+    unit: "Unit",
+    unitPrice: "Unit Price",
+    discPercent: "Disc %",
+    vatPercent: "VAT %",
+    total: "Total",
+    addLineItem: "Add Line Item",
+    shippingCharge: "Shipping",
+    grandTotal: "Grand Total",
+    invoiceSummary: "Invoice Summary",
+    attachments: "Attachments",
+    dropFiles: "Drop files here",
+    timeline: "Timeline",
+
+    // Module Specific: Customer & Suppliers
+    customerName: "Customer Name",
+    customerType: "Type",
+    contactPerson: "Contact Person",
+    mobile: "Mobile",
+    email: "Email",
+    address: "Address",
+    city: "City",
+    area: "Area / Zone",
+    creditLimit: "Credit Limit",
+    paymentTerms: "Payment Terms",
+    taxExempt: "Tax Exempt",
+    nid: "NID / Business Reg",
+    vendorName: "Vendor Name",
 
     // Statuses
     paid_status: "Paid",
@@ -141,6 +171,8 @@ export const translations = {
     available_status: "Available",
     sold_status: "Sold",
     damaged_status: "Damaged",
+    received_status: "Received",
+    ordered_status: "Ordered",
 
     // Settings & Profile
     general: "General",
@@ -149,17 +181,22 @@ export const translations = {
     security: "Security",
     navigation: "Navigation",
     companyName: "Company Name",
-    address: "Address",
     phone: "Phone",
-    email: "Email",
     profile: "Profile",
     identity: "Identity",
     preferences: "Preferences",
     language: "Language",
     systemLanguage: "System Language",
+    systemLanguageSub: "Changes the default language for all new users.",
     timezone: "Timezone",
     saveSystem: "Save Settings",
     controlCenter: "Control Center",
+    configSub: "Global system configuration and operational logic.",
+    opsLogic: "Operational Logic",
+    autoStock: "Automatic Stock Update",
+    autoStockSub: "Update inventory levels automatically on sales/purchase.",
+    negStock: "Allow Negative Stock",
+    negStockSub: "Allow sales even if stock is zero.",
   },
   BN: {
     // Navigation
@@ -203,6 +240,7 @@ export const translations = {
     search: "খুঁজুন...",
     actions: "অ্যাকশন",
     back: "ফিরে যান",
+    print: "প্রিন্ট",
 
     // Add Actions
     addItem: "আইটেম যোগ করুন",
@@ -219,11 +257,13 @@ export const translations = {
     addReturn: "নতুন রিটার্ন",
     addContract: "নতুন চুক্তি",
     addProject: "প্রকল্প শুরু",
+    newInvoice: "নতুন ইনভয়েস",
+    newQuotation: "নতুন কোটেশন",
+    newPO: "নতুন পিও (PO)",
 
     // Dashboard
     goodMorning: "শুভ সকাল",
     happeningToday: "আপনার ব্যবসার আজকের বর্তমান অবস্থা",
-    newInvoice: "নতুন ইনভয়েস",
     thisMonth: "এই মাস",
     lastMonth: "গত মাস",
     thisQuarter: "এই কোয়ার্টার",
@@ -261,7 +301,7 @@ export const translations = {
     totalBranches: "মোট শাখা",
     activeBranches: "সক্রিয় শাখা",
 
-    // Module Specific
+    // Module Specific: Sales & Procurement
     sku: "এসকেইউ",
     price: "মূল্য",
     stock: "স্টক",
@@ -285,8 +325,35 @@ export const translations = {
     postTransaction: "লেনদেন জমা দিন",
     voidInvoice: "ইনভয়েস বাতিল করবেন?",
     confirmVoid: "বাতিল নিশ্চিত করুন",
-    searchProduct: "পণ্য খুঁজুন বা স্ক্যান করুন...",
-    noItemsSelected: "কোন আইটেম নির্বাচন করা হয়নি",
+    itemDescription: "বিবরণ",
+    qty: "পরিমাণ",
+    unit: "একক",
+    unitPrice: "একক মূল্য",
+    discPercent: "ছাড় %",
+    vatPercent: "ভ্যাট %",
+    total: "মোট",
+    addLineItem: "আইটেম যোগ করুন",
+    shippingCharge: "শিপিং চার্জ",
+    grandTotal: "সর্বমোট",
+    invoiceSummary: "ইনভয়েস সারাংশ",
+    attachments: "সংযুক্ত ফাইল",
+    dropFiles: "ফাইল এখানে ছাড়ুন",
+    timeline: "টাইমলাইন",
+
+    // Module Specific: Customer & Suppliers
+    customerName: "গ্রাহকের নাম",
+    customerType: "ধরন",
+    contactPerson: "যোগাযোগকারী ব্যক্তি",
+    mobile: "মোবাইল",
+    email: "ইমেল",
+    address: "ঠিকানা",
+    city: "শহর",
+    area: "এলাকা / জোন",
+    creditLimit: "ক্রেডিট লিমিট",
+    paymentTerms: "পেমেন্ট শর্তাবলী",
+    taxExempt: "ট্যাক্স অব্যাহতি",
+    nid: "এনআইডি / ট্রেড লাইসেন্স",
+    vendorName: "সরবরাহকারীর নাম",
 
     // Statuses
     paid_status: "পরিশোধিত",
@@ -301,6 +368,8 @@ export const translations = {
     available_status: "উপলব্ধ",
     sold_status: "বিক্রিত",
     damaged_status: "ক্ষতিগ্রস্ত",
+    received_status: "গৃহীত",
+    ordered_status: "অর্ডার করা",
 
     // Settings & Profile
     general: "সাধারণ",
@@ -309,16 +378,21 @@ export const translations = {
     security: "নিরাপত্তা",
     navigation: "ন্যাভিগেশন",
     companyName: "কোম্পানির নাম",
-    address: "ঠিকানা",
     phone: "ফোন নম্বর",
-    email: "ইমেল",
     profile: "প্রোফাইল",
     identity: "পরিচয়",
     preferences: "পছন্দসমূহ",
     language: "ভাষা",
     systemLanguage: "সিস্টেম ভাষা",
+    systemLanguageSub: "নতুন সকল ব্যবহারকারীর জন্য ডিফল্ট ভাষা পরিবর্তন করে।",
     timezone: "টাইমজোন",
     saveSystem: "সেটিংস সংরক্ষণ",
     controlCenter: "কন্ট্রোল সেন্টার",
+    configSub: "গ্লোবাল সিস্টেম কনফিগারেশন এবং অপারেশনাল লজিক।",
+    opsLogic: "অপারেশনাল লজিক",
+    autoStock: "স্বয়ংক্রিয় স্টক আপডেট",
+    autoStockSub: "বিক্রয়/ক্রয়ের উপর ভিত্তি করে স্বয়ংক্রিয় স্টক পরিবর্তন।",
+    negStock: "নেতিবাচক স্টক অনুমতি",
+    negStockSub: "স্টক শূন্য থাকলেও বিক্রয়ের অনুমতি দিন।",
   }
 };

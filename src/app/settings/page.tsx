@@ -17,7 +17,8 @@ import {
   Languages,
   Loader2,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  Globe
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -35,7 +36,7 @@ import { useTranslation } from "@/hooks/use-translation"
 
 const DEFAULT_MENU_ORDER = [
   "dashboard", "sales", "quotations", "purchases", "returns", "inventory", 
-  "serialTracking", "projects", "project-billing", "contracts", 
+  "serialTracking", "projects", "billing", "contracts", 
   "customers", "suppliers", "accounts", "expenses", "support", 
   "crm", "hrm", "branches", "reports", "ai", "backup", 
   "settings", "users"
@@ -98,7 +99,7 @@ export default function SettingsPage() {
     };
 
     formData.forEach((value, key) => {
-      if (key !== "systemDefaultLanguage") {
+      if (key !== "systemDefaultLanguage" && key !== "companyLogo") {
         updates[key] = value;
       }
     });
@@ -113,19 +114,19 @@ export default function SettingsPage() {
     }
   };
 
-  if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin" /></div>;
+  if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-blue-600" /></div>;
 
   return (
     <div className="space-y-6 pb-20">
       <form onSubmit={handleSaveSettings}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold font-headline text-primary flex items-center gap-2">
+            <h1 className="text-2xl font-bold font-headline text-blue-600 flex items-center gap-2">
               <Settings2 className="h-8 w-8" /> {t('controlCenter')}
             </h1>
             <p className="text-sm text-muted-foreground mt-1">{t('configSub')}</p>
           </div>
-          <Button type="submit" disabled={isSaving} className="bg-primary rounded-full px-8 h-12 font-bold shadow-lg">
+          <Button type="submit" disabled={isSaving} className="bg-blue-600 hover:bg-blue-700 rounded-full px-8 h-12 font-bold shadow-lg shadow-blue-100">
             {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
             {t('saveSystem')}
           </Button>
@@ -137,7 +138,6 @@ export default function SettingsPage() {
             <TabsTrigger value="navigation" className="rounded-lg gap-2 flex-1 min-w-[120px] py-2">{t('navigation')}</TabsTrigger>
             <TabsTrigger value="business" className="rounded-lg gap-2 flex-1 min-w-[120px] py-2">{t('businessRules')}</TabsTrigger>
             <TabsTrigger value="billing" className="rounded-lg gap-2 flex-1 min-w-[120px] py-2">{t('billing')}</TabsTrigger>
-            <TabsTrigger value="security" className="rounded-lg gap-2 flex-1 min-w-[120px] py-2">{t('security')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="space-y-6">
@@ -146,9 +146,9 @@ export default function SettingsPage() {
                 <CardHeader><CardTitle className="text-lg font-headline">{t('general')}</CardTitle></CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2"><Label className="text-xs">{t('companyName')}</Label><Input name="companyName" defaultValue={settings?.companyName} /></div>
+                    <div className="space-y-2"><Label className="text-xs font-bold uppercase">{t('companyName')}</Label><Input name="companyName" defaultValue={settings?.companyName} /></div>
                     <div className="space-y-2">
-                      <Label className="text-xs">{t('systemLanguage')}</Label>
+                      <Label className="text-xs font-bold uppercase">{t('systemLanguage')}</Label>
                       <Select name="systemDefaultLanguage" defaultValue={settings?.systemDefaultLanguage || "BN"}>
                         <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -160,10 +160,10 @@ export default function SettingsPage() {
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2"><Label className="text-xs">{t('email')}</Label><Input name="email" type="email" defaultValue={settings?.email} /></div>
-                    <div className="space-y-2"><Label className="text-xs">{t('phone')}</Label><Input name="phone" defaultValue={settings?.phone} /></div>
+                    <div className="space-y-2"><Label className="text-xs font-bold uppercase">{t('email')}</Label><Input name="email" type="email" defaultValue={settings?.email} /></div>
+                    <div className="space-y-2"><Label className="text-xs font-bold uppercase">{t('phone')}</Label><Input name="phone" defaultValue={settings?.phone} /></div>
                   </div>
-                  <div className="space-y-2"><Label className="text-xs">{t('address')}</Label><Input name="address" defaultValue={settings?.address} /></div>
+                  <div className="space-y-2"><Label className="text-xs font-bold uppercase">{t('address')}</Label><Input name="address" defaultValue={settings?.address} /></div>
                 </CardContent>
               </Card>
               <Card className="border-none shadow-sm rounded-xl flex flex-col items-center justify-center p-6 text-center bg-muted/10">
@@ -171,12 +171,12 @@ export default function SettingsPage() {
                   {logoPreview ? (
                     <img src={logoPreview} alt="Logo" className="w-full h-full object-contain rounded-2xl bg-white p-2 shadow-xl" />
                   ) : (
-                    <div className="w-full h-full rounded-2xl bg-primary flex items-center justify-center text-white text-4xl font-bold shadow-xl">W</div>
+                    <div className="w-full h-full rounded-2xl bg-blue-600 flex items-center justify-center text-white text-4xl font-bold shadow-xl">W</div>
                   )}
                 </div>
                 <Button variant="outline" className="rounded-full gap-2" asChild>
                   <label className="cursor-pointer">
-                    <Upload className="h-4 w-4" /> {t('upload')}
+                    <Upload className="h-4 w-4" /> {t('export')}
                     <input type="file" className="hidden" accept="image/*" onChange={handleLogoChange} />
                   </label>
                 </Button>
@@ -210,7 +210,7 @@ export default function SettingsPage() {
              <Card className="border-none shadow-sm rounded-xl">
                <CardHeader><CardTitle className="text-lg font-headline">{t('opsLogic')}</CardTitle></CardHeader>
                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-4">
                       <div className="flex items-center justify-between p-4 bg-background border rounded-xl">
                         <div><Label className="text-sm font-bold">{t('autoStock')}</Label><p className="text-[10px] text-muted-foreground">{t('autoStockSub')}</p></div>
