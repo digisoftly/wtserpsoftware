@@ -54,6 +54,12 @@ export const translations = {
     recentActivity: "Recent Activity",
     viewAll: "View All",
     lastActiveSales: "Last 5 active sales",
+    admin: "Admin",
+    criticalStock: "Critical Stock",
+    itemsBelowThreshold: "items below threshold",
+    allHealthy: "All items healthy",
+    noSales: "No sales recorded.",
+    walkingClient: "Walking Client",
 
     // KPI
     totalRevenue: "Total Revenue",
@@ -106,6 +112,8 @@ export const translations = {
     postTransaction: "Post Transaction",
     voidInvoice: "Void Invoice?",
     confirmVoid: "Confirm Void",
+    searchProduct: "Search product / Scan barcode...",
+    noItemsSelected: "No items selected",
     
     // Statuses
     paid_status: "Paid",
@@ -215,9 +223,15 @@ export const translations = {
     recentActivity: "সাম্প্রতিক কার্যক্রম",
     viewAll: "সব দেখুন",
     lastActiveSales: "শেষ ৫টি সক্রিয় বিক্রয়",
+    admin: "অ্যাডমিন",
+    criticalStock: "জরুরী স্টক",
+    itemsBelowThreshold: "টি আইটেম লিমিটের নিচে",
+    allHealthy: "সব স্টক ঠিক আছে",
+    noSales: "কোন বিক্রয় রেকর্ড নেই।",
+    walkingClient: "সাধারণ কাস্টমার",
 
     // KPI
-    totalRevenue: "মোট রাজস্ব",
+    totalRevenue: "মোট আয়",
     totalOrders: "মোট অর্ডার",
     pendingInvoices: "বকেয়া ইনভয়েস",
     activeCustomers: "সক্রিয় গ্রাহক",
@@ -267,6 +281,8 @@ export const translations = {
     postTransaction: "লেনদেন জমা দিন",
     voidInvoice: "ইনভয়েস বাতিল করবেন?",
     confirmVoid: "বাতিল নিশ্চিত করুন",
+    searchProduct: "পণ্য খুঁজুন বা স্ক্যান করুন...",
+    noItemsSelected: "কোন আইটেম নির্বাচন করা হয়নি",
     
     // Statuses
     paid_status: "পরিশোধিত",
@@ -302,7 +318,7 @@ export const translations = {
     opsLogic: "লজিক",
     opsSub: "স্টক নিয়ম",
     autoStock: "অটো সিঙ্ক",
-    autoStockSub: "বিক্রয়ে আপডেট",
+    autoStockSub: "Update on sale",
     negStock: "নেতিবাচক স্টক",
     negStockSub: "শূন্য স্টকেও বিক্রয়",
     lowStockLevel: "লো স্টক এলার্ট",

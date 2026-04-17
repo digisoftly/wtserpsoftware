@@ -54,7 +54,7 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold font-headline text-slate-900">{t('goodMorning')}, Admin 👋</h1>
+          <h1 className="text-2xl font-bold font-headline text-slate-900">{t('goodMorning')}, {t('admin')} 👋</h1>
           <p className="text-sm text-muted-foreground mt-1">{t('happeningToday')}</p>
         </div>
         <div className="flex items-center gap-3">
@@ -108,7 +108,7 @@ export default function Dashboard() {
                     <TableRow key={inv.id} className="h-14 hover:bg-slate-50/50 transition-colors">
                       <TableCell className="font-bold text-xs pl-6 text-blue-600">{inv.invoiceNumber}</TableCell>
                       <TableCell className="text-xs font-bold text-slate-900">
-                        {leads?.find(l => l.id === inv.customerId)?.name || "Walking Client"}
+                        {leads?.find(l => l.id === inv.customerId)?.name || t('walkingClient')}
                       </TableCell>
                       <TableCell className="font-black text-xs">৳{inv.totalAmount?.toLocaleString()}</TableCell>
                       <TableCell className="text-right pr-6">
@@ -123,7 +123,7 @@ export default function Dashboard() {
                 </TableBody>
               </Table>
             ) : (
-              <div className="text-center py-20 text-muted-foreground text-xs italic">No sales recorded.</div>
+              <div className="text-center py-20 text-muted-foreground text-xs italic">{t('noSales')}</div>
             )}
           </CardContent>
         </Card>
@@ -149,14 +149,14 @@ export default function Dashboard() {
                   <div className="flex gap-3">
                     <div className="w-8 h-8 rounded-lg bg-red-500 text-white flex items-center justify-center shadow-lg"><AlertCircle className="h-4 w-4" /></div>
                     <div>
-                      <p className="text-xs font-bold text-red-900">Critical Stock</p>
-                      <p className="text-[10px] text-red-700 font-medium">{stats.lowStockCount} items below threshold</p>
+                      <p className="text-xs font-bold text-red-900">{t('criticalStock')}</p>
+                      <p className="text-[10px] text-red-700 font-medium">{stats.lowStockCount} {t('itemsBelowThreshold')}</p>
                     </div>
                   </div>
                   <ArrowRight className="h-4 w-4 text-red-400" />
                 </div>
               ) : (
-                <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest text-center py-6">All items healthy</p>
+                <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest text-center py-6">{t('allHealthy')}</p>
               )}
             </div>
           </Card>
