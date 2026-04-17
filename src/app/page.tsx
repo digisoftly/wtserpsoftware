@@ -75,10 +75,10 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title={t('totalRevenue')} value={`৳${stats.totalSales.toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-600" />
-        <KPICard title={t('totalOrders')} value={allInvoices?.length || 0} icon={ShoppingCart} colorClass="bg-blue-600" />
-        <KPICard title={t('pendingInvoices')} value={`৳${stats.dues.toLocaleString()}`} icon={AlertCircle} colorClass="bg-orange-600" />
-        <KPICard title={t('activeCustomers')} value="3,847" icon={Target} colorClass="bg-purple-600" />
+        <KPICard title={t('totalRevenue')} value={`৳${stats.totalSales.toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-600" subtext={t('revenueGrowth')} />
+        <KPICard title={t('totalOrders')} value={allInvoices?.length || 0} icon={ShoppingCart} colorClass="bg-blue-600" subtext={t('orderGrowth')} />
+        <KPICard title={t('pendingInvoices')} value={`৳${stats.dues.toLocaleString()}`} icon={AlertCircle} colorClass="bg-orange-600" subtext={t('overdueCount')} />
+        <KPICard title={t('activeCustomers')} value="3,847" icon={Target} colorClass="bg-purple-600" subtext={t('newCustomers')} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -86,9 +86,9 @@ export default function Dashboard() {
           <CardHeader className="flex flex-row items-center justify-between py-5 px-6 border-b border-slate-50">
             <div>
               <CardTitle className="text-sm font-bold font-headline uppercase tracking-tight text-slate-900">{t('recentTransactions')}</CardTitle>
-              <p className="text-[10px] text-muted-foreground font-medium uppercase mt-0.5">Last 5 active sales</p>
+              <p className="text-[10px] text-muted-foreground font-medium uppercase mt-0.5">{t('lastActiveSales')}</p>
             </div>
-            <Button variant="ghost" size="sm" className="h-8 rounded-full px-4 text-[10px] font-bold uppercase hover:bg-slate-50">{t('view')} All</Button>
+            <Button variant="ghost" size="sm" className="h-8 rounded-full px-4 text-[10px] font-bold uppercase hover:bg-slate-50">{t('viewAll')}</Button>
           </CardHeader>
           <CardContent className="p-0">
             {invoicesLoading ? (
@@ -97,10 +97,10 @@ export default function Dashboard() {
               <Table>
                 <TableHeader className="bg-slate-50/50">
                   <TableRow>
-                    <TableHead className="h-10 text-[10px] uppercase font-black text-slate-400 pl-6">Invoice</TableHead>
-                    <TableHead className="h-10 text-[10px] uppercase font-black text-slate-400">Customer</TableHead>
-                    <TableHead className="h-10 text-[10px] uppercase font-black text-slate-400">Amount</TableHead>
-                    <TableHead className="h-10 text-[10px] uppercase font-black text-slate-400 text-right pr-6">Status</TableHead>
+                    <TableHead className="h-10 text-[10px] uppercase font-black text-slate-400 pl-6">{t('invoiceNumber')}</TableHead>
+                    <TableHead className="h-10 text-[10px] uppercase font-black text-slate-400">{t('customer')}</TableHead>
+                    <TableHead className="h-10 text-[10px] uppercase font-black text-slate-400">{t('amount')}</TableHead>
+                    <TableHead className="h-10 text-[10px] uppercase font-black text-slate-400 text-right pr-6">{t('status')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -112,8 +112,10 @@ export default function Dashboard() {
                       </TableCell>
                       <TableCell className="font-black text-xs">৳{inv.totalAmount?.toLocaleString()}</TableCell>
                       <TableCell className="text-right pr-6">
-                        <Badge className={cn("text-[9px] h-5 uppercase px-2 font-black border-none", inv.status === "paid" ? "bg-green-50 text-green-700" : "bg-orange-50 text-orange-700")}>
-                          {inv.status}
+                        <Badge className={cn("text-[9px] h-5 uppercase px-2 font-black border-none", 
+                          inv.status === "paid" ? "bg-green-50 text-green-700" : 
+                          inv.status === "partial" ? "bg-blue-50 text-blue-700" : "bg-orange-50 text-orange-700")}>
+                          {t(`${inv.status}_status` as any)}
                         </Badge>
                       </TableCell>
                     </TableRow>

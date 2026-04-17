@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription } from "@/components/ui/alert-dialog"
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, doc, runTransaction, serverTimestamp, increment } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils"
 import { toast } from "@/hooks/use-toast"
 import { deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { KPICard } from "@/components/dashboard/kpi-card"
+import { useTranslation } from "@/hooks/use-translation"
 
 interface InvoiceItem {
   productId: string;
@@ -31,6 +32,7 @@ interface InvoiceItem {
 export default function SalesPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
+  const { t } = useTranslation();
   
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
@@ -166,7 +168,7 @@ export default function SalesPage() {
         }
       });
 
-      toast({ title: "Invoice Generated", description: "Stock levels updated automatically." });
+      toast({ title: "Invoice Generated" });
       setIsAddModalOpen(false);
       resetForm();
     } catch (e: any) {
@@ -198,24 +200,24 @@ export default function SalesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold font-headline text-blue-600">Sales Registry</h1>
+        <h1 className="text-xl font-bold font-headline text-blue-600">{t('sales')}</h1>
         <Button className="rounded-full gap-2 h-9 px-6 bg-blue-600 hover:bg-blue-700 font-bold text-[10px] uppercase shadow-lg shadow-blue-100" onClick={() => { resetForm(); setIsAddModalOpen(true); }}>
-          <Plus className="h-4 w-4" /> New Sale
+          <Plus className="h-4 w-4" /> {t('newInvoice')}
         </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Revenue Today" value={`৳${stats.today.toLocaleString()}`} icon={TrendingUp} colorClass="bg-blue-600" />
-        <KPICard title="Monthly Volume" value={`৳${stats.monthly.toLocaleString()}`} icon={Calendar} colorClass="bg-green-600" />
-        <KPICard title="Total Orders" value={stats.total} icon={ShoppingBag} colorClass="bg-purple-600" />
-        <KPICard title="Receivables" value={`৳${stats.due.toLocaleString()}`} icon={AlertCircle} colorClass="bg-red-600" />
+        <KPICard title={t('totalRevenue')} value={`৳${stats.today.toLocaleString()}`} icon={TrendingUp} colorClass="bg-blue-600" />
+        <KPICard title={t('thisMonth')} value={`৳${stats.monthly.toLocaleString()}`} icon={Calendar} colorClass="bg-green-600" />
+        <KPICard title={t('totalOrders')} value={stats.total} icon={ShoppingBag} colorClass="bg-purple-600" />
+        <KPICard title={t('pendingInvoices')} value={`৳${stats.due.toLocaleString()}`} icon={AlertCircle} colorClass="bg-red-600" />
       </div>
 
       <div className="flex gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <input 
-            placeholder="Search invoice number..." 
+            placeholder={t('filter')} 
             className="pl-9 h-10 w-full rounded-xl bg-white border-none shadow-sm ring-1 ring-slate-100 text-xs focus:ring-blue-500 transition-all outline-none" 
             value={searchTerm} 
             onChange={e => setSearchTerm(e.target.value)} 
@@ -230,10 +232,10 @@ export default function SalesPage() {
           <Table>
             <TableHeader className="bg-muted/20">
               <TableRow>
-                <TableHead className="h-10 text-[10px] uppercase font-bold">Invoice #</TableHead>
-                <TableHead className="h-10 text-[10px] uppercase font-bold">Client</TableHead>
-                <TableHead className="h-10 text-[10px] uppercase font-bold">Total</TableHead>
-                <TableHead className="h-10 text-[10px] uppercase font-bold">Status</TableHead>
+                <TableHead className="h-10 text-[10px] uppercase font-bold">{t('invoiceNumber')}</TableHead>
+                <TableHead className="h-10 text-[10px] uppercase font-bold">{t('customer')}</TableHead>
+                <TableHead className="h-10 text-[10px] uppercase font-bold">{t('amount')}</TableHead>
+                <TableHead className="h-10 text-[10px] uppercase font-bold">{t('status')}</TableHead>
                 <TableHead className="h-10 text-right"></TableHead>
               </TableRow>
             </TableHeader>
@@ -249,7 +251,7 @@ export default function SalesPage() {
                     <Badge variant="outline" className={cn("text-[8px] h-5 uppercase border-none px-2", 
                       inv.status === 'paid' ? "bg-green-50 text-green-700" : 
                       inv.status === 'partial' ? "bg-blue-50 text-blue-700" : "bg-orange-50 text-orange-700")}>
-                      {inv.status}
+                      {t(`${inv.status}_status` as any)}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
@@ -258,8 +260,8 @@ export default function SalesPage() {
                         <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-blue-50 text-blue-600"><MoreVertical className="h-3.5 w-3.5" /></Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-32">
-                        <DropdownMenuItem className="text-xs"><Eye className="mr-2 h-3.5 w-3.5" /> View</DropdownMenuItem>
-                        <DropdownMenuItem className="text-xs text-red-600" onClick={() => { setSelectedRecord(inv); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> Delete</DropdownMenuItem>
+                        <DropdownMenuItem className="text-xs"><Eye className="mr-2 h-3.5 w-3.5" /> {t('view')}</DropdownMenuItem>
+                        <DropdownMenuItem className="text-xs text-red-600" onClick={() => { setSelectedRecord(inv); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -270,13 +272,13 @@ export default function SalesPage() {
         </Card>
       )}
 
-      {/* MINIMAL SALES FORM DIALOG */}
+      {/* INVOICE BUILDER DIALOG */}
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
         <DialogContent className="max-w-5xl p-0 overflow-hidden border-none shadow-2xl bg-slate-50">
           <DialogHeader className="bg-blue-600 p-4 text-white flex-row items-center justify-between space-y-0">
             <div className="flex items-center gap-3">
               <ShoppingCart className="h-5 w-5" />
-              <DialogTitle className="text-lg font-bold font-headline uppercase tracking-tight">Generate Invoice</DialogTitle>
+              <DialogTitle className="text-lg font-bold font-headline uppercase tracking-tight">{t('newInvoice')}</DialogTitle>
             </div>
             <Button variant="ghost" size="icon" className="text-white/80 hover:text-white" onClick={() => setIsAddModalOpen(false)}><X className="h-5 w-5" /></Button>
           </DialogHeader>
@@ -286,10 +288,10 @@ export default function SalesPage() {
             <div className="lg:col-span-8 space-y-6">
               <div className="grid grid-cols-2 gap-4 bg-white p-4 rounded-2xl shadow-sm ring-1 ring-slate-100">
                 <div className="space-y-1">
-                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">Identify Customer</Label>
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">{t('selectCustomer')}</Label>
                   <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
                     <SelectTrigger className="h-10 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200">
-                      <SelectValue placeholder="Search client database..." />
+                      <SelectValue placeholder={t('searchCustomer')} />
                     </SelectTrigger>
                     <SelectContent>
                       {customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs">{c.firstName} {c.lastName} ({c.phoneNumber})</SelectItem>)}
@@ -297,7 +299,7 @@ export default function SalesPage() {
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">Transaction Date</Label>
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">{t('invoiceDate')}</Label>
                   <Input type="date" className="h-10 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} />
                 </div>
               </div>
@@ -307,7 +309,7 @@ export default function SalesPage() {
                   <Search className="h-4 w-4 text-blue-600" />
                   <Select onValueChange={handleAddProduct}>
                     <SelectTrigger className="h-10 flex-1 border-none focus:ring-0 shadow-none text-xs font-medium">
-                      <SelectValue placeholder="Scan barcode or search products..." />
+                      <SelectValue placeholder="Search product / Scan barcode..." />
                     </SelectTrigger>
                     <SelectContent>
                       {products?.map(p => (
@@ -326,10 +328,10 @@ export default function SalesPage() {
                   <Table>
                     <TableHeader className="bg-slate-50">
                       <TableRow>
-                        <TableHead className="text-[10px] uppercase font-bold">Product</TableHead>
-                        <TableHead className="text-[10px] uppercase font-bold text-center w-20">Qty</TableHead>
-                        <TableHead className="text-[10px] uppercase font-bold text-right w-24">Price</TableHead>
-                        <TableHead className="text-[10px] uppercase font-bold text-right w-24">Total</TableHead>
+                        <TableHead className="text-[10px] uppercase font-bold">{t('itemDescription')}</TableHead>
+                        <TableHead className="text-[10px] uppercase font-bold text-center w-20">{t('qty')}</TableHead>
+                        <TableHead className="text-[10px] uppercase font-bold text-right w-24">{t('price')}</TableHead>
+                        <TableHead className="text-[10px] uppercase font-bold text-right w-24">{t('total')}</TableHead>
                         <TableHead className="w-10"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -366,35 +368,35 @@ export default function SalesPage() {
               <div className="bg-blue-600 text-white p-6 rounded-[2rem] shadow-xl space-y-4 relative overflow-hidden">
                 <Calculator className="absolute -bottom-4 -right-4 h-24 w-24 opacity-10" />
                 <div className="space-y-1">
-                  <p className="text-[10px] uppercase font-black opacity-60 tracking-widest text-center">Net Final Amount</p>
+                  <p className="text-[10px] uppercase font-black opacity-60 tracking-widest text-center">{t('netFinalAmount')}</p>
                   <h2 className="text-4xl font-headline font-black text-center">৳{totalAmount.toLocaleString()}</h2>
                 </div>
                 <div className="pt-4 space-y-2 border-t border-white/10 text-xs font-medium">
-                  <div className="flex justify-between opacity-80"><span>Subtotal</span><span>৳{subtotal.toLocaleString()}</span></div>
-                  <div className="flex justify-between text-red-200"><span>Discount</span><span>- ৳{discount.toLocaleString()}</span></div>
-                  <div className="flex justify-between opacity-80"><span>VAT ({vatPercent}%)</span><span>+ ৳{vatAmount.toLocaleString()}</span></div>
+                  <div className="flex justify-between opacity-80"><span>{t('subtotal')}</span><span>৳{subtotal.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-red-200"><span>{t('discount')}</span><span>- ৳{discount.toLocaleString()}</span></div>
+                  <div className="flex justify-between opacity-80"><span>{t('vat')} ({vatPercent}%)</span><span>+ ৳{vatAmount.toLocaleString()}</span></div>
                 </div>
               </div>
 
               <div className="bg-white p-6 rounded-3xl shadow-sm ring-1 ring-slate-100 space-y-4">
                 <div className="space-y-1">
-                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">Adjustments</Label>
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">{t('filter')}</Label>
                   <div className="grid grid-cols-2 gap-3">
-                    <Input type="number" placeholder="Discount ৳" className="h-10 text-xs font-bold rounded-xl" value={discount || ''} onChange={e => setDiscount(Number(e.target.value))} />
-                    <Input type="number" placeholder="VAT %" className="h-10 text-xs font-bold rounded-xl" value={vatPercent || ''} onChange={e => setVatPercent(Number(e.target.value))} />
+                    <Input type="number" placeholder={t('discount')} className="h-10 text-xs font-bold rounded-xl" value={discount || ''} onChange={e => setDiscount(Number(e.target.value))} />
+                    <Input type="number" placeholder={t('vat')} className="h-10 text-xs font-bold rounded-xl" value={vatPercent || ''} onChange={e => setVatPercent(Number(e.target.value))} />
                   </div>
                 </div>
 
                 <div className="space-y-2 pt-2 border-t">
-                  <Label className="text-[10px] font-bold uppercase text-blue-600">Settlement</Label>
+                  <Label className="text-[10px] font-bold uppercase text-blue-600">{t('settlement')}</Label>
                   <div className="grid grid-cols-1 gap-3">
                     <div className="relative">
                       <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input type="number" placeholder="Amount Paid ৳" className="h-12 pl-9 text-lg font-black text-blue-600 rounded-xl bg-blue-50/50 border-blue-100" value={paidAmount || ''} onChange={e => setPaidAmount(Number(e.target.value))} />
+                      <Input type="number" placeholder={t('paid')} className="h-12 pl-9 text-lg font-black text-blue-600 rounded-xl bg-blue-50/50 border-blue-100" value={paidAmount || ''} onChange={e => setPaidAmount(Number(e.target.value))} />
                     </div>
                     <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                       <SelectTrigger className="h-10 rounded-xl text-xs font-bold">
-                        <SelectValue placeholder="Payment Method" />
+                        <SelectValue placeholder={t('paymentMethod')} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="cash" className="text-xs">Cash Payment</SelectItem>
@@ -408,14 +410,14 @@ export default function SalesPage() {
 
                 <div className={cn("p-4 rounded-2xl flex items-center justify-between", balanceDue > 0 ? "bg-red-50" : "bg-green-50")}>
                    <div className="space-y-0.5">
-                     <p className="text-[8px] uppercase font-bold text-muted-foreground">Remaining Due</p>
+                     <p className="text-[8px] uppercase font-bold text-muted-foreground">{t('remainingDue')}</p>
                      <p className={cn("text-lg font-black", balanceDue > 0 ? "text-red-600" : "text-green-600")}>৳{balanceDue.toLocaleString()}</p>
                    </div>
                    {balanceDue <= 0 && <CheckCircle2 className="h-6 w-6 text-green-500" />}
                 </div>
 
                 <Button className="w-full h-12 bg-blue-600 hover:bg-blue-700 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-100 mt-2" disabled={isSubmitting || lineItems.length === 0} onClick={handleSaveInvoice}>
-                  {isSubmitting ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Plus className="h-4 w-4 mr-2" />} Post Transaction
+                  {isSubmitting ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Plus className="h-4 w-4 mr-2" />} {t('postTransaction')}
                 </Button>
               </div>
             </div>
@@ -430,13 +432,13 @@ export default function SalesPage() {
               <AlertCircle className="h-8 w-8" />
             </div>
             <div className="space-y-2">
-              <h2 className="text-xl font-black font-headline uppercase tracking-tight">Void Invoice?</h2>
+              <h2 className="text-xl font-black font-headline uppercase tracking-tight">{t('voidInvoice')}</h2>
               <p className="text-xs text-muted-foreground font-medium px-4">This action will permanently delete the transaction record and is not reversible.</p>
             </div>
           </div>
           <div className="flex gap-3 mt-8">
-            <Button variant="ghost" className="flex-1 rounded-full text-[10px] uppercase font-black" onClick={() => setIsDeleteAlertOpen(false)}>Discard</Button>
-            <Button className="flex-1 bg-red-600 hover:bg-red-700 rounded-full text-[10px] uppercase font-black shadow-lg shadow-red-100" onClick={handleDelete}>Confirm Void</Button>
+            <Button variant="ghost" className="flex-1 rounded-full text-[10px] uppercase font-black" onClick={() => setIsDeleteAlertOpen(false)}>{t('cancel')}</Button>
+            <Button className="flex-1 bg-red-600 hover:bg-red-700 rounded-full text-[10px] uppercase font-black shadow-lg shadow-red-100" onClick={handleDelete}>{t('confirmVoid')}</Button>
           </div>
         </AlertDialogContent>
       </AlertDialog>
