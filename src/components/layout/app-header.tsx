@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Search, Languages, Plus, User, LogOut, ChevronDown, Building, Loader2 } from "lucide-react"
+import { Search, ChevronDown, Building, Loader2, User, LogOut } from "lucide-react"
 
 import {
   DropdownMenu,
@@ -51,10 +51,6 @@ export function AppHeader() {
       </div>
 
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setIsAddOpen(true)}>
-          <Plus className="h-4 w-4" />
-        </Button>
-
         {userRole?.isSuperAdmin && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -63,9 +59,15 @@ export function AppHeader() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              {branchesLoading ? <div className="p-4 text-center"><Loader2 className="animate-spin h-4 w-4 mx-auto" /></div> : branches?.map(b => (
-                <DropdownMenuItem key={b.id} onClick={() => setBranchId(b.id)} className="text-xs font-medium">{b.name}</DropdownMenuItem>
-              ))}
+              {branchesLoading ? (
+                <div className="p-4 text-center"><Loader2 className="animate-spin h-4 w-4 mx-auto" /></div>
+              ) : (
+                branches?.map(b => (
+                  <DropdownMenuItem key={b.id} onClick={() => setBranchId(b.id)} className="text-xs font-medium">
+                    {b.name}
+                  </DropdownMenuItem>
+                ))
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         )}
