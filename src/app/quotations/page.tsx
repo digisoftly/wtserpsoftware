@@ -396,7 +396,7 @@ export default function QuotationsPage() {
               <div>
                 <h3 className="font-bold uppercase text-[10px] mb-4 tracking-widest opacity-80">{t('grandTotal')}</h3>
                 <div className="text-4xl font-headline font-black">৳{totalValue.toLocaleString()}</div>
-                <p className="text-[10px] opacity-60 mt-4 leading-relaxed font-medium uppercase">{t('validUntil')}: 30 Days</p>
+                <p className="text-[10px] opacity-60 mt-4 leading-relaxed font-medium uppercase">{t('validUntil30Days')}</p>
               </div>
               <Button className={cn("w-full h-12 font-bold gap-2 mt-10 rounded-2xl text-[10px] uppercase tracking-widest", isEditModalOpen ? "bg-white text-blue-600 hover:bg-blue-50" : "bg-white text-purple-600 hover:bg-purple-50")} onClick={isEditModalOpen ? handleUpdateQuote : handleSubmitQuote} disabled={isSubmitting || lineItems.length === 0}>
                 {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : isEditModalOpen ? <CheckCircle2 className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />} 

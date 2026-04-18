@@ -48,6 +48,8 @@ export const translations = {
     date: "Date",
     amount: "Amount",
     details: "Details",
+    identity: "Identity",
+    profile: "Profile",
     
     // Add Actions
     addItem: "Add Item",
@@ -67,6 +69,10 @@ export const translations = {
     newInvoice: "New Invoice",
     newQuotation: "New Quote",
     newPO: "New PO",
+    createQuote: "Create Quote",
+    recordProposal: "Record Proposal",
+    recordProposalSub: "Quotation has been drafted successfully.",
+    initialize: "Initialize",
 
     // Dashboard
     goodMorning: "Good Morning",
@@ -85,6 +91,11 @@ export const translations = {
     allHealthy: "All stock levels healthy",
     noSales: "No sales recorded.",
     walkingClient: "Walk-in Customer",
+    recentInvoices: "Recent Invoices",
+    lastActiveSales: "Last active sales activities",
+    invoiceNumber: "Invoice #",
+    customer: "Customer",
+    purchases_action: "Purchases",
 
     // KPI Labels
     totalRevenue: "Total Income",
@@ -120,6 +131,10 @@ export const translations = {
     annualRevenue: "Annual Revenue",
     avgOrderValue: "Avg Order Value",
     netMargin: "Net Margin",
+    totalQuotations: "Total Quotations",
+    pendingQuotes: "Pending Quotes",
+    approvedQuotes: "Approved Quotes",
+    convertedQuotes: "Converted Quotes",
 
     // Module Specific: Finance
     label: "Label",
@@ -133,6 +148,26 @@ export const translations = {
     paidAmount: "Paid Amount",
     dueAmount: "Due Amount",
     receiveCombined: "Receive Combined",
+    subtotal: "Subtotal",
+    discount: "Discount",
+    vat: "VAT",
+    grandTotal: "Grand Total",
+    netFinalAmount: "Net Final Amount",
+    remainingDue: "Remaining Due",
+    postTransaction: "Post Transaction",
+    voidInvoice: "Void Invoice",
+    confirmVoid: "Confirm Void",
+
+    // Module Specific: Quotations
+    quoteNumber: "Quote #",
+    validUntil: "Valid Until",
+    validUntil30Days: "Valid for 30 days",
+    noItemsSelected: "No items selected",
+    searchProduct: "Search product...",
+    itemDescription: "Item Description",
+    qty: "Qty",
+    unitPrice: "Unit Price",
+    total: "Total",
 
     // AI
     runMarketForecast: "Run Market Forecast",
@@ -167,6 +202,9 @@ export const translations = {
     deadline: "Deadline",
     budget: "Budget",
     progress: "Progress",
+    project: "Project",
+    projectArchived: "Record will be permanently archived.",
+    deleteProject: "Delete Project?",
 
     // Statuses
     paid_status: "Paid",
@@ -234,6 +272,8 @@ export const translations = {
     date: "তারিখ",
     amount: "পরিমাণ",
     details: "বিস্তারিত",
+    identity: "পরিচয়",
+    profile: "প্রোফাইল",
 
     // Add Actions
     addItem: "আইটেম যোগ করুন",
@@ -253,6 +293,10 @@ export const translations = {
     newInvoice: "নতুন ইনভয়েস",
     newQuotation: "নতুন কোটেশন",
     newPO: "নতুন পিও (PO)",
+    createQuote: "কোটেশন তৈরি",
+    recordProposal: "প্রস্তাবনা সংরক্ষণ",
+    recordProposalSub: "কোটেশন ড্রাফট সফলভাবে সম্পন্ন হয়েছে।",
+    initialize: "শুরু করুন",
 
     // Dashboard
     goodMorning: "শুভ সকাল",
@@ -271,6 +315,11 @@ export const translations = {
     allHealthy: "সব স্টক ঠিক আছে",
     noSales: "কোন বিক্রয় রেকর্ড নেই।",
     walkingClient: "সাধারণ গ্রাহক",
+    recentInvoices: "সাম্প্রতিক ইনভয়েস",
+    lastActiveSales: "সর্বশেষ বিক্রয় কার্যক্রম",
+    invoiceNumber: "ইনভয়েস #",
+    customer: "গ্রাহক",
+    purchases_action: "ক্রয়",
 
     // KPI Labels
     totalRevenue: "মোট আয়",
@@ -306,6 +355,10 @@ export const translations = {
     annualRevenue: "বার্ষিক আয়",
     avgOrderValue: "গড় অর্ডার মূল্য",
     netMargin: "নিট মার্জিন",
+    totalQuotations: "মোট কোটেশন",
+    pendingQuotes: "বকেয়া কোটেশন",
+    approvedQuotes: "অনুমোদিত কোটেশন",
+    convertedQuotes: "বিক্রয়ে রূপান্তরিত",
 
     // Module Specific: Finance
     label: "বিবরণ",
@@ -319,6 +372,26 @@ export const translations = {
     paidAmount: "পরিশোধিত",
     dueAmount: "বকেয়া",
     receiveCombined: "সম্মিলিত পেমেন্ট",
+    subtotal: "সাবটোটাল",
+    discount: "ছাড়",
+    vat: "ভ্যাট",
+    grandTotal: "সর্বমোট",
+    netFinalAmount: "মোট প্রদেয়",
+    remainingDue: "বকেয়া পরিমাণ",
+    postTransaction: "লেনদেন জমা দিন",
+    voidInvoice: "ইনভয়েস বাতিল",
+    confirmVoid: "বাতিল নিশ্চিত করুন",
+
+    // Module Specific: Quotations
+    quoteNumber: "কোটেশন #",
+    validUntil: "মেয়াদের শেষ তারিখ",
+    validUntil30Days: "৩০ দিনের জন্য প্রযোজ্য",
+    noItemsSelected: "কোন আইটেম নির্বাচন করা হয়নি",
+    searchProduct: "পণ্য খুঁজুন...",
+    itemDescription: "পণ্যের বিবরণ",
+    qty: "পরিমাণ",
+    unitPrice: "একক মূল্য",
+    total: "মোট",
 
     // AI
     runMarketForecast: "বাজার পূর্বাভাস চালান",
@@ -353,6 +426,9 @@ export const translations = {
     deadline: "ডেডলাইন",
     budget: "বাজেট",
     progress: "অগ্রগতি",
+    project: "প্রকল্প",
+    projectArchived: "রেকর্ডটি স্থায়ীভাবে আর্কাইভ করা হবে।",
+    deleteProject: "প্রকল্প মুছবেন?",
 
     // Statuses
     paid_status: "পরিশোধিত",
