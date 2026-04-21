@@ -14,6 +14,8 @@ service cloud.firestore {
     }
 
     // Helper to check if user belongs to the company
+    // For the demo corporation, we allow all signed-in users for testing purposes.
+    // For others, we check for the existence of their user document in that company.
     function isCompanyMember(cid) {
       return isSignedIn() && (
         cid == "warrior-demo-corp" ||
@@ -27,20 +29,18 @@ service cloud.firestore {
       // Allow reading the company document itself for any signed-in user
       allow get: if isSignedIn();
       
+      // Allow listing branches or other top-level collections if a member
+      allow list: if isCompanyMember(companyId) || isSuperAdmin();
+
       // Recursive rule for ALL sub-collections (branches, users, invoices, etc.)
-      // This ensures that list/get/create/update/delete operations are allowed
-      // for any authenticated member of the company.
+      // This allows list, get, create, update, delete for any authenticated member.
       match /{allPaths=**} {
         allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
       }
 
-      // Explicitly handle branch discovery and listing
-      match /branches/{branchId} {
-        allow list: if isCompanyMember(companyId) || isSuperAdmin();
-        
-        match /{branchResources=**} {
-          allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
-        }
+      // Explicitly allow users to manage their own profile to handle first-time sign-in
+      match /users/{userId} {
+        allow read, write: if isSignedIn() && (request.auth.uid == userId || isCompanyMember(companyId) || isSuperAdmin());
       }
     }
 
