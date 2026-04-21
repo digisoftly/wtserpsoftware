@@ -13,6 +13,7 @@ service cloud.firestore {
       return isSignedIn() && exists(/databases/$(database)/documents/super_admins/$(request.auth.uid));
     }
 
+    // Helper to check if user belongs to the company
     function isCompanyMember(companyId) {
       return isSignedIn() && (
         companyId == "warrior-demo-corp" ||
@@ -22,18 +23,15 @@ service cloud.firestore {
 
     // --- TENANT DATA RULES ---
 
-    // Unified rule for all company-related data
-    // This allows recursive access to branches, products, invoices, etc.
-    match /companies/{companyId}/{allPaths=**} {
-      allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
-    }
-
-    // Explicit rules for user profile management (ensuring privacy while allowing company checks)
-    match /companies/{companyId}/users/{userId} {
-      allow get: if isSignedIn() && (request.auth.uid == userId || isCompanyMember(companyId) || isSuperAdmin());
-      allow list: if isCompanyMember(companyId) || isSuperAdmin();
-      allow create: if isSignedIn() && (companyId == "warrior-demo-corp" || isSuperAdmin());
-      allow update: if request.auth.uid == userId || isSuperAdmin();
+    // Root level company access
+    match /companies/{companyId} {
+      // Allow reading the company doc itself if signed in
+      allow get: if isSignedIn();
+      
+      // Recursive rule for ALL sub-collections (branches, users, invoices, etc.)
+      match /{allPaths=**} {
+        allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
+      }
     }
 
     // --- GLOBAL ADMIN RULES ---
