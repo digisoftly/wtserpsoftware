@@ -13,11 +13,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { useTranslation } from "@/hooks/use-translation"
+import { useRouter } from "next/navigation"
 
 export default function ContractsPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
   const { t } = useTranslation();
+  const router = useRouter();
   
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
 
@@ -78,20 +80,22 @@ export default function ContractsPage() {
                 </TableHeader>
                 <TableBody>
                   {contracts.map((c) => (
-                    <TableRow key={c.id} className="h-12 hover:bg-muted/10 transition-colors">
+                    <TableRow key={c.id} className="h-12 hover:bg-muted/10 transition-colors cursor-pointer" onClick={() => router.push(`/contracts/${c.id}`)}>
                       <TableCell className="font-bold text-xs uppercase">{c.contractNumber}</TableCell>
                       <TableCell>
                         <div className="font-bold text-xs">{c.serviceName}</div>
                         <div className="text-[9px] uppercase text-muted-foreground font-black">{c.serviceType}</div>
                       </TableCell>
                       <TableCell className="font-black text-xs text-slate-900">৳{Number(c.monthlyAmount || 0).toLocaleString()}/mo</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-emerald-50 text-emerald-600 transition-colors"><MoreVertical className="h-3.5 w-3.5" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-32">
-                            <DropdownMenuItem className="text-xs font-bold"><Eye className="mr-2 h-3.5 w-3.5" /> {t('details')}</DropdownMenuItem>
+                            <DropdownMenuItem className="text-xs font-bold" onClick={() => router.push(`/contracts/${c.id}`)}>
+                              <Eye className="mr-2 h-3.5 w-3.5" /> {t('details')}
+                            </DropdownMenuItem>
                             <DropdownMenuItem className="text-red-600 text-xs font-bold"><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>

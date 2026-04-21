@@ -205,6 +205,11 @@ export const translations = {
     project: "Project",
     projectArchived: "Record will be permanently archived.",
     deleteProject: "Delete Project?",
+    contractDetails: "Contract Details",
+    billingHistory: "Billing History",
+    startDate: "Start Date",
+    endDate: "End Date",
+    contractTerm: "Contract Terms",
 
     // Statuses
     paid_status: "Paid",
@@ -429,6 +434,11 @@ export const translations = {
     project: "প্রকল্প",
     projectArchived: "রেকর্ডটি স্থায়ীভাবে আর্কাইভ করা হবে।",
     deleteProject: "প্রকল্প মুছবেন?",
+    contractDetails: "চুক্তির বিবরণ",
+    billingHistory: "বিলিং ইতিহাস",
+    startDate: "শুরুর তারিখ",
+    endDate: "শেষের তারিখ",
+    contractTerm: "চুক্তির শর্তাবলী",
 
     // Statuses
     paid_status: "পরিশোধিত",
