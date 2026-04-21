@@ -22,7 +22,8 @@ service cloud.firestore {
 
     // --- TENANT DATA RULES ---
 
-    // Matches the company document and everything underneath it (branches, invoices, etc.)
+    // Matches the company document and everything underneath it recursively.
+    // This allows listing collections like contract_invoices, sales_invoices, etc.
     match /companies/{companyId} {
       allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
 
@@ -30,7 +31,7 @@ service cloud.firestore {
         allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
       }
       
-      // Explicit rules for user creation and profile management
+      // Explicit rules for user profile management (must match UID)
       match /users/{userId} {
         allow create: if isSignedIn() && (companyId == "warrior-demo-corp" || isSuperAdmin());
         allow get, update: if request.auth.uid == userId || isSuperAdmin();

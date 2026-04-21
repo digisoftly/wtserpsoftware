@@ -25,7 +25,9 @@
         "phone": { "type": "string" },
         "address": { "type": "string" },
         "systemDefaultLanguage": { "type": "string", "enum": ["EN", "BN"] },
-        "sidebarMenuOrder": { "type": "array", "items": { "type": "string" } }
+        "sidebarMenuOrder": { "type": "array", "items": { "type": "string" } },
+        "autoStockUpdate": { "type": "boolean" },
+        "allowNegativeStock": { "type": "boolean" }
       }
     },
     "User": {
@@ -42,6 +44,17 @@
         "preferredLanguage": { "type": "string", "enum": ["EN", "BN"] }
       }
     },
+    "Role": {
+      "title": "Role",
+      "type": "object",
+      "description": "Access control role with permissions matrix.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "isSuperAdmin": { "type": "boolean" },
+        "permissions": { "type": "object" }
+      }
+    },
     "Branch": {
       "title": "Branch",
       "type": "object",
@@ -50,6 +63,7 @@
         "id": { "type": "string" },
         "name": { "type": "string" },
         "code": { "type": "string" },
+        "city": { "type": "string" },
         "isActive": { "type": "boolean" }
       }
     },
@@ -64,7 +78,9 @@
         "unitPrice": { "type": "number" },
         "costPrice": { "type": "number" },
         "currentStock": { "type": "number" },
-        "serialNumberTrackingRequired": { "type": "boolean" }
+        "minStockLevel": { "type": "number" },
+        "serialNumberTrackingRequired": { "type": "boolean" },
+        "productType": { "type": "string" }
       }
     },
     "SalesInvoice": {
@@ -77,7 +93,10 @@
         "customerId": { "type": "string" },
         "totalAmount": { "type": "number" },
         "paidAmount": { "type": "number" },
-        "status": { "type": "string" }
+        "balanceDue": { "type": "number" },
+        "status": { "type": "string" },
+        "invoiceDate": { "type": "string", "format": "date" },
+        "items": { "type": "array" }
       }
     },
     "PurchaseOrder": {
@@ -89,7 +108,22 @@
         "orderNumber": { "type": "string" },
         "supplierId": { "type": "string" },
         "totalAmount": { "type": "number" },
-        "status": { "type": "string" }
+        "status": { "type": "string" },
+        "orderDate": { "type": "string", "format": "date" },
+        "items": { "type": "array" }
+      }
+    },
+    "Quotation": {
+      "title": "Quotation",
+      "type": "object",
+      "description": "Sales proposal/quote.",
+      "properties": {
+        "id": { "type": "string" },
+        "quotationNumber": { "type": "string" },
+        "customerId": { "type": "string" },
+        "totalAmount": { "type": "number" },
+        "status": { "type": "string" },
+        "quotationDate": { "type": "string", "format": "date" }
       }
     },
     "Project": {
@@ -103,7 +137,21 @@
         "budget": { "type": "number" },
         "paidAmount": { "type": "number" },
         "progress": { "type": "number" },
+        "deadline": { "type": "string", "format": "date" },
         "status": { "type": "string" }
+      }
+    },
+    "ProjectPayment": {
+      "title": "Project Payment",
+      "type": "object",
+      "description": "Combined payment record across multiple projects.",
+      "properties": {
+        "id": { "type": "string" },
+        "customerId": { "type": "string" },
+        "totalPaid": { "type": "number" },
+        "allocationType": { "type": "string" },
+        "allocations": { "type": "array" },
+        "paymentDate": { "type": "string", "format": "date-time" }
       }
     },
     "ServiceContract": {
@@ -115,6 +163,8 @@
         "contractNumber": { "type": "string" },
         "serviceName": { "type": "string" },
         "monthlyAmount": { "type": "number" },
+        "billingCycle": { "type": "string" },
+        "startDate": { "type": "string", "format": "date" },
         "status": { "type": "string" }
       }
     },
@@ -138,7 +188,9 @@
         "firstName": { "type": "string" },
         "lastName": { "type": "string" },
         "email": { "type": "string" },
-        "phoneNumber": { "type": "string" }
+        "phoneNumber": { "type": "string" },
+        "companyName": { "type": "string" },
+        "customerType": { "type": "string" }
       }
     },
     "Supplier": {
@@ -147,6 +199,8 @@
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phoneNumber": { "type": "string" },
         "totalDueAmount": { "type": "number" }
       }
     },
@@ -158,7 +212,8 @@
         "id": { "type": "string" },
         "description": { "type": "string" },
         "amount": { "type": "number" },
-        "transactionType": { "type": "string", "enum": ["income", "expense"] }
+        "transactionType": { "type": "string", "enum": ["income", "expense"] },
+        "transactionDate": { "type": "string", "format": "date-time" }
       }
     },
     "Expense": {
@@ -169,7 +224,34 @@
         "id": { "type": "string" },
         "description": { "type": "string" },
         "amount": { "type": "number" },
-        "category": { "type": "string" }
+        "category": { "type": "string" },
+        "expenseDate": { "type": "string", "format": "date-time" }
+      }
+    },
+    "SalesReturn": {
+      "title": "Sales Return",
+      "type": "object",
+      "description": "Record of returned items from a customer.",
+      "properties": {
+        "id": { "type": "string" },
+        "salesInvoiceId": { "type": "string" },
+        "customerId": { "type": "string" },
+        "returnAmount": { "type": "number" },
+        "reason": { "type": "string" },
+        "returnDate": { "type": "string", "format": "date-time" }
+      }
+    },
+    "PurchaseReturn": {
+      "title": "Purchase Return",
+      "type": "object",
+      "description": "Record of items returned to a supplier.",
+      "properties": {
+        "id": { "type": "string" },
+        "purchaseOrderId": { "type": "string" },
+        "supplierId": { "type": "string" },
+        "returnAmount": { "type": "number" },
+        "reason": { "type": "string" },
+        "returnDate": { "type": "string", "format": "date-time" }
       }
     },
     "Ticket": {
@@ -180,7 +262,8 @@
         "id": { "type": "string" },
         "subject": { "type": "string" },
         "status": { "type": "string" },
-        "priority": { "type": "string" }
+        "priority": { "type": "string" },
+        "customerId": { "type": "string" }
       }
     },
     "Lead": {
@@ -202,7 +285,9 @@
         "id": { "type": "string" },
         "firstName": { "type": "string" },
         "lastName": { "type": "string" },
-        "jobTitle": { "type": "string" }
+        "jobTitle": { "type": "string" },
+        "department": { "type": "string" },
+        "employmentStatus": { "type": "string" }
       }
     },
     "SerialNumber": {
@@ -213,7 +298,8 @@
         "id": { "type": "string" },
         "productId": { "type": "string" },
         "serialNumber": { "type": "string" },
-        "status": { "type": "string" }
+        "status": { "type": "string" },
+        "purchaseOrderId": { "type": "string" }
       }
     }
   },
@@ -249,9 +335,17 @@
       "schema": { "$ref": "#/entities/PurchaseOrder" },
       "description": "Purchase records."
     },
+    "/companies/{companyId}/branches/{branchId}/quotations/{quoteId}": {
+      "schema": { "$ref": "#/entities/Quotation" },
+      "description": "Sales proposals."
+    },
     "/companies/{companyId}/branches/{branchId}/projects/{projectId}": {
       "schema": { "$ref": "#/entities/Project" },
       "description": "Client projects."
+    },
+    "/companies/{companyId}/branches/{branchId}/project_payments/{paymentId}": {
+      "schema": { "$ref": "#/entities/ProjectPayment" },
+      "description": "Payments received for projects."
     },
     "/companies/{companyId}/branches/{branchId}/service_contracts/{contractId}": {
       "schema": { "$ref": "#/entities/ServiceContract" },
@@ -276,6 +370,14 @@
     "/companies/{companyId}/branches/{branchId}/expenses/{exId}": {
       "schema": { "$ref": "#/entities/Expense" },
       "description": "Operating expenses."
+    },
+    "/companies/{companyId}/branches/{branchId}/sales_returns/{returnId}": {
+      "schema": { "$ref": "#/entities/SalesReturn" },
+      "description": "Customer returns."
+    },
+    "/companies/{companyId}/branches/{branchId}/purchase_returns/{returnId}": {
+      "schema": { "$ref": "#/entities/PurchaseReturn" },
+      "description": "Supplier returns."
     },
     "/companies/{companyId}/branches/{branchId}/tickets/{tkId}": {
       "schema": { "$ref": "#/entities/Ticket" },
