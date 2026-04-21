@@ -4,7 +4,7 @@
     "Company": {
       "title": "Company",
       "type": "object",
-      "description": "Represents a single company within the multi-tenant ERP system.",
+      "description": "Multi-tenant company entity.",
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
@@ -17,7 +17,7 @@
     "SystemConfig": {
       "title": "System Configuration",
       "type": "object",
-      "description": "Global ERP settings and branding.",
+      "description": "Global settings for a company.",
       "properties": {
         "companyName": { "type": "string" },
         "companyLogo": { "type": "string" },
@@ -35,7 +35,7 @@
     "User": {
       "title": "User",
       "type": "object",
-      "description": "ERP User profile and preferences.",
+      "description": "User profile within a company.",
       "properties": {
         "id": { "type": "string" },
         "firstName": { "type": "string" },
@@ -51,7 +51,7 @@
     "Role": {
       "title": "Role",
       "type": "object",
-      "description": "Access control role with permissions matrix.",
+      "description": "Access control role.",
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
@@ -62,7 +62,7 @@
     "Branch": {
       "title": "Branch",
       "type": "object",
-      "description": "Physical location or warehouse location.",
+      "description": "Physical branch or warehouse.",
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
@@ -74,7 +74,7 @@
     "Product": {
       "title": "Product",
       "type": "object",
-      "description": "Inventory product or service item.",
+      "description": "Inventory product item.",
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
@@ -90,7 +90,6 @@
     "SalesInvoice": {
       "title": "Sales Invoice",
       "type": "object",
-      "description": "Client billing record.",
       "properties": {
         "id": { "type": "string" },
         "invoiceNumber": { "type": "string" },
@@ -106,34 +105,29 @@
     "PurchaseOrder": {
       "title": "Purchase Order",
       "type": "object",
-      "description": "Inventory procurement record.",
       "properties": {
         "id": { "type": "string" },
         "orderNumber": { "type": "string" },
         "supplierId": { "type": "string" },
         "totalAmount": { "type": "number" },
         "status": { "type": "string", "enum": ["ordered", "received", "cancelled"] },
-        "orderDate": { "type": "string", "format": "date" },
-        "items": { "type": "array" }
+        "orderDate": { "type": "string", "format": "date" }
       }
     },
     "Quotation": {
       "title": "Quotation",
       "type": "object",
-      "description": "Sales proposal/quote.",
       "properties": {
         "id": { "type": "string" },
         "quotationNumber": { "type": "string" },
         "customerId": { "type": "string" },
         "totalAmount": { "type": "number" },
-        "status": { "type": "string", "enum": ["draft", "sent", "accepted", "converted"] },
-        "quotationDate": { "type": "string", "format": "date" }
+        "status": { "type": "string", "enum": ["draft", "sent", "accepted", "converted"] }
       }
     },
     "Project": {
       "title": "Project",
       "type": "object",
-      "description": "Long-term client implementation project.",
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
@@ -141,41 +135,33 @@
         "budget": { "type": "number" },
         "paidAmount": { "type": "number" },
         "progress": { "type": "number" },
-        "deadline": { "type": "string", "format": "date" },
         "status": { "type": "string", "enum": ["pending", "active", "completed"] }
       }
     },
     "ProjectPayment": {
       "title": "Project Payment",
       "type": "object",
-      "description": "Combined payment record across multiple projects.",
       "properties": {
         "id": { "type": "string" },
         "customerId": { "type": "string" },
         "totalPaid": { "type": "number" },
-        "allocationType": { "type": "string" },
-        "allocations": { "type": "array" },
         "paymentDate": { "type": "string", "format": "date-time" }
       }
     },
     "ServiceContract": {
       "title": "Service Contract",
       "type": "object",
-      "description": "Recurring service level agreement.",
       "properties": {
         "id": { "type": "string" },
         "contractNumber": { "type": "string" },
         "serviceName": { "type": "string" },
         "monthlyAmount": { "type": "number" },
-        "billingCycle": { "type": "string" },
-        "startDate": { "type": "string", "format": "date" },
         "status": { "type": "string", "enum": ["active", "expired", "cancelled"] }
       }
     },
     "ContractInvoice": {
       "title": "Contract Invoice",
       "type": "object",
-      "description": "Generated invoice for a contract billing cycle.",
       "properties": {
         "id": { "type": "string" },
         "contractId": { "type": "string" },
@@ -191,10 +177,7 @@
         "id": { "type": "string" },
         "firstName": { "type": "string" },
         "lastName": { "type": "string" },
-        "email": { "type": "string" },
-        "phoneNumber": { "type": "string" },
-        "companyName": { "type": "string" },
-        "customerType": { "type": "string", "enum": ["individual", "company"] }
+        "email": { "type": "string" }
       }
     },
     "Supplier": {
@@ -203,107 +186,80 @@
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
-        "email": { "type": "string" },
-        "phoneNumber": { "type": "string" },
         "totalDueAmount": { "type": "number" }
       }
     },
     "Transaction": {
       "title": "Account Transaction",
       "type": "object",
-      "description": "Financial ledger entry.",
       "properties": {
         "id": { "type": "string" },
-        "description": { "type": "string" },
         "amount": { "type": "number" },
-        "transactionType": { "type": "string", "enum": ["income", "expense"] },
-        "transactionDate": { "type": "string", "format": "date-time" }
+        "transactionType": { "type": "string", "enum": ["income", "expense"] }
       }
     },
     "Expense": {
       "title": "Expense",
       "type": "object",
-      "description": "Operating expenditure record.",
       "properties": {
         "id": { "type": "string" },
-        "description": { "type": "string" },
         "amount": { "type": "number" },
-        "category": { "type": "string" },
-        "expenseDate": { "type": "string", "format": "date-time" }
+        "category": { "type": "string" }
       }
     },
     "SalesReturn": {
       "title": "Sales Return",
       "type": "object",
-      "description": "Record of returned items from a customer.",
       "properties": {
         "id": { "type": "string" },
-        "salesInvoiceId": { "type": "string" },
-        "customerId": { "type": "string" },
         "returnAmount": { "type": "number" },
-        "reason": { "type": "string" },
-        "returnDate": { "type": "string", "format": "date-time" }
+        "reason": { "type": "string" }
       }
     },
     "PurchaseReturn": {
       "title": "Purchase Return",
       "type": "object",
-      "description": "Record of items returned to a supplier.",
       "properties": {
         "id": { "type": "string" },
-        "purchaseOrderId": { "type": "string" },
-        "supplierId": { "type": "string" },
         "returnAmount": { "type": "number" },
-        "reason": { "type": "string" },
-        "returnDate": { "type": "string", "format": "date-time" }
+        "reason": { "type": "string" }
       }
     },
     "Ticket": {
       "title": "Support Ticket",
       "type": "object",
-      "description": "Client support case.",
       "properties": {
         "id": { "type": "string" },
         "subject": { "type": "string" },
-        "status": { "type": "string", "enum": ["open", "pending", "closed"] },
-        "priority": { "type": "string", "enum": ["low", "medium", "high"] },
-        "customerId": { "type": "string" }
+        "status": { "type": "string", "enum": ["open", "pending", "closed"] }
       }
     },
     "Lead": {
       "title": "Lead",
       "type": "object",
-      "description": "Sales pipeline opportunity.",
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
-        "company": { "type": "string" },
-        "status": { "type": "string", "enum": ["new", "contacted", "qualified", "lost"] }
+        "status": { "type": "string", "enum": ["new", "qualified", "lost"] }
       }
     },
     "Employee": {
       "title": "Employee",
       "type": "object",
-      "description": "HR staff record.",
       "properties": {
         "id": { "type": "string" },
         "firstName": { "type": "string" },
-        "lastName": { "type": "string" },
-        "jobTitle": { "type": "string" },
-        "department": { "type": "string" },
-        "employmentStatus": { "type": "string", "enum": ["active", "on_leave", "terminated"] }
+        "jobTitle": { "type": "string" }
       }
     },
     "SerialNumber": {
       "title": "Serial Number",
       "type": "object",
-      "description": "Tracked unit serial/IMEI.",
       "properties": {
         "id": { "type": "string" },
         "productId": { "type": "string" },
         "serialNumber": { "type": "string" },
-        "status": { "type": "string", "enum": ["available", "sold", "damaged", "under_service"] },
-        "purchaseOrderId": { "type": "string" }
+        "status": { "type": "string", "enum": ["available", "sold", "damaged"] }
       }
     }
   },

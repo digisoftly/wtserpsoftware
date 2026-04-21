@@ -25,20 +25,16 @@ service cloud.firestore {
 
     // --- TENANT DATA RULES ---
 
+    // Apply recursive rules to the entire company hierarchy
     match /companies/{companyId} {
-      // Allow reading the company document itself for any signed-in user
-      allow get: if isSignedIn();
-      
-      // Allow listing branches or other top-level collections if a member
-      allow list: if isCompanyMember(companyId) || isSuperAdmin();
+      // Allow individual operations and recursive access if a member or super admin
+      allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
 
-      // Recursive rule for ALL sub-collections (branches, users, invoices, etc.)
-      // This allows list, get, create, update, delete for any authenticated member.
       match /{allPaths=**} {
         allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
       }
 
-      // Explicitly allow users to manage their own profile to handle first-time sign-in
+      // Explicitly allow users to manage their own profile for onboarding
       match /users/{userId} {
         allow read, write: if isSignedIn() && (request.auth.uid == userId || isCompanyMember(companyId) || isSuperAdmin());
       }
