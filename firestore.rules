@@ -3,6 +3,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // --- BASE HELPERS ---
+
     function isSignedIn() {
       return request.auth != null;
     }
@@ -18,55 +20,32 @@ service cloud.firestore {
       );
     }
 
-    function matchesTenant(companyId) {
-      return request.resource.data.companyId == companyId;
-    }
+    // --- TENANT DATA RULES ---
 
     match /companies/{companyId} {
-      allow get: if isCompanyMember(companyId) || isSuperAdmin();
-      allow create: if isSignedIn() && (companyId == "warrior-demo-corp" || isSuperAdmin());
-      allow update: if isCompanyMember(companyId) || isSuperAdmin();
+      // Allow members to read and write everything within their company scope
+      // This includes all nested collections like branches, products, invoices, etc.
+      allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
 
-      match /system/{allPaths=**} {
+      match /{allPaths=**} {
         allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
       }
 
-      match /roles/{allPaths=**} {
-        allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
-      }
-
+      // Explicit rules for user creation for new sign-ups
       match /users/{userId} {
-        allow get: if isCompanyMember(companyId) || isSuperAdmin() || request.auth.uid == userId;
-        allow list: if isCompanyMember(companyId) || isSuperAdmin();
-        allow create, update: if (isCompanyMember(companyId) || isSuperAdmin()) && matchesTenant(companyId);
-      }
-
-      match /brands/{brandId} {
-        allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
-      }
-
-      match /models/{modelId} {
-        allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
-      }
-
-      match /categories/{categoryId} {
-        allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
-      }
-
-      match /branches/{branchId} {
-        allow read: if isCompanyMember(companyId) || isSuperAdmin();
-        allow write: if isCompanyMember(companyId) || isSuperAdmin();
-
-        match /{allPaths=**} {
-          allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
-        }
+        allow create: if isSignedIn() && (companyId == "warrior-demo-corp" || isSuperAdmin());
+        allow get, update: if request.auth.uid == userId || isSuperAdmin();
       }
     }
+
+    // --- GLOBAL ADMIN RULES ---
 
     match /super_admins/{userId} {
       allow get: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
       allow list, create, update, delete: if isSuperAdmin();
     }
+
+    // --- DEFAULT DENY ---
 
     match /{path=**} {
       allow read, write: if false;
