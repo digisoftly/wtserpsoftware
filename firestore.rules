@@ -25,11 +25,6 @@ service cloud.firestore {
 
     // --- RULES ---
 
-    // Global bypass for Super Admins
-    match /{allPaths=**} {
-      allow read, write: if isSuperAdmin();
-    }
-
     // Root-level Super Admin profiles
     match /super_admins/{userId} {
       allow get: if isSignedIn() && request.auth.uid == userId;
@@ -39,14 +34,17 @@ service cloud.firestore {
     // This recursive match ensures that if you are a member of a company,
     // you can read/write to the company document and ALL nested sub-collections 
     // (branches, products, invoices, etc.) regardless of path depth.
-    match /companies/{companyId}/{allPaths=**} {
+    match /companies/{companyId} {
       allow read, write: if isMember(companyId);
+      
+      match /{allPaths=**} {
+        allow read, write: if isMember(companyId);
+      }
     }
 
-    // User Profile - Ensure users can always manage their own identity within a company
-    // This provides a fallback if the recursive rule above is still initializing
-    match /companies/{companyId}/users/{userId} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    // Global bypass for Super Admins
+    match /{allPaths=**} {
+      allow read, write: if isSuperAdmin();
     }
 
     // Default Deny
