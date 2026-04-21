@@ -22,16 +22,15 @@ service cloud.firestore {
 
     // --- TENANT DATA RULES ---
 
+    // Matches the company document and everything underneath it (branches, invoices, etc.)
     match /companies/{companyId} {
-      // Allow members to read and write everything within their company scope
-      // This includes all nested collections like branches, products, invoices, etc.
       allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
 
       match /{allPaths=**} {
         allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
       }
-
-      // Explicit rules for user creation for new sign-ups
+      
+      // Explicit rules for user creation and profile management
       match /users/{userId} {
         allow create: if isSignedIn() && (companyId == "warrior-demo-corp" || isSuperAdmin());
         allow get, update: if request.auth.uid == userId || isSuperAdmin();

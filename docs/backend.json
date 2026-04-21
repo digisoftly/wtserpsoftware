@@ -14,106 +14,88 @@
       },
       "required": ["id", "name", "currencyCode", "isActive", "createdAt"]
     },
-    "Brand": {
-      "title": "Product Brand",
+    "SystemConfig": {
+      "title": "System Configuration",
       "type": "object",
-      "description": "Manufacturer or brand name.",
+      "description": "Global ERP settings and branding.",
       "properties": {
-        "id": { "type": "string" },
-        "companyId": { "type": "string" },
-        "name": { "type": "string" },
-        "description": { "type": "string" }
-      },
-      "required": ["id", "companyId", "name"]
+        "companyName": { "type": "string" },
+        "companyLogo": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "systemDefaultLanguage": { "type": "string", "enum": ["EN", "BN"] },
+        "sidebarMenuOrder": { "type": "array", "items": { "type": "string" } }
+      }
     },
-    "Model": {
-      "title": "Product Model",
+    "User": {
+      "title": "User",
       "type": "object",
-      "description": "Specific model line within a brand.",
+      "description": "ERP User profile and preferences.",
       "properties": {
         "id": { "type": "string" },
-        "companyId": { "type": "string" },
-        "brandId": { "type": "string" },
-        "name": { "type": "string" }
-      },
-      "required": ["id", "companyId", "brandId", "name"]
-    },
-    "Category": {
-      "title": "Product Category",
-      "type": "object",
-      "description": "Categorization for products (e.g., CCTV, Networking).",
-      "properties": {
-        "id": { "type": "string" },
-        "companyId": { "type": "string" },
-        "name": { "type": "string" },
-        "description": { "type": "string" }
-      },
-      "required": ["id", "companyId", "name"]
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "email": { "type": "string" },
+        "roleId": { "type": "string" },
+        "branchId": { "type": "string" },
+        "preferredLanguage": { "type": "string", "enum": ["EN", "BN"] }
+      }
     },
     "Branch": {
       "title": "Branch",
       "type": "object",
-      "description": "Represents a physical location or warehouse.",
+      "description": "Physical location or warehouse location.",
       "properties": {
         "id": { "type": "string" },
-        "companyId": { "type": "string" },
         "name": { "type": "string" },
         "code": { "type": "string" },
-        "address": { "type": "string" },
-        "phoneNumber": { "type": "string" },
-        "managerId": { "type": "string" },
         "isActive": { "type": "boolean" }
-      },
-      "required": ["id", "companyId", "name", "code"]
+      }
     },
     "Product": {
       "title": "Product",
       "type": "object",
-      "description": "Represents a physical product or service.",
+      "description": "Inventory product or service item.",
       "properties": {
         "id": { "type": "string" },
-        "companyId": { "type": "string" },
-        "branchId": { "type": "string" },
         "name": { "type": "string" },
         "sku": { "type": "string" },
         "unitPrice": { "type": "number" },
         "costPrice": { "type": "number" },
         "currentStock": { "type": "number" },
-        "serialNumberTrackingRequired": { "type": "boolean" },
-        "isActive": { "type": "boolean" }
-      },
-      "required": ["id", "name", "sku", "unitPrice", "serialNumberTrackingRequired"]
+        "serialNumberTrackingRequired": { "type": "boolean" }
+      }
     },
     "SalesInvoice": {
       "title": "Sales Invoice",
       "type": "object",
-      "description": "Customer billing record.",
+      "description": "Client billing record.",
       "properties": {
         "id": { "type": "string" },
         "invoiceNumber": { "type": "string" },
         "customerId": { "type": "string" },
         "totalAmount": { "type": "number" },
         "paidAmount": { "type": "number" },
-        "status": { "type": "string", "enum": ["paid", "due", "partial", "void"] },
-        "invoiceDate": { "type": "string" }
+        "status": { "type": "string" }
       }
     },
     "PurchaseOrder": {
       "title": "Purchase Order",
       "type": "object",
-      "description": "Stock procurement record.",
+      "description": "Inventory procurement record.",
       "properties": {
         "id": { "type": "string" },
         "orderNumber": { "type": "string" },
         "supplierId": { "type": "string" },
         "totalAmount": { "type": "number" },
-        "status": { "type": "string", "enum": ["ordered", "received", "cancelled"] }
+        "status": { "type": "string" }
       }
     },
     "Project": {
       "title": "Project",
       "type": "object",
-      "description": "Long-term client project.",
+      "description": "Long-term client implementation project.",
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
@@ -121,32 +103,31 @@
         "budget": { "type": "number" },
         "paidAmount": { "type": "number" },
         "progress": { "type": "number" },
-        "status": { "type": "string", "enum": ["active", "pending", "completed"] }
+        "status": { "type": "string" }
       }
     },
     "ServiceContract": {
       "title": "Service Contract",
       "type": "object",
-      "description": "Recurring service agreement.",
+      "description": "Recurring service level agreement.",
       "properties": {
         "id": { "type": "string" },
         "contractNumber": { "type": "string" },
         "serviceName": { "type": "string" },
-        "customerId": { "type": "string" },
         "monthlyAmount": { "type": "number" },
-        "status": { "type": "string", "enum": ["active", "expired", "cancelled"] }
+        "status": { "type": "string" }
       }
     },
     "ContractInvoice": {
       "title": "Contract Invoice",
       "type": "object",
-      "description": "Generated invoice for a specific contract month.",
+      "description": "Generated invoice for a contract billing cycle.",
       "properties": {
         "id": { "type": "string" },
         "contractId": { "type": "string" },
         "amount": { "type": "number" },
         "billingMonth": { "type": "string" },
-        "status": { "type": "string", "enum": ["paid", "due"] }
+        "status": { "type": "string" }
       }
     },
     "Customer": {
@@ -169,14 +150,70 @@
         "totalDueAmount": { "type": "number" }
       }
     },
-    "Role": {
-      "title": "Access Role",
+    "Transaction": {
+      "title": "Account Transaction",
       "type": "object",
-      "description": "Defines permissions.",
+      "description": "Financial ledger entry.",
       "properties": {
+        "id": { "type": "string" },
+        "description": { "type": "string" },
+        "amount": { "type": "number" },
+        "transactionType": { "type": "string", "enum": ["income", "expense"] }
+      }
+    },
+    "Expense": {
+      "title": "Expense",
+      "type": "object",
+      "description": "Operating expenditure record.",
+      "properties": {
+        "id": { "type": "string" },
+        "description": { "type": "string" },
+        "amount": { "type": "number" },
+        "category": { "type": "string" }
+      }
+    },
+    "Ticket": {
+      "title": "Support Ticket",
+      "type": "object",
+      "description": "Client support case.",
+      "properties": {
+        "id": { "type": "string" },
+        "subject": { "type": "string" },
+        "status": { "type": "string" },
+        "priority": { "type": "string" }
+      }
+    },
+    "Lead": {
+      "title": "Lead",
+      "type": "object",
+      "description": "Sales pipeline opportunity.",
+      "properties": {
+        "id": { "type": "string" },
         "name": { "type": "string" },
-        "isSuperAdmin": { "type": "boolean" },
-        "permissions": { "type": "object" }
+        "company": { "type": "string" },
+        "status": { "type": "string" }
+      }
+    },
+    "Employee": {
+      "title": "Employee",
+      "type": "object",
+      "description": "HR staff record.",
+      "properties": {
+        "id": { "type": "string" },
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "jobTitle": { "type": "string" }
+      }
+    },
+    "SerialNumber": {
+      "title": "Serial Number",
+      "type": "object",
+      "description": "Tracked unit serial/IMEI.",
+      "properties": {
+        "id": { "type": "string" },
+        "productId": { "type": "string" },
+        "serialNumber": { "type": "string" },
+        "status": { "type": "string" }
       }
     }
   },
@@ -184,84 +221,77 @@
     "providers": ["password", "anonymous"]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/companies/{companyId}/system/config",
-        "definition": {
-          "entityName": "SystemConfig",
-          "description": "Global ERP settings."
-        }
-      },
-      {
-        "path": "/companies/{companyId}/users/{userId}",
-        "definition": {
-          "entityName": "User",
-          "description": "Company staff profiles."
-        }
-      },
-      {
-        "path": "/companies/{companyId}/roles/{roleId}",
-        "definition": {
-          "entityName": "Role",
-          "description": "Access control levels."
-        }
-      },
-      {
-        "path": "/companies/{companyId}/branches/{branchId}",
-        "definition": {
-          "entityName": "Branch",
-          "description": "Branch locations."
-        }
-      },
-      {
-        "path": "/companies/{companyId}/branches/{branchId}/products/{productId}",
-        "definition": {
-          "entityName": "Product",
-          "description": "Branch inventory items."
-        }
-      },
-      {
-        "path": "/companies/{companyId}/branches/{branchId}/sales_invoices/{invoiceId}",
-        "definition": {
-          "entityName": "SalesInvoice",
-          "description": "Sales records."
-        }
-      },
-      {
-        "path": "/companies/{companyId}/branches/{branchId}/projects/{projectId}",
-        "definition": {
-          "entityName": "Project",
-          "description": "Client projects."
-        }
-      },
-      {
-        "path": "/companies/{companyId}/branches/{branchId}/service_contracts/{contractId}",
-        "definition": {
-          "entityName": "ServiceContract",
-          "description": "SLA agreements."
-        }
-      },
-      {
-        "path": "/companies/{companyId}/branches/{branchId}/contract_invoices/{invoiceId}",
-        "definition": {
-          "entityName": "ContractInvoice",
-          "description": "Monthly contract billing."
-        }
-      },
-      {
-        "path": "/companies/{companyId}/branches/{branchId}/customers/{customerId}",
-        "definition": {
-          "entityName": "Customer",
-          "description": "Customer profiles."
-        }
-      },
-      {
-        "path": "/companies/{companyId}/branches/{branchId}/suppliers/{supplierId}",
-        "definition": {
-          "entityName": "Supplier",
-          "description": "Supplier profiles."
-        }
-      }
-    ]
+    "/companies/{companyId}/system/config": {
+      "schema": { "$ref": "#/entities/SystemConfig" },
+      "description": "Global ERP settings."
+    },
+    "/companies/{companyId}/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Company staff profiles."
+    },
+    "/companies/{companyId}/roles/{roleId}": {
+      "schema": { "$ref": "#/entities/Role" },
+      "description": "Access control levels."
+    },
+    "/companies/{companyId}/branches/{branchId}": {
+      "schema": { "$ref": "#/entities/Branch" },
+      "description": "Branch locations."
+    },
+    "/companies/{companyId}/branches/{branchId}/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Branch inventory items."
+    },
+    "/companies/{companyId}/branches/{branchId}/sales_invoices/{invoiceId}": {
+      "schema": { "$ref": "#/entities/SalesInvoice" },
+      "description": "Sales records."
+    },
+    "/companies/{companyId}/branches/{branchId}/purchase_orders/{orderId}": {
+      "schema": { "$ref": "#/entities/PurchaseOrder" },
+      "description": "Purchase records."
+    },
+    "/companies/{companyId}/branches/{branchId}/projects/{projectId}": {
+      "schema": { "$ref": "#/entities/Project" },
+      "description": "Client projects."
+    },
+    "/companies/{companyId}/branches/{branchId}/service_contracts/{contractId}": {
+      "schema": { "$ref": "#/entities/ServiceContract" },
+      "description": "Recurring service agreements."
+    },
+    "/companies/{companyId}/branches/{branchId}/contract_invoices/{invoiceId}": {
+      "schema": { "$ref": "#/entities/ContractInvoice" },
+      "description": "Monthly contract billing."
+    },
+    "/companies/{companyId}/branches/{branchId}/customers/{customerId}": {
+      "schema": { "$ref": "#/entities/Customer" },
+      "description": "Customer profiles."
+    },
+    "/companies/{companyId}/branches/{branchId}/suppliers/{supplierId}": {
+      "schema": { "$ref": "#/entities/Supplier" },
+      "description": "Supplier profiles."
+    },
+    "/companies/{companyId}/branches/{branchId}/transactions/{txId}": {
+      "schema": { "$ref": "#/entities/Transaction" },
+      "description": "Financial ledger transactions."
+    },
+    "/companies/{companyId}/branches/{branchId}/expenses/{exId}": {
+      "schema": { "$ref": "#/entities/Expense" },
+      "description": "Operating expenses."
+    },
+    "/companies/{companyId}/branches/{branchId}/tickets/{tkId}": {
+      "schema": { "$ref": "#/entities/Ticket" },
+      "description": "Support cases."
+    },
+    "/companies/{companyId}/branches/{branchId}/leads/{ldId}": {
+      "schema": { "$ref": "#/entities/Lead" },
+      "description": "Sales opportunities."
+    },
+    "/companies/{companyId}/branches/{branchId}/employees/{emId}": {
+      "schema": { "$ref": "#/entities/Employee" },
+      "description": "Staff records."
+    },
+    "/companies/{companyId}/branches/{branchId}/serial_numbers/{snId}": {
+      "schema": { "$ref": "#/entities/SerialNumber" },
+      "description": "Inventory unit tracking."
+    }
   }
 }
