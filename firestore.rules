@@ -19,6 +19,7 @@ service cloud.firestore {
     }
 
     function isSuperAdmin() {
+      // Global super admin bypass for system-wide maintenance
       return isSignedIn() && exists(/databases/$(database)/documents/super_admins/$(request.auth.uid));
     }
 
@@ -36,21 +37,19 @@ service cloud.firestore {
 
     // Multi-tenant Company Hierarchy
     // This recursive match ensures that if you are a member of a company,
-    // you can read/write to the company document and ALL nested sub-collections (branches, products, invoices, etc.)
-    match /companies/{companyId} {
+    // you can read/write to the company document and ALL nested sub-collections 
+    // (branches, products, invoices, etc.) regardless of path depth.
+    match /companies/{companyId}/{allPaths=**} {
       allow read, write: if isMember(companyId);
-
-      match /{allPaths=**} {
-        allow read, write: if isMember(companyId);
-      }
     }
 
     // User Profile - Ensure users can always manage their own identity within a company
+    // This provides a fallback if the recursive rule above is still initializing
     match /companies/{companyId}/users/{userId} {
       allow read, write: if isSignedIn() && request.auth.uid == userId;
     }
 
-    // Default Deny (Optional but good practice to keep it explicit)
+    // Default Deny
     match /{path=**} {
       allow read, write: if false;
     }

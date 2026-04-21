@@ -275,91 +275,91 @@
   },
   "firestore": {
     "/companies/{companyId}/system/config": {
-      "schema": { "$ref": "#/entities/SystemConfig" },
+      "schema": { "$ref": "#/backend/entities/SystemConfig" },
       "description": "Global ERP settings."
     },
     "/companies/{companyId}/users/{userId}": {
-      "schema": { "$ref": "#/entities/User" },
+      "schema": { "$ref": "#/backend/entities/User" },
       "description": "Company staff profiles."
     },
     "/companies/{companyId}/roles/{roleId}": {
-      "schema": { "$ref": "#/entities/Role" },
+      "schema": { "$ref": "#/backend/entities/Role" },
       "description": "Access control levels."
     },
     "/companies/{companyId}/branches/{branchId}": {
-      "schema": { "$ref": "#/entities/Branch" },
+      "schema": { "$ref": "#/backend/entities/Branch" },
       "description": "Branch locations."
     },
     "/companies/{companyId}/branches/{branchId}/products/{productId}": {
-      "schema": { "$ref": "#/entities/Product" },
+      "schema": { "$ref": "#/backend/entities/Product" },
       "description": "Branch inventory items."
     },
     "/companies/{companyId}/branches/{branchId}/sales_invoices/{invoiceId}": {
-      "schema": { "$ref": "#/entities/SalesInvoice" },
+      "schema": { "$ref": "#/backend/entities/SalesInvoice" },
       "description": "Sales records."
     },
     "/companies/{companyId}/branches/{branchId}/purchase_orders/{orderId}": {
-      "schema": { "$ref": "#/entities/PurchaseOrder" },
+      "schema": { "$ref": "#/backend/entities/PurchaseOrder" },
       "description": "Purchase records."
     },
     "/companies/{companyId}/branches/{branchId}/quotations/{quoteId}": {
-      "schema": { "$ref": "#/entities/Quotation" },
+      "schema": { "$ref": "#/backend/entities/Quotation" },
       "description": "Sales proposals."
     },
     "/companies/{companyId}/branches/{branchId}/projects/{projectId}": {
-      "schema": { "$ref": "#/entities/Project" },
+      "schema": { "$ref": "#/backend/entities/Project" },
       "description": "Client projects."
     },
     "/companies/{companyId}/branches/{branchId}/project_payments/{paymentId}": {
-      "schema": { "$ref": "#/entities/ProjectPayment" },
+      "schema": { "$ref": "#/backend/entities/ProjectPayment" },
       "description": "Payments received for projects."
     },
     "/companies/{companyId}/branches/{branchId}/service_contracts/{contractId}": {
-      "schema": { "$ref": "#/entities/ServiceContract" },
+      "schema": { "$ref": "#/backend/entities/ServiceContract" },
       "description": "Recurring service agreements."
     },
     "/companies/{companyId}/branches/{branchId}/contract_invoices/{invoiceId}": {
-      "schema": { "$ref": "#/entities/ContractInvoice" },
+      "schema": { "$ref": "#/backend/entities/ContractInvoice" },
       "description": "Monthly contract billing."
     },
     "/companies/{companyId}/branches/{branchId}/customers/{customerId}": {
-      "schema": { "$ref": "#/entities/Customer" },
+      "schema": { "$ref": "#/backend/entities/Customer" },
       "description": "Customer profiles."
     },
     "/companies/{companyId}/branches/{branchId}/suppliers/{supplierId}": {
-      "schema": { "$ref": "#/entities/Supplier" },
+      "schema": { "$ref": "#/backend/entities/Supplier" },
       "description": "Supplier profiles."
     },
     "/companies/{companyId}/branches/{branchId}/transactions/{txId}": {
-      "schema": { "$ref": "#/entities/Transaction" },
+      "schema": { "$ref": "#/backend/entities/Transaction" },
       "description": "Financial ledger transactions."
     },
     "/companies/{companyId}/branches/{branchId}/expenses/{exId}": {
-      "schema": { "$ref": "#/entities/Expense" },
+      "schema": { "$ref": "#/backend/entities/Expense" },
       "description": "Operating expenses."
     },
     "/companies/{companyId}/branches/{branchId}/sales_returns/{returnId}": {
-      "schema": { "$ref": "#/entities/SalesReturn" },
+      "schema": { "$ref": "#/backend/entities/SalesReturn" },
       "description": "Customer returns."
     },
     "/companies/{companyId}/branches/{branchId}/purchase_returns/{returnId}": {
-      "schema": { "$ref": "#/entities/PurchaseReturn" },
+      "schema": { "$ref": "#/backend/entities/PurchaseReturn" },
       "description": "Supplier returns."
     },
     "/companies/{companyId}/branches/{branchId}/tickets/{tkId}": {
-      "schema": { "$ref": "#/entities/Ticket" },
+      "schema": { "$ref": "#/backend/entities/Ticket" },
       "description": "Support cases."
     },
     "/companies/{companyId}/branches/{branchId}/leads/{ldId}": {
-      "schema": { "$ref": "#/entities/Lead" },
+      "schema": { "$ref": "#/backend/entities/Lead" },
       "description": "Sales opportunities."
     },
     "/companies/{companyId}/branches/{branchId}/employees/{emId}": {
-      "schema": { "$ref": "#/entities/Employee" },
+      "schema": { "$ref": "#/backend/entities/Employee" },
       "description": "Staff records."
     },
     "/companies/{companyId}/branches/{branchId}/serial_numbers/{snId}": {
-      "schema": { "$ref": "#/entities/SerialNumber" },
+      "schema": { "$ref": "#/backend/entities/SerialNumber" },
       "description": "Inventory unit tracking."
     }
   }
