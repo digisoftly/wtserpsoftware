@@ -27,7 +27,9 @@
         "systemDefaultLanguage": { "type": "string", "enum": ["EN", "BN"] },
         "sidebarMenuOrder": { "type": "array", "items": { "type": "string" } },
         "autoStockUpdate": { "type": "boolean" },
-        "allowNegativeStock": { "type": "boolean" }
+        "allowNegativeStock": { "type": "boolean" },
+        "taxRate": { "type": "number" },
+        "currency": { "type": "string" }
       }
     },
     "User": {
@@ -41,7 +43,9 @@
         "email": { "type": "string" },
         "roleId": { "type": "string" },
         "branchId": { "type": "string" },
-        "preferredLanguage": { "type": "string", "enum": ["EN", "BN"] }
+        "preferredLanguage": { "type": "string", "enum": ["EN", "BN"] },
+        "phoneNumber": { "type": "string" },
+        "isActive": { "type": "boolean" }
       }
     },
     "Role": {
@@ -94,7 +98,7 @@
         "totalAmount": { "type": "number" },
         "paidAmount": { "type": "number" },
         "balanceDue": { "type": "number" },
-        "status": { "type": "string" },
+        "status": { "type": "string", "enum": ["paid", "partial", "due"] },
         "invoiceDate": { "type": "string", "format": "date" },
         "items": { "type": "array" }
       }
@@ -108,7 +112,7 @@
         "orderNumber": { "type": "string" },
         "supplierId": { "type": "string" },
         "totalAmount": { "type": "number" },
-        "status": { "type": "string" },
+        "status": { "type": "string", "enum": ["ordered", "received", "cancelled"] },
         "orderDate": { "type": "string", "format": "date" },
         "items": { "type": "array" }
       }
@@ -122,7 +126,7 @@
         "quotationNumber": { "type": "string" },
         "customerId": { "type": "string" },
         "totalAmount": { "type": "number" },
-        "status": { "type": "string" },
+        "status": { "type": "string", "enum": ["draft", "sent", "accepted", "converted"] },
         "quotationDate": { "type": "string", "format": "date" }
       }
     },
@@ -138,7 +142,7 @@
         "paidAmount": { "type": "number" },
         "progress": { "type": "number" },
         "deadline": { "type": "string", "format": "date" },
-        "status": { "type": "string" }
+        "status": { "type": "string", "enum": ["pending", "active", "completed"] }
       }
     },
     "ProjectPayment": {
@@ -165,7 +169,7 @@
         "monthlyAmount": { "type": "number" },
         "billingCycle": { "type": "string" },
         "startDate": { "type": "string", "format": "date" },
-        "status": { "type": "string" }
+        "status": { "type": "string", "enum": ["active", "expired", "cancelled"] }
       }
     },
     "ContractInvoice": {
@@ -177,7 +181,7 @@
         "contractId": { "type": "string" },
         "amount": { "type": "number" },
         "billingMonth": { "type": "string" },
-        "status": { "type": "string" }
+        "status": { "type": "string", "enum": ["paid", "due"] }
       }
     },
     "Customer": {
@@ -190,7 +194,7 @@
         "email": { "type": "string" },
         "phoneNumber": { "type": "string" },
         "companyName": { "type": "string" },
-        "customerType": { "type": "string" }
+        "customerType": { "type": "string", "enum": ["individual", "company"] }
       }
     },
     "Supplier": {
@@ -261,8 +265,8 @@
       "properties": {
         "id": { "type": "string" },
         "subject": { "type": "string" },
-        "status": { "type": "string" },
-        "priority": { "type": "string" },
+        "status": { "type": "string", "enum": ["open", "pending", "closed"] },
+        "priority": { "type": "string", "enum": ["low", "medium", "high"] },
         "customerId": { "type": "string" }
       }
     },
@@ -274,7 +278,7 @@
         "id": { "type": "string" },
         "name": { "type": "string" },
         "company": { "type": "string" },
-        "status": { "type": "string" }
+        "status": { "type": "string", "enum": ["new", "contacted", "qualified", "lost"] }
       }
     },
     "Employee": {
@@ -287,7 +291,7 @@
         "lastName": { "type": "string" },
         "jobTitle": { "type": "string" },
         "department": { "type": "string" },
-        "employmentStatus": { "type": "string" }
+        "employmentStatus": { "type": "string", "enum": ["active", "on_leave", "terminated"] }
       }
     },
     "SerialNumber": {
@@ -298,7 +302,7 @@
         "id": { "type": "string" },
         "productId": { "type": "string" },
         "serialNumber": { "type": "string" },
-        "status": { "type": "string" },
+        "status": { "type": "string", "enum": ["available", "sold", "damaged", "under_service"] },
         "purchaseOrderId": { "type": "string" }
       }
     }

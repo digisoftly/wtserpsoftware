@@ -22,20 +22,18 @@ service cloud.firestore {
 
     // --- TENANT DATA RULES ---
 
-    // Matches the company document and everything underneath it recursively.
-    // This allows listing collections like contract_invoices, sales_invoices, etc.
-    match /companies/{companyId} {
+    // Unified rule for all company-related data
+    // This allows recursive access to branches, products, invoices, etc.
+    match /companies/{companyId}/{allPaths=**} {
       allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
+    }
 
-      match /{allPaths=**} {
-        allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
-      }
-      
-      // Explicit rules for user profile management (must match UID)
-      match /users/{userId} {
-        allow create: if isSignedIn() && (companyId == "warrior-demo-corp" || isSuperAdmin());
-        allow get, update: if request.auth.uid == userId || isSuperAdmin();
-      }
+    // Explicit rules for user profile management (ensuring privacy while allowing company checks)
+    match /companies/{companyId}/users/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || isCompanyMember(companyId) || isSuperAdmin());
+      allow list: if isCompanyMember(companyId) || isSuperAdmin();
+      allow create: if isSignedIn() && (companyId == "warrior-demo-corp" || isSuperAdmin());
+      allow update: if request.auth.uid == userId || isSuperAdmin();
     }
 
     // --- GLOBAL ADMIN RULES ---
