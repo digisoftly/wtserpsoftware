@@ -1,4 +1,5 @@
 
+
 export type Language = 'EN' | 'BN';
 
 export const translations = {
@@ -99,7 +100,7 @@ export const translations = {
     purchases_action: "Purchases",
 
     // KPI Labels
-    totalRevenue: "Total Income",
+    totalRevenue: "Total Revenue",
     totalOrders: "Total Orders",
     pendingInvoices: "Pending Invoices",
     activeCustomers: "Active Customers",

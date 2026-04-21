@@ -177,7 +177,8 @@
         "id": { "type": "string" },
         "firstName": { "type": "string" },
         "lastName": { "type": "string" },
-        "email": { "type": "string" }
+        "email": { "type": "string" },
+        "phoneNumber": { "type": "string" }
       }
     },
     "Supplier": {
@@ -195,7 +196,9 @@
       "properties": {
         "id": { "type": "string" },
         "amount": { "type": "number" },
-        "transactionType": { "type": "string", "enum": ["income", "expense"] }
+        "transactionType": { "type": "string", "enum": ["income", "expense"] },
+        "description": { "type": "string" },
+        "transactionDate": { "type": "string", "format": "date-time" }
       }
     },
     "Expense": {
@@ -204,7 +207,8 @@
       "properties": {
         "id": { "type": "string" },
         "amount": { "type": "number" },
-        "category": { "type": "string" }
+        "category": { "type": "string" },
+        "description": { "type": "string" }
       }
     },
     "SalesReturn": {
@@ -213,7 +217,8 @@
       "properties": {
         "id": { "type": "string" },
         "returnAmount": { "type": "number" },
-        "reason": { "type": "string" }
+        "reason": { "type": "string" },
+        "salesInvoiceId": { "type": "string" }
       }
     },
     "PurchaseReturn": {
@@ -222,7 +227,8 @@
       "properties": {
         "id": { "type": "string" },
         "returnAmount": { "type": "number" },
-        "reason": { "type": "string" }
+        "reason": { "type": "string" },
+        "purchaseOrderId": { "type": "string" }
       }
     },
     "Ticket": {
@@ -231,7 +237,8 @@
       "properties": {
         "id": { "type": "string" },
         "subject": { "type": "string" },
-        "status": { "type": "string", "enum": ["open", "pending", "closed"] }
+        "status": { "type": "string", "enum": ["open", "pending", "closed"] },
+        "priority": { "type": "string" }
       }
     },
     "Lead": {

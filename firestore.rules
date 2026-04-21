@@ -9,8 +9,8 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // A user is a member if they belong to the specific company
-    // For the demo corporation, we allow all signed-in users for testing.
+    // A user is a member if they belong to the specific company.
+    // For the demo corporation, we allow all signed-in users for testing purposes.
     function isMember(cid) {
       return isSignedIn() && (
         cid == "warrior-demo-corp" || 
@@ -29,9 +29,15 @@ service cloud.firestore {
       allow read, write: if isSuperAdmin();
     }
 
+    // Root-level Super Admin profiles
+    match /super_admins/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId;
+    }
+
     // Multi-tenant Company Hierarchy
+    // This recursive match ensures that if you are a member of a company,
+    // you can read/write to the company document and ALL nested sub-collections (branches, products, invoices, etc.)
     match /companies/{companyId} {
-      // Allow read/write to the company document and ALL nested sub-collections recursively
       allow read, write: if isMember(companyId);
 
       match /{allPaths=**} {
@@ -39,17 +45,12 @@ service cloud.firestore {
       }
     }
 
-    // Individual User Profile (Allow creation during onboarding)
+    // User Profile - Ensure users can always manage their own identity within a company
     match /companies/{companyId}/users/{userId} {
       allow read, write: if isSignedIn() && request.auth.uid == userId;
     }
 
-    // Super Admin Profile Management
-    match /super_admins/{userId} {
-      allow get: if isSignedIn() && request.auth.uid == userId;
-    }
-    
-    // Default Deny
+    // Default Deny (Optional but good practice to keep it explicit)
     match /{path=**} {
       allow read, write: if false;
     }
