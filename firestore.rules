@@ -30,15 +30,10 @@ service cloud.firestore {
     }
 
     // Multi-tenant Company Hierarchy
-    // This recursive match ensures that if you are a member of a company,
-    // you can read/write to the company document and ALL nested sub-collections 
-    // (branches, products, invoices, etc.) regardless of path depth.
-    match /companies/{companyId} {
+    // Using a recursive wildcard at the company level ensures that if you are a member
+    // of a company, you have access to all its nested data (branches, invoices, products, etc.)
+    match /companies/{companyId}/{allPaths=**} {
       allow read, write: if isMember(companyId);
-      
-      match /{allPaths=**} {
-        allow read, write: if isMember(companyId);
-      }
     }
 
     // Global bypass for Super Admins

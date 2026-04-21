@@ -97,6 +97,9 @@
         "totalAmount": { "type": "number" },
         "paidAmount": { "type": "number" },
         "balanceDue": { "type": "number" },
+        "subtotal": { "type": "number" },
+        "discount": { "type": "number" },
+        "vatAmount": { "type": "number" },
         "status": { "type": "string", "enum": ["paid", "partial", "due"] },
         "invoiceDate": { "type": "string", "format": "date" },
         "items": { "type": "array" }
@@ -147,6 +150,7 @@
         "customerId": { "type": "string" },
         "totalPaid": { "type": "number" },
         "paymentDate": { "type": "string", "format": "date-time" },
+        "allocationType": { "type": "string" },
         "allocations": { "type": "array" }
       }
     },
