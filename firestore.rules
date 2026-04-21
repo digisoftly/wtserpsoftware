@@ -14,23 +14,33 @@ service cloud.firestore {
     }
 
     // Helper to check if user belongs to the company
-    function isCompanyMember(companyId) {
+    function isCompanyMember(cid) {
       return isSignedIn() && (
-        companyId == "warrior-demo-corp" ||
-        exists(/databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid))
+        cid == "warrior-demo-corp" ||
+        exists(/databases/$(database)/documents/companies/$(cid)/users/$(request.auth.uid))
       );
     }
 
     // --- TENANT DATA RULES ---
 
-    // Root level company access
     match /companies/{companyId} {
-      // Allow reading the company doc itself if signed in
+      // Allow reading the company document itself for any signed-in user
       allow get: if isSignedIn();
       
       // Recursive rule for ALL sub-collections (branches, users, invoices, etc.)
+      // This ensures that list/get/create/update/delete operations are allowed
+      // for any authenticated member of the company.
       match /{allPaths=**} {
         allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
+      }
+
+      // Explicitly handle branch discovery and listing
+      match /branches/{branchId} {
+        allow list: if isCompanyMember(companyId) || isSuperAdmin();
+        
+        match /{branchResources=**} {
+          allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
+        }
       }
     }
 
