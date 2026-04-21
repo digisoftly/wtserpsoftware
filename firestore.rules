@@ -3,52 +3,53 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- BASE HELPERS ---
+    // --- HELPERS ---
 
     function isSignedIn() {
       return request.auth != null;
+    }
+
+    // A user is a member if they belong to the specific company
+    // For the demo corporation, we allow all signed-in users for testing.
+    function isMember(cid) {
+      return isSignedIn() && (
+        cid == "warrior-demo-corp" || 
+        exists(/databases/$(database)/documents/companies/$(cid)/users/$(request.auth.uid))
+      );
     }
 
     function isSuperAdmin() {
       return isSignedIn() && exists(/databases/$(database)/documents/super_admins/$(request.auth.uid));
     }
 
-    // Helper to check if user belongs to the company
-    // For the demo corporation, we allow all signed-in users for testing purposes.
-    // For others, we check for the existence of their user document in that company.
-    function isCompanyMember(cid) {
-      return isSignedIn() && (
-        cid == "warrior-demo-corp" ||
-        exists(/databases/$(database)/documents/companies/$(cid)/users/$(request.auth.uid))
-      );
+    // --- RULES ---
+
+    // Global bypass for Super Admins
+    match /{allPaths=**} {
+      allow read, write: if isSuperAdmin();
     }
 
-    // --- TENANT DATA RULES ---
-
-    // Apply recursive rules to the entire company hierarchy
+    // Multi-tenant Company Hierarchy
     match /companies/{companyId} {
-      // Allow individual operations and recursive access if a member or super admin
-      allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
+      // Allow read/write to the company document and ALL nested sub-collections recursively
+      allow read, write: if isMember(companyId);
 
       match /{allPaths=**} {
-        allow read, write: if isCompanyMember(companyId) || isSuperAdmin();
-      }
-
-      // Explicitly allow users to manage their own profile for onboarding
-      match /users/{userId} {
-        allow read, write: if isSignedIn() && (request.auth.uid == userId || isCompanyMember(companyId) || isSuperAdmin());
+        allow read, write: if isMember(companyId);
       }
     }
 
-    // --- GLOBAL ADMIN RULES ---
+    // Individual User Profile (Allow creation during onboarding)
+    match /companies/{companyId}/users/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
 
+    // Super Admin Profile Management
     match /super_admins/{userId} {
-      allow get: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
-      allow list, create, update, delete: if isSuperAdmin();
+      allow get: if isSignedIn() && request.auth.uid == userId;
     }
-
-    // --- DEFAULT DENY ---
-
+    
+    // Default Deny
     match /{path=**} {
       allow read, write: if false;
     }
