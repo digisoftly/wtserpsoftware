@@ -1,3 +1,4 @@
+
 import type {Metadata, Viewport} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
@@ -9,7 +10,7 @@ import { ClientLayout } from '@/components/layout/client-layout';
 export const metadata: Metadata = {
   title: 'WarriorERP | Enterprise Resource Planning',
   description: 'Production-ready SaaS ERP system for Warrior Tech System',
-  robots: 'noindex, nofollow', // Recommended for internal ERP systems
+  robots: 'noindex, nofollow',
 };
 
 export const viewport: Viewport = {
@@ -31,7 +32,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-body antialiased overflow-hidden">
+      <body className="font-body antialiased bg-background">
         <FirebaseClientProvider>
           <AuthGate>
             <TenantProvider>
@@ -40,8 +41,8 @@ export default function RootLayout({
               </ClientLayout>
             </TenantProvider>
           </AuthGate>
+          <Toaster />
         </FirebaseClientProvider>
-        <Toaster />
       </body>
     </html>
   );

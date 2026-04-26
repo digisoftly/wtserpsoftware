@@ -10,7 +10,7 @@ service cloud.firestore {
     }
 
     // A user is a member if they belong to the specific company.
-    // For the demo corporation, we allow all signed-in users for testing purposes.
+    // We allow all signed-in users access to the "warrior-demo-corp" tenant for testing.
     function isMember(cid) {
       return isSignedIn() && (
         cid == "warrior-demo-corp" || 
@@ -24,14 +24,13 @@ service cloud.firestore {
 
     // --- RULES ---
 
-    // Root-level Super Admin profiles
+    // Allow users to read their own super admin status
     match /super_admins/{userId} {
       allow get: if isSignedIn() && request.auth.uid == userId;
     }
 
     // Multi-tenant Company Hierarchy
-    // Using a recursive wildcard at the company level ensures that if you are a member
-    // of a company, you have access to all its nested data (branches, invoices, products, etc.)
+    // Using a recursive wildcard ensures that members have access to all nested branch data
     match /companies/{companyId}/{allPaths=**} {
       allow read, write: if isMember(companyId);
     }

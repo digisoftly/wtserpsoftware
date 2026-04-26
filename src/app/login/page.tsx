@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -29,6 +30,11 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [isRedirecting, setIsRedirecting] = React.useState(false);
   const [authError, setAuthError] = React.useState<string | null>(null);
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   React.useEffect(() => {
     if (user && userRole) {
@@ -51,19 +57,14 @@ export default function LoginPage() {
     setIsLoading(true);
     setAuthError(null);
 
-    // Call the Firebase SDK directly to handle the promise rejection/error state
     signInWithEmailAndPassword(auth, email, password)
-      .then(() => {
-        // Success will be handled by the useEffect watching the 'user' state
-      })
       .catch((error: any) => {
         console.error('Login Error:', error);
         setIsLoading(false);
-        // Map specific Firebase errors to user-friendly messages
         if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-          setAuthError(t('loginError'));
+          setAuthError(t('errorSub'));
         } else {
-          setAuthError("An unexpected error occurred. Please try again.");
+          setAuthError("Authentication failed. Please check your network.");
         }
       });
   };
@@ -74,11 +75,12 @@ export default function LoginPage() {
     initiateAnonymousSignIn(auth);
   };
 
+  if (!mounted) return null;
+
   return (
-    <div className="min-h-screen flex items-stretch bg-slate-50">
+    <div className="min-h-screen flex items-stretch bg-slate-50 overflow-y-auto">
       {/* LEFT PANE: BRANDING & ILLUSTRATION */}
       <div className="hidden lg:flex w-1/2 bg-blue-600 relative overflow-hidden items-center justify-center p-16">
-        {/* Background Pattern/Illustration */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-900" />
         <div className="absolute inset-0 opacity-20 mix-blend-overlay">
           <Image 
@@ -86,6 +88,7 @@ export default function LoginPage() {
             alt="Business Illustration" 
             fill 
             className="object-cover"
+            priority
             data-ai-hint="business analytics"
           />
         </div>
@@ -119,7 +122,6 @@ export default function LoginPage() {
       {/* RIGHT PANE: LOGIN FORM */}
       <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12">
         <div className="w-full max-w-md space-y-8">
-          {/* Header Controls */}
           <div className="absolute top-8 right-8 flex items-center gap-4">
             <Button 
               variant="ghost" 
@@ -161,13 +163,13 @@ export default function LoginPage() {
             {isRedirecting ? (
               <div className="flex flex-col items-center justify-center py-12 space-y-4">
                 <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
-                <p className="text-sm font-bold text-blue-600 animate-pulse">{t('roleRedirecting')}</p>
+                <p className="text-sm font-bold text-blue-600 animate-pulse">Establishing Secure Session...</p>
               </div>
             ) : (
               <form onSubmit={handleEmailLogin} className="space-y-6">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('emailLabel')}</Label>
+                    <Label htmlFor="email" className="text-xs font-bold text-slate-700 uppercase tracking-wider">Email Address</Label>
                     <div className="relative">
                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                       <Input 
@@ -183,8 +185,8 @@ export default function LoginPage() {
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="password" className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('passwordLabel')}</Label>
-                      <button type="button" className="text-xs text-blue-600 font-bold hover:underline transition-all">{t('forgotPassword')}</button>
+                      <Label htmlFor="password" className="text-xs font-bold text-slate-700 uppercase tracking-wider">Password</Label>
+                      <button type="button" className="text-xs text-blue-600 font-bold hover:underline transition-all">Forgot?</button>
                     </div>
                     <div className="relative">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -201,7 +203,7 @@ export default function LoginPage() {
                   <div className="flex items-center space-x-2 pt-2">
                     <Checkbox id="remember" className="rounded-md border-slate-300" />
                     <label htmlFor="remember" className="text-sm text-slate-600 font-medium cursor-pointer select-none">
-                      {t('rememberMe')}
+                      Remember me
                     </label>
                   </div>
                 </div>
@@ -211,7 +213,7 @@ export default function LoginPage() {
                   className="w-full h-14 rounded-2xl text-lg font-bold bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-100 gap-2 transition-all active:scale-95" 
                   disabled={isLoading}
                 >
-                  {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><ArrowRight className="h-5 w-5" /> {t('signInBtn')}</>}
+                  {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><ArrowRight className="h-5 w-5" /> Sign In</>}
                 </Button>
 
                 <div className="relative py-4">
@@ -219,7 +221,7 @@ export default function LoginPage() {
                     <span className="w-full border-t border-slate-100" />
                   </div>
                   <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-[0.2em]">
-                    <span className="bg-white px-4 text-slate-400">{t('demoAccess')}</span>
+                    <span className="bg-white px-4 text-slate-400">Demo Access</span>
                   </div>
                 </div>
 
@@ -231,7 +233,7 @@ export default function LoginPage() {
                   disabled={isLoading}
                 >
                   {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShieldCheck className="h-5 w-5" />}
-                  {t('guestAdmin')}
+                  Guest Administrator
                 </Button>
               </form>
             )}

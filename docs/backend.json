@@ -97,9 +97,6 @@
         "totalAmount": { "type": "number" },
         "paidAmount": { "type": "number" },
         "balanceDue": { "type": "number" },
-        "subtotal": { "type": "number" },
-        "discount": { "type": "number" },
-        "vatAmount": { "type": "number" },
         "status": { "type": "string", "enum": ["paid", "partial", "due"] },
         "invoiceDate": { "type": "string", "format": "date" },
         "items": { "type": "array" }
@@ -114,8 +111,7 @@
         "supplierId": { "type": "string" },
         "totalAmount": { "type": "number" },
         "status": { "type": "string", "enum": ["received", "ordered", "cancelled"] },
-        "orderDate": { "type": "string", "format": "date" },
-        "items": { "type": "array" }
+        "orderDate": { "type": "string", "format": "date" }
       }
     },
     "Quotation": {
@@ -150,7 +146,6 @@
         "customerId": { "type": "string" },
         "totalPaid": { "type": "number" },
         "paymentDate": { "type": "string", "format": "date-time" },
-        "allocationType": { "type": "string" },
         "allocations": { "type": "array" }
       }
     },
@@ -184,8 +179,7 @@
         "firstName": { "type": "string" },
         "lastName": { "type": "string" },
         "email": { "type": "string" },
-        "phoneNumber": { "type": "string" },
-        "customerType": { "type": "string", "enum": ["individual", "company"] }
+        "phoneNumber": { "type": "string" }
       }
     },
     "Supplier": {
@@ -204,8 +198,7 @@
         "id": { "type": "string" },
         "amount": { "type": "number" },
         "transactionType": { "type": "string", "enum": ["income", "expense"] },
-        "description": { "type": "string" },
-        "transactionDate": { "type": "string", "format": "date-time" }
+        "description": { "type": "string" }
       }
     },
     "Expense": {
@@ -244,8 +237,7 @@
       "properties": {
         "id": { "type": "string" },
         "subject": { "type": "string" },
-        "status": { "type": "string", "enum": ["open", "pending", "closed"] },
-        "priority": { "type": "string" }
+        "status": { "type": "string", "enum": ["open", "pending", "closed"] }
       }
     },
     "Lead": {
