@@ -35,17 +35,13 @@ service cloud.firestore {
     }
 
     // Multi-tenant Company Hierarchy
-    // Using a recursive wildcard on the company root ensures that members 
-    // have inherited access to all nested branch, product, and invoice data.
-    match /companies/{companyId} {
+    // Using a recursive wildcard ensures that members have inherited access 
+    // to all nested branch, product, invoice, and project data.
+    match /companies/{companyId}/{allPaths=**} {
       allow read, write: if isMember(companyId);
-      
-      match /{allPaths=**} {
-        allow read, write: if isMember(companyId);
-      }
     }
 
-    // Global bypass for Super Admins (if any)
+    // Global bypass for Super Admins
     match /{allPaths=**} {
       allow read, write: if isSuperAdmin();
     }
