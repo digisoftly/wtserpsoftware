@@ -199,6 +199,15 @@ export default function QuotationsPage() {
     }
   };
 
+  const handleDeleteQuote = () => {
+    if (!selectedRecord || !db || !companyId || !branchId) return;
+    const docRef = doc(db, "companies", companyId, "branches", branchId, "quotations", selectedRecord.id);
+    deleteDocumentNonBlocking(docRef);
+    toast({ title: t('success'), description: t('successSub') });
+    setIsDeleteAlertOpen(false);
+    setSelectedRecord(null);
+  };
+
   const resetForm = () => {
     setSelectedCustomerId("");
     setLineItems([]);
