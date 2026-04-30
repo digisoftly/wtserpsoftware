@@ -1,4 +1,3 @@
-
 export type Language = 'EN' | 'BN';
 
 export const translations = {
@@ -76,6 +75,8 @@ export const translations = {
     initialize: "Initialize",
     scanPrompt: "Scan Barcode or Type Serial...",
     selectSerials: "Select Serials",
+    receiveStock: "Receive Stock",
+    initializeIntake: "Initialize Intake",
 
     // Dashboard
     goodMorning: "Good Morning",
@@ -139,6 +140,9 @@ export const translations = {
     approvedQuotes: "Approved Quotes",
     convertedQuotes: "Converted Quotes",
     todaySales: "Today Sales",
+    totalPurchase: "Total Purchase",
+    monthlyPurchase: "Monthly Purchase",
+    suppliersDue: "Suppliers Due",
 
     // Inventory Specific
     brand: "Brand",
@@ -175,6 +179,8 @@ export const translations = {
 
     // Module Specific: Quotations
     quoteNumber: "Quote #",
+    poNumber: "PO #",
+    supplier: "Supplier",
     validUntil: "Valid Until",
     validUntil30Days: "Valid for 30 days",
     noItemsSelected: "No items selected",
@@ -319,6 +325,8 @@ export const translations = {
     initialize: "শুরু করুন",
     scanPrompt: "বারকোড স্ক্যান বা সিরিয়াল টাইপ করুন...",
     selectSerials: "সিরিয়াল নির্বাচন করুন",
+    receiveStock: "পণ্য গ্রহণ",
+    initializeIntake: "ইনভেন্টরি শুরু করুন",
 
     // Dashboard
     goodMorning: "শুভ সকাল",
@@ -382,6 +390,9 @@ export const translations = {
     approvedQuotes: "অনুমোদিত কোটেশন",
     convertedQuotes: "বিক্রয়ে রূপান্তরিত",
     todaySales: "আজকের বিক্রয়",
+    totalPurchase: "মোট ক্রয়",
+    monthlyPurchase: "মাসিক ক্রয়",
+    suppliersDue: "সরবরাহকারী বকেয়া",
 
     // Inventory Specific
     brand: "ব্র্যান্ড",
@@ -418,6 +429,8 @@ export const translations = {
 
     // Module Specific: Quotations
     quoteNumber: "কোটেশন #",
+    poNumber: "পিও (PO) #",
+    supplier: "সরবরাহকারী",
     validUntil: "মেয়াদের শেষ তারিখ",
     validUntil30Days: "৩০ দিনের জন্য প্রযোজ্য",
     noItemsSelected: "কোন আইটেম নির্বাচন করা হয়নি",
