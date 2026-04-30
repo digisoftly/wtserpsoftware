@@ -1,5 +1,4 @@
 
-
 export type Language = 'EN' | 'BN';
 
 export const translations = {
@@ -75,6 +74,8 @@ export const translations = {
     recordProposal: "Record Proposal",
     recordProposalSub: "Quotation has been drafted successfully.",
     initialize: "Initialize",
+    scanPrompt: "Scan Barcode or Type Serial...",
+    selectSerials: "Select Serials",
 
     // Dashboard
     goodMorning: "Good Morning",
@@ -137,6 +138,7 @@ export const translations = {
     pendingQuotes: "Pending Quotes",
     approvedQuotes: "Approved Quotes",
     convertedQuotes: "Converted Quotes",
+    todaySales: "Today Sales",
 
     // Module Specific: Finance
     label: "Label",
@@ -304,6 +306,8 @@ export const translations = {
     recordProposal: "প্রস্তাবনা সংরক্ষণ",
     recordProposalSub: "কোটেশন ড্রাফট সফলভাবে সম্পন্ন হয়েছে।",
     initialize: "শুরু করুন",
+    scanPrompt: "বারকোড স্ক্যান বা সিরিয়াল টাইপ করুন...",
+    selectSerials: "সিরিয়াল নির্বাচন করুন",
 
     // Dashboard
     goodMorning: "শুভ সকাল",
@@ -366,6 +370,7 @@ export const translations = {
     pendingQuotes: "বকেয়া কোটেশন",
     approvedQuotes: "অনুমোদিত কোটেশন",
     convertedQuotes: "বিক্রয়ে রূপান্তরিত",
+    todaySales: "আজকের বিক্রয়",
 
     // Module Specific: Finance
     label: "বিবরণ",
