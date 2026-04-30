@@ -24,21 +24,21 @@ service cloud.firestore {
 
     // --- RULES ---
 
-    // Allow users to read/write their own profile metadata
+    // Allow users to read/write their own profile metadata in the global users collection
     match /users/{userId} {
       allow read, write: if isSignedIn() && request.auth.uid == userId;
     }
 
-    // Allow users to read their own super admin status
-    match /super_admins/{userId} {
-      allow get: if isSignedIn() && request.auth.uid == userId;
-    }
-
     // Multi-tenant Company Hierarchy
-    // Using a recursive wildcard ensures that members have inherited access 
-    // to all nested branch, product, invoice, and project data.
-    match /companies/{companyId}/{allPaths=**} {
-      allow read, write: if isMember(companyId);
+    // Flattening the match to ensure recursive wildcards apply correctly to all sub-paths.
+    match /companies/{companyId} {
+      // Allow access to the company document itself
+      allow read: if isMember(companyId);
+      
+      // Recursive match for ALL nested data: branches, products, invoices, projects, etc.
+      match /{allPaths=**} {
+        allow read, write: if isMember(companyId);
+      }
     }
 
     // Global bypass for Super Admins
