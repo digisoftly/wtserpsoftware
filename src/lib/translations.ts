@@ -140,6 +140,17 @@ export const translations = {
     convertedQuotes: "Converted Quotes",
     todaySales: "Today Sales",
 
+    // Inventory Specific
+    brand: "Brand",
+    model: "Model",
+    category: "Category",
+    sku: "SKU / ID",
+    stock: "Stock",
+    price: "Price",
+    serialRequired: "Serial Tracking Required?",
+    allBrands: "All Brands",
+    allCategories: "All Categories",
+
     // Module Specific: Finance
     label: "Label",
     type: "Type",
@@ -371,6 +382,17 @@ export const translations = {
     approvedQuotes: "অনুমোদিত কোটেশন",
     convertedQuotes: "বিক্রয়ে রূপান্তরিত",
     todaySales: "আজকের বিক্রয়",
+
+    // Inventory Specific
+    brand: "ব্র্যান্ড",
+    model: "মডেল",
+    category: "ক্যাটাগরি",
+    sku: "এসকেইউ (SKU)",
+    stock: "স্টক",
+    price: "মূল্য",
+    serialRequired: "সিরিয়াল ট্র্যাকিং প্রয়োজন?",
+    allBrands: "সব ব্র্যান্ড",
+    allCategories: "সব ক্যাটাগরি",
 
     // Module Specific: Finance
     label: "বিবরণ",

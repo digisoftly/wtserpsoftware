@@ -79,12 +79,14 @@
         "id": { "type": "string" },
         "name": { "type": "string" },
         "sku": { "type": "string" },
+        "brand": { "type": "string" },
+        "model": { "type": "string" },
+        "category": { "type": "string" },
         "unitPrice": { "type": "number" },
         "costPrice": { "type": "number" },
         "currentStock": { "type": "number" },
         "minStockLevel": { "type": "number" },
-        "serialNumberTrackingRequired": { "type": "boolean" },
-        "productType": { "type": "string" }
+        "serialNumberTrackingRequired": { "type": "boolean" }
       }
     },
     "SalesInvoice": {
