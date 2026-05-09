@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -23,11 +24,11 @@ interface TenantContextType {
 }
 
 const TenantContext = React.createContext<TenantContextType>({
-  companyId: null,
+  companyId: 'warrior-demo-corp',
   branchId: null,
   setBranchId: () => {},
   userRole: null,
-  language: 'BN', // Defaulting to Bangla as per requirements
+  language: 'BN',
   setLanguage: () => {},
   isLoading: true,
 });
@@ -37,18 +38,19 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const db = useFirestore();
   const [isInitializing, setIsInitializing] = React.useState(true);
   const [userRole, setUserRole] = React.useState<Role | null>(null);
-  const [language, setLanguage] = React.useState<Language>('BN'); // Start with Bangla
+  const [language, setLanguage] = React.useState<Language>('BN');
   const [branchId, setBranchId] = React.useState<string | null>(null);
 
-  const companyId = user ? "warrior-demo-corp" : null;
+  // We keep companyId constant for the demo corporation so unauthenticated users can see branding
+  const companyId = "warrior-demo-corp";
 
   React.useEffect(() => {
     if (isUserLoading) return;
 
     const initTenant = async () => {
-      if (user && db && companyId) {
+      if (user && db) {
         try {
-          // 1. Fetch System-wide settings first to check for default language
+          // 1. Fetch System-wide settings to check for default language
           const settingsRef = doc(db, "companies", companyId, "system", "config");
           const settingsSnap = await getDoc(settingsRef);
           let systemDefaultLang: Language = 'BN';
@@ -62,19 +64,16 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
           // 2. Fetch User profile
           const userRef = doc(db, "companies", companyId, "users", user.uid);
-          const userSnap = await getDoc(userRef).catch(async (err) => {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-              path: userRef.path,
-              operation: 'get'
-            }));
-            throw err;
+          const userSnap = await getDoc(userRef).catch((err) => {
+            console.error("Profile fetch error:", err);
+            return null;
           });
           
           let roleId = "super-admin";
           let activeBranchId = "dhaka-main";
 
-          if (!userSnap.exists()) {
-            // New User Setup: Use System Default Language
+          if (userSnap && !userSnap.exists()) {
+            // New User Setup
             const userData = {
               id: user.uid,
               companyId,
@@ -89,14 +88,13 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
               updatedAt: serverTimestamp(),
             };
             
-            setDoc(userRef, userData, { merge: true });
+            await setDoc(userRef, userData, { merge: true });
             setLanguage(systemDefaultLang);
-          } else {
+          } else if (userSnap) {
             const data = userSnap.data();
-            roleId = data.roleId || "super-admin";
-            activeBranchId = data.branchId || "dhaka-main";
-            // Prefer user choice, fallback to system default
-            setLanguage((data.preferredLanguage || systemDefaultLang) as Language);
+            roleId = data?.roleId || "super-admin";
+            activeBranchId = data?.branchId || "dhaka-main";
+            setLanguage((data?.preferredLanguage || systemDefaultLang) as Language);
           }
 
           setBranchId(activeBranchId);
@@ -114,37 +112,36 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
               isSuperAdmin: true,
               permissions: {} 
             };
-            setDoc(roleRef, superAdminRole);
             setUserRole(superAdminRole);
           }
         } catch (error) {
-          console.error("Initialization Error:", error);
+          console.error("Tenant initialization failed:", error);
         } finally {
           setIsInitializing(false);
         }
-      } else if (!user) {
+      } else {
         setIsInitializing(false);
       }
     };
 
     initTenant();
-  }, [user, isUserLoading, db, companyId]);
+  }, [user, isUserLoading, db]);
 
   const handleSetLanguage = React.useCallback((lang: Language) => {
     setLanguage(lang);
-    if (user && db && companyId) {
+    if (user && db) {
       const userRef = doc(db, "companies", companyId, "users", user.uid);
       setDoc(userRef, { preferredLanguage: lang }, { merge: true });
     }
-  }, [user, db, companyId]);
+  }, [user, db]);
 
   const handleSetBranch = React.useCallback((id: string) => {
     setBranchId(id);
-    if (user && db && companyId) {
+    if (user && db) {
       const userRef = doc(db, "companies", companyId, "users", user.uid);
       setDoc(userRef, { branchId: id }, { merge: true });
     }
-  }, [user, db, companyId]);
+  }, [user, db]);
 
   const contextValue = React.useMemo(() => ({ 
     companyId, 
@@ -154,7 +151,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     language,
     setLanguage: handleSetLanguage,
     isLoading: isUserLoading || isInitializing 
-  }), [companyId, branchId, handleSetBranch, userRole, language, handleSetLanguage, isUserLoading, isInitializing]);
+  }), [branchId, handleSetBranch, userRole, language, handleSetLanguage, isUserLoading, isInitializing]);
 
   return (
     <TenantContext.Provider value={contextValue}>

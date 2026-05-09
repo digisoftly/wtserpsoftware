@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -16,6 +15,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { useTenant } from '@/context/tenant-context';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import Image from 'next/image';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function LoginPage() {
   const auth = useAuth();
@@ -77,20 +77,24 @@ export default function LoginPage() {
 
   if (!mounted) return null;
 
+  const loginHero = PlaceHolderImages.find(img => img.id === 'login-hero');
+
   return (
     <div className="min-h-screen flex items-stretch bg-slate-50 overflow-y-auto">
       {/* LEFT PANE: BRANDING & ILLUSTRATION */}
       <div className="hidden lg:flex w-1/2 bg-blue-600 relative overflow-hidden items-center justify-center p-16">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-900" />
         <div className="absolute inset-0 opacity-20 mix-blend-overlay">
-          <Image 
-            src="https://picsum.photos/seed/erp-business/1200/1200" 
-            alt="Business Illustration" 
-            fill 
-            className="object-cover"
-            priority
-            data-ai-hint="business analytics"
-          />
+          {loginHero && (
+            <Image 
+              src={loginHero.imageUrl} 
+              alt={loginHero.description} 
+              fill 
+              className="object-cover"
+              priority
+              data-ai-hint={loginHero.imageHint}
+            />
+          )}
         </div>
         
         <div className="relative z-10 max-w-md text-white text-center">

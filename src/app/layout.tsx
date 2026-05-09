@@ -1,4 +1,3 @@
-
 import type {Metadata, Viewport} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
@@ -6,6 +5,8 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { AuthGate } from '@/components/auth/auth-gate';
 import { TenantProvider } from '@/context/tenant-context';
 import { ClientLayout } from '@/components/layout/client-layout';
+import { ErrorBoundary } from '@/components/error-boundary';
+import * as React from 'react';
 
 export const metadata: Metadata = {
   title: 'WarriorERP | Enterprise Resource Planning',
@@ -33,16 +34,18 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased bg-background min-h-screen">
-        <FirebaseClientProvider>
-          <AuthGate>
-            <TenantProvider>
-              <ClientLayout>
-                {children}
-              </ClientLayout>
-              <Toaster />
-            </TenantProvider>
-          </AuthGate>
-        </FirebaseClientProvider>
+        <ErrorBoundary>
+          <FirebaseClientProvider>
+            <AuthGate>
+              <TenantProvider>
+                <ClientLayout>
+                  {children}
+                </ClientLayout>
+                <Toaster />
+              </TenantProvider>
+            </AuthGate>
+          </FirebaseClientProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

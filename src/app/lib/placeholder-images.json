@@ -1,0 +1,10 @@
+{
+  "placeholderImages": [
+    {
+      "id": "login-hero",
+      "description": "Business illustration for login screen",
+      "imageUrl": "https://picsum.photos/seed/erp-business/1200/1200",
+      "imageHint": "business analytics"
+    }
+  ]
+}
