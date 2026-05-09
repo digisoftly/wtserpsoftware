@@ -1,7 +1,21 @@
+
 "use client"
 
 import * as React from "react"
-import { Plus, Loader2, MoreVertical, Calculator, History, CheckCircle2, AlertCircle, DollarSign, FileSpreadsheet, Eye, Printer, X, ArrowRight } from "lucide-react"
+import { 
+  Plus, 
+  Loader2, 
+  History, 
+  CheckCircle2, 
+  AlertCircle, 
+  FileSpreadsheet, 
+  Eye, 
+  Printer, 
+  Calculator, 
+  ArrowRight,
+  ShieldCheck,
+  ChevronRight
+} from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, serverTimestamp, query, orderBy, doc, runTransaction, increment } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
@@ -24,7 +38,6 @@ import { DocumentTemplate } from "@/components/documents/document-template"
 interface ProjectAllocation {
   projectId: string;
   projectName: string;
-  totalAmount: number;
   currentDue: number;
   amountAllocated: number;
 }
@@ -63,7 +76,6 @@ export default function ProjectBillingPage() {
 
   // Stats
   const stats = React.useMemo(() => ({
-    totalInvoices: payments?.length || 0,
     paidAmount: payments?.reduce((s, p) => s + (p.totalPaid || 0), 0) || 0,
     dueAmount: allProjects?.reduce((s, p) => s + ((p.budget || 0) - (p.paidAmount || 0)), 0) || 0
   }), [payments, allProjects]);
@@ -97,7 +109,12 @@ export default function ProjectBillingPage() {
       } else {
         allocated = manualAllocations[p.id] || 0;
       }
-      return { projectId: p.id, projectName: p.name, totalAmount: p.budget, currentDue: due, amountAllocated: allocated };
+      return { 
+        projectId: p.id, 
+        projectName: p.name, 
+        currentDue: due, 
+        amountAllocated: allocated 
+      };
     });
   }, [selectedProjectsData, totalPaymentAmount, isAutoAllocation, manualAllocations]);
 
@@ -110,6 +127,7 @@ export default function ProjectBillingPage() {
       await runTransaction(db!, async (transaction) => {
         const paymentRef = doc(collection(db!, "companies", companyId!, "branches", branchId!, "project_payments"));
         const receiptNumber = `PAY-${Date.now().toString().slice(-6)}`;
+        const customer = customers?.find(c => c.id === selectedCustomerId);
         
         transaction.set(paymentRef, {
           id: paymentRef.id,
@@ -117,7 +135,7 @@ export default function ProjectBillingPage() {
           companyId,
           branchId,
           customerId: selectedCustomerId,
-          customerName: customers?.find(c => c.id === selectedCustomerId)?.firstName || "Client",
+          customerName: customer ? `${customer.firstName} ${customer.lastName}` : "Client",
           totalPaid: allocatedTotal,
           allocationType: isAutoAllocation ? "auto" : "manual",
           allocations: allocations.filter(a => a.amountAllocated > 0),
@@ -135,7 +153,7 @@ export default function ProjectBillingPage() {
         }
       });
 
-      toast({ title: t('success') });
+      toast({ title: t('success'), description: t('successSub') });
       resetForm();
       setIsPaymentModalOpen(false);
     } catch (e: any) {
@@ -170,8 +188,7 @@ export default function ProjectBillingPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <KPICard title={t('totalRevenue')} value={stats.totalInvoices} icon={FileSpreadsheet} colorClass="bg-blue-600" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <KPICard title={t('paidAmount')} value={`৳${stats.paidAmount.toLocaleString()}`} icon={CheckCircle2} colorClass="bg-green-600" />
         <KPICard title={t('dueAmount')} value={`৳${stats.dueAmount.toLocaleString()}`} icon={AlertCircle} colorClass="bg-red-600" />
       </div>
@@ -185,40 +202,42 @@ export default function ProjectBillingPage() {
           <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-indigo-600" /></div>
         ) : payments && payments.length > 0 ? (
           <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-white ring-1 ring-slate-100">
-            <Table>
-              <TableHeader className="bg-muted/10">
-                <TableRow>
-                  <TableHead className="text-[10px] uppercase font-black h-12 pl-6">{t('date')}</TableHead>
-                  <TableHead className="text-[10px] uppercase font-black h-12">Receipt #</TableHead>
-                  <TableHead className="text-[10px] uppercase font-black h-12">{t('customer')}</TableHead>
-                  <TableHead className="text-[10px] uppercase font-black h-12">{t('paid')}</TableHead>
-                  <TableHead className="text-right h-12 pr-6"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {payments.map((p) => (
-                  <TableRow key={p.id} className="h-16 hover:bg-muted/5 transition-colors group">
-                    <TableCell className="pl-6 text-[10px] font-bold uppercase text-slate-500">
-                      {new Date(p.paymentDate).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className="font-mono text-[10px] font-black text-indigo-600">
-                      {p.receiptNumber || `#PAY-${p.id.slice(-6)}`}
-                    </TableCell>
-                    <TableCell className="text-xs font-bold text-slate-700">
-                      {p.customerName || customers?.find(c => c.id === p.customerId)?.firstName || "---"}
-                    </TableCell>
-                    <TableCell className="font-black text-xs text-green-600">
-                      ৳{p.totalPaid?.toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-right pr-6">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-indigo-50 text-indigo-600 transition-colors" onClick={() => openView(p)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-muted/10">
+                  <TableRow>
+                    <TableHead className="text-[10px] uppercase font-black h-12 pl-6">{t('date')}</TableHead>
+                    <TableHead className="text-[10px] uppercase font-black h-12">Receipt #</TableHead>
+                    <TableHead className="text-[10px] uppercase font-black h-12">{t('customer')}</TableHead>
+                    <TableHead className="text-[10px] uppercase font-black h-12 text-right">{t('paid')}</TableHead>
+                    <TableHead className="text-right h-12 pr-6"></TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {payments.map((p) => (
+                    <TableRow key={p.id} className="h-16 hover:bg-muted/5 transition-colors group">
+                      <TableCell className="pl-6 text-[10px] font-bold uppercase text-slate-500">
+                        {new Date(p.paymentDate).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="font-mono text-[10px] font-black text-indigo-600">
+                        {p.receiptNumber}
+                      </TableCell>
+                      <TableCell className="text-xs font-bold text-slate-700">
+                        {p.customerName}
+                      </TableCell>
+                      <TableCell className="text-right font-black text-xs text-green-600">
+                        ৳{p.totalPaid?.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-right pr-6">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-indigo-50 text-indigo-600 transition-colors" onClick={() => openView(p)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </Card>
         ) : (
           <div className="p-24 bg-white rounded-[3rem] border border-dashed text-center flex flex-col items-center ring-1 ring-slate-100">
@@ -238,7 +257,7 @@ export default function ProjectBillingPage() {
               </div>
               <div>
                 <DialogTitle className="text-lg md:text-xl font-bold font-headline uppercase tracking-tight">{t('receiveCombined')}</DialogTitle>
-                <p className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em] leading-none mt-1">Lump-sum Revenue Distribution</p>
+                <p className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em] leading-none mt-1">Multi-Project Revenue Distribution</p>
               </div>
             </div>
           </DialogHeader>
@@ -248,7 +267,7 @@ export default function ProjectBillingPage() {
             <div className="flex-1 flex flex-col p-6 space-y-6 overflow-hidden">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Step 1: {t('customer')}</Label>
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('customer')}</Label>
                   <Select value={selectedCustomerId} onValueChange={(val) => { setSelectedCustomerId(val); setSelectedProjectIds([]); }}>
                     <SelectTrigger className="h-12 rounded-2xl bg-white border-none ring-1 ring-slate-200 shadow-sm transition-all focus:ring-2 focus:ring-indigo-600 font-bold text-xs">
                       <SelectValue placeholder={t('search')} />
@@ -259,7 +278,7 @@ export default function ProjectBillingPage() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Step 2: {t('total')} (৳)</Label>
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('amount')} (৳)</Label>
                   <Input 
                     type="number" 
                     className="h-12 rounded-2xl bg-white border-none ring-1 ring-slate-200 text-sm font-black text-indigo-600 focus:ring-2 focus:ring-indigo-600" 
@@ -273,15 +292,15 @@ export default function ProjectBillingPage() {
               {/* PROJECT GRID */}
               <div className="flex-1 flex flex-col space-y-4 overflow-hidden">
                 <div className="flex items-center justify-between">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Step 3: {t('agreements')}</Label>
-                  <Badge variant="outline" className="text-[9px] uppercase h-5 font-black bg-indigo-50 border-none text-indigo-600">Combined Due: ৳{combinedDue.toLocaleString()}</Badge>
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('projects')}</Label>
+                  <Badge variant="outline" className="text-[9px] uppercase h-5 font-black bg-indigo-50 border-none text-indigo-600">Client Dues: ৳{combinedDue.toLocaleString()}</Badge>
                 </div>
 
-                <div className="flex-1 bg-white rounded-[2rem] shadow-sm ring-1 ring-slate-100 overflow-hidden flex flex-col">
+                <div className="flex-1 bg-white rounded-[2rem] shadow-sm ring-1 ring-slate-100 overflow-hidden flex flex-col border">
                   {!selectedCustomerId ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground opacity-30 gap-4">
-                      <ArrowRight className="h-12 w-12" />
-                      <p className="text-[10px] uppercase font-black tracking-[0.3em]">{t('initializeMarketLogic')}</p>
+                      <ShieldCheck className="h-12 w-12" />
+                      <p className="text-[10px] uppercase font-black tracking-[0.3em]">Select customer to load projects</p>
                     </div>
                   ) : (
                     <div className="overflow-auto flex-1 custom-scrollbar">
@@ -347,22 +366,22 @@ export default function ProjectBillingPage() {
             <div className="w-full lg:w-[350px] bg-white border-l border-slate-100 p-8 space-y-8 flex flex-col shadow-2xl relative z-20 shrink-0">
               <div className="space-y-6">
                 <div className="p-8 rounded-[2.5rem] bg-indigo-600 text-white shadow-2xl shadow-indigo-100 space-y-4 text-center">
-                  <p className="text-[10px] uppercase font-black opacity-60 tracking-[0.2em]">{t('paid')}</p>
+                  <p className="text-[10px] uppercase font-black opacity-60 tracking-[0.2em]">{t('total')}</p>
                   <h2 className="text-4xl font-headline font-black tracking-tighter">৳{allocatedTotal.toLocaleString()}</h2>
                 </div>
 
-                <div className="p-5 bg-slate-50 rounded-3xl space-y-4">
+                <div className="p-5 bg-slate-50 rounded-3xl space-y-4 border">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label className="text-xs font-black uppercase text-slate-900 tracking-tight">FIFO Allocation</Label>
-                      <p className="text-[8px] text-muted-foreground font-bold uppercase">Auto-distribute funds</p>
+                      <Label className="text-xs font-black uppercase text-slate-900 tracking-tight">Auto Distribution</Label>
+                      <p className="text-[8px] text-muted-foreground font-bold uppercase">FIFO Logic enabled</p>
                     </div>
                     <Switch checked={isAutoAllocation} onCheckedChange={setIsAutoAllocation} className="data-[state=checked]:bg-indigo-600" />
                   </div>
                   <div className="pt-3 border-t border-slate-200">
                     <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-500">
                       <span>Remainder</span>
-                      <span className="text-slate-300">৳{Math.max(0, totalPaymentAmount - allocatedTotal).toLocaleString()}</span>
+                      <span className="text-slate-400">৳{Math.max(0, totalPaymentAmount - allocatedTotal).toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
@@ -371,7 +390,7 @@ export default function ProjectBillingPage() {
               <div className="mt-auto">
                 <Button 
                   className="w-full h-16 bg-indigo-600 hover:bg-indigo-700 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-indigo-100 transition-all active:scale-95" 
-                  disabled={isSubmitting || allocatedTotal <= 0 || allocatedTotal > totalPaymentAmount} 
+                  disabled={isSubmitting || allocatedTotal <= 0} 
                   onClick={handleProcessPayment}
                 >
                   {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <CheckCircle2 className="h-5 w-5" />}
@@ -396,7 +415,7 @@ export default function ProjectBillingPage() {
               <DocumentTemplate
                 title="Payment Receipt"
                 type="agreement"
-                docNumber={selectedPayment.receiptNumber || `PAY-${selectedPayment.id.slice(-6)}`}
+                docNumber={selectedPayment.receiptNumber}
                 date={selectedPayment.paymentDate}
                 customerName={selectedPayment.customerName}
                 items={selectedPayment.allocations.map((a: any) => ({
@@ -404,12 +423,12 @@ export default function ProjectBillingPage() {
                   quantity: 1,
                   unitPrice: a.amountAllocated,
                   total: a.amountAllocated,
-                  description: `Project ID: ${a.projectId.slice(0, 8)}`
+                  description: `Project ID: ${a.projectId.slice(-6)}`
                 }))}
                 subtotal={selectedPayment.totalPaid}
                 grandTotal={selectedPayment.totalPaid}
                 status="processed"
-                notes="Lump-sum payment received and allocated to active project dues."
+                notes="Lump-sum payment received and allocated to active project balances."
               />
             </div>
           )}
