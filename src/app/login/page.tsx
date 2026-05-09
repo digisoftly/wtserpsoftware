@@ -39,7 +39,7 @@ export default function LoginPage() {
   React.useEffect(() => {
     if (user && userRole) {
       setIsRedirecting(true);
-      const roleName = userRole.name.toLowerCase();
+      const roleName = userRole.name?.toLowerCase() || 'admin';
       if (roleName.includes('sales')) {
         router.push('/sales');
       } else if (roleName.includes('accountant')) {
@@ -59,7 +59,6 @@ export default function LoginPage() {
 
     signInWithEmailAndPassword(auth, email, password)
       .catch((error: any) => {
-        console.error('Login Error:', error);
         setIsLoading(false);
         if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
           setAuthError(t('errorSub'));

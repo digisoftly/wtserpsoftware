@@ -1,8 +1,7 @@
-
 'use client';
 
 import * as React from 'react';
-import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { Language } from '@/lib/translations';
 
@@ -41,39 +40,40 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = React.useState<Language>('BN');
   const [branchId, setBranchId] = React.useState<string | null>(null);
 
-  // We keep companyId constant for the demo corporation so unauthenticated users can see branding
   const companyId = "warrior-demo-corp";
 
   React.useEffect(() => {
-    if (isUserLoading) return;
+    // Add a failsafe timeout to prevent infinite loading screen
+    const failsafe = setTimeout(() => {
+      if (isInitializing) {
+        console.warn("Tenant initialization taking too long. Proceeding with defaults.");
+        setIsInitializing(false);
+      }
+    }, 8000);
 
     const initTenant = async () => {
-      if (user && db) {
+      if (!isUserLoading && user && db) {
         try {
-          // 1. Fetch System-wide settings to check for default language
+          // 1. Fetch System Settings
           const settingsRef = doc(db, "companies", companyId, "system", "config");
-          const settingsSnap = await getDoc(settingsRef);
+          const settingsSnap = await getDoc(settingsRef).catch(() => null);
           let systemDefaultLang: Language = 'BN';
           
-          if (settingsSnap.exists()) {
+          if (settingsSnap?.exists()) {
             const settingsData = settingsSnap.data();
             if (settingsData.systemDefaultLanguage) {
               systemDefaultLang = settingsData.systemDefaultLanguage as Language;
             }
           }
 
-          // 2. Fetch User profile
+          // 2. Fetch User Profile
           const userRef = doc(db, "companies", companyId, "users", user.uid);
-          const userSnap = await getDoc(userRef).catch((err) => {
-            console.error("Profile fetch error:", err);
-            return null;
-          });
+          const userSnap = await getDoc(userRef).catch(() => null);
           
           let roleId = "super-admin";
           let activeBranchId = "dhaka-main";
 
           if (userSnap && !userSnap.exists()) {
-            // New User Setup
             const userData = {
               id: user.uid,
               companyId,
@@ -88,7 +88,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
               updatedAt: serverTimestamp(),
             };
             
-            await setDoc(userRef, userData, { merge: true });
+            await setDoc(userRef, userData, { merge: true }).catch(console.error);
             setLanguage(systemDefaultLang);
           } else if (userSnap) {
             const data = userSnap.data();
@@ -101,37 +101,39 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
           // 3. Fetch Role
           const roleRef = doc(db, "companies", companyId, "roles", roleId);
-          const roleSnap = await getDoc(roleRef);
+          const roleSnap = await getDoc(roleRef).catch(() => null);
 
-          if (roleSnap.exists()) {
+          if (roleSnap?.exists()) {
             setUserRole({ id: roleSnap.id, ...roleSnap.data() } as Role);
           } else if (roleId === "super-admin") {
-            const superAdminRole = {
+            setUserRole({
               id: "super-admin",
               name: "Super Administrator",
               isSuperAdmin: true,
               permissions: {} 
-            };
-            setUserRole(superAdminRole);
+            });
           }
         } catch (error) {
-          console.error("Tenant initialization failed:", error);
+          console.error("Critical Tenant initialization error:", error);
         } finally {
           setIsInitializing(false);
+          clearTimeout(failsafe);
         }
-      } else {
+      } else if (!isUserLoading) {
         setIsInitializing(false);
+        clearTimeout(failsafe);
       }
     };
 
     initTenant();
+    return () => clearTimeout(failsafe);
   }, [user, isUserLoading, db]);
 
   const handleSetLanguage = React.useCallback((lang: Language) => {
     setLanguage(lang);
     if (user && db) {
       const userRef = doc(db, "companies", companyId, "users", user.uid);
-      setDoc(userRef, { preferredLanguage: lang }, { merge: true });
+      setDoc(userRef, { preferredLanguage: lang }, { merge: true }).catch(console.error);
     }
   }, [user, db]);
 
@@ -139,7 +141,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     setBranchId(id);
     if (user && db) {
       const userRef = doc(db, "companies", companyId, "users", user.uid);
-      setDoc(userRef, { branchId: id }, { merge: true });
+      setDoc(userRef, { branchId: id }, { merge: true }).catch(console.error);
     }
   }, [user, db]);
 
