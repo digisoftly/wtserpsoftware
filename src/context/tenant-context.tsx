@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -43,7 +44,6 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const companyId = "warrior-demo-corp";
 
   React.useEffect(() => {
-    // Add a failsafe timeout to prevent infinite loading screen
     const failsafe = setTimeout(() => {
       if (isInitializing) {
         console.warn("Tenant initialization taking too long. Proceeding with defaults.");
@@ -54,7 +54,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     const initTenant = async () => {
       if (!isUserLoading && user && db) {
         try {
-          // 1. Fetch System Settings
+          // 1. Fetch System Settings (Always fallback if permission fails)
           const settingsRef = doc(db, "companies", companyId, "system", "config");
           const settingsSnap = await getDoc(settingsRef).catch(() => null);
           let systemDefaultLang: Language = 'BN';
@@ -78,7 +78,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
               id: user.uid,
               companyId,
               branchId: "dhaka-main",
-              firstName: "User",
+              firstName: user.email?.split('@')[0] || "User",
               lastName: user.uid.slice(-4),
               email: user.email || `${user.uid}@warrior.com`,
               roleId: "super-admin",
@@ -88,7 +88,9 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
               updatedAt: serverTimestamp(),
             };
             
-            await setDoc(userRef, userData, { merge: true }).catch(console.error);
+            await setDoc(userRef, userData, { merge: true }).catch(err => {
+              console.error("Failed to sync user profile:", err);
+            });
             setLanguage(systemDefaultLang);
           } else if (userSnap) {
             const data = userSnap.data();

@@ -19,12 +19,13 @@ service cloud.firestore {
     }
 
     function isSuperAdmin() {
+      // Safely check for super admin status
       return isSignedIn() && exists(/databases/$(database)/documents/super_admins/$(request.auth.uid));
     }
 
     // --- RULES ---
 
-    // Allow public read of system configuration for branding (Logo, Name) on Login Page
+    // Allow public read of system configuration for branding on Login Page
     match /companies/{companyId}/system/config {
       allow read: if true;
     }
@@ -35,9 +36,14 @@ service cloud.firestore {
     }
 
     // Multi-tenant Company Hierarchy
-    // We use a flattened recursive match to prevent depth-related permission errors
-    match /companies/{companyId}/{allPaths=**} {
+    match /companies/{companyId} {
+      // Members can read/write everything within their company scope
       allow read, write: if isMember(companyId);
+      
+      // Ensure recursive access to all sub-collections (branches, products, invoices, etc.)
+      match /{allPaths=**} {
+        allow read, write: if isMember(companyId);
+      }
     }
 
     // Global bypass for Super Admins

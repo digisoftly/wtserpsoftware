@@ -59,6 +59,18 @@
         "status": { "type": "string", "enum": ["active", "inactive", "expired"] }
       },
       "required": ["id", "customerId", "serviceName", "startDate", "monthlyAmount"]
+    },
+    "SalesInvoice": {
+      "title": "Sales Invoice",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "invoiceNumber": { "type": "string" },
+        "customerId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "totalAmount": { "type": "number" },
+        "status": { "type": "string", "enum": ["paid", "partial", "due"] }
+      }
     }
   },
   "auth": {
@@ -80,6 +92,14 @@
     "/companies/{companyId}/branches/{branchId}/contract_invoices/{invoiceId}": {
       "schema": { "type": "object" },
       "description": "Monthly billing records generated from service contracts."
+    },
+    "/companies/{companyId}/branches/{branchId}/sales_invoices/{invoiceId}": {
+      "schema": { "$ref": "#/backend/entities/SalesInvoice" },
+      "description": "Direct sales records for equipment and services."
+    },
+    "/companies/{companyId}/system/config": {
+      "schema": { "type": "object" },
+      "description": "Global ERP branding and operational configuration."
     }
   }
 }
