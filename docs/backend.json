@@ -39,6 +39,26 @@
         "progress": { "type": "number" },
         "status": { "type": "string", "enum": ["pending", "active", "completed"] }
       }
+    },
+    "ServiceContract": {
+      "title": "Service Contract",
+      "type": "object",
+      "description": "Recurring service agreement for maintenance or subscriptions.",
+      "properties": {
+        "id": { "type": "string" },
+        "contractNumber": { "type": "string" },
+        "customerId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "serviceName": { "type": "string" },
+        "serviceType": { "type": "string", "enum": ["CCTV", "Internet", "AMC", "Support"] },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "monthlyAmount": { "type": "number" },
+        "billingCycle": { "type": "string", "enum": ["Monthly", "Quarterly", "Yearly"] },
+        "paymentType": { "type": "string", "enum": ["Advance", "Postpaid"] },
+        "status": { "type": "string", "enum": ["active", "inactive", "expired"] }
+      },
+      "required": ["id", "customerId", "serviceName", "startDate", "monthlyAmount"]
     }
   },
   "auth": {
@@ -52,6 +72,14 @@
     "/companies/{companyId}/branches/{branchId}/projects/{projectId}": {
       "schema": { "$ref": "#/backend/entities/Project" },
       "description": "Client installation projects."
+    },
+    "/companies/{companyId}/branches/{branchId}/service_contracts/{contractId}": {
+      "schema": { "$ref": "#/backend/entities/ServiceContract" },
+      "description": "Ongoing service and maintenance agreements."
+    },
+    "/companies/{companyId}/branches/{branchId}/contract_invoices/{invoiceId}": {
+      "schema": { "type": "object" },
+      "description": "Monthly billing records generated from service contracts."
     }
   }
 }
