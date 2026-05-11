@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -83,7 +84,7 @@ export default function LoginPage() {
       {/* LEFT PANE: BRANDING & ILLUSTRATION */}
       <div className="hidden lg:flex w-1/2 bg-blue-600 relative overflow-hidden items-center justify-center p-16">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-900" />
-        <div className="absolute inset-0 opacity-20 mix-blend-overlay">
+        <div className="absolute inset-0 opacity-30 mix-blend-overlay">
           {loginHero && (
             <Image 
               src={loginHero.imageUrl} 
@@ -110,13 +111,13 @@ export default function LoginPage() {
           <div className="grid grid-cols-2 gap-4 text-left">
             <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
               <ShieldCheck className="h-5 w-5 mb-2 text-blue-300" />
-              <p className="text-[10px] uppercase font-bold tracking-widest opacity-60">Compliance</p>
-              <p className="text-sm font-bold">Secure Access</p>
+              <p className="text-[10px] uppercase font-bold tracking-widest opacity-60">Security</p>
+              <p className="text-sm font-bold">Encrypted Data</p>
             </div>
             <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
               <Info className="h-5 w-5 mb-2 text-blue-300" />
-              <p className="text-[10px] uppercase font-bold tracking-widest opacity-60">Status</p>
-              <p className="text-sm font-bold">Systems Online</p>
+              <p className="text-[10px] uppercase font-bold tracking-widest opacity-60">Uptime</p>
+              <p className="text-sm font-bold">99.9% Reliable</p>
             </div>
           </div>
         </div>
@@ -125,6 +126,7 @@ export default function LoginPage() {
       {/* RIGHT PANE: LOGIN FORM */}
       <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12">
         <div className="w-full max-w-md space-y-8">
+          {/* Language Toggle in Corner */}
           <div className="absolute top-8 right-8 flex items-center gap-4">
             <Button 
               variant="ghost" 
@@ -137,7 +139,7 @@ export default function LoginPage() {
             </Button>
           </div>
 
-          <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl shadow-slate-200 border border-slate-100">
+          <div className="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-2xl shadow-slate-200 border border-slate-100 animate-in fade-in zoom-in-95 duration-500">
             <div className="text-center mb-10">
               <div className="flex justify-center mb-6">
                 <div className="w-16 h-16 rounded-2xl bg-slate-50 p-2 flex items-center justify-center border border-slate-100 overflow-hidden shadow-inner">
@@ -148,10 +150,10 @@ export default function LoginPage() {
                   )}
                 </div>
               </div>
-              <h2 className="text-3xl font-black font-headline tracking-tight text-slate-900 uppercase">
-                WELCOME
+              <h2 className="text-2xl font-black font-headline tracking-tight text-slate-900 uppercase">
+                {t('login')} / {t('login_bn')}
               </h2>
-              <p className="text-slate-500 mt-2 font-medium">Please enter your details to sign in</p>
+              <p className="text-slate-500 mt-2 font-medium text-sm">{t('signin_to_continue')}</p>
             </div>
 
             {authError && (
@@ -172,42 +174,44 @@ export default function LoginPage() {
               <form onSubmit={handleEmailLogin} className="space-y-6">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-xs font-bold text-slate-700 uppercase tracking-wider">Email Address</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <div className="relative group">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
                       <Input 
                         id="email" 
                         type="email" 
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="admin@warrior.com" 
-                        className="pl-11 h-14 rounded-2xl bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all font-medium" 
+                        placeholder={t('email')} 
+                        className="pl-11 h-14 rounded-2xl bg-slate-50 border-transparent focus:bg-white focus:ring-2 focus:ring-blue-600 transition-all font-medium border-slate-100" 
                         required
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="password" className="text-xs font-bold text-slate-700 uppercase tracking-wider">Password</Label>
-                      <button type="button" className="text-xs text-blue-600 font-bold hover:underline transition-all">Forgot?</button>
-                    </div>
-                    <div className="relative">
-                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <div className="relative group">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
                       <Input 
                         id="password" 
                         type="password" 
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="pl-11 h-14 rounded-2xl bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all" 
+                        placeholder={t('password')}
+                        className="pl-11 h-14 rounded-2xl bg-slate-50 border-transparent focus:bg-white focus:ring-2 focus:ring-blue-600 transition-all font-medium border-slate-100" 
                         required
                       />
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2 pt-2">
-                    <Checkbox id="remember" className="rounded-md border-slate-300" />
-                    <label htmlFor="remember" className="text-sm text-slate-600 font-medium cursor-pointer select-none">
-                      Remember me
-                    </label>
+                  
+                  <div className="flex items-center justify-between pt-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="remember" className="rounded-md border-slate-300 data-[state=checked]:bg-blue-600" />
+                      <label htmlFor="remember" className="text-xs text-slate-600 font-bold cursor-pointer select-none">
+                        {t('remember_me')}
+                      </label>
+                    </div>
+                    <button type="button" className="text-xs text-blue-600 font-bold hover:underline transition-all">
+                      {t('forgot_password')}
+                    </button>
                   </div>
                 </div>
 
@@ -216,7 +220,7 @@ export default function LoginPage() {
                   className="w-full h-14 rounded-2xl text-lg font-bold bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-100 gap-2 transition-all active:scale-95" 
                   disabled={isLoading}
                 >
-                  {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><ArrowRight className="h-5 w-5" /> Sign In</>}
+                  {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><ArrowRight className="h-5 w-5" /> {t('login')}</>}
                 </Button>
 
                 <div className="relative py-4">
@@ -231,7 +235,7 @@ export default function LoginPage() {
                 <Button 
                   type="button"
                   variant="outline" 
-                  className="w-full h-14 rounded-2xl gap-3 border-slate-200 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 font-bold transition-all" 
+                  className="w-full h-14 rounded-2xl gap-3 border-slate-200 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 font-bold transition-all text-slate-600" 
                   onClick={handleDemoLogin}
                   disabled={isLoading}
                 >
@@ -245,7 +249,7 @@ export default function LoginPage() {
           <footer className="text-center">
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
               {settings?.companyName || "Warrior Tech System"} &copy; {new Date().getFullYear()} <br/>
-              Enterprise Resource Planning Terminal
+              ERP Central Management System
             </p>
           </footer>
         </div>

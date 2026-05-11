@@ -1,3 +1,4 @@
+
 export type Language = 'EN' | 'BN';
 
 export const translations = {
@@ -77,6 +78,16 @@ export const translations = {
     selectSerials: "Select Serials",
     receiveStock: "Receive Stock",
     initializeIntake: "Initialize Intake",
+
+    // Auth
+    login: "Sign In",
+    login_bn: "লগইন",
+    email: "Email Address",
+    password: "Password",
+    remember_me: "Remember me",
+    forgot_password: "Forgot Password?",
+    welcome_back: "Welcome Back",
+    signin_to_continue: "Please enter your details to sign in",
 
     // Dashboard
     goodMorning: "Good Morning",
@@ -218,7 +229,7 @@ export const translations = {
     // Projects & Contracts
     service: "Service",
     fee: "Fee",
-    agreements: "Agreements",
+    agreements: "Chreements",
     billingCycle: "Billing Cycle",
     deadline: "Deadline",
     budget: "Budget",
@@ -300,6 +311,16 @@ export const translations = {
     details: "বিস্তারিত",
     identity: "পরিচয়",
     profile: "প্রোফাইল",
+
+    // Auth
+    login: "সাইন ইন",
+    login_bn: "লগইন",
+    email: "ইমেইল অ্যাড্রেস",
+    password: "পাসওয়ার্ড",
+    remember_me: "আমাকে মনে রাখুন",
+    forgot_password: "পাসওয়ার্ড ভুলে গেছেন?",
+    welcome_back: "স্বাগতম",
+    signin_to_continue: "সাইন ইন করতে আপনার বিবরণ লিখুন",
 
     // Add Actions
     addItem: "আইটেম যোগ করুন",
@@ -471,7 +492,7 @@ export const translations = {
     agreements: "চুক্তিপত্র",
     billingCycle: "বিলিং সাইকেল",
     deadline: "ডেডলাইন",
-    budget: "বাজেট",
+    budget: "বজেট",
     progress: "অগ্রগতি",
     project: "প্রকল্প",
     projectArchived: "রেকর্ডটি স্থায়ীভাবে আর্কাইভ করা হবে।",
