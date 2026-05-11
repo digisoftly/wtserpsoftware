@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -33,6 +32,10 @@ const TenantContext = React.createContext<TenantContextType>({
   isLoading: true,
 });
 
+/**
+ * TenantProvider handles the global ERP context including company identity,
+ * active branch, user roles, and system-wide localization.
+ */
 export function TenantProvider({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
@@ -44,17 +47,24 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const companyId = "warrior-demo-corp";
 
   React.useEffect(() => {
+    // Safety failsafe to ensure UI loads even if initialization hangs
     const failsafe = setTimeout(() => {
       if (isInitializing) {
-        console.warn("Tenant initialization taking too long. Proceeding with defaults.");
+        console.warn("Tenant initialization timeout. Proceeding with safe defaults.");
         setIsInitializing(false);
       }
-    }, 5000);
+    }, 3000);
 
     const initTenant = async () => {
+      // If user is not logged in, initialization is done immediately (for login page)
+      if (!isUserLoading && !user) {
+        setIsInitializing(false);
+        return;
+      }
+
       if (!isUserLoading && user && db) {
         try {
-          // 1. Fetch System Settings (Always fallback if permission fails)
+          // 1. Fetch System Settings (fallback if permission fails)
           const settingsRef = doc(db, "companies", companyId, "system", "config");
           const settingsSnap = await getDoc(settingsRef).catch(() => null);
           let systemDefaultLang: Language = 'BN';
@@ -74,7 +84,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           let activeBranchId = "dhaka-main";
 
           if (userSnap && !userSnap.exists()) {
-            // New user registration
+            // Register new user profile automatically
             const userData = {
               id: user.uid,
               companyId,
@@ -90,7 +100,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
             };
             
             await setDoc(userRef, userData, { merge: true }).catch(err => {
-              console.error("Failed to sync user profile:", err);
+              console.error("User profile sync failed:", err);
             });
             setLanguage(systemDefaultLang);
           } else if (userSnap) {
@@ -102,7 +112,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
           setBranchId(activeBranchId);
 
-          // 3. Fetch Role
+          // 3. Fetch Role Permissions
           const roleRef = doc(db, "companies", companyId, "roles", roleId);
           const roleSnap = await getDoc(roleRef).catch(() => null);
 
@@ -117,14 +127,11 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
             });
           }
         } catch (error) {
-          console.error("Critical Tenant initialization error:", error);
+          console.error("Tenant configuration error:", error);
         } finally {
           setIsInitializing(false);
           clearTimeout(failsafe);
         }
-      } else if (!isUserLoading) {
-        setIsInitializing(false);
-        clearTimeout(failsafe);
       }
     };
 
@@ -138,7 +145,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       const userRef = doc(db, "companies", companyId, "users", user.uid);
       setDoc(userRef, { preferredLanguage: lang }, { merge: true }).catch(console.error);
     }
-  }, [user, db]);
+  }, [user, db, companyId]);
 
   const handleSetBranch = React.useCallback((id: string) => {
     setBranchId(id);
@@ -146,7 +153,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       const userRef = doc(db, "companies", companyId, "users", user.uid);
       setDoc(userRef, { branchId: id }, { merge: true }).catch(console.error);
     }
-  }, [user, db]);
+  }, [user, db, companyId]);
 
   const contextValue = React.useMemo(() => ({ 
     companyId, 
@@ -156,7 +163,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     language,
     setLanguage: handleSetLanguage,
     isLoading: isUserLoading || isInitializing 
-  }), [branchId, handleSetBranch, userRole, language, handleSetLanguage, isUserLoading, isInitializing]);
+  }), [branchId, handleSetBranch, userRole, language, handleSetLanguage, isUserLoading, isInitializing, companyId]);
 
   return (
     <TenantContext.Provider value={contextValue}>
