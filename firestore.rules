@@ -19,7 +19,6 @@ service cloud.firestore {
     }
 
     function isSuperAdmin() {
-      // Safely check for super admin status
       return isSignedIn() && exists(/databases/$(database)/documents/super_admins/$(request.auth.uid));
     }
 
@@ -28,22 +27,38 @@ service cloud.firestore {
     // Allow public read of system configuration for branding on Login Page
     match /companies/{companyId}/system/config {
       allow read: if true;
+      allow write: if isMember(companyId);
     }
 
-    // Allow users to read/write their own profile metadata
-    match /users/{userId} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    // User Profile Access
+    match /companies/{companyId}/users/{userId} {
+      allow read, write: if isSignedIn() && (request.auth.uid == userId || isMember(companyId));
     }
 
-    // Multi-tenant Company Hierarchy
-    match /companies/{companyId} {
-      // Members can read/write everything within their company scope
+    // Global Roles Access
+    match /companies/{companyId}/roles/{roleId} {
+      allow read: if isSignedIn() && isMember(companyId);
+      allow write: if isMember(companyId);
+    }
+
+    // Branch and Sub-collection Access
+    match /companies/{companyId}/branches/{branchId} {
       allow read, write: if isMember(companyId);
       
-      // Ensure recursive access to all sub-collections (branches, products, invoices, etc.)
+      // Explicit sub-collection matching for clarity and reliability
+      match /{collectionName}/{docId} {
+        allow read, write: if isMember(companyId);
+      }
+      
+      // Recursive match for any other deep paths
       match /{allPaths=**} {
         allow read, write: if isMember(companyId);
       }
+    }
+
+    // Root collections
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
     }
 
     // Global bypass for Super Admins

@@ -97,6 +97,54 @@
       "schema": { "$ref": "#/backend/entities/SalesInvoice" },
       "description": "Direct sales records for equipment and services."
     },
+    "/companies/{companyId}/branches/{branchId}/purchase_orders/{orderId}": {
+      "schema": { "type": "object" },
+      "description": "Inbound inventory procurement orders."
+    },
+    "/companies/{companyId}/branches/{branchId}/serial_numbers/{serialId}": {
+      "schema": { "type": "object" },
+      "description": "Individual unit tracking records."
+    },
+    "/companies/{companyId}/branches/{branchId}/sales_returns/{returnId}": {
+      "schema": { "type": "object" },
+      "description": "Customer return records."
+    },
+    "/companies/{companyId}/branches/{branchId}/purchase_returns/{returnId}": {
+      "schema": { "type": "object" },
+      "description": "Supplier return records."
+    },
+    "/companies/{companyId}/branches/{branchId}/products/{productId}": {
+      "schema": { "type": "object" },
+      "description": "Master inventory catalog items."
+    },
+    "/companies/{companyId}/branches/{branchId}/customers/{customerId}": {
+      "schema": { "type": "object" },
+      "description": "Customer profiles."
+    },
+    "/companies/{companyId}/branches/{branchId}/suppliers/{supplierId}": {
+      "schema": { "type": "object" },
+      "description": "Vendor profiles."
+    },
+    "/companies/{companyId}/branches/{branchId}/leads/{leadId}": {
+      "schema": { "type": "object" },
+      "description": "Potential sales opportunities."
+    },
+    "/companies/{companyId}/branches/{branchId}/tickets/{ticketId}": {
+      "schema": { "type": "object" },
+      "description": "Customer support cases."
+    },
+    "/companies/{companyId}/branches/{branchId}/transactions/{txId}": {
+      "schema": { "type": "object" },
+      "description": "Financial journal entries."
+    },
+    "/companies/{companyId}/branches/{branchId}/expenses/{expId}": {
+      "schema": { "type": "object" },
+      "description": "Operational expense records."
+    },
+    "/companies/{companyId}/branches/{branchId}/employees/{empId}": {
+      "schema": { "type": "object" },
+      "description": "Staff and human resource records."
+    },
     "/companies/{companyId}/system/config": {
       "schema": { "type": "object" },
       "description": "Global ERP branding and operational configuration."

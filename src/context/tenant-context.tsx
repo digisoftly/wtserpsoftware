@@ -25,7 +25,7 @@ interface TenantContextType {
 
 const TenantContext = React.createContext<TenantContextType>({
   companyId: 'warrior-demo-corp',
-  branchId: null,
+  branchId: 'dhaka-main',
   setBranchId: () => {},
   userRole: null,
   language: 'BN',
@@ -39,7 +39,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const [isInitializing, setIsInitializing] = React.useState(true);
   const [userRole, setUserRole] = React.useState<Role | null>(null);
   const [language, setLanguage] = React.useState<Language>('BN');
-  const [branchId, setBranchId] = React.useState<string | null>(null);
+  const [branchId, setBranchId] = React.useState<string | null>('dhaka-main');
 
   const companyId = "warrior-demo-corp";
 
@@ -49,7 +49,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         console.warn("Tenant initialization taking too long. Proceeding with defaults.");
         setIsInitializing(false);
       }
-    }, 8000);
+    }, 5000);
 
     const initTenant = async () => {
       if (!isUserLoading && user && db) {
@@ -74,6 +74,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           let activeBranchId = "dhaka-main";
 
           if (userSnap && !userSnap.exists()) {
+            // New user registration
             const userData = {
               id: user.uid,
               companyId,
@@ -149,7 +150,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
   const contextValue = React.useMemo(() => ({ 
     companyId, 
-    branchId, 
+    branchId: branchId || 'dhaka-main', 
     setBranchId: handleSetBranch,
     userRole,
     language,
