@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -11,9 +12,12 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user } = useUser();
   
+  // Normalize path for consistent shell rendering logic (handles trailing slashes)
+  const normalizedPath = pathname?.replace(/\/$/, '') || '';
+  const isLoginPage = normalizedPath === '/login';
+  
   // Only show the shell (sidebar and header) if the user is authenticated and not on the login page.
-  // This prevents unauthenticated components from attempting to fetch data and triggering security rules errors.
-  const showShell = user && pathname !== '/login';
+  const showShell = user && !isLoginPage;
 
   if (!showShell) {
     return <div className="h-screen w-full overflow-hidden bg-background">{children}</div>;
