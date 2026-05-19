@@ -13,17 +13,13 @@ import {
   X, 
   CheckCircle2, 
   Calculator, 
-  Calendar,
-  Phone,
-  MapPin,
-  FileText,
   Clock,
-  ArrowRight,
-  Share2,
-  AlertCircle,
+  User,
   PackagePlus,
   Box,
-  User
+  ArrowRight,
+  Share2,
+  FileText
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -113,7 +109,7 @@ export default function ChallansPage() {
 
   // Handle selection of Invoice to populate data
   React.useEffect(() => {
-    if (!selectedInvoiceId) return;
+    if (!selectedInvoiceId || selectedInvoiceId === "none") return;
     const inv = invoices?.find(i => i.id === selectedInvoiceId);
     if (inv) {
       setIsManualCustomer(false);
@@ -146,7 +142,7 @@ export default function ChallansPage() {
     const newItems = [...lineItems];
     newItems[index] = { ...newItems[index], [field]: value };
     if (field === 'quantity' || field === 'unitPrice') {
-      newItems[index].total = newItems[index].quantity * newItems[index].unitPrice;
+      newItems[index].total = Number(newItems[index].quantity || 0) * Number(newItems[index].unitPrice || 0);
     }
     setLineItems(newItems);
   };
@@ -244,7 +240,7 @@ export default function ChallansPage() {
   };
 
   const resetForm = () => {
-    setSelectedInvoiceId("");
+    setSelectedInvoiceId("none");
     setSelectedCustomerId("");
     setManualCustomerName("");
     setManualCustomerPhone("");
@@ -364,22 +360,24 @@ export default function ChallansPage() {
           <div className="flex flex-col lg:flex-row h-[85vh] lg:h-[80vh] overflow-hidden">
             {/* Form Side */}
             <div className="flex-1 flex flex-col p-4 md:p-6 space-y-6 overflow-hidden">
-              {/* LINK INVOICE (Optional) */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-4 rounded-2xl ring-1 ring-slate-100 shadow-sm">
-                <div className="space-y-1.5 col-span-1">
+              
+              {/* TOP GRID: LINKING & DATE */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded-2xl ring-1 ring-slate-100 shadow-sm">
+                <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('fromInvoice')} (Optional)</Label>
                   <Select value={selectedInvoiceId} onValueChange={setSelectedInvoiceId}>
                     <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 transition-all focus:ring-2 focus:ring-amber-600">
-                      <SelectValue placeholder="Search sales record..." />
+                      <SelectValue placeholder="Link existing sales record..." />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl shadow-2xl">
-                      <SelectItem value="none" className="text-xs font-bold text-slate-400 italic">None / Manual Entry</SelectItem>
+                      <SelectItem value="none" className="text-xs font-bold text-slate-400 italic">None (Standalone Dispatch)</SelectItem>
                       {invoices?.map(i => <SelectItem key={i.id} value={i.id} className="text-xs font-bold">{i.invoiceNumber} - {i.customerName}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5 md:col-span-2 flex items-end">
-                   <p className="text-[9px] text-muted-foreground italic mb-2 uppercase font-bold">Linking an invoice will automatically populate customer and product data.</p>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('dispatchDate')}</Label>
+                  <Input type="date" className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={dispatchDate} onChange={e => setDispatchDate(e.target.value)} />
                 </div>
               </div>
 
@@ -395,59 +393,53 @@ export default function ChallansPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {isManualCustomer ? (
-                    <>
-                      <div className="space-y-1.5">
-                        <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Full Name</Label>
-                        <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerName} onChange={e => setManualCustomerName(e.target.value)} placeholder="e.g. John Doe" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Phone Number</Label>
-                        <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerPhone} onChange={e => setManualCustomerPhone(e.target.value)} placeholder="+880..." />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Address / Office</Label>
-                        <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerAddress} onChange={e => setManualCustomerAddress(e.target.value)} placeholder="Dhaka, Bangladesh" />
-                      </div>
-                    </>
-                  ) : (
-                    <div className="space-y-1.5 md:col-span-2">
-                      <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('customer')}</Label>
-                      <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                        <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 shadow-sm">
-                          <SelectValue placeholder="Pick from database..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-bold">{c.firstName} {c.lastName}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                {isManualCustomer ? (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in slide-in-from-top-1 duration-300">
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Full Name</Label>
+                      <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerName} onChange={e => setManualCustomerName(e.target.value)} placeholder="e.g. John Doe" />
                     </div>
-                  )}
-                  <div className="space-y-1.5">
-                    <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('dispatchDate')}</Label>
-                    <Input type="date" className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={dispatchDate} onChange={e => setDispatchDate(e.target.value)} />
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Phone Number</Label>
+                      <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerPhone} onChange={e => setManualCustomerPhone(e.target.value)} placeholder="+880..." />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Delivery Address</Label>
+                      <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerAddress} onChange={e => setManualCustomerAddress(e.target.value)} placeholder="Village, City, Area..." />
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-300">
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('customer')}</Label>
+                    <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                      <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 shadow-sm">
+                        <SelectValue placeholder="Search from database..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-bold">{c.firstName} {c.lastName} - {c.companyName || 'Personal'}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
 
-              {/* Logistics Grid */}
+              {/* LOGISTICS GRID */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-6 rounded-2xl ring-1 ring-slate-100 shadow-sm">
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('deliveryMethod')}</Label>
-                  <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs" value={deliveryMethod} onChange={e => setDeliveryMethod(e.target.value)} />
+                  <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={deliveryMethod} onChange={e => setDeliveryMethod(e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('vehicleNumber')}</Label>
-                  <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs" value={vehicleNumber} onChange={e => setVehicleNumber(e.target.value)} />
+                  <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={vehicleNumber} onChange={e => setVehicleNumber(e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('driverName')}</Label>
-                  <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs" value={driverName} onChange={e => setDriverName(e.target.value)} />
+                  <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={driverName} onChange={e => setDriverName(e.target.value)} />
                 </div>
               </div>
 
-              {/* Items Table */}
+              {/* PRODUCT WORKSHEET */}
               <div className="flex-1 bg-white rounded-[2rem] shadow-sm ring-1 ring-slate-100 overflow-hidden flex flex-col border border-slate-50 min-h-0">
                 <div className="p-4 border-b bg-slate-50/50 flex justify-between items-center">
                   <h3 className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('itemDescription')}</h3>
@@ -485,7 +477,7 @@ export default function ChallansPage() {
                                   className="h-8 text-[11px] font-black uppercase border-none ring-1 ring-slate-100 bg-slate-50/30" 
                                   value={item.name} 
                                   onChange={e => updateItem(idx, 'name', e.target.value)} 
-                                  placeholder="Enter custom item name..."
+                                  placeholder="Type individual product name..."
                                 />
                               ) : (
                                 <div className="flex flex-col">
@@ -540,8 +532,8 @@ export default function ChallansPage() {
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('notes')}</Label>
                     <textarea 
-                      className="w-full min-h-[100px] rounded-2xl bg-slate-50 border-none p-4 text-xs font-medium focus:ring-2 focus:ring-amber-600" 
-                      placeholder="Special instructions for delivery..."
+                      className="w-full min-h-[100px] rounded-2xl bg-slate-50 border-none p-4 text-xs font-medium focus:ring-2 focus:ring-amber-600 outline-none resize-none" 
+                      placeholder="Special instructions for delivery team..."
                       value={notes}
                       onChange={e => setNotes(e.target.value)}
                     />
@@ -550,7 +542,7 @@ export default function ChallansPage() {
 
                 <div className="p-4 rounded-2xl bg-blue-50 flex items-center gap-3 border-2 border-dashed border-blue-200">
                   <div className="p-2 rounded-xl bg-blue-600 text-white"><Calculator className="h-4 w-4" /></div>
-                  <p className="text-[9px] font-black uppercase tracking-tighter leading-tight text-blue-700">Inventory stock will be deducted for catalog items.</p>
+                  <p className="text-[9px] font-black uppercase tracking-tighter leading-tight text-blue-700">Inventory sync active for catalog items only.</p>
                 </div>
               </div>
 
@@ -591,7 +583,7 @@ export default function ChallansPage() {
                   quantity: i.quantity,
                   unitPrice: i.unitPrice,
                   total: i.total,
-                  description: i.isCustom ? "Custom Item" : `SKU: ${i.sku}`
+                  description: i.isCustom ? "Individual / Custom Item" : `SKU: ${i.sku}`
                 }))}
                 subtotal={selectedRecord.totalAmount}
                 grandTotal={selectedRecord.totalAmount}
