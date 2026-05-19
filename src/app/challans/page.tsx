@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -23,7 +22,8 @@ import {
   Share2,
   AlertCircle,
   PackagePlus,
-  Box
+  Box,
+  User
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -33,6 +33,7 @@ import { Card } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
@@ -68,10 +69,14 @@ export default function ChallansPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Form State
+  const [isManualCustomer, setIsManualCustomer] = React.useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = React.useState("");
   const [selectedCustomerId, setSelectedCustomerId] = React.useState("");
+  const [manualCustomerName, setManualCustomerName] = React.useState("");
+  const [manualCustomerPhone, setManualCustomerPhone] = React.useState("");
+  const [manualCustomerAddress, setManualCustomerAddress] = React.useState("");
+  
   const [dispatchDate, setDispatchDate] = React.useState(new Date().toISOString().split('T')[0]);
-  const [deliveryDate, setDeliveryDate] = React.useState("");
   const [lineItems, setLineItems] = React.useState<ChallanItem[]>([]);
   const [deliveryMethod, setDeliveryMethod] = React.useState("Company Vehicle");
   const [vehicleNumber, setVehicleNumber] = React.useState("");
@@ -111,6 +116,7 @@ export default function ChallansPage() {
     if (!selectedInvoiceId) return;
     const inv = invoices?.find(i => i.id === selectedInvoiceId);
     if (inv) {
+      setIsManualCustomer(false);
       setSelectedCustomerId(inv.customerId);
       setLineItems(inv.items.map((item: any) => ({
         productId: item.productId,
@@ -150,7 +156,15 @@ export default function ChallansPage() {
   };
 
   const handleSaveChallan = async () => {
-    if (!selectedCustomerId || lineItems.length === 0) {
+    if (!isManualCustomer && !selectedCustomerId) {
+      toast({ variant: "destructive", title: t('error'), description: "Please select a customer or provide manual details." });
+      return;
+    }
+    if (isManualCustomer && !manualCustomerName) {
+      toast({ variant: "destructive", title: t('error'), description: "Please enter customer name." });
+      return;
+    }
+    if (lineItems.length === 0) {
       toast({ variant: "destructive", title: t('error'), description: t('noItemsSelected') });
       return;
     }
@@ -159,7 +173,21 @@ export default function ChallansPage() {
     try {
       await runTransaction(db!, async (transaction) => {
         const challanRef = doc(collection(db!, "companies", companyId!, "branches", branchId!, "delivery_challans"));
-        const customer = customers?.find(c => c.id === selectedCustomerId);
+        
+        let customerName = manualCustomerName;
+        let customerPhone = manualCustomerPhone;
+        let customerAddress = manualCustomerAddress;
+        let finalCustomerId = selectedCustomerId;
+
+        if (!isManualCustomer) {
+          const customer = customers?.find(c => c.id === selectedCustomerId);
+          customerName = customer ? `${customer.firstName} ${customer.lastName}` : "Client";
+          customerPhone = customer?.phoneNumber || "";
+          customerAddress = customer?.companyName || "---";
+        } else {
+          finalCustomerId = "manual";
+        }
+
         const invoice = invoices?.find(i => i.id === selectedInvoiceId);
 
         const challanData = {
@@ -167,14 +195,14 @@ export default function ChallansPage() {
           companyId,
           branchId,
           challanNumber: `CHL-${Date.now().toString().slice(-6)}`,
-          invoiceId: selectedInvoiceId,
+          invoiceId: selectedInvoiceId || "manual",
           invoiceNumber: invoice?.invoiceNumber || "MANUAL",
-          customerId: selectedCustomerId,
-          customerName: customer ? `${customer.firstName} ${customer.lastName}` : "Client",
-          customerPhone: customer?.phoneNumber || "",
-          customerAddress: customer?.companyName || "---",
+          customerId: finalCustomerId,
+          customerName,
+          customerPhone,
+          customerAddress,
           dispatchDate,
-          deliveryDate,
+          deliveryDate: "",
           deliveryMethod,
           vehicleNumber,
           driverName,
@@ -218,9 +246,12 @@ export default function ChallansPage() {
   const resetForm = () => {
     setSelectedInvoiceId("");
     setSelectedCustomerId("");
+    setManualCustomerName("");
+    setManualCustomerPhone("");
+    setManualCustomerAddress("");
+    setIsManualCustomer(false);
     setLineItems([]);
     setDispatchDate(new Date().toISOString().split('T')[0]);
-    setDeliveryDate("");
     setDeliveryMethod("Company Vehicle");
     setVehicleNumber("");
     setDriverName("");
@@ -333,48 +364,86 @@ export default function ChallansPage() {
           <div className="flex flex-col lg:flex-row h-[85vh] lg:h-[80vh] overflow-hidden">
             {/* Form Side */}
             <div className="flex-1 flex flex-col p-4 md:p-6 space-y-6 overflow-hidden">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('fromInvoice')}</Label>
+              {/* LINK INVOICE (Optional) */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-4 rounded-2xl ring-1 ring-slate-100 shadow-sm">
+                <div className="space-y-1.5 col-span-1">
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('fromInvoice')} (Optional)</Label>
                   <Select value={selectedInvoiceId} onValueChange={setSelectedInvoiceId}>
-                    <SelectTrigger className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 shadow-sm transition-all focus:ring-2 focus:ring-amber-600">
-                      <SelectValue placeholder={t('search')} />
+                    <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 transition-all focus:ring-2 focus:ring-amber-600">
+                      <SelectValue placeholder="Search sales record..." />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl shadow-2xl">
+                      <SelectItem value="none" className="text-xs font-bold text-slate-400 italic">None / Manual Entry</SelectItem>
                       {invoices?.map(i => <SelectItem key={i.id} value={i.id} className="text-xs font-bold">{i.invoiceNumber} - {i.customerName}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('customer')}</Label>
-                  <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                    <SelectTrigger className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 shadow-sm">
-                      <SelectValue placeholder={t('search')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-bold">{c.firstName} {c.lastName}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-1.5 md:col-span-2 flex items-end">
+                   <p className="text-[9px] text-muted-foreground italic mb-2 uppercase font-bold">Linking an invoice will automatically populate customer and product data.</p>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('dispatchDate')}</Label>
-                  <Input type="date" className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs font-bold" value={dispatchDate} onChange={e => setDispatchDate(e.target.value)} />
+              </div>
+
+              {/* CUSTOMER SECTION */}
+              <div className="bg-white p-6 rounded-2xl ring-1 ring-slate-100 shadow-sm space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-black uppercase text-slate-900 flex items-center gap-2">
+                    <User className="h-4 w-4 text-amber-600" /> Customer Identification
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-[10px] font-black uppercase text-muted-foreground">Individual Entry</Label>
+                    <Switch checked={isManualCustomer} onCheckedChange={setIsManualCustomer} className="data-[state=checked]:bg-amber-600" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {isManualCustomer ? (
+                    <>
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Full Name</Label>
+                        <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerName} onChange={e => setManualCustomerName(e.target.value)} placeholder="e.g. John Doe" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Phone Number</Label>
+                        <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerPhone} onChange={e => setManualCustomerPhone(e.target.value)} placeholder="+880..." />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Address / Office</Label>
+                        <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerAddress} onChange={e => setManualCustomerAddress(e.target.value)} placeholder="Dhaka, Bangladesh" />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="space-y-1.5 md:col-span-2">
+                      <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('customer')}</Label>
+                      <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                        <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 shadow-sm">
+                          <SelectValue placeholder="Pick from database..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-bold">{c.firstName} {c.lastName}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('dispatchDate')}</Label>
+                    <Input type="date" className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={dispatchDate} onChange={e => setDispatchDate(e.target.value)} />
+                  </div>
                 </div>
               </div>
 
               {/* Logistics Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-6 rounded-2xl ring-1 ring-slate-100 shadow-sm">
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('deliveryMethod')}</Label>
-                  <Input className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs" value={deliveryMethod} onChange={e => setDeliveryMethod(e.target.value)} />
+                  <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs" value={deliveryMethod} onChange={e => setDeliveryMethod(e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('vehicleNumber')}</Label>
-                  <Input className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs" value={vehicleNumber} onChange={e => setVehicleNumber(e.target.value)} />
+                  <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs" value={vehicleNumber} onChange={e => setVehicleNumber(e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('driverName')}</Label>
-                  <Input className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs" value={driverName} onChange={e => setDriverName(e.target.value)} />
+                  <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs" value={driverName} onChange={e => setDriverName(e.target.value)} />
                 </div>
               </div>
 
@@ -382,7 +451,7 @@ export default function ChallansPage() {
               <div className="flex-1 bg-white rounded-[2rem] shadow-sm ring-1 ring-slate-100 overflow-hidden flex flex-col border border-slate-50 min-h-0">
                 <div className="p-4 border-b bg-slate-50/50 flex justify-between items-center">
                   <h3 className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('itemDescription')}</h3>
-                  <Button variant="outline" size="sm" className="h-8 rounded-full gap-2 text-[10px] font-black uppercase bg-white" onClick={addCustomItem}>
+                  <Button variant="outline" size="sm" className="h-8 rounded-full gap-2 text-[10px] font-black uppercase bg-white border-amber-200 text-amber-700" onClick={addCustomItem}>
                     <PackagePlus className="h-3.5 w-3.5 text-amber-600" /> {t('addCustomItem')}
                   </Button>
                 </div>
@@ -446,7 +515,7 @@ export default function ChallansPage() {
                               ৳{item.total.toLocaleString()}
                             </TableCell>
                             <TableCell>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 rounded-full hover:bg-red-50 opacity-0 group-hover:opacity-100" onClick={() => removeItem(idx)}>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 rounded-full hover:bg-red-50 md:opacity-0 md:group-hover:opacity-100" onClick={() => removeItem(idx)}>
                                 <X className="h-4 w-4" />
                               </Button>
                             </TableCell>
