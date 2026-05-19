@@ -19,7 +19,8 @@ import {
   Box,
   ArrowRight,
   Share2,
-  FileText
+  FileText,
+  Barcode
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -98,6 +99,12 @@ export default function ChallansPage() {
   }, [db, companyId, branchId]);
   const { data: customers } = useCollection(customersQuery);
 
+  const productsQuery = useMemoFirebase(() => {
+    if (!db || !companyId || !branchId) return null;
+    return collection(db, "companies", companyId, "branches", branchId, "products");
+  }, [db, companyId, branchId]);
+  const { data: products } = useCollection(productsQuery);
+
   // Calculations
   const totalAmount = lineItems.reduce((sum, item) => sum + item.total, 0);
 
@@ -119,12 +126,36 @@ export default function ChallansPage() {
         name: item.name,
         sku: item.sku || "",
         quantity: item.qty,
-        unitPrice: item.price,
-        total: item.total,
+        unitPrice: item.price || item.unitPrice || 0,
+        total: item.total || (item.qty * (item.price || item.unitPrice || 0)),
         isCustom: false
       })));
     }
   }, [selectedInvoiceId, invoices]);
+
+  const addCatalogItem = (productId: string) => {
+    const product = products?.find(p => p.id === productId);
+    if (!product) return;
+
+    const existing = lineItems.find(i => i.productId === productId);
+    if (existing) {
+      setLineItems(lineItems.map(i => 
+        i.productId === productId 
+          ? { ...i, quantity: i.quantity + 1, total: (i.quantity + 1) * i.unitPrice } 
+          : i
+      ));
+    } else {
+      setLineItems([...lineItems, {
+        productId: product.id,
+        name: product.name,
+        sku: product.sku || "N/A",
+        quantity: 1,
+        unitPrice: product.unitPrice || 0,
+        total: product.unitPrice || 0,
+        isCustom: false
+      }]);
+    }
+  };
 
   const addCustomItem = () => {
     setLineItems([...lineItems, {
@@ -359,7 +390,7 @@ export default function ChallansPage() {
 
           <div className="flex flex-col lg:flex-row h-[85vh] lg:h-[80vh] overflow-hidden">
             {/* Form Side */}
-            <div className="flex-1 flex flex-col p-4 md:p-6 space-y-6 overflow-hidden">
+            <div className="flex-1 flex flex-col p-4 md:p-6 space-y-4 md:space-y-6 overflow-hidden">
               
               {/* TOP GRID: LINKING & DATE */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded-2xl ring-1 ring-slate-100 shadow-sm">
@@ -382,7 +413,7 @@ export default function ChallansPage() {
               </div>
 
               {/* CUSTOMER SECTION */}
-              <div className="bg-white p-6 rounded-2xl ring-1 ring-slate-100 shadow-sm space-y-6">
+              <div className="bg-white p-6 rounded-2xl ring-1 ring-slate-100 shadow-sm space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-black uppercase text-slate-900 flex items-center gap-2">
                     <User className="h-4 w-4 text-amber-600" /> Customer Identification
@@ -423,31 +454,38 @@ export default function ChallansPage() {
                 )}
               </div>
 
-              {/* LOGISTICS GRID */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-6 rounded-2xl ring-1 ring-slate-100 shadow-sm">
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('deliveryMethod')}</Label>
-                  <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={deliveryMethod} onChange={e => setDeliveryMethod(e.target.value)} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('vehicleNumber')}</Label>
-                  <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={vehicleNumber} onChange={e => setVehicleNumber(e.target.value)} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('driverName')}</Label>
-                  <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={driverName} onChange={e => setDriverName(e.target.value)} />
+              {/* PRODUCT PICKER */}
+              <div className="bg-white p-4 rounded-2xl ring-1 ring-slate-100 shadow-sm">
+                <div className="flex flex-col md:flex-row gap-4 items-end">
+                  <div className="flex-1 space-y-1.5">
+                    <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Select Product to Add</Label>
+                    <Select onValueChange={addCatalogItem}>
+                      <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 shadow-sm transition-all focus:ring-2 focus:ring-amber-500">
+                        <SelectValue placeholder={t('addProduct')} />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        {products?.map(p => (
+                          <SelectItem key={p.id} value={p.id} className="text-xs font-bold">
+                            {p.name} <span className="text-[9px] opacity-60 ml-2">(STOCK: {p.currentStock})</span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button variant="outline" className="h-12 rounded-xl gap-2 border-amber-200 text-amber-700 font-black text-[10px] uppercase bg-amber-50/50" onClick={addCustomItem}>
+                    <PackagePlus className="h-4 w-4" /> {t('addCustomItem')}
+                  </Button>
                 </div>
               </div>
 
               {/* PRODUCT WORKSHEET */}
               <div className="flex-1 bg-white rounded-[2rem] shadow-sm ring-1 ring-slate-100 overflow-hidden flex flex-col border border-slate-50 min-h-0">
-                <div className="p-4 border-b bg-slate-50/50 flex justify-between items-center">
-                  <h3 className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('itemDescription')}</h3>
-                  <Button variant="outline" size="sm" className="h-8 rounded-full gap-2 text-[10px] font-black uppercase bg-white border-amber-200 text-amber-700" onClick={addCustomItem}>
-                    <PackagePlus className="h-3.5 w-3.5 text-amber-600" /> {t('addCustomItem')}
-                  </Button>
+                <div className="p-4 border-b bg-slate-50/50">
+                  <h3 className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
+                    <Barcode className="h-3.5 w-3.5" /> {t('itemDescription')}
+                  </h3>
                 </div>
-                <div className="overflow-auto flex-1 custom-scrollbar">
+                <div className="overflow-y-auto flex-1 custom-scrollbar">
                   <Table>
                     <TableHeader className="bg-slate-50/50 sticky top-0 z-10 backdrop-blur-md">
                       <TableRow>
@@ -521,11 +559,29 @@ export default function ChallansPage() {
             </div>
 
             {/* Sidebar Summary */}
-            <div className="w-full lg:w-[350px] bg-white border-l border-slate-100 p-8 space-y-8 flex flex-col shadow-2xl relative z-20 shrink-0">
+            <div className="w-full lg:w-[350px] bg-white border-l border-slate-100 p-8 space-y-6 flex flex-col shadow-2xl relative z-20 shrink-0 overflow-y-auto custom-scrollbar">
               <div className="space-y-6">
                 <div className="bg-amber-600 text-white p-8 rounded-[2.5rem] shadow-2xl shadow-amber-100 space-y-4 text-center">
                   <p className="text-[10px] uppercase font-black opacity-60 tracking-[0.2em]">{t('grandTotal')}</p>
                   <h2 className="text-4xl font-headline font-black tracking-tighter">৳{totalAmount.toLocaleString()}</h2>
+                </div>
+
+                <div className="space-y-4 bg-slate-50 p-6 rounded-3xl ring-1 ring-slate-100">
+                  <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Logistics Context</h4>
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('deliveryMethod')}</Label>
+                      <Input className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs font-bold" value={deliveryMethod} onChange={e => setDeliveryMethod(e.target.value)} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('vehicleNumber')}</Label>
+                      <Input className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs font-bold" value={vehicleNumber} onChange={e => setVehicleNumber(e.target.value)} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('driverName')}</Label>
+                      <Input className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs font-bold" value={driverName} onChange={e => setDriverName(e.target.value)} />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-4">
@@ -546,7 +602,7 @@ export default function ChallansPage() {
                 </div>
               </div>
 
-              <div className="mt-auto">
+              <div className="mt-auto pt-6">
                 <Button 
                   className="w-full h-16 bg-amber-600 hover:bg-amber-700 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl shadow-amber-100 transition-all active:scale-95" 
                   disabled={isSubmitting || lineItems.length === 0} 
