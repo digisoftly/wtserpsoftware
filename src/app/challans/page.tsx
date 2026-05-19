@@ -21,7 +21,9 @@ import {
   Share2,
   FileText,
   Barcode,
-  LayoutGrid
+  LayoutGrid,
+  MapPin,
+  Phone
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -376,7 +378,7 @@ export default function ChallansPage() {
 
       {/* NEW CHALLAN MODAL */}
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="max-w-[95vw] w-[1400px] p-0 overflow-hidden border-none shadow-2xl bg-slate-50 rounded-[2rem] md:rounded-[2.5rem]">
+        <DialogContent className="max-w-[95vw] w-[1400px] p-0 overflow-hidden border-none shadow-2xl bg-slate-50 rounded-[2rem] md:rounded-[2.5rem] max-h-[96vh]">
           <DialogHeader className="bg-amber-600 p-5 text-white flex-row items-center justify-between space-y-0">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center shrink-0">
@@ -389,39 +391,43 @@ export default function ChallansPage() {
             </div>
           </DialogHeader>
 
-          <div className="flex flex-col lg:flex-row h-[85vh] lg:h-[80vh] overflow-hidden">
+          <div className="flex flex-col lg:flex-row h-full max-h-[calc(96vh-80px)] overflow-hidden">
             {/* Form Side */}
-            <div className="flex-1 flex flex-col p-4 md:p-6 space-y-4 md:space-y-6 overflow-y-auto lg:overflow-hidden custom-scrollbar">
+            <div className="flex-1 flex flex-col p-4 md:p-6 space-y-4 md:space-y-6 overflow-y-auto custom-scrollbar">
               
               {/* TOP GRID: LINKING & DATE */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded-2xl ring-1 ring-slate-100 shadow-sm">
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('fromInvoice')} (Optional)</Label>
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest flex items-center gap-1.5">
+                    <FileText className="h-3 w-3" /> {t('fromInvoice')} (Optional)
+                  </Label>
                   <Select value={selectedInvoiceId} onValueChange={setSelectedInvoiceId}>
-                    <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 transition-all focus:ring-2 focus:ring-amber-600">
+                    <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 transition-all focus:ring-2 focus:ring-amber-600 font-bold text-xs">
                       <SelectValue placeholder="Link existing sales record..." />
                     </SelectTrigger>
-                    <SelectContent className="rounded-xl shadow-2xl max-h-[200px]">
+                    <SelectContent className="rounded-xl shadow-2xl max-h-[250px]">
                       <SelectItem value="none" className="text-xs font-bold text-slate-400 italic">None (Standalone Dispatch)</SelectItem>
                       {invoices?.map(i => <SelectItem key={i.id} value={i.id} className="text-xs font-bold">{i.invoiceNumber} - {i.customerName}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('dispatchDate')}</Label>
-                  <Input type="date" className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={dispatchDate} onChange={e => setDispatchDate(e.target.value)} />
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest flex items-center gap-1.5">
+                    <Clock className="h-3 w-3" /> {t('dispatchDate')}
+                  </Label>
+                  <Input type="date" className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-black" value={dispatchDate} onChange={e => setDispatchDate(e.target.value)} />
                 </div>
               </div>
 
               {/* CUSTOMER SECTION */}
               <div className="bg-white p-4 md:p-6 rounded-2xl ring-1 ring-slate-100 shadow-sm space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <h3 className="text-xs font-black uppercase text-slate-900 flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4 border-slate-50">
+                  <h3 className="text-[10px] font-black uppercase text-slate-900 flex items-center gap-2 tracking-widest">
                     <User className="h-4 w-4 text-amber-600" /> Customer Identification
                   </h3>
-                  <div className="flex items-center gap-2">
-                    <Label className="text-[10px] font-black uppercase text-muted-foreground">Individual Entry</Label>
-                    <Switch checked={isManualCustomer} onCheckedChange={setIsManualCustomer} className="data-[state=checked]:bg-amber-600" />
+                  <div className="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-full">
+                    <Label className="text-[9px] font-black uppercase text-muted-foreground cursor-pointer" htmlFor="manual-entry">Manual Individual Entry</Label>
+                    <Switch id="manual-entry" checked={isManualCustomer} onCheckedChange={setIsManualCustomer} className="data-[state=checked]:bg-amber-600 scale-75" />
                   </div>
                 </div>
 
@@ -433,21 +439,27 @@ export default function ChallansPage() {
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Phone Number</Label>
-                      <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerPhone} onChange={e => setManualCustomerPhone(e.target.value)} placeholder="+880..." />
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                        <Input className="h-11 pl-9 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerPhone} onChange={e => setManualCustomerPhone(e.target.value)} placeholder="+880..." />
+                      </div>
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Delivery Address</Label>
-                      <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerAddress} onChange={e => setManualCustomerAddress(e.target.value)} placeholder="Village, City, Area..." />
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                        <Input className="h-11 pl-9 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerAddress} onChange={e => setManualCustomerAddress(e.target.value)} placeholder="Area, City..." />
+                      </div>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-300">
                     <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('customer')}</Label>
                     <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                      <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 shadow-sm">
+                      <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 shadow-sm font-bold text-xs">
                         <SelectValue placeholder="Search from database..." />
                       </SelectTrigger>
-                      <SelectContent className="max-h-[200px]">
+                      <SelectContent className="max-h-[250px] rounded-xl">
                         {customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-bold">{c.firstName} {c.lastName} - {c.companyName || 'Personal'}</SelectItem>)}
                       </SelectContent>
                     </Select>
@@ -456,163 +468,170 @@ export default function ChallansPage() {
               </div>
 
               {/* PRODUCT PICKER */}
-              <div className="bg-white p-4 rounded-2xl ring-1 ring-slate-100 shadow-sm">
+              <div className="bg-white p-4 rounded-2xl ring-1 ring-slate-100 shadow-sm border border-amber-50">
                 <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-end">
                   <div className="flex-1 space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Select Product to Add</Label>
                     <Select onValueChange={addCatalogItem}>
-                      <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 shadow-sm transition-all focus:ring-2 focus:ring-amber-500">
+                      <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 shadow-sm transition-all focus:ring-2 focus:ring-amber-500 font-bold text-xs">
                         <SelectValue placeholder={t('addProduct')} />
                       </SelectTrigger>
-                      <SelectContent className="max-h-[300px]">
+                      <SelectContent className="max-h-[300px] rounded-xl">
                         {products?.map(p => (
                           <SelectItem key={p.id} value={p.id} className="text-xs font-bold">
-                            {p.name} <span className="text-[9px] opacity-60 ml-2">(STOCK: {p.currentStock})</span>
+                            {p.name} <span className="text-[9px] opacity-60 ml-2 font-mono">(STOCK: {p.currentStock})</span>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button variant="outline" className="h-12 rounded-xl gap-2 border-amber-200 text-amber-700 font-black text-[10px] uppercase bg-amber-50/50" onClick={addCustomItem}>
+                  <Button variant="outline" className="h-12 rounded-xl gap-2 border-amber-200 text-amber-700 font-black text-[10px] uppercase bg-amber-50/50 transition-all hover:bg-amber-100 shadow-sm" onClick={addCustomItem}>
                     <PackagePlus className="h-4 w-4" /> {t('addCustomItem')}
                   </Button>
                 </div>
               </div>
 
               {/* PRODUCT WORKSHEET */}
-              <div className="flex-1 bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-sm ring-1 ring-slate-100 overflow-hidden flex flex-col border border-slate-50 min-h-[300px] md:min-h-0">
-                <div className="p-4 border-b bg-slate-50/50">
+              <div className="flex-1 bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-sm ring-1 ring-slate-100 overflow-hidden flex flex-col border border-slate-50 min-h-[400px] lg:min-h-0">
+                <div className="p-4 border-b bg-slate-50/50 flex items-center justify-between">
                   <h3 className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
                     <Barcode className="h-3.5 w-3.5" /> {t('itemDescription')}
                   </h3>
+                  <Badge variant="outline" className="text-[8px] h-5 font-black uppercase border-none bg-white">{lineItems.length} Items</Badge>
                 </div>
-                <div className="overflow-x-auto lg:overflow-y-auto flex-1 custom-scrollbar">
-                  <Table>
-                    <TableHeader className="bg-slate-50/50 sticky top-0 z-10 backdrop-blur-md">
-                      <TableRow>
-                        <TableHead className="text-[10px] uppercase font-black py-4 pl-4 md:pl-8">{t('itemDescription')}</TableHead>
-                        <TableHead className="text-[10px] uppercase font-black text-center w-24">{t('qty')}</TableHead>
-                        <TableHead className="text-[10px] uppercase font-black text-right w-32 hidden sm:table-cell">{t('unitPrice')}</TableHead>
-                        <TableHead className="text-[10px] uppercase font-black text-right w-32 pr-4 md:pr-8">{t('total')}</TableHead>
-                        <TableHead className="w-10"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {lineItems.length === 0 ? (
+                <div className="overflow-x-auto flex-1 custom-scrollbar">
+                  <div className="min-w-[800px]">
+                    <Table>
+                      <TableHeader className="bg-slate-50/50 sticky top-0 z-10 backdrop-blur-md">
                         <TableRow>
-                          <TableCell colSpan={5} className="h-48 text-center">
-                            <div className="flex flex-col items-center opacity-20">
-                              <Box className="h-12 w-12 mb-4" />
-                              <p className="text-[10px] uppercase font-black tracking-[0.3em]">{t('noItemsSelected')}</p>
-                            </div>
-                          </TableCell>
+                          <TableHead className="text-[10px] uppercase font-black py-4 pl-4 md:pl-8">{t('itemDescription')}</TableHead>
+                          <TableHead className="text-[10px] uppercase font-black text-center w-24">{t('qty')}</TableHead>
+                          <TableHead className="text-[10px] uppercase font-black text-right w-32">{t('unitPrice')}</TableHead>
+                          <TableHead className="text-[10px] uppercase font-black text-right w-32 pr-4 md:pr-8">{t('total')}</TableHead>
+                          <TableHead className="w-10"></TableHead>
                         </TableRow>
-                      ) : (
-                        lineItems.map((item, idx) => (
-                          <TableRow key={idx} className="h-16 hover:bg-slate-50/50 transition-colors group">
-                            <TableCell className="pl-4 md:pl-8">
-                              {item.isCustom ? (
-                                <Input 
-                                  className="h-8 text-[11px] font-black uppercase border-none ring-1 ring-slate-100 bg-slate-50/30" 
-                                  value={item.name} 
-                                  onChange={e => updateItem(idx, 'name', e.target.value)} 
-                                  placeholder="Type individual product name..."
-                                />
-                              ) : (
-                                <div className="flex flex-col">
-                                  <span className="text-[11px] font-black text-slate-900 uppercase tracking-tighter">{item.name}</span>
-                                  <p className="text-[9px] font-mono text-muted-foreground">{item.sku}</p>
-                                </div>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Input 
-                                type="number" 
-                                className="h-8 w-16 mx-auto text-center font-black text-xs bg-slate-100 border-none" 
-                                value={item.quantity} 
-                                onChange={e => updateItem(idx, 'quantity', Number(e.target.value))}
-                              />
-                            </TableCell>
-                            <TableCell className="text-right hidden sm:table-cell">
-                              <Input 
-                                type="number" 
-                                className="h-8 w-24 ml-auto text-right font-bold text-xs bg-slate-100 border-none" 
-                                value={item.unitPrice} 
-                                onChange={e => updateItem(idx, 'unitPrice', Number(e.target.value))}
-                                disabled={!item.isCustom}
-                              />
-                            </TableCell>
-                            <TableCell className="text-right pr-4 md:pr-8 text-xs font-black text-amber-600">
-                              ৳{item.total.toLocaleString()}
-                            </TableCell>
-                            <TableCell>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 rounded-full hover:bg-red-50 md:opacity-0 md:group-hover:opacity-100" onClick={() => removeItem(idx)}>
-                                <X className="h-4 w-4" />
-                              </Button>
+                      </TableHeader>
+                      <TableBody>
+                        {lineItems.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={5} className="h-48 text-center">
+                              <div className="flex flex-col items-center opacity-20">
+                                <Box className="h-12 w-12 mb-4" />
+                                <p className="text-[10px] uppercase font-black tracking-[0.3em]">{t('noItemsSelected')}</p>
+                              </div>
                             </TableCell>
                           </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
+                        ) : (
+                          lineItems.map((item, idx) => (
+                            <TableRow key={idx} className="h-16 hover:bg-slate-50/50 transition-colors group">
+                              <TableCell className="pl-4 md:pl-8">
+                                {item.isCustom ? (
+                                  <Input 
+                                    className="h-9 text-[11px] font-black uppercase border-none ring-1 ring-slate-100 bg-slate-50/30" 
+                                    value={item.name} 
+                                    onChange={e => updateItem(idx, 'name', e.target.value)} 
+                                    placeholder="Type individual product name..."
+                                  />
+                                ) : (
+                                  <div className="flex flex-col">
+                                    <span className="text-[11px] font-black text-slate-900 uppercase tracking-tighter">{item.name}</span>
+                                    <p className="text-[9px] font-mono text-muted-foreground">{item.sku}</p>
+                                  </div>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Input 
+                                  type="number" 
+                                  className="h-9 w-20 mx-auto text-center font-black text-xs bg-slate-100 border-none rounded-lg" 
+                                  value={item.quantity} 
+                                  onChange={e => updateItem(idx, 'quantity', Number(e.target.value))}
+                                />
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Input 
+                                  type="number" 
+                                  className="h-9 w-28 ml-auto text-right font-bold text-xs bg-slate-100 border-none rounded-lg" 
+                                  value={item.unitPrice} 
+                                  onChange={e => updateItem(idx, 'unitPrice', Number(e.target.value))}
+                                  disabled={!item.isCustom}
+                                />
+                              </TableCell>
+                              <TableCell className="text-right pr-4 md:pr-8 text-xs font-black text-amber-600">
+                                ৳{item.total.toLocaleString()}
+                              </TableCell>
+                              <TableCell>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 rounded-full hover:bg-red-50" onClick={() => removeItem(idx)}>
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Sidebar Summary */}
-            <div className="w-full lg:w-[350px] bg-white border-t lg:border-t-0 lg:border-l border-slate-100 p-6 md:p-8 space-y-6 flex flex-col shadow-2xl relative z-20 shrink-0 overflow-y-auto custom-scrollbar">
+            <div className="w-full lg:w-[380px] bg-white border-t lg:border-t-0 lg:border-l border-slate-100 p-6 md:p-8 space-y-6 flex flex-col shadow-2xl relative z-20 shrink-0 overflow-y-auto custom-scrollbar">
               <div className="space-y-6">
-                <div className="bg-amber-600 text-white p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl shadow-amber-100 space-y-4 text-center">
-                  <p className="text-[10px] uppercase font-black opacity-60 tracking-[0.2em]">{t('grandTotal')}</p>
-                  <h2 className="text-3xl md:text-4xl font-headline font-black tracking-tighter">৳{totalAmount.toLocaleString()}</h2>
+                <div className="bg-amber-600 text-white p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl shadow-amber-100 space-y-3 text-center relative overflow-hidden group">
+                  <Calculator className="absolute -bottom-6 -right-6 h-32 w-32 opacity-10 group-hover:scale-125 transition-transform duration-700" />
+                  <p className="text-[10px] uppercase font-black opacity-60 tracking-[0.2em] relative z-10">{t('grandTotal')}</p>
+                  <h2 className="text-3xl md:text-4xl font-headline font-black tracking-tighter relative z-10">৳{totalAmount.toLocaleString()}</h2>
                 </div>
 
-                <div className="space-y-4 bg-slate-50 p-6 rounded-3xl ring-1 ring-slate-100">
-                  <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2">
-                    <LayoutGrid className="h-3 w-3" /> Logistics Context
+                <div className="space-y-4 bg-slate-50 p-6 rounded-[2rem] ring-1 ring-slate-100 border border-white">
+                  <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2 mb-2">
+                    <LayoutGrid className="h-3.5 w-3.5" /> Logistics Configuration
                   </h4>
                   <div className="space-y-4">
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('deliveryMethod')}</Label>
-                      <Input className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs font-bold" value={deliveryMethod} onChange={e => setDeliveryMethod(e.target.value)} />
+                      <Label className="text-[9px] font-black uppercase text-slate-500 tracking-widest">{t('deliveryMethod')}</Label>
+                      <Input className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs font-bold transition-all focus:ring-2 focus:ring-amber-500" value={deliveryMethod} onChange={e => setDeliveryMethod(e.target.value)} />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('vehicleNumber')}</Label>
-                      <Input className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs font-bold" value={vehicleNumber} onChange={e => setVehicleNumber(e.target.value)} />
+                      <Label className="text-[9px] font-black uppercase text-slate-500 tracking-widest">{t('vehicleNumber')}</Label>
+                      <Input className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs font-bold transition-all focus:ring-2 focus:ring-amber-500" value={vehicleNumber} onChange={e => setVehicleNumber(e.target.value)} />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('driverName')}</Label>
-                      <Input className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs font-bold" value={driverName} onChange={e => setDriverName(e.target.value)} />
+                      <Label className="text-[9px] font-black uppercase text-slate-500 tracking-widest">{t('driverName')}</Label>
+                      <Input className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs font-bold transition-all focus:ring-2 focus:ring-amber-500" value={driverName} onChange={e => setDriverName(e.target.value)} />
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('notes')}</Label>
-                    <textarea 
-                      className="w-full min-h-[100px] rounded-2xl bg-slate-50 border-none p-4 text-xs font-medium focus:ring-2 focus:ring-amber-600 outline-none resize-none" 
-                      placeholder="Special instructions for delivery team..."
-                      value={notes}
-                      onChange={e => setNotes(e.target.value)}
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2 ml-1">
+                    <Barcode className="h-3 w-3" /> {t('notes')}
+                  </Label>
+                  <textarea 
+                    className="w-full min-h-[100px] rounded-2xl bg-slate-50 border-none p-4 text-xs font-medium focus:ring-2 focus:ring-amber-600 outline-none resize-none shadow-inner ring-1 ring-slate-100" 
+                    placeholder="Type special delivery instructions here..."
+                    value={notes}
+                    onChange={e => setNotes(e.target.value)}
+                  />
                 </div>
 
-                <div className="p-4 rounded-2xl bg-blue-50 flex items-center gap-3 border-2 border-dashed border-blue-200">
-                  <div className="p-2 rounded-xl bg-blue-600 text-white"><Calculator className="h-4 w-4" /></div>
-                  <p className="text-[9px] font-black uppercase tracking-tighter leading-tight text-blue-700">Inventory sync active for catalog items only.</p>
+                <div className="p-4 rounded-2xl bg-blue-50 flex items-center gap-3 border-2 border-dashed border-blue-100">
+                  <div className="p-2 rounded-xl bg-blue-600 text-white shadow-lg"><CheckCircle2 className="h-4 w-4" /></div>
+                  <p className="text-[9px] font-black uppercase tracking-tighter leading-tight text-blue-700">Inventory intelligence active for catalog items.</p>
                 </div>
               </div>
 
-              <div className="mt-auto pt-6 pb-4 lg:pb-0">
+              <div className="mt-auto pt-4">
                 <Button 
-                  className="w-full h-16 bg-amber-600 hover:bg-amber-700 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl shadow-amber-100 transition-all active:scale-95" 
+                  className="w-full h-16 bg-amber-600 hover:bg-amber-700 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-amber-100 transition-all active:scale-95 group overflow-hidden" 
                   disabled={isSubmitting || lineItems.length === 0} 
                   onClick={handleSaveChallan}
                 >
-                  {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <ArrowRight className="h-5 w-5" />}
-                  {t('postTransaction')}
+                  <span className="relative z-10 flex items-center gap-3">
+                    {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <ArrowRight className="h-5 w-5" />}
+                    {t('postTransaction')}
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                 </Button>
               </div>
             </div>
