@@ -20,7 +20,8 @@ import {
   ArrowRight,
   Share2,
   FileText,
-  Barcode
+  Barcode,
+  LayoutGrid
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -390,7 +391,7 @@ export default function ChallansPage() {
 
           <div className="flex flex-col lg:flex-row h-[85vh] lg:h-[80vh] overflow-hidden">
             {/* Form Side */}
-            <div className="flex-1 flex flex-col p-4 md:p-6 space-y-4 md:space-y-6 overflow-hidden">
+            <div className="flex-1 flex flex-col p-4 md:p-6 space-y-4 md:space-y-6 overflow-y-auto lg:overflow-hidden custom-scrollbar">
               
               {/* TOP GRID: LINKING & DATE */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded-2xl ring-1 ring-slate-100 shadow-sm">
@@ -400,7 +401,7 @@ export default function ChallansPage() {
                     <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 transition-all focus:ring-2 focus:ring-amber-600">
                       <SelectValue placeholder="Link existing sales record..." />
                     </SelectTrigger>
-                    <SelectContent className="rounded-xl shadow-2xl">
+                    <SelectContent className="rounded-xl shadow-2xl max-h-[200px]">
                       <SelectItem value="none" className="text-xs font-bold text-slate-400 italic">None (Standalone Dispatch)</SelectItem>
                       {invoices?.map(i => <SelectItem key={i.id} value={i.id} className="text-xs font-bold">{i.invoiceNumber} - {i.customerName}</SelectItem>)}
                     </SelectContent>
@@ -413,8 +414,8 @@ export default function ChallansPage() {
               </div>
 
               {/* CUSTOMER SECTION */}
-              <div className="bg-white p-6 rounded-2xl ring-1 ring-slate-100 shadow-sm space-y-4">
-                <div className="flex items-center justify-between">
+              <div className="bg-white p-4 md:p-6 rounded-2xl ring-1 ring-slate-100 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <h3 className="text-xs font-black uppercase text-slate-900 flex items-center gap-2">
                     <User className="h-4 w-4 text-amber-600" /> Customer Identification
                   </h3>
@@ -446,7 +447,7 @@ export default function ChallansPage() {
                       <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 shadow-sm">
                         <SelectValue placeholder="Search from database..." />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="max-h-[200px]">
                         {customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-bold">{c.firstName} {c.lastName} - {c.companyName || 'Personal'}</SelectItem>)}
                       </SelectContent>
                     </Select>
@@ -456,7 +457,7 @@ export default function ChallansPage() {
 
               {/* PRODUCT PICKER */}
               <div className="bg-white p-4 rounded-2xl ring-1 ring-slate-100 shadow-sm">
-                <div className="flex flex-col md:flex-row gap-4 items-end">
+                <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-end">
                   <div className="flex-1 space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Select Product to Add</Label>
                     <Select onValueChange={addCatalogItem}>
@@ -479,20 +480,20 @@ export default function ChallansPage() {
               </div>
 
               {/* PRODUCT WORKSHEET */}
-              <div className="flex-1 bg-white rounded-[2rem] shadow-sm ring-1 ring-slate-100 overflow-hidden flex flex-col border border-slate-50 min-h-0">
+              <div className="flex-1 bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-sm ring-1 ring-slate-100 overflow-hidden flex flex-col border border-slate-50 min-h-[300px] md:min-h-0">
                 <div className="p-4 border-b bg-slate-50/50">
                   <h3 className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
                     <Barcode className="h-3.5 w-3.5" /> {t('itemDescription')}
                   </h3>
                 </div>
-                <div className="overflow-y-auto flex-1 custom-scrollbar">
+                <div className="overflow-x-auto lg:overflow-y-auto flex-1 custom-scrollbar">
                   <Table>
                     <TableHeader className="bg-slate-50/50 sticky top-0 z-10 backdrop-blur-md">
                       <TableRow>
-                        <TableHead className="text-[10px] uppercase font-black py-4 pl-8">{t('itemDescription')}</TableHead>
+                        <TableHead className="text-[10px] uppercase font-black py-4 pl-4 md:pl-8">{t('itemDescription')}</TableHead>
                         <TableHead className="text-[10px] uppercase font-black text-center w-24">{t('qty')}</TableHead>
-                        <TableHead className="text-[10px] uppercase font-black text-right w-32">{t('unitPrice')}</TableHead>
-                        <TableHead className="text-[10px] uppercase font-black text-right w-32 pr-8">{t('total')}</TableHead>
+                        <TableHead className="text-[10px] uppercase font-black text-right w-32 hidden sm:table-cell">{t('unitPrice')}</TableHead>
+                        <TableHead className="text-[10px] uppercase font-black text-right w-32 pr-4 md:pr-8">{t('total')}</TableHead>
                         <TableHead className="w-10"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -509,7 +510,7 @@ export default function ChallansPage() {
                       ) : (
                         lineItems.map((item, idx) => (
                           <TableRow key={idx} className="h-16 hover:bg-slate-50/50 transition-colors group">
-                            <TableCell className="pl-8">
+                            <TableCell className="pl-4 md:pl-8">
                               {item.isCustom ? (
                                 <Input 
                                   className="h-8 text-[11px] font-black uppercase border-none ring-1 ring-slate-100 bg-slate-50/30" 
@@ -532,7 +533,7 @@ export default function ChallansPage() {
                                 onChange={e => updateItem(idx, 'quantity', Number(e.target.value))}
                               />
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="text-right hidden sm:table-cell">
                               <Input 
                                 type="number" 
                                 className="h-8 w-24 ml-auto text-right font-bold text-xs bg-slate-100 border-none" 
@@ -541,7 +542,7 @@ export default function ChallansPage() {
                                 disabled={!item.isCustom}
                               />
                             </TableCell>
-                            <TableCell className="text-right pr-8 text-xs font-black text-amber-600">
+                            <TableCell className="text-right pr-4 md:pr-8 text-xs font-black text-amber-600">
                               ৳{item.total.toLocaleString()}
                             </TableCell>
                             <TableCell>
@@ -559,15 +560,17 @@ export default function ChallansPage() {
             </div>
 
             {/* Sidebar Summary */}
-            <div className="w-full lg:w-[350px] bg-white border-l border-slate-100 p-8 space-y-6 flex flex-col shadow-2xl relative z-20 shrink-0 overflow-y-auto custom-scrollbar">
+            <div className="w-full lg:w-[350px] bg-white border-t lg:border-t-0 lg:border-l border-slate-100 p-6 md:p-8 space-y-6 flex flex-col shadow-2xl relative z-20 shrink-0 overflow-y-auto custom-scrollbar">
               <div className="space-y-6">
-                <div className="bg-amber-600 text-white p-8 rounded-[2.5rem] shadow-2xl shadow-amber-100 space-y-4 text-center">
+                <div className="bg-amber-600 text-white p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl shadow-amber-100 space-y-4 text-center">
                   <p className="text-[10px] uppercase font-black opacity-60 tracking-[0.2em]">{t('grandTotal')}</p>
-                  <h2 className="text-4xl font-headline font-black tracking-tighter">৳{totalAmount.toLocaleString()}</h2>
+                  <h2 className="text-3xl md:text-4xl font-headline font-black tracking-tighter">৳{totalAmount.toLocaleString()}</h2>
                 </div>
 
                 <div className="space-y-4 bg-slate-50 p-6 rounded-3xl ring-1 ring-slate-100">
-                  <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Logistics Context</h4>
+                  <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2">
+                    <LayoutGrid className="h-3 w-3" /> Logistics Context
+                  </h4>
                   <div className="space-y-4">
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('deliveryMethod')}</Label>
@@ -602,7 +605,7 @@ export default function ChallansPage() {
                 </div>
               </div>
 
-              <div className="mt-auto pt-6">
+              <div className="mt-auto pt-6 pb-4 lg:pb-0">
                 <Button 
                   className="w-full h-16 bg-amber-600 hover:bg-amber-700 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl shadow-amber-100 transition-all active:scale-95" 
                   disabled={isSubmitting || lineItems.length === 0} 
