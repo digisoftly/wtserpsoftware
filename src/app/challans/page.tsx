@@ -21,7 +21,9 @@ import {
   Clock,
   ArrowRight,
   Share2,
-  AlertCircle
+  AlertCircle,
+  PackagePlus,
+  Box
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -50,6 +52,7 @@ interface ChallanItem {
   quantity: number;
   unitPrice: number;
   total: number;
+  isCustom?: boolean;
 }
 
 export default function ChallansPage() {
@@ -94,12 +97,6 @@ export default function ChallansPage() {
   }, [db, companyId, branchId]);
   const { data: customers } = useCollection(customersQuery);
 
-  const productsQuery = useMemoFirebase(() => {
-    if (!db || !companyId || !branchId) return null;
-    return collection(db, "companies", companyId, "branches", branchId, "products");
-  }, [db, companyId, branchId]);
-  const { data: products } = useCollection(productsQuery);
-
   // Calculations
   const totalAmount = lineItems.reduce((sum, item) => sum + item.total, 0);
 
@@ -121,10 +118,36 @@ export default function ChallansPage() {
         sku: item.sku || "",
         quantity: item.qty,
         unitPrice: item.price,
-        total: item.total
+        total: item.total,
+        isCustom: false
       })));
     }
   }, [selectedInvoiceId, invoices]);
+
+  const addCustomItem = () => {
+    setLineItems([...lineItems, {
+      productId: `manual-${Date.now()}`,
+      name: "",
+      sku: "CUSTOM",
+      quantity: 1,
+      unitPrice: 0,
+      total: 0,
+      isCustom: true
+    }]);
+  };
+
+  const updateItem = (index: number, field: keyof ChallanItem, value: any) => {
+    const newItems = [...lineItems];
+    newItems[index] = { ...newItems[index], [field]: value };
+    if (field === 'quantity' || field === 'unitPrice') {
+      newItems[index].total = newItems[index].quantity * newItems[index].unitPrice;
+    }
+    setLineItems(newItems);
+  };
+
+  const removeItem = (index: number) => {
+    setLineItems(lineItems.filter((_, i) => i !== index));
+  };
 
   const handleSaveChallan = async () => {
     if (!selectedCustomerId || lineItems.length === 0) {
@@ -165,14 +188,15 @@ export default function ChallansPage() {
 
         transaction.set(challanRef, challanData);
 
-        // Optional: Deduct Stock if status is set to delivered or upon dispatch
-        // For this MVP, we deduct stock when challan is created as it represents a dispatch
+        // Atomic Stock Adjustment for items that exist in inventory
         for (const item of lineItems) {
-          const productRef = doc(db!, "companies", companyId!, "branches", branchId!, "products", item.productId);
-          transaction.update(productRef, { 
-            currentStock: increment(-item.quantity),
-            updatedAt: serverTimestamp()
-          });
+          if (!item.isCustom) {
+            const productRef = doc(db!, "companies", companyId!, "branches", branchId!, "products", item.productId);
+            transaction.update(productRef, { 
+              currentStock: increment(-item.quantity),
+              updatedAt: serverTimestamp()
+            });
+          }
         }
       });
 
@@ -356,38 +380,76 @@ export default function ChallansPage() {
 
               {/* Items Table */}
               <div className="flex-1 bg-white rounded-[2rem] shadow-sm ring-1 ring-slate-100 overflow-hidden flex flex-col border border-slate-50 min-h-0">
+                <div className="p-4 border-b bg-slate-50/50 flex justify-between items-center">
+                  <h3 className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('itemDescription')}</h3>
+                  <Button variant="outline" size="sm" className="h-8 rounded-full gap-2 text-[10px] font-black uppercase bg-white" onClick={addCustomItem}>
+                    <PackagePlus className="h-3.5 w-3.5 text-amber-600" /> {t('addCustomItem')}
+                  </Button>
+                </div>
                 <div className="overflow-auto flex-1 custom-scrollbar">
                   <Table>
                     <TableHeader className="bg-slate-50/50 sticky top-0 z-10 backdrop-blur-md">
                       <TableRow>
                         <TableHead className="text-[10px] uppercase font-black py-4 pl-8">{t('itemDescription')}</TableHead>
-                        <TableHead className="text-[10px] uppercase font-black text-center w-32">{t('qty')}</TableHead>
-                        <TableHead className="text-[10px] uppercase font-black text-right w-40">{t('price')}</TableHead>
-                        <TableHead className="text-[10px] uppercase font-black text-right w-40 pr-8">{t('total')}</TableHead>
+                        <TableHead className="text-[10px] uppercase font-black text-center w-24">{t('qty')}</TableHead>
+                        <TableHead className="text-[10px] uppercase font-black text-right w-32">{t('unitPrice')}</TableHead>
+                        <TableHead className="text-[10px] uppercase font-black text-right w-32 pr-8">{t('total')}</TableHead>
+                        <TableHead className="w-10"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {lineItems.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={4} className="h-64 text-center">
+                          <TableCell colSpan={5} className="h-48 text-center">
                             <div className="flex flex-col items-center opacity-20">
-                              <Truck className="h-12 w-12 mb-4" />
+                              <Box className="h-12 w-12 mb-4" />
                               <p className="text-[10px] uppercase font-black tracking-[0.3em]">{t('noItemsSelected')}</p>
                             </div>
                           </TableCell>
                         </TableRow>
                       ) : (
                         lineItems.map((item, idx) => (
-                          <TableRow key={idx} className="h-16 hover:bg-slate-50/50 transition-colors">
+                          <TableRow key={idx} className="h-16 hover:bg-slate-50/50 transition-colors group">
                             <TableCell className="pl-8">
-                              <span className="text-[11px] font-black text-slate-900 uppercase tracking-tighter">{item.name}</span>
-                              <p className="text-[9px] font-mono text-muted-foreground">{item.sku}</p>
+                              {item.isCustom ? (
+                                <Input 
+                                  className="h-8 text-[11px] font-black uppercase border-none ring-1 ring-slate-100 bg-slate-50/30" 
+                                  value={item.name} 
+                                  onChange={e => updateItem(idx, 'name', e.target.value)} 
+                                  placeholder="Enter custom item name..."
+                                />
+                              ) : (
+                                <div className="flex flex-col">
+                                  <span className="text-[11px] font-black text-slate-900 uppercase tracking-tighter">{item.name}</span>
+                                  <p className="text-[9px] font-mono text-muted-foreground">{item.sku}</p>
+                                </div>
+                              )}
                             </TableCell>
                             <TableCell className="text-center">
-                              <span className="font-black text-xs bg-slate-100 px-3 py-1 rounded-lg">{item.quantity}</span>
+                              <Input 
+                                type="number" 
+                                className="h-8 w-16 mx-auto text-center font-black text-xs bg-slate-100 border-none" 
+                                value={item.quantity} 
+                                onChange={e => updateItem(idx, 'quantity', Number(e.target.value))}
+                              />
                             </TableCell>
-                            <TableCell className="text-right text-xs font-bold text-slate-500">৳{item.unitPrice.toLocaleString()}</TableCell>
-                            <TableCell className="text-right pr-8 text-xs font-black text-amber-600">৳{item.total.toLocaleString()}</TableCell>
+                            <TableCell className="text-right">
+                              <Input 
+                                type="number" 
+                                className="h-8 w-24 ml-auto text-right font-bold text-xs bg-slate-100 border-none" 
+                                value={item.unitPrice} 
+                                onChange={e => updateItem(idx, 'unitPrice', Number(e.target.value))}
+                                disabled={!item.isCustom}
+                              />
+                            </TableCell>
+                            <TableCell className="text-right pr-8 text-xs font-black text-amber-600">
+                              ৳{item.total.toLocaleString()}
+                            </TableCell>
+                            <TableCell>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 rounded-full hover:bg-red-50 opacity-0 group-hover:opacity-100" onClick={() => removeItem(idx)}>
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
                           </TableRow>
                         ))
                       )}
@@ -419,7 +481,7 @@ export default function ChallansPage() {
 
                 <div className="p-4 rounded-2xl bg-blue-50 flex items-center gap-3 border-2 border-dashed border-blue-200">
                   <div className="p-2 rounded-xl bg-blue-600 text-white"><Calculator className="h-4 w-4" /></div>
-                  <p className="text-[9px] font-black uppercase tracking-tighter leading-tight text-blue-700">Stock will be automatically adjusted upon challan creation.</p>
+                  <p className="text-[9px] font-black uppercase tracking-tighter leading-tight text-blue-700">Inventory stock will be deducted for catalog items.</p>
                 </div>
               </div>
 
@@ -460,7 +522,7 @@ export default function ChallansPage() {
                   quantity: i.quantity,
                   unitPrice: i.unitPrice,
                   total: i.total,
-                  description: `SKU: ${i.sku}`
+                  description: i.isCustom ? "Custom Item" : `SKU: ${i.sku}`
                 }))}
                 subtotal={selectedRecord.totalAmount}
                 grandTotal={selectedRecord.totalAmount}
@@ -474,7 +536,7 @@ export default function ChallansPage() {
 
       {/* DELETE ALERT */}
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-        <AlertDialogContent className="rounded-[2rem] border-none p-10 shadow-2xl">
+        <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tight text-slate-900">{t('delete')}?</AlertDialogTitle>
             <AlertDialogDescription className="text-xs font-medium leading-relaxed">{t('errorSub')}</AlertDialogDescription>

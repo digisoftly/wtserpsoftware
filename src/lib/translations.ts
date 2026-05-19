@@ -56,6 +56,7 @@ export const translations = {
     
     // Add Actions
     addItem: "Add Item",
+    addCustomItem: "Add Custom Item",
     addProduct: "Add Product",
     addCustomer: "Add Client",
     addStaff: "New Staff",
@@ -346,6 +347,7 @@ export const translations = {
 
     // Add Actions
     addItem: "আইটেম যোগ করুন",
+    addCustomItem: "কাস্টম আইটেম যোগ করুন",
     addProduct: "পণ্য যোগ করুন",
     addCustomer: "নতুন গ্রাহক",
     addStaff: "নতুন স্টাফ",
