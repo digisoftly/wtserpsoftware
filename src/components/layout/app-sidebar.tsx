@@ -1,7 +1,8 @@
+
 "use client"
 
 import * as React from "react"
-import { LayoutDashboard, ShoppingCart, FileText, Package, RotateCcw, Boxes, Scan, Folder, Layers, Wrench, Users, Truck, Wallet, UserRoundCog, BarChart3, TrendingUp, Settings, ShieldCheck, LogOut, Target, LifeBuoy, Receipt, Building2 } from "lucide-react"
+import { LayoutDashboard, ShoppingCart, FileText, Package, RotateCcw, Boxes, Scan, Folder, Layers, Wrench, Users, Truck, Wallet, UserRoundCog, BarChart3, TrendingUp, Settings, ShieldCheck, LogOut, Target, LifeBuoy, Receipt, Building2, Truck as DispatchIcon } from "lucide-react"
 
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarGroup, useSidebar } from "@/components/ui/sidebar"
 import Link from "next/link"
@@ -16,6 +17,7 @@ const MODULES = [
   { name: "dashboard", key: "dashboard", icon: LayoutDashboard, color: "text-blue-500", path: "/" },
   { name: "sales", key: "sales", icon: ShoppingCart, color: "text-green-500", path: "/sales" },
   { name: "quotations", key: "quotations", icon: FileText, color: "text-purple-500", path: "/quotations" },
+  { name: "dispatch", key: "dispatch", icon: DispatchIcon, color: "text-amber-500", path: "/challans" },
   { name: "purchases", key: "purchases", icon: Package, color: "text-orange-500", path: "/purchases" },
   { name: "returns", key: "returns", icon: RotateCcw, color: "text-red-500", path: "/returns" },
   { name: "inventory", key: "inventory", icon: Boxes, color: "text-yellow-600", path: "/inventory" },

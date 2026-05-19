@@ -27,6 +27,7 @@ export const translations = {
     settings: "Settings",
     users: "Users & Roles",
     backup: "Backup",
+    dispatch: "Delivery Challan",
     
     // Common Actions
     save: "Save",
@@ -51,6 +52,7 @@ export const translations = {
     details: "Details",
     identity: "Identity",
     profile: "Profile",
+    share: "Share",
     
     // Add Actions
     addItem: "Add Item",
@@ -67,6 +69,7 @@ export const translations = {
     addReturn: "New Return",
     addContract: "New Agreement",
     addProject: "Initialize Project",
+    addChallan: "New Challan",
     newInvoice: "New Invoice",
     newQuotation: "New Quote",
     newPO: "New PO",
@@ -104,11 +107,12 @@ export const translations = {
     criticalStock: "Critical Stock",
     itemsBelowThreshold: "items below threshold",
     allHealthy: "All stock levels healthy",
-    noSales: "No sales recorded.",
+    noSales: "No records found.",
     walkingClient: "Walk-in Customer",
     recentInvoices: "Recent Invoices",
     lastActiveSales: "Last active sales activities",
     invoiceNumber: "Invoice #",
+    challanNumber: "Challan #",
     customer: "Customer",
     purchases_action: "Purchases",
 
@@ -154,6 +158,9 @@ export const translations = {
     totalPurchase: "Total Purchase",
     monthlyPurchase: "Monthly Purchase",
     suppliersDue: "Suppliers Due",
+    totalDispatch: "Total Dispatch",
+    pendingDeliveries: "Pending Deliveries",
+    deliveredOrders: "Delivered Orders",
 
     // Inventory Specific
     brand: "Brand",
@@ -187,6 +194,16 @@ export const translations = {
     postTransaction: "Post Transaction",
     voidInvoice: "Void Invoice",
     confirmVoid: "Confirm Void",
+
+    // Module Specific: Dispatch
+    dispatchDate: "Dispatch Date",
+    deliveryDate: "Delivery Date",
+    deliveryMethod: "Delivery Method",
+    vehicleNumber: "Vehicle #",
+    driverName: "Driver Name",
+    customerPhone: "Customer Phone",
+    customerAddress: "Customer Address",
+    fromInvoice: "Link Invoice",
 
     // Module Specific: Quotations
     quoteNumber: "Quote #",
@@ -229,7 +246,7 @@ export const translations = {
     // Projects & Contracts
     service: "Service",
     fee: "Fee",
-    agreements: "Chreements",
+    agreements: "Agreements",
     billingCycle: "Billing Cycle",
     deadline: "Deadline",
     budget: "Budget",
@@ -261,6 +278,9 @@ export const translations = {
     sent_status: "Sent",
     accepted_status: "Accepted",
     converted_status: "Converted",
+    processing_status: "Processing",
+    delivered_status: "Delivered",
+    cancelled_status: "Cancelled",
   },
   BN: {
     // Navigation
@@ -287,6 +307,7 @@ export const translations = {
     settings: "সেটিংস",
     users: "ইউজার ও রোল",
     backup: "ব্যাকআপ",
+    dispatch: "ডেলিভারি চালান",
     
     // Common Actions
     save: "সংরক্ষণ",
@@ -311,6 +332,7 @@ export const translations = {
     details: "বিস্তারিত",
     identity: "পরিচয়",
     profile: "প্রোফাইল",
+    share: "শেয়ার",
 
     // Auth
     login: "সাইন ইন",
@@ -337,6 +359,7 @@ export const translations = {
     addReturn: "নতুন রিটার্ন",
     addContract: "নতুন চুক্তি",
     addProject: "প্রকল্প শুরু",
+    addChallan: "নতুন চালান",
     newInvoice: "নতুন ইনভয়েস",
     newQuotation: "নতুন কোটেশন",
     newPO: "নতুন পিও (PO)",
@@ -364,11 +387,12 @@ export const translations = {
     criticalStock: "জরুরী স্টক",
     itemsBelowThreshold: "টি আইটেম লিমিটের নিচে",
     allHealthy: "সব স্টক ঠিক আছে",
-    noSales: "কোন বিক্রয় রেকর্ড নেই।",
+    noSales: "কোন রেকর্ড পাওয়া যায়নি।",
     walkingClient: "সাধারণ গ্রাহক",
     recentInvoices: "সাম্প্রতিক ইনভয়েস",
     lastActiveSales: "সর্বশেষ বিক্রয় কার্যক্রম",
     invoiceNumber: "ইনভয়েস #",
+    challanNumber: "চালান #",
     customer: "গ্রাহক",
     purchases_action: "ক্রয়",
 
@@ -414,6 +438,9 @@ export const translations = {
     totalPurchase: "মোট ক্রয়",
     monthlyPurchase: "মাসিক ক্রয়",
     suppliersDue: "সরবরাহকারী বকেয়া",
+    totalDispatch: "মোট চালান",
+    pendingDeliveries: "বকেয়া ডেলিভারি",
+    deliveredOrders: "সম্পন্ন ডেলিভারি",
 
     // Inventory Specific
     brand: "ব্র্যান্ড",
@@ -447,6 +474,16 @@ export const translations = {
     postTransaction: "লেনদেন জমা দিন",
     voidInvoice: "ইনভয়েস বাতিল",
     confirmVoid: "বাতিল নিশ্চিত করুন",
+
+    // Module Specific: Dispatch
+    dispatchDate: "চালান তারিখ",
+    deliveryDate: "ডেলিভারি তারিখ",
+    deliveryMethod: "ডেলিভারি মাধ্যম",
+    vehicleNumber: "গাড়ি #",
+    driverName: "চালকের নাম",
+    customerPhone: "গ্রাহক ফোন",
+    customerAddress: "গ্রাহক ঠিকানা",
+    fromInvoice: "ইনভয়েস লিঙ্ক",
 
     // Module Specific: Quotations
     quoteNumber: "কোটেশন #",
@@ -493,7 +530,7 @@ export const translations = {
     billingCycle: "বিলিং সাইকেল",
     deadline: "ডেডলাইন",
     budget: "বজেট",
-    progress: "অগ্রগতি",
+    progress: "progress",
     project: "প্রকল্প",
     projectArchived: "রেকর্ডটি স্থায়ীভাবে আর্কাইভ করা হবে।",
     deleteProject: "প্রকল্প মুছবেন?",
@@ -521,5 +558,8 @@ export const translations = {
     sent_status: "পাঠানো হয়েছে",
     accepted_status: "গৃহীত",
     converted_status: "রূপান্তরিত",
+    processing_status: "প্রক্রিয়াজাত",
+    delivered_status: "ডেলিভারি সম্পন্ন",
+    cancelled_status: "বাতিল",
   }
 };

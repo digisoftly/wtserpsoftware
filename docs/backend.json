@@ -71,6 +71,31 @@
         "totalAmount": { "type": "number" },
         "status": { "type": "string", "enum": ["paid", "partial", "due"] }
       }
+    },
+    "DeliveryChallan": {
+      "title": "Delivery Challan",
+      "type": "object",
+      "description": "Product dispatch and delivery documentation.",
+      "properties": {
+        "id": { "type": "string" },
+        "challanNumber": { "type": "string" },
+        "invoiceId": { "type": "string" },
+        "invoiceNumber": { "type": "string" },
+        "customerId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "customerAddress": { "type": "string" },
+        "dispatchDate": { "type": "string", "format": "date" },
+        "deliveryDate": { "type": "string", "format": "date" },
+        "deliveryMethod": { "type": "string" },
+        "vehicleNumber": { "type": "string" },
+        "driverName": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "processing", "delivered", "cancelled"] },
+        "items": { "type": "array" },
+        "totalAmount": { "type": "number" },
+        "notes": { "type": "string" }
+      },
+      "required": ["id", "challanNumber", "customerId", "dispatchDate", "status"]
     }
   },
   "auth": {
@@ -96,6 +121,10 @@
     "/companies/{companyId}/branches/{branchId}/sales_invoices/{invoiceId}": {
       "schema": { "$ref": "#/backend/entities/SalesInvoice" },
       "description": "Direct sales records for equipment and services."
+    },
+    "/companies/{companyId}/branches/{branchId}/delivery_challans/{challanId}": {
+      "schema": { "$ref": "#/backend/entities/DeliveryChallan" },
+      "description": "Product dispatch and delivery documentation."
     },
     "/companies/{companyId}/branches/{branchId}/purchase_orders/{orderId}": {
       "schema": { "type": "object" },
