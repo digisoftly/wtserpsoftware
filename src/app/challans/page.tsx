@@ -140,15 +140,16 @@ export default function ChallansPage() {
     const product = products?.find(p => p.id === productId);
     if (!product) return;
 
-    const existing = lineItems.find(i => i.productId === productId);
-    if (existing) {
-      setLineItems(lineItems.map(i => 
-        i.productId === productId 
-          ? { ...i, quantity: i.quantity + 1, total: (i.quantity + 1) * i.unitPrice } 
-          : i
-      ));
-    } else {
-      setLineItems([...lineItems, {
+    setLineItems(prev => {
+      const existing = prev.find(i => i.productId === productId);
+      if (existing && !existing.isCustom) {
+        return prev.map(i => 
+          i.productId === productId 
+            ? { ...i, quantity: i.quantity + 1, total: (i.quantity + 1) * i.unitPrice } 
+            : i
+        );
+      }
+      return [...prev, {
         productId: product.id,
         name: product.name,
         sku: product.sku || "N/A",
@@ -156,12 +157,12 @@ export default function ChallansPage() {
         unitPrice: product.unitPrice || 0,
         total: product.unitPrice || 0,
         isCustom: false
-      }]);
-    }
+      }];
+    });
   };
 
   const addCustomItem = () => {
-    setLineItems([...lineItems, {
+    setLineItems(prev => [...prev, {
       productId: `manual-${Date.now()}`,
       name: "",
       sku: "CUSTOM",
@@ -173,12 +174,24 @@ export default function ChallansPage() {
   };
 
   const updateItem = (index: number, field: keyof ChallanItem, value: any) => {
-    const newItems = [...lineItems];
-    newItems[index] = { ...newItems[index], [field]: value };
-    if (field === 'quantity' || field === 'unitPrice') {
-      newItems[index].total = Number(newItems[index].quantity || 0) * Number(newItems[index].unitPrice || 0);
-    }
-    setLineItems(newItems);
+    setLineItems(prev => {
+      const updated = [...prev];
+      const current = { ...updated[index], [field]: value };
+      
+      if (field === 'quantity') {
+        current.quantity = Math.max(1, Number(value) || 0);
+      }
+      if (field === 'unitPrice') {
+        current.unitPrice = Math.max(0, Number(value) || 0);
+      }
+      
+      if (field === 'quantity' || field === 'unitPrice') {
+        current.total = current.quantity * current.unitPrice;
+      }
+      
+      updated[index] = current;
+      return updated;
+    });
   };
 
   const removeItem = (index: number) => {
@@ -190,12 +203,18 @@ export default function ChallansPage() {
       toast({ variant: "destructive", title: t('error'), description: "Please select a customer or provide manual details." });
       return;
     }
-    if (isManualCustomer && !manualCustomerName) {
+    if (isManualCustomer && !manualCustomerName.trim()) {
       toast({ variant: "destructive", title: t('error'), description: "Please enter customer name." });
       return;
     }
     if (lineItems.length === 0) {
       toast({ variant: "destructive", title: t('error'), description: t('noItemsSelected') });
+      return;
+    }
+
+    const invalidCustom = lineItems.find(i => i.isCustom && !i.name.trim());
+    if (invalidCustom) {
+      toast({ variant: "destructive", title: t('error'), description: "Please provide names for all custom items." });
       return;
     }
 
@@ -391,9 +410,9 @@ export default function ChallansPage() {
             </div>
           </DialogHeader>
 
-          <div className="flex flex-col lg:flex-row h-full max-h-[calc(96vh-80px)] overflow-hidden">
+          <div className="flex flex-col lg:flex-row h-full max-h-[calc(96vh-80px)] overflow-y-auto lg:overflow-hidden">
             {/* Form Side */}
-            <div className="flex-1 flex flex-col p-4 md:p-6 space-y-4 md:space-y-6 overflow-y-auto custom-scrollbar">
+            <div className="flex-1 flex flex-col p-4 md:p-6 space-y-4 md:space-y-6 lg:overflow-y-auto custom-scrollbar">
               
               {/* TOP GRID: LINKING & DATE */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded-2xl ring-1 ring-slate-100 shadow-sm">
@@ -472,7 +491,7 @@ export default function ChallansPage() {
                 <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-end">
                   <div className="flex-1 space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Select Product to Add</Label>
-                    <Select onValueChange={addCatalogItem}>
+                    <Select onValueChange={(val) => { addCatalogItem(val); }}>
                       <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 shadow-sm transition-all focus:ring-2 focus:ring-amber-500 font-bold text-xs">
                         <SelectValue placeholder={t('addProduct')} />
                       </SelectTrigger>
@@ -492,7 +511,7 @@ export default function ChallansPage() {
               </div>
 
               {/* PRODUCT WORKSHEET */}
-              <div className="flex-1 bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-sm ring-1 ring-slate-100 overflow-hidden flex flex-col border border-slate-50 min-h-[400px] lg:min-h-0">
+              <div className="flex-1 bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-sm ring-1 ring-slate-100 overflow-hidden flex flex-col border border-slate-50 min-h-[400px]">
                 <div className="p-4 border-b bg-slate-50/50 flex items-center justify-between">
                   <h3 className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
                     <Barcode className="h-3.5 w-3.5" /> {t('itemDescription')}
@@ -526,12 +545,20 @@ export default function ChallansPage() {
                             <TableRow key={idx} className="h-16 hover:bg-slate-50/50 transition-colors group">
                               <TableCell className="pl-4 md:pl-8">
                                 {item.isCustom ? (
-                                  <Input 
-                                    className="h-9 text-[11px] font-black uppercase border-none ring-1 ring-slate-100 bg-slate-50/30" 
-                                    value={item.name} 
-                                    onChange={e => updateItem(idx, 'name', e.target.value)} 
-                                    placeholder="Type individual product name..."
-                                  />
+                                  <div className="flex gap-2">
+                                    <Input 
+                                      className="h-10 text-[11px] font-black uppercase border-none ring-1 ring-slate-100 bg-slate-50/30 w-full" 
+                                      value={item.name} 
+                                      onChange={e => updateItem(idx, 'name', e.target.value)} 
+                                      placeholder="Product Name..."
+                                    />
+                                    <Input 
+                                      className="h-10 text-[10px] font-mono border-none ring-1 ring-slate-100 bg-slate-50/30 w-32" 
+                                      value={item.sku} 
+                                      onChange={e => updateItem(idx, 'sku', e.target.value)} 
+                                      placeholder="SKU..."
+                                    />
+                                  </div>
                                 ) : (
                                   <div className="flex flex-col">
                                     <span className="text-[11px] font-black text-slate-900 uppercase tracking-tighter">{item.name}</span>
@@ -542,17 +569,17 @@ export default function ChallansPage() {
                               <TableCell className="text-center">
                                 <Input 
                                   type="number" 
-                                  className="h-9 w-20 mx-auto text-center font-black text-xs bg-slate-100 border-none rounded-lg" 
+                                  className="h-10 w-20 mx-auto text-center font-black text-sm bg-slate-100 border-none rounded-lg" 
                                   value={item.quantity} 
-                                  onChange={e => updateItem(idx, 'quantity', Number(e.target.value))}
+                                  onChange={e => updateItem(idx, 'quantity', e.target.value)}
                                 />
                               </TableCell>
                               <TableCell className="text-right">
                                 <Input 
                                   type="number" 
-                                  className="h-9 w-28 ml-auto text-right font-bold text-xs bg-slate-100 border-none rounded-lg" 
+                                  className="h-10 w-28 ml-auto text-right font-bold text-sm bg-slate-100 border-none rounded-lg" 
                                   value={item.unitPrice} 
-                                  onChange={e => updateItem(idx, 'unitPrice', Number(e.target.value))}
+                                  onChange={e => updateItem(idx, 'unitPrice', e.target.value)}
                                   disabled={!item.isCustom}
                                 />
                               </TableCell>
@@ -560,7 +587,7 @@ export default function ChallansPage() {
                                 ৳{item.total.toLocaleString()}
                               </TableCell>
                               <TableCell>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 rounded-full hover:bg-red-50" onClick={() => removeItem(idx)}>
+                                <Button variant="ghost" size="icon" className="h-9 w-9 text-red-500 rounded-full hover:bg-red-50" onClick={() => removeItem(idx)}>
                                   <X className="h-4 w-4" />
                                 </Button>
                               </TableCell>
@@ -575,7 +602,7 @@ export default function ChallansPage() {
             </div>
 
             {/* Sidebar Summary */}
-            <div className="w-full lg:w-[380px] bg-white border-t lg:border-t-0 lg:border-l border-slate-100 p-6 md:p-8 space-y-6 flex flex-col shadow-2xl relative z-20 shrink-0 overflow-y-auto custom-scrollbar">
+            <div className="w-full lg:w-[380px] bg-white border-t lg:border-t-0 lg:border-l border-slate-100 p-6 md:p-8 space-y-6 flex flex-col shadow-2xl relative z-20 shrink-0 lg:overflow-y-auto custom-scrollbar">
               <div className="space-y-6">
                 <div className="bg-amber-600 text-white p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl shadow-amber-100 space-y-3 text-center relative overflow-hidden group">
                   <Calculator className="absolute -bottom-6 -right-6 h-32 w-32 opacity-10 group-hover:scale-125 transition-transform duration-700" />
@@ -621,7 +648,7 @@ export default function ChallansPage() {
                 </div>
               </div>
 
-              <div className="mt-auto pt-4">
+              <div className="mt-auto pt-6">
                 <Button 
                   className="w-full h-16 bg-amber-600 hover:bg-amber-700 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-amber-100 transition-all active:scale-95 group overflow-hidden" 
                   disabled={isSubmitting || lineItems.length === 0} 
