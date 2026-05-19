@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -405,6 +404,9 @@ export default function ProjectBillingPage() {
       {/* VIEW RECEIPT MODAL */}
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
         <DialogContent className="max-w-[21cm] w-[95vw] p-0 border-none bg-transparent shadow-none overflow-y-auto max-h-[95vh]">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Payment Receipt View</DialogTitle>
+          </DialogHeader>
           <div className="flex justify-end gap-3 mb-4 no-print fixed top-4 right-4 z-[100]">
             <Button onClick={() => window.print()} className="bg-white text-indigo-600 hover:bg-indigo-50 shadow-2xl rounded-full font-black text-[10px] uppercase h-10 px-6 gap-2 border-none">
               <Printer className="h-4 w-4" /> {t('print')}
