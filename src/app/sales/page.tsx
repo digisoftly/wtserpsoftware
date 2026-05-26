@@ -23,7 +23,9 @@ import {
   Upload,
   Scan,
   Printer,
-  Barcode
+  Barcode,
+  User,
+  PackagePlus
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -33,6 +35,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
@@ -53,6 +56,7 @@ interface InvoiceItem {
   total: number;
   serials: string[];
   isSerialized: boolean;
+  isCustom?: boolean;
 }
 
 export default function SalesPage() {
@@ -71,6 +75,9 @@ export default function SalesPage() {
   const [scannerInput, setScannerInput] = React.useState("");
 
   // Form State
+  const [isManualCustomer, setIsManualCustomer] = React.useState(false);
+  const [manualCustomerName, setManualCustomerName] = React.useState("");
+  const [manualCustomerPhone, setManualCustomerPhone] = React.useState("");
   const [selectedCustomerId, setSelectedCustomerId] = React.useState("");
   const [invoiceDate, setInvoiceDate] = React.useState(new Date().toISOString().split('T')[0]);
   const [lineItems, setLineItems] = React.useState<InvoiceItem[]>([]);
@@ -128,7 +135,7 @@ export default function SalesPage() {
     if (!product) return;
 
     const existingIdx = lineItems.findIndex(item => item.productId === productId);
-    if (existingIdx > -1 && !product.serialNumberTrackingRequired) {
+    if (existingIdx > -1 && !product.serialNumberTrackingRequired && !lineItems[existingIdx].isCustom) {
       const updated = [...lineItems];
       updated[existingIdx].qty += 1;
       updated[existingIdx].total = updated[existingIdx].qty * updated[existingIdx].price;
@@ -141,9 +148,23 @@ export default function SalesPage() {
         price: product.unitPrice || 0,
         total: product.unitPrice || 0,
         isSerialized: product.serialNumberTrackingRequired || false,
-        serials: []
+        serials: [],
+        isCustom: false
       }]);
     }
+  };
+
+  const handleAddCustomItem = () => {
+    setLineItems([...lineItems, {
+      productId: `custom-${Date.now()}`,
+      name: "",
+      qty: 1,
+      price: 0,
+      total: 0,
+      isSerialized: false,
+      serials: [],
+      isCustom: true
+    }]);
   };
 
   const handleScannerInput = (e: React.FormEvent) => {
@@ -173,7 +194,8 @@ export default function SalesPage() {
             price: product.unitPrice || 0,
             total: product.unitPrice || 0,
             isSerialized: true,
-            serials: [foundSerial.serialNumber]
+            serials: [foundSerial.serialNumber],
+            isCustom: false
           }]);
           toast({ title: t('addItem'), description: `${product.name} added.` });
         }
@@ -194,12 +216,20 @@ export default function SalesPage() {
     setScannerInput("");
   };
 
-  const handleUpdateQty = (idx: number, newQty: number) => {
-    const item = lineItems[idx];
-    if (item.isSerialized) return; 
-    setLineItems(lineItems.map((item, i) => 
-      i === idx ? { ...item, qty: Math.max(1, newQty), total: Math.max(1, newQty) * item.price } : item
-    ));
+  const handleUpdateItem = (idx: number, field: keyof InvoiceItem, val: any) => {
+    setLineItems(lineItems.map((item, i) => {
+      if (i !== idx) return item;
+      const updated = { ...item, [field]: val };
+      
+      if (field === 'qty') updated.qty = Math.max(1, Number(val) || 0);
+      if (field === 'price') updated.price = Math.max(0, Number(val) || 0);
+      
+      if (field === 'qty' || field === 'price') {
+        updated.total = updated.qty * updated.price;
+      }
+      
+      return updated;
+    }));
   };
 
   const handleRemoveItem = (idx: number) => {
@@ -207,12 +237,24 @@ export default function SalesPage() {
   };
 
   const handleSaveInvoice = async () => {
-    if (!selectedCustomerId || lineItems.length === 0) {
+    if (!isManualCustomer && !selectedCustomerId) {
+      toast({ variant: "destructive", title: t('error'), description: "Please select a customer or provide manual details." });
+      return;
+    }
+    if (isManualCustomer && !manualCustomerName.trim()) {
+      toast({ variant: "destructive", title: t('error'), description: "Please enter customer name." });
+      return;
+    }
+    if (lineItems.length === 0) {
       toast({ variant: "destructive", title: t('error'), description: t('noItemsSelected') });
       return;
     }
 
     for (const item of lineItems) {
+      if (item.isCustom && !item.name.trim()) {
+        toast({ variant: "destructive", title: t('error'), description: "Please provide names for all custom items." });
+        return;
+      }
       if (item.isSerialized && item.serials.length !== item.qty) {
         toast({ variant: "destructive", title: t('error'), description: `Please select serials for ${item.name}` });
         return;
@@ -223,13 +265,24 @@ export default function SalesPage() {
     try {
       await runTransaction(db!, async (transaction) => {
         const invoiceRef = doc(collection(db!, "companies", companyId!, "branches", branchId!, "sales_invoices"));
+        
+        let customerName = manualCustomerName;
+        let finalCustomerId = selectedCustomerId;
+
+        if (!isManualCustomer) {
+          const customer = customers?.find(c => c.id === selectedCustomerId);
+          customerName = customer ? `${customer.firstName} ${customer.lastName}` : "Client";
+        } else {
+          finalCustomerId = "manual";
+        }
+
         const invoiceData = {
           id: invoiceRef.id,
           companyId,
           branchId,
           invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
-          customerId: selectedCustomerId,
-          customerName: customers?.find(c => c.id === selectedCustomerId)?.firstName || "Client",
+          customerId: finalCustomerId,
+          customerName,
           invoiceDate,
           items: lineItems,
           subtotal,
@@ -248,18 +301,20 @@ export default function SalesPage() {
         transaction.set(invoiceRef, invoiceData);
 
         for (const item of lineItems) {
-          const productRef = doc(db!, "companies", companyId!, "branches", branchId!, "products", item.productId);
-          transaction.update(productRef, { 
-            currentStock: increment(-item.qty),
-            updatedAt: serverTimestamp()
-          });
+          if (!item.isCustom) {
+            const productRef = doc(db!, "companies", companyId!, "branches", branchId!, "products", item.productId);
+            transaction.update(productRef, { 
+              currentStock: increment(-item.qty),
+              updatedAt: serverTimestamp()
+            });
 
-          if (item.isSerialized) {
-            for (const sn of item.serials) {
-              const snRef = availableSerials?.find(s => s.serialNumber === sn);
-              if (snRef) {
-                const docRef = doc(db!, "companies", companyId!, "branches", branchId!, "serial_numbers", snRef.id);
-                transaction.update(docRef, { status: "sold", salesInvoiceId: invoiceRef.id });
+            if (item.isSerialized) {
+              for (const sn of item.serials) {
+                const snRef = availableSerials?.find(s => s.serialNumber === sn);
+                if (snRef) {
+                  const docRef = doc(db!, "companies", companyId!, "branches", branchId!, "serial_numbers", snRef.id);
+                  transaction.update(docRef, { status: "sold", salesInvoiceId: invoiceRef.id });
+                }
               }
             }
           }
@@ -278,6 +333,9 @@ export default function SalesPage() {
 
   const resetForm = () => {
     setSelectedCustomerId("");
+    setIsManualCustomer(false);
+    setManualCustomerName("");
+    setManualCustomerPhone("");
     setLineItems([]);
     setDiscount(0);
     setPaidAmount(0);
@@ -388,120 +446,183 @@ export default function SalesPage() {
                 <p className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em] leading-none mt-1 hidden md:block">Point of Sale Terminal</p>
               </div>
             </div>
-            {/* Standard Close X is handled by DialogPrimitive.Close in dialog.tsx component */}
           </DialogHeader>
 
           <div className="flex flex-col lg:flex-row h-[85vh] lg:h-[80vh] overflow-hidden">
             {/* Main POS Interface */}
-            <div className="flex-1 flex flex-col p-4 md:p-6 space-y-4 md:space-y-6 overflow-hidden">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('customer')}</Label>
-                  <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                    <SelectTrigger className="h-12 rounded-2xl bg-white border-none ring-1 ring-slate-200 shadow-sm transition-all focus:ring-2 focus:ring-blue-600">
-                      <SelectValue placeholder={t('search')} />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl shadow-2xl">
-                      {customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-bold">{c.firstName} {c.lastName}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+            <div className="flex-1 flex flex-col p-4 md:p-6 space-y-4 md:space-y-6 overflow-y-auto lg:overflow-hidden">
+              
+              {/* CUSTOMER SECTION */}
+              <div className="bg-white p-4 md:p-6 rounded-2xl ring-1 ring-slate-100 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4 border-slate-50">
+                  <h3 className="text-[10px] font-black uppercase text-slate-900 flex items-center gap-2 tracking-widest">
+                    <User className="h-4 w-4 text-blue-600" /> {t('customer')} Identification
+                  </h3>
+                  <div className="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-full">
+                    <Label className="text-[9px] font-black uppercase text-muted-foreground cursor-pointer" htmlFor="manual-cust-entry">{t('individual')}</Label>
+                    <Switch id="manual-cust-entry" checked={isManualCustomer} onCheckedChange={setIsManualCustomer} className="data-[state=checked]:bg-blue-600 scale-75" />
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('date')}</Label>
-                  <Input type="date" className="h-12 rounded-2xl bg-white border-none ring-1 ring-slate-200 text-xs font-bold" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} />
-                </div>
+
+                {isManualCustomer ? (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in slide-in-from-top-1 duration-300">
+                    <div className="space-y-1.5 md:col-span-2">
+                      <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Full Name</Label>
+                      <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerName} onChange={e => setManualCustomerName(e.target.value)} placeholder="e.g. John Doe" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Phone Number</Label>
+                      <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerPhone} onChange={e => setManualCustomerPhone(e.target.value)} placeholder="+880..." />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('customer')}</Label>
+                      <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                        <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 shadow-sm font-bold text-xs">
+                          <SelectValue placeholder={t('search')} />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[250px] rounded-xl">
+                          {customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-bold">{c.firstName} {c.lastName}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('date')}</Label>
+                      <Input type="date" className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} />
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* SMART SCANNER INPUT */}
-              <form onSubmit={handleScannerInput} className="relative group shrink-0">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                  <Scan className="h-5 w-5 text-blue-600 animate-pulse" />
+              {/* PRODUCT PICKER SECTION */}
+              <div className="bg-white p-4 rounded-2xl ring-1 ring-slate-100 shadow-sm border border-blue-50 space-y-4">
+                <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-end">
+                  <div className="flex-1 space-y-1.5">
+                    <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Catalog Search</Label>
+                    <Select onValueChange={handleAddProduct}>
+                      <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 shadow-sm transition-all focus:ring-2 focus:ring-blue-500 font-bold text-xs">
+                        <SelectValue placeholder={t('addProduct')} />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[300px] rounded-xl">
+                        {products?.map(p => (
+                          <SelectItem key={p.id} value={p.id} className="text-xs font-bold">
+                            {p.name} <span className="text-[9px] opacity-60 ml-2 font-mono">(STOCK: {p.currentStock})</span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button variant="outline" className="h-12 rounded-xl gap-2 border-blue-200 text-blue-700 font-black text-[10px] uppercase bg-blue-50/50 transition-all hover:bg-blue-100 shadow-sm" onClick={handleAddCustomItem}>
+                    <PackagePlus className="h-4 w-4" /> {t('addCustomItem')}
+                  </Button>
                 </div>
-                <Input 
-                  placeholder={t('scanPrompt')}
-                  className="h-14 pl-12 rounded-[1.25rem] bg-white border-none ring-1 ring-slate-200 shadow-lg text-sm font-bold focus:ring-2 focus:ring-blue-600 transition-all placeholder:font-medium"
-                  value={scannerInput}
-                  onChange={e => setScannerInput(e.target.value)}
-                />
-                <Button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl h-10 px-4 md:px-6 bg-blue-600 text-[10px] font-black uppercase shadow-lg">
-                  {t('addItem')}
-                </Button>
-              </form>
+
+                <form onSubmit={handleScannerInput} className="relative group shrink-0">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                    <Scan className="h-4 w-4 text-blue-600 animate-pulse" />
+                  </div>
+                  <Input 
+                    placeholder={t('scanPrompt')}
+                    className="h-11 pl-11 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-100 shadow-sm text-xs font-bold focus:ring-2 focus:ring-blue-600 transition-all"
+                    value={scannerInput}
+                    onChange={e => setScannerInput(e.target.value)}
+                  />
+                </form>
+              </div>
 
               {/* PRODUCT TABLE */}
-              <div className="flex-1 bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-sm ring-1 ring-slate-100 overflow-hidden flex flex-col border border-slate-50 min-h-0">
-                <div className="overflow-auto flex-1 custom-scrollbar">
-                  <Table>
-                    <TableHeader className="bg-slate-50/50 sticky top-0 z-10 backdrop-blur-md">
-                      <TableRow>
-                        <TableHead className="text-[10px] uppercase font-black py-4 pl-4 md:pl-8">{t('itemDescription')}</TableHead>
-                        <TableHead className="text-[10px] uppercase font-black text-center w-24 md:w-32">{t('qty')}</TableHead>
-                        <TableHead className="text-[10px] uppercase font-black text-right w-24 md:w-40 hidden sm:table-cell">{t('unitPrice')}</TableHead>
-                        <TableHead className="text-[10px] uppercase font-black text-right w-24 md:w-40 pr-4 md:pr-8">{t('total')}</TableHead>
-                        <TableHead className="w-10"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {lineItems.length === 0 ? (
+              <div className="flex-1 bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-sm ring-1 ring-slate-100 overflow-hidden flex flex-col border border-slate-50 min-h-[400px]">
+                <div className="overflow-x-auto flex-1 custom-scrollbar">
+                  <div className="min-w-[800px]">
+                    <Table>
+                      <TableHeader className="bg-slate-50/50 sticky top-0 z-10 backdrop-blur-md">
                         <TableRow>
-                          <TableCell colSpan={5} className="h-48 md:h-64 text-center">
-                            <div className="flex flex-col items-center opacity-20 group">
-                              <Barcode className="h-12 w-12 md:h-16 md:w-16 mb-4 transition-transform group-hover:scale-110 duration-500" />
-                              <p className="text-[10px] md:text-xs uppercase font-black tracking-[0.3em]">{t('noItemsSelected')}</p>
-                            </div>
-                          </TableCell>
+                          <TableHead className="text-[10px] uppercase font-black py-4 pl-4 md:pl-8">{t('itemDescription')}</TableHead>
+                          <TableHead className="text-[10px] uppercase font-black text-center w-24 md:w-32">{t('qty')}</TableHead>
+                          <TableHead className="text-[10px] uppercase font-black text-right w-24 md:w-40">{t('unitPrice')}</TableHead>
+                          <TableHead className="text-[10px] uppercase font-black text-right w-24 md:w-40 pr-4 md:pr-8">{t('total')}</TableHead>
+                          <TableHead className="w-10"></TableHead>
                         </TableRow>
-                      ) : (
-                        lineItems.map((item, idx) => (
-                          <TableRow key={idx} className="group hover:bg-slate-50/50 transition-colors h-16 md:h-20">
-                            <TableCell className="pl-4 md:pl-8">
-                              <div className="flex flex-col min-w-0">
-                                <span className="text-[11px] md:text-sm font-black text-slate-900 uppercase tracking-tighter truncate">{item.name}</span>
-                                {item.isSerialized && (
-                                  <div className="flex flex-wrap gap-1 mt-1.5 max-w-[150px] md:max-w-none">
-                                    {item.serials.map((s, si) => (
-                                      <Badge key={si} variant="secondary" className="text-[7px] md:text-[8px] h-3.5 md:h-4 bg-blue-50 text-blue-700 border-none font-mono">
-                                        {s}
-                                      </Badge>
-                                    ))}
-                                    {item.serials.length === 0 && <span className="text-[8px] md:text-[9px] text-red-500 font-bold italic animate-pulse">Required serials!</span>}
-                                  </div>
-                                )}
+                      </TableHeader>
+                      <TableBody>
+                        {lineItems.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={5} className="h-48 md:h-64 text-center">
+                              <div className="flex flex-col items-center opacity-20">
+                                <Barcode className="h-12 w-12 md:h-16 md:w-16 mb-4" />
+                                <p className="text-[10px] md:text-xs uppercase font-black tracking-[0.3em]">{t('noItemsSelected')}</p>
                               </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center justify-center">
-                                <Input 
-                                  type="number" 
-                                  className="h-8 md:h-10 text-center font-black text-xs md:text-sm rounded-xl w-16 md:w-24 bg-slate-50 border-none focus:ring-2 focus:ring-blue-600" 
-                                  value={item.qty} 
-                                  disabled={item.isSerialized}
-                                  onChange={e => handleUpdateQty(idx, Number(e.target.value))} 
-                                />
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-right hidden sm:table-cell">
-                              <span className="font-bold text-xs md:text-sm text-slate-500">৳{item.price.toLocaleString()}</span>
-                            </TableCell>
-                            <TableCell className="text-right pr-4 md:pr-8">
-                              <span className="font-black text-xs md:text-sm text-blue-600">৳{item.total.toLocaleString()}</span>
-                            </TableCell>
-                            <TableCell>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 md:h-9 md:w-9 text-red-500 hover:bg-red-50 rounded-full transition-all md:opacity-0 md:group-hover:opacity-100" onClick={() => handleRemoveItem(idx)}>
-                                <X className="h-4 w-4 md:h-5 md:w-5" />
-                              </Button>
                             </TableCell>
                           </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
+                        ) : (
+                          lineItems.map((item, idx) => (
+                            <TableRow key={idx} className="group hover:bg-slate-50/50 transition-colors h-16 md:h-20">
+                              <TableCell className="pl-4 md:pl-8">
+                                <div className="flex flex-col min-w-0">
+                                  {item.isCustom ? (
+                                    <Input 
+                                      className="h-9 text-[11px] font-black uppercase border-none ring-1 ring-slate-100 bg-slate-50/30 w-full" 
+                                      value={item.name} 
+                                      onChange={e => handleUpdateItem(idx, 'name', e.target.value)} 
+                                      placeholder="Type product name..."
+                                    />
+                                  ) : (
+                                    <span className="text-[11px] md:text-sm font-black text-slate-900 uppercase tracking-tighter truncate">{item.name}</span>
+                                  )}
+                                  {item.isSerialized && (
+                                    <div className="flex flex-wrap gap-1 mt-1.5">
+                                      {item.serials.map((s, si) => (
+                                        <Badge key={si} variant="secondary" className="text-[7px] md:text-[8px] h-3.5 md:h-4 bg-blue-50 text-blue-700 border-none font-mono">
+                                          {s}
+                                        </Badge>
+                                      ))}
+                                      {item.serials.length === 0 && <span className="text-[8px] md:text-[9px] text-red-500 font-bold italic animate-pulse">Required serials!</span>}
+                                    </div>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center justify-center">
+                                  <Input 
+                                    type="number" 
+                                    className="h-9 text-center font-black text-xs rounded-xl w-16 md:w-24 bg-slate-50 border-none" 
+                                    value={item.qty} 
+                                    disabled={item.isSerialized}
+                                    onChange={e => handleUpdateItem(idx, 'qty', e.target.value)} 
+                                  />
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Input 
+                                  type="number" 
+                                  className="h-9 text-right font-black text-xs rounded-xl w-24 md:w-32 bg-slate-50 border-none ml-auto" 
+                                  value={item.price} 
+                                  disabled={!item.isCustom}
+                                  onChange={e => handleUpdateItem(idx, 'price', e.target.value)} 
+                                />
+                              </TableCell>
+                              <TableCell className="text-right pr-4 md:pr-8">
+                                <span className="font-black text-xs md:text-sm text-blue-600">৳{item.total.toLocaleString()}</span>
+                              </TableCell>
+                              <TableCell>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-50 rounded-full transition-all" onClick={() => handleRemoveItem(idx)}>
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Sidebar Summary & Payment */}
-            <div className="w-full lg:w-[400px] bg-white border-l border-slate-100 p-4 md:p-8 space-y-4 md:space-y-8 flex flex-col shadow-2xl relative z-20 shrink-0 overflow-y-auto">
+            <div className="w-full lg:w-[400px] bg-white border-l border-slate-100 p-4 md:p-8 space-y-4 md:space-y-8 flex flex-col shadow-2xl relative z-20 shrink-0 overflow-y-auto custom-scrollbar">
               <div className="space-y-4 md:space-y-6">
                 <div className="bg-blue-600 text-white p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl shadow-blue-100 space-y-4 relative overflow-hidden group shrink-0">
                   <Calculator className="absolute -bottom-6 -right-6 h-24 w-24 md:h-32 md:w-32 opacity-10 group-hover:scale-125 transition-transform duration-700" />
@@ -582,7 +703,6 @@ export default function SalesPage() {
             <Button onClick={() => window.print()} className="bg-white text-blue-600 hover:bg-blue-50 shadow-2xl rounded-full font-black text-[10px] uppercase h-10 px-6 gap-2 border-none ring-1 ring-blue-100">
               <Printer className="h-4 w-4" /> {t('print')}
             </Button>
-            {/* ShadCN DialogContent Close handles removal */}
           </div>
           {selectedRecord && (
             <div className="bg-white shadow-2xl rounded-none md:rounded-[2rem] overflow-hidden">
