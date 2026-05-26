@@ -83,6 +83,10 @@ export const translations = {
     receiveStock: "Receive Stock",
     initializeIntake: "Initialize Intake",
 
+    // Shortcuts
+    invoiceShortcut: "Invoice",
+    paymentShortcut: "Payment",
+
     // Auth
     login: "Sign In",
     login_bn: "লগইন",
@@ -373,6 +377,10 @@ export const translations = {
     selectSerials: "সিরিয়াল নির্বাচন করুন",
     receiveStock: "পণ্য গ্রহণ",
     initializeIntake: "ইনভেন্টরি শুরু করুন",
+
+    // Shortcuts
+    invoiceShortcut: "ইনভয়েস",
+    paymentShortcut: "পেমেন্ট",
 
     // Dashboard
     goodMorning: "শুভ সকাল",

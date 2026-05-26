@@ -1,7 +1,8 @@
+
 "use client"
 
 import * as React from "react"
-import { TrendingUp, ShoppingCart, Target, LifeBuoy, Loader2, ArrowRight, AlertCircle, DollarSign, Plus } from "lucide-react"
+import { TrendingUp, ShoppingCart, Target, LifeBuoy, Loader2, ArrowRight, AlertCircle, DollarSign, Plus, Truck, FileText, Receipt, Layers, Wallet, Landmark } from "lucide-react"
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -13,11 +14,22 @@ import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, limit } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { useTranslation } from "@/hooks/use-translation"
+import Link from "next/link"
 
 export default function Dashboard() {
   const { branchId, companyId } = useTenant();
   const db = useFirestore();
   const { t } = useTranslation();
+
+  const shortcuts = [
+    { label: t('sales'), icon: ShoppingCart, color: "bg-green-500", path: "/sales" },
+    { label: t('purchases'), icon: Truck, color: "bg-orange-500", path: "/purchases" },
+    { label: t('quotations'), icon: FileText, color: "bg-purple-500", path: "/quotations" },
+    { label: t('invoiceShortcut'), icon: Receipt, color: "bg-blue-500", path: "/sales" },
+    { label: t('billing'), icon: Layers, color: "bg-violet-500", path: "/project-billing" },
+    { label: t('paymentShortcut'), icon: Wallet, color: "bg-indigo-500", path: "/project-billing" },
+    { label: t('accounts'), icon: Landmark, color: "bg-cyan-500", path: "/accounts" },
+  ];
 
   const invoicesQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
@@ -74,6 +86,25 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Bubble Shortcuts */}
+      <div className="bg-white p-6 rounded-[2rem] border shadow-sm ring-1 ring-slate-100 overflow-x-auto no-scrollbar">
+        <div className="flex justify-between items-center gap-4 min-w-[700px] md:min-w-0 md:grid md:grid-cols-7">
+          {shortcuts.map((s, i) => (
+            <Link key={i} href={s.path} className="flex flex-col items-center gap-3 group shrink-0">
+              <div className={cn(
+                "w-14 h-14 rounded-full flex items-center justify-center text-white shadow-xl transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1 group-active:scale-95",
+                s.color
+              )}>
+                <s.icon className="h-6 w-6" />
+              </div>
+              <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest group-hover:text-primary transition-colors text-center whitespace-nowrap">
+                {s.label}
+              </span>
+            </Link>
+          ))}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard title={t('totalRevenue')} value={`৳${stats.totalSales.toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-600" subtext={t('revenueGrowth')} />
         <KPICard title={t('totalOrders')} value={allInvoices?.length || 0} icon={ShoppingCart} colorClass="bg-blue-600" subtext={t('orderGrowth')} />
@@ -108,7 +139,7 @@ export default function Dashboard() {
                     <TableRow key={inv.id} className="h-14 hover:bg-slate-50/50 transition-colors">
                       <TableCell className="font-bold text-xs pl-6 text-blue-600">{inv.invoiceNumber}</TableCell>
                       <TableCell className="text-xs font-bold text-slate-900">
-                        {leads?.find(l => l.id === inv.customerId)?.name || t('walkingClient')}
+                        {leads?.find(l => l.id === inv.customerId)?.name || inv.customerName || t('walkingClient')}
                       </TableCell>
                       <TableCell className="font-black text-xs">৳{inv.totalAmount?.toLocaleString()}</TableCell>
                       <TableCell className="text-right pr-6">
