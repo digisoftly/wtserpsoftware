@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { TrendingUp, ShoppingCart, Target, Loader2, ArrowRight, AlertCircle, DollarSign, Plus, Truck, FileText, Receipt, Layers, Wallet, Landmark } from "lucide-react"
+import { TrendingUp, ShoppingCart, Target, Loader2, ArrowRight, AlertCircle, DollarSign, Plus, Truck, FileText, Receipt, Layers, Wallet, Landmark, CheckCircle2 } from "lucide-react"
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
