@@ -10,28 +10,28 @@
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 215 72% 50%; /* #226FDB */
+    --primary: 243 75% 59%; /* #4F46E5 Indigo */
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
+    --secondary: 188 91% 43%; /* #06B6D4 Cyan */
     --secondary-foreground: 222 47% 11%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215 16% 47%;
-    --accent: 215 72% 50%;
+    --accent: 142 71% 45%; /* #22C55E Green */
     --accent-foreground: 210 40% 98%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 215 72% 50%;
-    --radius: 0.5rem;
+    --ring: 243 75% 59%;
+    --radius: 0.75rem;
     --sidebar-background: 222 47% 11%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 215 72% 50%;
+    --sidebar-primary: 243 75% 59%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 217 33% 17%;
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 217 33% 17%;
-    --sidebar-ring: 215 72% 50%;
+    --sidebar-ring: 243 75% 59%;
   }
 }
 
@@ -69,5 +69,12 @@
   }
   .no-print {
     display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  @page {
+    size: A4;
+    margin: 10mm;
   }
 }

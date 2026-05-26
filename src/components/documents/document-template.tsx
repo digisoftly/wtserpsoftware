@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -8,6 +7,7 @@ import { ProfessionalLayout } from "./layouts/professional-layout"
 import { MinimalLayout } from "./layouts/minimal-layout"
 import { ModernLayout } from "./layouts/modern-layout"
 import { ThermalLayout } from "./layouts/thermal-layout"
+import { ERPProLayout } from "./layouts/erp-pro-layout"
 
 export interface DocumentItem {
   name: string;
@@ -16,9 +16,10 @@ export interface DocumentItem {
   unitPrice: number;
   total: number;
   serialNumber?: string;
+  discount?: number;
 }
 
-export type DocumentLayoutType = 'professional' | 'minimal' | 'modern' | 'thermal';
+export type DocumentLayoutType = 'professional' | 'minimal' | 'modern' | 'thermal' | 'erppro';
 
 export interface DocumentTemplateProps {
   title: string;
@@ -42,7 +43,7 @@ export function DocumentTemplate(props: DocumentTemplateProps) {
   const { get_setting } = useSettings();
   
   // Determine layout: Override > Default per type > Fallback
-  const defaultLayout = get_setting(`defaultTemplate_${props.type || 'invoice'}`, 'professional') as DocumentLayoutType;
+  const defaultLayout = get_setting(`defaultTemplate_${props.type || 'invoice'}`, 'erppro') as DocumentLayoutType;
   const layout = props.layoutOverride || defaultLayout;
 
   const renderLayout = () => {
@@ -53,6 +54,8 @@ export function DocumentTemplate(props: DocumentTemplateProps) {
         return <ModernLayout {...props} />;
       case 'thermal':
         return <ThermalLayout {...props} />;
+      case 'erppro':
+        return <ERPProLayout {...props} />;
       case 'professional':
       default:
         return <ProfessionalLayout {...props} />;

@@ -1,4 +1,3 @@
-
 export type Language = 'EN' | 'BN';
 
 export const translations = {
@@ -53,6 +52,9 @@ export const translations = {
     identity: "Identity",
     profile: "Profile",
     share: "Share",
+    refNo: "Ref No",
+    amountInWords: "Amount in Words",
+    workingList: "Working List",
     
     // Add Actions
     addItem: "Add Item",
@@ -338,6 +340,9 @@ export const translations = {
     identity: "পরিচয়",
     profile: "প্রোফাইল",
     share: "শেয়ার",
+    refNo: "রেফ নং",
+    amountInWords: "কথায়",
+    workingList: "ওয়ার্কিং লিস্ট",
 
     // Auth
     login: "সাইন ইন",
