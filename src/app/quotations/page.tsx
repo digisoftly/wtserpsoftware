@@ -16,7 +16,8 @@ import {
   X,
   Clock,
   ArrowRightLeft,
-  ArrowRight
+  ArrowRight,
+  Download
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -305,7 +306,7 @@ export default function QuotationsPage() {
                         )}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-purple-50 text-purple-600"><MoreVertical className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-purple-50 text-purple-600 transition-colors"><MoreVertical className="h-4 w-4" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-xl">
                             <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedRecord(q); setIsViewModalOpen(true); }}><Eye className="mr-2 h-3.5 w-3.5" /> {t('view')}</DropdownMenuItem>
@@ -325,7 +326,7 @@ export default function QuotationsPage() {
       )}
 
       {/* NEW/EDIT MODAL */}
-      <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) { setIsAddModalOpen(false); setIsEditModalOpen(false); resetForm(); } }}>
+      <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) { resetForm(); setIsAddModalOpen(false); setIsEditModalOpen(false); } }}>
         <DialogContent className="max-w-[95vw] w-[1200px] p-0 overflow-hidden border-none shadow-2xl bg-slate-50 rounded-[2rem] md:rounded-[2.5rem]">
           <DialogHeader className={cn("p-5 text-white flex-row items-center justify-between space-y-0", isEditModalOpen ? "bg-blue-600" : "bg-purple-600")}>
             <div className="flex items-center gap-3">
@@ -463,8 +464,8 @@ export default function QuotationsPage() {
         <DialogContent className="max-w-[21cm] w-[95vw] p-0 border-none bg-transparent shadow-none overflow-y-auto max-h-[95vh]">
           <DialogHeader className="sr-only"><DialogTitle>Quotation View</DialogTitle></DialogHeader>
           <div className="flex justify-end gap-3 mb-4 no-print fixed top-4 right-4 z-[100]">
-            <Button onClick={() => window.print()} className="bg-white text-purple-600 hover:bg-purple-50 shadow-2xl rounded-full font-black text-[10px] uppercase h-10 px-6 gap-2 border-none">
-              <Printer className="h-4 w-4" /> {t('print')}
+            <Button onClick={() => window.print()} className="bg-white text-purple-600 hover:bg-purple-50 shadow-2xl rounded-full font-black text-[10px] uppercase h-10 px-6 gap-2 border-none ring-1 ring-purple-100">
+              <Download className="h-4 w-4" /> Download PDF
             </Button>
           </div>
           {selectedRecord && (

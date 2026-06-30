@@ -16,16 +16,20 @@ import {
   X,
   CheckCircle2,
   Calculator,
-  ArrowRight
+  ArrowRight,
+  Eye,
+  Edit,
+  Trash2,
+  Download
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, query, orderBy, serverTimestamp, doc, runTransaction, increment } from "firebase/firestore"
+import { collection, query, orderBy, serverTimestamp, doc, runTransaction, increment, setDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -33,6 +37,10 @@ import { cn } from "@/lib/utils"
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { useTranslation } from "@/hooks/use-translation"
 import { toast } from "@/hooks/use-toast"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates"
+import { DocumentTemplate } from "@/components/documents/document-template"
 
 interface ReturnLineItem {
   productId: string;
@@ -48,8 +56,13 @@ export default function ReturnsPage() {
   const { t } = useTranslation();
   
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
+  const [selectedRecord, setSelectedRecord] = React.useState<any>(null);
   const [activeTab, setActiveTab] = React.useState("sales");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState("");
 
   // Form State
   const [selectedParentId, setSelectedParentId] = React.useState("");
@@ -91,10 +104,7 @@ export default function ReturnsPage() {
 
   // Handle selection of Invoice/PO to populate items
   React.useEffect(() => {
-    if (!selectedParentId) {
-      setLineItems([]);
-      return;
-    }
+    if (!selectedParentId || isEditModalOpen) return;
 
     if (activeTab === "sales") {
       const inv = invoices?.find(i => i.id === selectedParentId);
@@ -102,7 +112,7 @@ export default function ReturnsPage() {
         setLineItems(inv.items.map((item: any) => ({
           productId: item.productId,
           name: item.name,
-          qty: 1, // Default return 1, user can adjust
+          qty: 1, 
           price: item.price || item.unitPrice || 0,
           total: item.price || item.unitPrice || 0
         })));
@@ -119,7 +129,7 @@ export default function ReturnsPage() {
         })));
       }
     }
-  }, [selectedParentId, activeTab, invoices, purchaseOrders]);
+  }, [selectedParentId, activeTab, invoices, purchaseOrders, isEditModalOpen]);
 
   const handleUpdateQty = (idx: number, qty: number) => {
     const updated = [...lineItems];
@@ -135,7 +145,9 @@ export default function ReturnsPage() {
     try {
       await runTransaction(db!, async (transaction) => {
         const returnCol = activeTab === "sales" ? "sales_returns" : "purchase_returns";
-        const returnRef = doc(collection(db!, "companies", companyId!, "branches", branchId!, returnCol));
+        const returnRef = isEditModalOpen 
+          ? doc(db!, "companies", companyId!, "branches", branchId!, returnCol, selectedRecord.id)
+          : doc(collection(db!, "companies", companyId!, "branches", branchId!, returnCol));
         
         const returnData = {
           id: returnRef.id,
@@ -148,29 +160,30 @@ export default function ReturnsPage() {
           items: lineItems,
           totalAmount: totalReturnAmount,
           reason,
-          returnDate: new Date().toISOString(),
+          returnDate: isEditModalOpen ? selectedRecord.returnDate : new Date().toISOString(),
           status: "completed",
-          createdAt: serverTimestamp(),
+          createdAt: isEditModalOpen ? selectedRecord.createdAt : serverTimestamp(),
+          updatedAt: serverTimestamp(),
         };
 
-        transaction.set(returnRef, returnData);
+        transaction.set(returnRef, returnData, { merge: true });
 
-        // ADJUST STOCK
-        // Sales Return: Customer gives back -> STOCK INCREASES
-        // Purchase Return: We give back to supplier -> STOCK DECREASES
-        const stockAdjustment = activeTab === "sales" ? 1 : -1;
-
-        for (const item of lineItems) {
-          const productRef = doc(db!, "companies", companyId!, "branches", branchId!, "products", item.productId);
-          transaction.update(productRef, {
-            currentStock: increment(item.qty * stockAdjustment),
-            updatedAt: serverTimestamp()
-          });
+        // ADJUST STOCK only on new creation to avoid double counting in prototype
+        if (!isEditModalOpen) {
+          const stockAdjustment = activeTab === "sales" ? 1 : -1;
+          for (const item of lineItems) {
+            const productRef = doc(db!, "companies", companyId!, "branches", branchId!, "products", item.productId);
+            transaction.update(productRef, {
+              currentStock: increment(item.qty * stockAdjustment),
+              updatedAt: serverTimestamp()
+            });
+          }
         }
       });
 
       toast({ title: t('success'), description: t('successSub') });
       setIsAddModalOpen(false);
+      setIsEditModalOpen(false);
       resetForm();
     } catch (e: any) {
       toast({ variant: "destructive", title: t('error'), description: e.message });
@@ -183,6 +196,24 @@ export default function ReturnsPage() {
     setSelectedParentId("");
     setReason("");
     setLineItems([]);
+    setSelectedRecord(null);
+  };
+
+  const openEdit = (r: any) => {
+    setSelectedRecord(r);
+    setSelectedParentId(r.parentId);
+    setReason(r.reason || "");
+    setLineItems(r.items || []);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDelete = () => {
+    if (!selectedRecord || !db || !companyId || !branchId) return;
+    const col = activeTab === "sales" ? "sales_returns" : "purchase_returns";
+    const docRef = doc(db, "companies", companyId, "branches", branchId, col, selectedRecord.id);
+    deleteDocumentNonBlocking(docRef);
+    toast({ title: t('success') });
+    setIsDeleteAlertOpen(false);
   };
 
   return (
@@ -227,16 +258,30 @@ export default function ReturnsPage() {
                     <TableHead className="h-12 text-[10px] uppercase font-black pl-6">{t('date')}</TableHead>
                     <TableHead className="h-12 text-[10px] uppercase font-black">{t('invoiceNumber')}</TableHead>
                     <TableHead className="h-12 text-[10px] uppercase font-black">{t('reason')}</TableHead>
-                    <TableHead className="h-12 text-[10px] uppercase font-black text-right pr-6">{t('amount')}</TableHead>
+                    <TableHead className="h-12 text-[10px] uppercase font-black text-right">{t('amount')}</TableHead>
+                    <TableHead className="text-right pr-6"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {salesReturns.map((r) => (
-                    <TableRow key={r.id} className="h-14 hover:bg-muted/5 transition-colors">
+                    <TableRow key={r.id} className="h-14 hover:bg-muted/5 transition-colors group">
                       <TableCell className="pl-6 text-[10px] font-bold uppercase text-slate-500">{new Date(r.returnDate).toLocaleDateString()}</TableCell>
                       <TableCell className="font-black text-xs text-red-600">{r.parentNumber}</TableCell>
                       <TableCell className="text-xs font-bold text-slate-600">{r.reason || "---"}</TableCell>
-                      <TableCell className="text-right pr-6 font-black text-xs text-slate-900">৳{r.totalAmount?.toLocaleString()}</TableCell>
+                      <TableCell className="text-right font-black text-xs text-slate-900">৳{r.totalAmount?.toLocaleString()}</TableCell>
+                      <TableCell className="text-right pr-6">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-red-50 text-red-600 transition-colors"><MoreVertical className="h-4 w-4" /></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-xl">
+                            <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedRecord(r); setIsViewModalOpen(true); }}><Eye className="mr-2 h-3.5 w-3.5" /> {t('view')}</DropdownMenuItem>
+                            <DropdownMenuItem className="text-xs font-bold" onClick={() => openEdit(r)}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(r); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -261,16 +306,30 @@ export default function ReturnsPage() {
                     <TableHead className="h-12 text-[10px] uppercase font-black pl-6">{t('date')}</TableHead>
                     <TableHead className="h-12 text-[10px] uppercase font-black">{t('poNumber')}</TableHead>
                     <TableHead className="h-12 text-[10px] uppercase font-black">{t('reason')}</TableHead>
-                    <TableHead className="h-12 text-[10px] uppercase font-black text-right pr-6">{t('amount')}</TableHead>
+                    <TableHead className="h-12 text-[10px] uppercase font-black text-right">{t('amount')}</TableHead>
+                    <TableHead className="text-right pr-6"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {purchaseReturns.map((r) => (
-                    <TableRow key={r.id} className="h-14 hover:bg-muted/5 transition-colors">
+                    <TableRow key={r.id} className="h-14 hover:bg-muted/5 transition-colors group">
                       <TableCell className="pl-6 text-[10px] font-bold uppercase text-slate-500">{new Date(r.returnDate).toLocaleDateString()}</TableCell>
                       <TableCell className="font-black text-xs text-blue-600">{r.parentNumber}</TableCell>
                       <TableCell className="text-xs font-bold text-slate-600">{r.reason || "---"}</TableCell>
-                      <TableCell className="text-right pr-6 font-black text-xs text-slate-900">৳{r.totalAmount?.toLocaleString()}</TableCell>
+                      <TableCell className="text-right font-black text-xs text-slate-900">৳{r.totalAmount?.toLocaleString()}</TableCell>
+                      <TableCell className="text-right pr-6">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-blue-50 text-blue-600 transition-colors"><MoreVertical className="h-4 w-4" /></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-xl">
+                            <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedRecord(r); setIsViewModalOpen(true); }}><Eye className="mr-2 h-3.5 w-3.5" /> {t('view')}</DropdownMenuItem>
+                            <DropdownMenuItem className="text-xs font-bold" onClick={() => openEdit(r)}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(r); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -285,8 +344,8 @@ export default function ReturnsPage() {
         </TabsContent>
       </Tabs>
 
-      {/* ADD RETURN MODAL */}
-      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+      {/* ADD/EDIT RETURN MODAL */}
+      <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) resetForm(); setIsAddModalOpen(false); setIsEditModalOpen(false); }}>
         <DialogContent className="max-w-[95vw] w-[1200px] p-0 overflow-hidden border-none shadow-2xl bg-slate-50 rounded-[2rem] md:rounded-[2.5rem]">
           <DialogHeader className={cn("p-5 text-white flex-row items-center justify-between space-y-0", activeTab === "sales" ? "bg-red-600" : "bg-blue-600")}>
             <div className="flex items-center gap-3">
@@ -294,7 +353,7 @@ export default function ReturnsPage() {
                 <RotateCcw className="h-5 w-5" />
               </div>
               <div>
-                <DialogTitle className="text-lg md:text-xl font-bold font-headline uppercase tracking-tight">{t('addReturn')}</DialogTitle>
+                <DialogTitle className="text-lg md:text-xl font-bold font-headline uppercase tracking-tight">{isEditModalOpen ? t('edit') : t('addReturn')}</DialogTitle>
                 <p className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em] leading-none mt-1">
                   {activeTab === "sales" ? "Sales / Customer Return" : "Purchase / Supplier Return"}
                 </p>
@@ -310,7 +369,7 @@ export default function ReturnsPage() {
                   <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">
                     {activeTab === "sales" ? t('invoiceNumber') : t('poNumber')}
                   </Label>
-                  <Select value={selectedParentId} onValueChange={setSelectedParentId}>
+                  <Select value={selectedParentId} onValueChange={setSelectedParentId} disabled={isEditModalOpen}>
                     <SelectTrigger className="h-12 rounded-2xl bg-white border-none ring-1 ring-slate-200 shadow-sm transition-all focus:ring-2">
                       <SelectValue placeholder={t('search')} />
                     </SelectTrigger>
@@ -406,17 +465,6 @@ export default function ReturnsPage() {
                     </div>
                   </div>
                 </div>
-
-                <div className={cn("p-4 rounded-2xl flex items-center gap-3 border-2 border-dashed", activeTab === "sales" ? "bg-green-50 border-green-200" : "bg-orange-50 border-orange-200")}>
-                  <div className={cn("p-2 rounded-xl text-white", activeTab === "sales" ? "bg-green-600" : "bg-orange-600")}>
-                    <ArrowRight className="h-4 w-4" />
-                  </div>
-                  <p className="text-[9px] font-black uppercase tracking-tighter leading-tight">
-                    {activeTab === "sales" 
-                      ? "Stock will be increased automatically upon processing." 
-                      : "Stock will be decreased automatically upon processing."}
-                  </p>
-                </div>
               </div>
 
               <div className="mt-auto">
@@ -426,13 +474,60 @@ export default function ReturnsPage() {
                   onClick={handleProcessReturn}
                 >
                   {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <CheckCircle2 className="h-5 w-5" />}
-                  {t('save')}
+                  {isEditModalOpen ? "Update Record" : t('save')}
                 </Button>
               </div>
             </div>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* VIEW DIALOG */}
+      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+        <DialogContent className="max-w-[21cm] w-[95vw] p-0 border-none bg-transparent shadow-none overflow-y-auto max-h-[95vh]">
+          <DialogHeader className="sr-only"><DialogTitle>Return View</DialogTitle></DialogHeader>
+          <div className="flex justify-end gap-3 mb-4 no-print fixed top-4 right-4 z-[100]">
+            <Button onClick={() => window.print()} className="bg-white text-red-600 hover:bg-red-50 shadow-2xl rounded-full font-black text-[10px] uppercase h-10 px-6 gap-2 border-none ring-1 ring-red-100">
+              <Download className="h-4 w-4" /> Download PDF
+            </Button>
+          </div>
+          {selectedRecord && (
+            <div className="bg-white shadow-2xl rounded-none md:rounded-[2rem] overflow-hidden">
+              <DocumentTemplate
+                title={activeTab === 'sales' ? 'Sales Return' : 'Purchase Return'}
+                type="agreement"
+                docNumber={selectedRecord.parentNumber}
+                date={selectedRecord.returnDate}
+                customerName={selectedRecord.parentNumber}
+                items={selectedRecord.items.map((i: any) => ({
+                  name: i.name,
+                  quantity: i.qty,
+                  unitPrice: i.price,
+                  total: i.total
+                }))}
+                subtotal={selectedRecord.totalAmount}
+                grandTotal={selectedRecord.totalAmount}
+                status={selectedRecord.status}
+                notes={selectedRecord.reason}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* DELETE ALERT */}
+      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+        <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tight text-slate-900">{t('delete')}?</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs font-medium leading-relaxed">{t('errorSub')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-8 gap-3">
+            <AlertDialogCancel className="rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest">{t('cancel')}</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest" onClick={handleDelete}>{t('delete')}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

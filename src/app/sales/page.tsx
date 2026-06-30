@@ -25,7 +25,9 @@ import {
   Printer,
   Barcode,
   User,
-  PackagePlus
+  PackagePlus,
+  Download,
+  Edit
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -65,6 +67,7 @@ export default function SalesPage() {
   const { t } = useTranslation();
   
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
   const [selectedRecord, setSelectedRecord] = React.useState<any>(null);
@@ -171,7 +174,6 @@ export default function SalesPage() {
     e.preventDefault();
     if (!scannerInput) return;
 
-    // 1. Try to find by Serial Number
     const foundSerial = availableSerials?.find(s => s.serialNumber.toLowerCase() === scannerInput.toLowerCase());
     if (foundSerial) {
       const product = products?.find(p => p.id === foundSerial.productId);
@@ -204,7 +206,6 @@ export default function SalesPage() {
       }
     }
 
-    // 2. Try to find by SKU/Barcode
     const foundProduct = products?.find(p => p.sku?.toLowerCase() === scannerInput.toLowerCase());
     if (foundProduct) {
       handleAddProduct(foundProduct.id);
@@ -250,21 +251,12 @@ export default function SalesPage() {
       return;
     }
 
-    for (const item of lineItems) {
-      if (item.isCustom && !item.name.trim()) {
-        toast({ variant: "destructive", title: t('error'), description: "Please provide names for all custom items." });
-        return;
-      }
-      if (item.isSerialized && item.serials.length !== item.qty) {
-        toast({ variant: "destructive", title: t('error'), description: `Please select serials for ${item.name}` });
-        return;
-      }
-    }
-
     setIsSubmitting(true);
     try {
       await runTransaction(db!, async (transaction) => {
-        const invoiceRef = doc(collection(db!, "companies", companyId!, "branches", branchId!, "sales_invoices"));
+        const invoiceRef = isEditModalOpen 
+          ? doc(db!, "companies", companyId!, "branches", branchId!, "sales_invoices", selectedRecord.id)
+          : doc(collection(db!, "companies", companyId!, "branches", branchId!, "sales_invoices"));
         
         let customerName = manualCustomerName;
         let finalCustomerId = selectedCustomerId;
@@ -280,7 +272,7 @@ export default function SalesPage() {
           id: invoiceRef.id,
           companyId,
           branchId,
-          invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
+          invoiceNumber: isEditModalOpen ? selectedRecord.invoiceNumber : `INV-${Date.now().toString().slice(-6)}`,
           customerId: finalCustomerId,
           customerName,
           invoiceDate,
@@ -294,26 +286,29 @@ export default function SalesPage() {
           balanceDue,
           paymentMethod,
           status: balanceDue <= 0 ? "paid" : paidAmount > 0 ? "partial" : "due",
-          createdAt: serverTimestamp(),
+          createdAt: isEditModalOpen ? selectedRecord.createdAt : serverTimestamp(),
           updatedAt: serverTimestamp(),
         };
 
-        transaction.set(invoiceRef, invoiceData);
+        transaction.set(invoiceRef, invoiceData, { merge: true });
 
-        for (const item of lineItems) {
-          if (!item.isCustom) {
-            const productRef = doc(db!, "companies", companyId!, "branches", branchId!, "products", item.productId);
-            transaction.update(productRef, { 
-              currentStock: increment(-item.qty),
-              updatedAt: serverTimestamp()
-            });
+        // Stock deduction only on new creation for simple prototype
+        if (!isEditModalOpen) {
+          for (const item of lineItems) {
+            if (!item.isCustom) {
+              const productRef = doc(db!, "companies", companyId!, "branches", branchId!, "products", item.productId);
+              transaction.update(productRef, { 
+                currentStock: increment(-item.qty),
+                updatedAt: serverTimestamp()
+              });
 
-            if (item.isSerialized) {
-              for (const sn of item.serials) {
-                const snRef = availableSerials?.find(s => s.serialNumber === sn);
-                if (snRef) {
-                  const docRef = doc(db!, "companies", companyId!, "branches", branchId!, "serial_numbers", snRef.id);
-                  transaction.update(docRef, { status: "sold", salesInvoiceId: invoiceRef.id });
+              if (item.isSerialized) {
+                for (const sn of item.serials) {
+                  const snRef = availableSerials?.find(s => s.serialNumber === sn);
+                  if (snRef) {
+                    const docRef = doc(db!, "companies", companyId!, "branches", branchId!, "serial_numbers", snRef.id);
+                    transaction.update(docRef, { status: "sold", salesInvoiceId: invoiceRef.id });
+                  }
                 }
               }
             }
@@ -323,6 +318,7 @@ export default function SalesPage() {
 
       toast({ title: t('success'), description: t('successSub') });
       setIsAddModalOpen(false);
+      setIsEditModalOpen(false);
       resetForm();
     } catch (e: any) {
       toast({ variant: "destructive", title: t('error'), description: e.message });
@@ -341,6 +337,21 @@ export default function SalesPage() {
     setPaidAmount(0);
     setPaymentMethod("cash");
     setInvoiceDate(new Date().toISOString().split('T')[0]);
+    setSelectedRecord(null);
+  };
+
+  const openEdit = (inv: any) => {
+    setSelectedRecord(inv);
+    setIsManualCustomer(inv.customerId === 'manual');
+    setSelectedCustomerId(inv.customerId === 'manual' ? '' : inv.customerId);
+    setManualCustomerName(inv.customerId === 'manual' ? inv.customerName : '');
+    setInvoiceDate(inv.invoiceDate);
+    setLineItems(inv.items || []);
+    setDiscount(inv.discount || 0);
+    setVatPercent(inv.vatPercent || 0);
+    setPaidAmount(inv.paidAmount || 0);
+    setPaymentMethod(inv.paymentMethod || 'cash');
+    setIsEditModalOpen(true);
   };
 
   const handleDelete = () => {
@@ -421,6 +432,7 @@ export default function SalesPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-xl">
                           <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedRecord(inv); setIsViewModalOpen(true); }}><Eye className="mr-2 h-3.5 w-3.5" /> {t('view')}</DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs font-bold" onClick={() => openEdit(inv)}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
                           <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(inv); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -434,15 +446,15 @@ export default function SalesPage() {
       )}
 
       {/* POS INVOICE BUILDER */}
-      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+      <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) resetForm(); setIsAddModalOpen(false); setIsEditModalOpen(false); }}>
         <DialogContent className="max-w-[95vw] w-[1400px] p-0 overflow-hidden border-none shadow-2xl bg-slate-50 rounded-[2rem] md:rounded-[2.5rem]">
-          <DialogHeader className="bg-blue-600 p-5 text-white flex-row items-center justify-between space-y-0">
+          <DialogHeader className={cn("p-5 text-white flex-row items-center justify-between space-y-0", isEditModalOpen ? "bg-indigo-600" : "bg-blue-600")}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center shrink-0">
                 <ShoppingCart className="h-5 w-5" />
               </div>
               <div>
-                <DialogTitle className="text-lg md:text-xl font-bold font-headline uppercase tracking-tight">{t('newInvoice')}</DialogTitle>
+                <DialogTitle className="text-lg md:text-xl font-bold font-headline uppercase tracking-tight">{isEditModalOpen ? t('edit') : t('newInvoice')}</DialogTitle>
                 <p className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em] leading-none mt-1 hidden md:block">Point of Sale Terminal</p>
               </div>
             </div>
@@ -490,7 +502,7 @@ export default function SalesPage() {
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('date')}</Label>
-                      <Input type="date" className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} />
+                      <Input type="date" className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-black" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} />
                     </div>
                   </div>
                 )}
@@ -624,7 +636,7 @@ export default function SalesPage() {
             {/* Sidebar Summary & Payment */}
             <div className="w-full lg:w-[400px] bg-white border-l border-slate-100 p-4 md:p-8 space-y-4 md:space-y-8 flex flex-col shadow-2xl relative z-20 shrink-0 overflow-y-auto custom-scrollbar">
               <div className="space-y-4 md:space-y-6">
-                <div className="bg-blue-600 text-white p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl shadow-blue-100 space-y-4 relative overflow-hidden group shrink-0">
+                <div className={cn("p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl space-y-4 relative overflow-hidden group shrink-0 text-white", isEditModalOpen ? "bg-indigo-600 shadow-indigo-100" : "bg-blue-600 shadow-blue-100")}>
                   <Calculator className="absolute -bottom-6 -right-6 h-24 w-24 md:h-32 md:w-32 opacity-10 group-hover:scale-125 transition-transform duration-700" />
                   <div className="space-y-1 text-center relative z-10">
                     <p className="text-[9px] md:text-[10px] uppercase font-black opacity-60 tracking-[0.2em]">{t('netFinalAmount')}</p>
@@ -679,13 +691,13 @@ export default function SalesPage() {
 
               <div className="mt-auto pt-4 md:pt-6">
                 <Button 
-                  className="w-full h-14 md:h-16 bg-blue-600 hover:bg-blue-700 rounded-[1.25rem] md:rounded-[1.5rem] font-black text-[11px] md:text-xs uppercase tracking-[0.2em] md:tracking-[0.3em] shadow-2xl shadow-blue-100 transition-all active:scale-95 group overflow-hidden" 
+                  className={cn("w-full h-14 md:h-16 rounded-[1.25rem] md:rounded-[1.5rem] font-black text-[11px] md:text-xs uppercase tracking-[0.2em] md:tracking-[0.3em] shadow-2xl transition-all active:scale-95 group overflow-hidden text-white", isEditModalOpen ? "bg-indigo-600 hover:bg-indigo-700" : "bg-blue-600 hover:bg-blue-700")} 
                   disabled={isSubmitting || lineItems.length === 0} 
                   onClick={handleSaveInvoice}
                 >
                   <span className="relative z-10 flex items-center gap-3">
                     {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <CheckCircle2 className="h-5 w-5" />}
-                    {t('postTransaction')}
+                    {isEditModalOpen ? "Update Transaction" : t('postTransaction')}
                   </span>
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                 </Button>
@@ -701,7 +713,7 @@ export default function SalesPage() {
           <DialogHeader className="sr-only"><DialogTitle>Invoice View</DialogTitle></DialogHeader>
           <div className="flex justify-end gap-3 mb-4 no-print fixed top-4 right-4 md:top-6 md:right-6 z-[100]">
             <Button onClick={() => window.print()} className="bg-white text-blue-600 hover:bg-blue-50 shadow-2xl rounded-full font-black text-[10px] uppercase h-10 px-6 gap-2 border-none ring-1 ring-blue-100">
-              <Printer className="h-4 w-4" /> {t('print')}
+              <Download className="h-4 w-4" /> Download PDF
             </Button>
           </div>
           {selectedRecord && (

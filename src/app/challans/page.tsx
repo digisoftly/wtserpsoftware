@@ -23,7 +23,9 @@ import {
   Barcode,
   LayoutGrid,
   MapPin,
-  Phone
+  Phone,
+  Edit,
+  Download
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -37,7 +39,7 @@ import { Switch } from "@/components/ui/switch"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, query, orderBy, doc, runTransaction, serverTimestamp, increment } from "firebase/firestore"
+import { collection, query, orderBy, doc, runTransaction, serverTimestamp, increment, setDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { cn } from "@/lib/utils"
 import { toast } from "@/hooks/use-toast"
@@ -62,6 +64,7 @@ export default function ChallansPage() {
   const { t } = useTranslation();
   
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
   const [selectedRecord, setSelectedRecord] = React.useState<any>(null);
@@ -82,6 +85,7 @@ export default function ChallansPage() {
   const [vehicleNumber, setVehicleNumber] = React.useState("");
   const [driverName, setDriverName] = React.useState("");
   const [notes, setNotes] = React.useState("");
+  const [status, setStatus] = React.useState("pending");
 
   // Queries
   const challansQuery = useMemoFirebase(() => {
@@ -116,25 +120,6 @@ export default function ChallansPage() {
     pending: challans?.filter(c => c.status === 'pending').length || 0,
     delivered: challans?.filter(c => c.status === 'delivered').length || 0,
   }), [challans]);
-
-  // Handle selection of Invoice to populate data
-  React.useEffect(() => {
-    if (!selectedInvoiceId || selectedInvoiceId === "none") return;
-    const inv = invoices?.find(i => i.id === selectedInvoiceId);
-    if (inv) {
-      setIsManualCustomer(false);
-      setSelectedCustomerId(inv.customerId);
-      setLineItems(inv.items.map((item: any) => ({
-        productId: item.productId,
-        name: item.name,
-        sku: item.sku || "",
-        quantity: item.qty,
-        unitPrice: item.price || item.unitPrice || 0,
-        total: item.total || (item.qty * (item.price || item.unitPrice || 0)),
-        isCustom: false
-      })));
-    }
-  }, [selectedInvoiceId, invoices]);
 
   const addCatalogItem = (productId: string) => {
     const product = products?.find(p => p.id === productId);
@@ -212,16 +197,12 @@ export default function ChallansPage() {
       return;
     }
 
-    const invalidCustom = lineItems.find(i => i.isCustom && !i.name.trim());
-    if (invalidCustom) {
-      toast({ variant: "destructive", title: t('error'), description: "Please provide names for all custom items." });
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       await runTransaction(db!, async (transaction) => {
-        const challanRef = doc(collection(db!, "companies", companyId!, "branches", branchId!, "delivery_challans"));
+        const challanRef = isEditModalOpen 
+          ? doc(db!, "companies", companyId!, "branches", branchId!, "delivery_challans", selectedRecord.id)
+          : doc(collection(db!, "companies", companyId!, "branches", branchId!, "delivery_challans"));
         
         let customerName = manualCustomerName;
         let customerPhone = manualCustomerPhone;
@@ -243,9 +224,9 @@ export default function ChallansPage() {
           id: challanRef.id,
           companyId,
           branchId,
-          challanNumber: `CHL-${Date.now().toString().slice(-6)}`,
+          challanNumber: isEditModalOpen ? selectedRecord.challanNumber : `CHL-${Date.now().toString().slice(-6)}`,
           invoiceId: selectedInvoiceId || "manual",
-          invoiceNumber: invoice?.invoiceNumber || "MANUAL",
+          invoiceNumber: invoice?.invoiceNumber || (selectedRecord?.invoiceNumber || "MANUAL"),
           customerId: finalCustomerId,
           customerName,
           customerPhone,
@@ -258,27 +239,30 @@ export default function ChallansPage() {
           notes,
           items: lineItems,
           totalAmount,
-          status: "pending",
-          createdAt: serverTimestamp(),
+          status: status,
+          createdAt: isEditModalOpen ? selectedRecord.createdAt : serverTimestamp(),
           updatedAt: serverTimestamp(),
         };
 
-        transaction.set(challanRef, challanData);
+        transaction.set(challanRef, challanData, { merge: true });
 
-        // Atomic Stock Adjustment for items that exist in inventory
-        for (const item of lineItems) {
-          if (!item.isCustom) {
-            const productRef = doc(db!, "companies", companyId!, "branches", branchId!, "products", item.productId);
-            transaction.update(productRef, { 
-              currentStock: increment(-item.quantity),
-              updatedAt: serverTimestamp()
-            });
+        // Stock adjustment only on new creation for simplicity in prototype
+        if (!isEditModalOpen) {
+          for (const item of lineItems) {
+            if (!item.isCustom) {
+              const productRef = doc(db!, "companies", companyId!, "branches", branchId!, "products", item.productId);
+              transaction.update(productRef, { 
+                currentStock: increment(-item.quantity),
+                updatedAt: serverTimestamp()
+              });
+            }
           }
         }
       });
 
       toast({ title: t('success'), description: t('successSub') });
       setIsAddModalOpen(false);
+      setIsEditModalOpen(false);
       resetForm();
     } catch (e: any) {
       toast({ variant: "destructive", title: t('error'), description: e.message });
@@ -305,6 +289,25 @@ export default function ChallansPage() {
     setVehicleNumber("");
     setDriverName("");
     setNotes("");
+    setStatus("pending");
+    setSelectedRecord(null);
+  };
+
+  const openEdit = (c: any) => {
+    setSelectedRecord(c);
+    setIsManualCustomer(c.customerId === 'manual');
+    setSelectedCustomerId(c.customerId === 'manual' ? '' : c.customerId);
+    setManualCustomerName(c.customerId === 'manual' ? c.customerName : '');
+    setManualCustomerPhone(c.customerPhone || '');
+    setManualCustomerAddress(c.customerAddress || '');
+    setDispatchDate(c.dispatchDate);
+    setLineItems(c.items || []);
+    setDeliveryMethod(c.deliveryMethod || '');
+    setVehicleNumber(c.vehicleNumber || '');
+    setDriverName(c.driverName || '');
+    setNotes(c.notes || '');
+    setStatus(c.status || 'pending');
+    setIsEditModalOpen(true);
   };
 
   const filteredChallans = challans?.filter(c => 
@@ -381,6 +384,7 @@ export default function ChallansPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl">
                           <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedRecord(c); setIsViewModalOpen(true); }}><Eye className="mr-2 h-3.5 w-3.5" /> {t('view')}</DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs font-bold" onClick={() => openEdit(c)}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
                           <DropdownMenuItem className="text-xs font-bold" onClick={() => handleShareWhatsApp(c)}><Share2 className="mr-2 h-3.5 w-3.5" /> {t('share')}</DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(c); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
@@ -395,16 +399,16 @@ export default function ChallansPage() {
         </Card>
       )}
 
-      {/* NEW CHALLAN MODAL */}
-      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+      {/* NEW/EDIT CHALLAN MODAL */}
+      <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) resetForm(); setIsAddModalOpen(false); setIsEditModalOpen(false); }}>
         <DialogContent className="max-w-[95vw] w-[1400px] p-0 overflow-hidden border-none shadow-2xl bg-slate-50 rounded-[2rem] md:rounded-[2.5rem] max-h-[96vh]">
-          <DialogHeader className="bg-amber-600 p-5 text-white flex-row items-center justify-between space-y-0">
+          <DialogHeader className={cn("p-5 text-white flex-row items-center justify-between space-y-0", isEditModalOpen ? "bg-blue-600" : "bg-amber-600")}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center shrink-0">
                 <Truck className="h-5 w-5" />
               </div>
               <div>
-                <DialogTitle className="text-lg md:text-xl font-bold font-headline uppercase tracking-tight">{t('addChallan')}</DialogTitle>
+                <DialogTitle className="text-lg md:text-xl font-bold font-headline uppercase tracking-tight">{isEditModalOpen ? t('edit') : t('addChallan')}</DialogTitle>
                 <p className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em] leading-none mt-1 hidden md:block">Logistics & Dispatch Terminal</p>
               </div>
             </div>
@@ -420,7 +424,7 @@ export default function ChallansPage() {
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest flex items-center gap-1.5">
                     <FileText className="h-3 w-3" /> {t('fromInvoice')} (Optional)
                   </Label>
-                  <Select value={selectedInvoiceId} onValueChange={setSelectedInvoiceId}>
+                  <Select value={selectedInvoiceId} onValueChange={setSelectedInvoiceId} disabled={isEditModalOpen}>
                     <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 transition-all focus:ring-2 focus:ring-amber-600 font-bold text-xs">
                       <SelectValue placeholder="Link existing sales record..." />
                     </SelectTrigger>
@@ -627,6 +631,20 @@ export default function ChallansPage() {
                       <Label className="text-[9px] font-black uppercase text-slate-500 tracking-widest">{t('driverName')}</Label>
                       <Input className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs font-bold transition-all focus:ring-2 focus:ring-amber-500" value={driverName} onChange={e => setDriverName(e.target.value)} />
                     </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase text-slate-500 tracking-widest">{t('status')}</Label>
+                      <Select value={status} onValueChange={setStatus}>
+                        <SelectTrigger className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs font-bold">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="processing">Processing</SelectItem>
+                          <SelectItem value="delivered">Delivered</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
 
@@ -641,11 +659,6 @@ export default function ChallansPage() {
                     onChange={e => setNotes(e.target.value)}
                   />
                 </div>
-
-                <div className="p-4 rounded-2xl bg-blue-50 flex items-center gap-3 border-2 border-dashed border-blue-100">
-                  <div className="p-2 rounded-xl bg-blue-600 text-white shadow-lg"><CheckCircle2 className="h-4 w-4" /></div>
-                  <p className="text-[9px] font-black uppercase tracking-tighter leading-tight text-blue-700">Inventory intelligence active for catalog items.</p>
-                </div>
               </div>
 
               <div className="mt-auto pt-6">
@@ -656,7 +669,7 @@ export default function ChallansPage() {
                 >
                   <span className="relative z-10 flex items-center gap-3">
                     {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <ArrowRight className="h-5 w-5" />}
-                    {t('postTransaction')}
+                    {isEditModalOpen ? "Update Transaction" : t('postTransaction')}
                   </span>
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                 </Button>
@@ -674,7 +687,7 @@ export default function ChallansPage() {
           </DialogHeader>
           <div className="flex justify-end gap-3 mb-4 no-print fixed top-4 right-4 md:top-6 md:right-6 z-[100]">
              <Button onClick={() => window.print()} className="bg-white text-amber-600 hover:bg-amber-50 shadow-2xl rounded-full font-black text-[10px] uppercase h-10 px-6 gap-2 border-none ring-1 ring-amber-100">
-              <Printer className="h-4 w-4" /> {t('print')}
+              <Download className="h-4 w-4" /> Download PDF
             </Button>
           </div>
           {selectedRecord && (
