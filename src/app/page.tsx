@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -21,7 +20,8 @@ export default function Dashboard() {
   const db = useFirestore();
   const { t } = useTranslation();
 
-  const shortcuts = [
+  // Optimization: Memoized shortcuts array to prevent re-renders
+  const shortcuts = React.useMemo(() => [
     { label: t('sales'), icon: ShoppingCart, color: "bg-green-500", path: "/sales" },
     { label: t('purchases'), icon: Truck, color: "bg-orange-500", path: "/purchases" },
     { label: t('quotations'), icon: FileText, color: "bg-purple-500", path: "/quotations" },
@@ -29,29 +29,25 @@ export default function Dashboard() {
     { label: t('billing'), icon: Layers, color: "bg-violet-500", path: "/project-billing" },
     { label: t('paymentShortcut'), icon: Wallet, color: "bg-indigo-500", path: "/project-billing" },
     { label: t('accounts'), icon: Landmark, color: "bg-cyan-500", path: "/accounts" },
-  ];
+  ], [t]);
 
+  // Optimization: Ensure all main data listeners are capped for performance
   const invoicesQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
     return query(collection(db, "companies", companyId, "branches", branchId, "sales_invoices"), orderBy("createdAt", "desc"), limit(5));
   }, [db, companyId, branchId]);
   const { data: recentInvoices, isLoading: invoicesLoading } = useCollection(invoicesQuery);
 
-  const leadsQuery = useMemoFirebase(() => {
-    if (!db || !companyId || !branchId) return null;
-    return collection(db, "companies", companyId, "branches", branchId, "leads");
-  }, [db, companyId, branchId]);
-  const { data: leads } = useCollection(leadsQuery);
-
   const allInvoicesQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
-    return collection(db, "companies", companyId, "branches", branchId, "sales_invoices");
+    // Capping total invoice fetch to 100 for recent stats calculation
+    return query(collection(db, "companies", companyId, "branches", branchId, "sales_invoices"), orderBy("createdAt", "desc"), limit(100));
   }, [db, companyId, branchId]);
   const { data: allInvoices } = useCollection(allInvoicesQuery);
 
   const productsQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
-    return collection(db, "companies", companyId, "branches", branchId, "products");
+    return query(collection(db, "companies", companyId, "branches", branchId, "products"), limit(100));
   }, [db, companyId, branchId]);
   const { data: products } = useCollection(productsQuery);
 

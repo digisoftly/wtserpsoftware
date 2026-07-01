@@ -1,3 +1,4 @@
+import * as React from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -14,7 +15,11 @@ interface KPICardProps {
   }
 }
 
-export function KPICard({ title, value, icon: Icon, colorClass, subtext, trend }: KPICardProps) {
+/**
+ * Optimized KPICard using React.memo to prevent unnecessary re-renders
+ * during frequent dashboard data updates.
+ */
+export const KPICard = React.memo(function KPICard({ title, value, icon: Icon, colorClass, subtext, trend }: KPICardProps) {
   return (
     <Card className="overflow-hidden border-none shadow-sm hover:shadow-md transition-all group rounded-xl bg-white">
       <CardContent className="p-5">
@@ -47,4 +52,4 @@ export function KPICard({ title, value, icon: Icon, colorClass, subtext, trend }
       </CardContent>
     </Card>
   )
-}
+})

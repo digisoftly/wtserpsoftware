@@ -4,7 +4,7 @@ import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Users, UserPlus, Search, MoreVertical, Loader2, UserCheck, UserX, Edit, Trash2, Mail, Phone } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, serverTimestamp, doc } from "firebase/firestore"
+import { collection, serverTimestamp, doc, query, limit, orderBy } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -28,11 +28,17 @@ export default function CustomersPage() {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
   const [selectedCustomer, setSelectedCustomer] = React.useState<any>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
+  const deferredSearch = React.useDeferredValue(searchTerm); // Optimization
   const [customerType, setCustomerType] = React.useState<"individual" | "company">("individual");
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const customersQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
-    return collection(db, "companies", companyId, "branches", branchId, "customers");
+    return query(
+      collection(db, "companies", companyId, "branches", branchId, "customers"),
+      orderBy("createdAt", "desc"),
+      limit(100)
+    );
   }, [db, companyId, branchId]);
 
   const { data: customers, isLoading } = useCollection(customersQuery);
@@ -43,14 +49,19 @@ export default function CustomersPage() {
     due: 0
   }), [customers]);
 
-  const filteredCustomers = customers?.filter(c => 
-    `${c.firstName} ${c.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.companyName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredCustomers = React.useMemo(() => {
+    return customers?.filter(c => 
+      `${c.firstName} ${c.lastName}`.toLowerCase().includes(deferredSearch.toLowerCase()) ||
+      c.email?.toLowerCase().includes(deferredSearch.toLowerCase()) ||
+      c.companyName?.toLowerCase().includes(deferredSearch.toLowerCase())
+    );
+  }, [customers, deferredSearch]);
 
   const handleAddCustomer = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
     const formData = new FormData(e.currentTarget);
     if (!db || !companyId || !branchId) return;
 
@@ -67,18 +78,24 @@ export default function CustomersPage() {
       updatedAt: serverTimestamp(),
     };
 
-    addDocumentNonBlocking(collection(db, "companies", companyId, "branches", branchId, "customers"), customerData);
-    setIsAddModalOpen(false);
-    toast({ title: t('success') });
+    try {
+      await addDocumentNonBlocking(collection(db, "companies", companyId, "branches", branchId, "customers"), customerData);
+      setIsAddModalOpen(false);
+      toast({ title: t('success') });
+    } catch (err) {
+      toast({ variant: "destructive", title: t('error') });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleDeleteCustomer = () => {
+  const handleDeleteCustomer = React.useCallback(() => {
     if (!selectedCustomer || !db) return;
     const docRef = doc(db, "companies", companyId!, "branches", branchId!, "customers", selectedCustomer.id);
     deleteDocumentNonBlocking(docRef);
     toast({ title: t('success') });
     setIsDeleteAlertOpen(false);
-  };
+  }, [selectedCustomer, db, companyId, branchId, t]);
 
   return (
     <div className="space-y-6 pb-10">
@@ -169,7 +186,7 @@ export default function CustomersPage() {
                <div className="space-y-1"><Label className="text-[10px] font-bold uppercase">First Name</Label><Input name="firstName" required className="h-10 text-xs" /></div>
                <div className="space-y-1"><Label className="text-[10px] font-bold uppercase">Last Name</Label><Input name="lastName" required className="h-10 text-xs" /></div>
             </div>
-            <Button type="submit" className="w-full bg-cyan-600 hover:bg-cyan-700 h-12 rounded-2xl text-[10px] font-black uppercase tracking-widest">{t('save')}</Button>
+            <Button type="submit" disabled={isSubmitting} className="w-full bg-cyan-600 hover:bg-cyan-700 h-12 rounded-2xl text-[10px] font-black uppercase tracking-widest">{isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : t('save')}</Button>
           </form>
         </DialogContent>
       </Dialog>

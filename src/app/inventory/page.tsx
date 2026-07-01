@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -20,12 +19,11 @@ import {
   ChevronDown
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, query, orderBy, serverTimestamp, doc } from "firebase/firestore"
+import { collection, query, orderBy, serverTimestamp, doc, limit } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { cn } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -37,6 +35,7 @@ import { KPICard } from "@/components/dashboard/kpi-card"
 import { useTranslation } from "@/hooks/use-translation"
 import { addDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { toast } from "@/hooks/use-toast"
+import { Input } from "@/components/ui/input"
 
 export default function InventoryPage() {
   const { companyId, branchId } = useTenant();
@@ -45,22 +44,24 @@ export default function InventoryPage() {
   
   // State
   const [searchTerm, setSearchTerm] = React.useState("");
+  const deferredSearch = React.useDeferredValue(searchTerm); // Optimization: search in background
   const [brandFilter, setBrandFilter] = React.useState("all");
   const [categoryFilter, setCategoryFilter] = React.useState("all");
   const [isAddOpen, setIsAddOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  // Queries
+  // Queries - Optimization: limit initial load to 100 products for performance
   const productsQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
     return query(
       collection(db, "companies", companyId, "branches", branchId, "products"),
-      orderBy("createdAt", "desc")
+      orderBy("createdAt", "desc"),
+      limit(100)
     );
   }, [db, companyId, branchId]);
   const { data: products, isLoading } = useCollection(productsQuery);
 
-  // Derived Data
+  // Derived Data - Optimization: memoized results
   const stats = React.useMemo(() => ({
     totalProducts: products?.length || 0,
     lowStock: products?.filter(p => (p.currentStock || 0) <= (p.minStockLevel || 5)).length || 0,
@@ -68,23 +69,26 @@ export default function InventoryPage() {
   }), [products]);
 
   const brands = React.useMemo(() => 
-    ["all", ...Array.from(new Set(products?.map(p => p.brand).filter(Boolean)))], 
+    ["all", ...Array.from(new Set(products?.map(p => p.brand).filter(Boolean) as string[]))], 
   [products]);
 
   const categories = React.useMemo(() => 
-    ["all", ...Array.from(new Set(products?.map(p => p.category).filter(Boolean)))], 
+    ["all", ...Array.from(new Set(products?.map(p => p.category).filter(Boolean) as string[]))], 
   [products]);
 
-  const filtered = products?.filter(p => {
-    const matchesSearch = p.name?.toLowerCase().includes(searchTerm.toLowerCase()) || p.sku?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesBrand = brandFilter === "all" || p.brand === brandFilter;
-    const matchesCategory = categoryFilter === "all" || p.category === categoryFilter;
-    return matchesSearch && matchesBrand && matchesCategory;
-  });
+  const filtered = React.useMemo(() => {
+    return products?.filter(p => {
+      const matchesSearch = p.name?.toLowerCase().includes(deferredSearch.toLowerCase()) || 
+                            p.sku?.toLowerCase().includes(deferredSearch.toLowerCase());
+      const matchesBrand = brandFilter === "all" || p.brand === brandFilter;
+      const matchesCategory = categoryFilter === "all" || p.category === categoryFilter;
+      return matchesSearch && matchesBrand && matchesCategory;
+    });
+  }, [products, deferredSearch, brandFilter, categoryFilter]);
 
   const handleAddProduct = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!db || !companyId || !branchId) return;
+    if (!db || !companyId || !branchId || isSubmitting) return;
 
     setIsSubmitting(true);
     const formData = new FormData(e.currentTarget);
@@ -118,12 +122,12 @@ export default function InventoryPage() {
     }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = React.useCallback((id: string) => {
     if (!db || !companyId || !branchId) return;
     const docRef = doc(db, "companies", companyId, "branches", branchId, "products", id);
     deleteDocumentNonBlocking(docRef);
     toast({ title: t('success') });
-  };
+  }, [db, companyId, branchId, t]);
 
   return (
     <div className="space-y-6 pb-10">
