@@ -24,30 +24,19 @@ service cloud.firestore {
 
     // --- RULES ---
 
-    // Allow public read of system configuration for branding on Login Page
+    // Public read for branding/config
     match /companies/{companyId}/system/config {
       allow read: if true;
       allow write: if isMember(companyId);
     }
 
-    // User Profile Access
-    match /companies/{companyId}/users/{userId} {
-      allow read, write: if isSignedIn() && (request.auth.uid == userId || isMember(companyId));
-    }
-
-    // Global Roles Access
-    match /companies/{companyId}/roles/{roleId} {
-      allow read: if isSignedIn() && isMember(companyId);
-      allow write: if isMember(companyId);
-    }
-
-    // Branch and Sub-collection Access
-    // Unified recursive match to ensure all sub-collections (like invoices/challans) are accessible
-    match /companies/{companyId}/branches/{branchId}/{allPaths=**} {
+    // Comprehensive Company Access
+    // Handles users, roles, branches, and all sub-collections (invoices, challans, etc.)
+    match /companies/{companyId}/{allPaths=**} {
       allow read, write: if isMember(companyId);
     }
 
-    // Root collections
+    // Root level user preferences
     match /users/{userId} {
       allow read, write: if isSignedIn() && request.auth.uid == userId;
     }

@@ -48,19 +48,31 @@
 }
 
 @layer utilities {
+  /* Minimalist minimalist scrollbar */
   .custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
+    width: 3px;
+    height: 3px;
   }
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-muted-foreground/10 rounded-full;
+    @apply bg-slate-300/30 rounded-full;
     transition: background 0.3s;
   }
   .custom-scrollbar:hover::-webkit-scrollbar-thumb {
-    @apply bg-muted-foreground/30;
+    @apply bg-slate-400/60;
+  }
+  
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
   }
 }
 
