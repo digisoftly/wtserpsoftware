@@ -18,19 +18,15 @@ service cloud.firestore {
       );
     }
 
-    function isSuperAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/super_admins/$(request.auth.uid));
-    }
-
     // --- RULES ---
 
     // Public read for branding/config
     match /companies/{companyId}/system/config {
       allow read: if true;
-      allow write: if isMember(companyId);
     }
 
-    // Recursive rule for company data (branches, users, roles, etc.)
+    // Recursive rule for all company data (branches, invoices, products, etc.)
+    // This allows listing documents in any sub-collection if isMember is true.
     match /companies/{companyId}/{allPaths=**} {
       allow read, write: if isMember(companyId);
     }
@@ -42,7 +38,7 @@ service cloud.firestore {
 
     // Global bypass for Super Admins
     match /{allPaths=**} {
-      allow read, write: if isSuperAdmin();
+      allow read, write: if isSignedIn() && exists(/databases/$(database)/documents/super_admins/$(request.auth.uid));
     }
 
     // Default Deny

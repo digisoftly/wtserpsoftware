@@ -28,10 +28,9 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log the error to your console for debugging
+    // Log the error for developer awareness, but keep it clean.
     console.group('ERP Runtime Error');
     console.error('Error:', error);
-    // Suppressing redundant Info log to clean up console
     console.groupEnd();
   }
 

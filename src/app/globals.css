@@ -57,11 +57,11 @@
     background: transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-slate-300/30 rounded-full;
+    @apply bg-slate-300/20 rounded-full;
     transition: background 0.3s;
   }
   .custom-scrollbar:hover::-webkit-scrollbar-thumb {
-    @apply bg-slate-400/60;
+    @apply bg-slate-400/40;
   }
   
   /* Hide scrollbar for Chrome, Safari and Opera */
