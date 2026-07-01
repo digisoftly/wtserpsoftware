@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
@@ -32,7 +31,7 @@ export class ErrorBoundary extends Component<Props, State> {
     // Log the error to your console for debugging
     console.group('ERP Runtime Error');
     console.error('Error:', error);
-    console.error('Info:', errorInfo);
+    // Suppressing redundant Info log to clean up console
     console.groupEnd();
   }
 
