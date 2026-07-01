@@ -15,6 +15,7 @@ export function FirebaseErrorListener() {
   useEffect(() => {
     const handleError = (error: FirestorePermissionError) => {
       // We throw the error so it can be handled by the global ErrorBoundary
+      // without cluttering the console with redundant logs.
       setError(error);
     };
 

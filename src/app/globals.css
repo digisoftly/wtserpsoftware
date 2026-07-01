@@ -48,7 +48,7 @@
 }
 
 @layer utilities {
-  /* Minimalist minimalist scrollbar */
+  /* Ultra-minimalist custom scrollbar */
   .custom-scrollbar::-webkit-scrollbar {
     width: 3px;
     height: 3px;
@@ -57,7 +57,7 @@
     background: transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-slate-300/20 rounded-full;
+    @apply bg-slate-400/10 rounded-full;
     transition: background 0.3s;
   }
   .custom-scrollbar:hover::-webkit-scrollbar-thumb {

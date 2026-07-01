@@ -9,15 +9,6 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // A user is a member if they belong to the specific company.
-    // For the demo, we allow all signed-in users to access the demo tenant.
-    function isMember(cid) {
-      return isSignedIn() && (
-        cid == "warrior-demo-corp" || 
-        exists(/databases/$(database)/documents/companies/$(cid)/users/$(request.auth.uid))
-      );
-    }
-
     // --- RULES ---
 
     // Public read for branding/config
@@ -25,10 +16,15 @@ service cloud.firestore {
       allow read: if true;
     }
 
-    // Recursive rule for all company data (branches, invoices, products, etc.)
-    // This allows listing documents in any sub-collection if isMember is true.
+    // Robust recursive rule for the demo company
+    // Grants full access to all sub-collections for signed-in users
+    match /companies/warrior-demo-corp/{allPaths=**} {
+      allow read, write: if isSignedIn();
+    }
+
+    // Rule for other companies (if any)
     match /companies/{companyId}/{allPaths=**} {
-      allow read, write: if isMember(companyId);
+      allow read, write: if isSignedIn() && exists(/databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid));
     }
 
     // Root level user preferences

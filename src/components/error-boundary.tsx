@@ -28,10 +28,10 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log the error for developer awareness, but keep it clean.
-    console.group('ERP Runtime Error');
-    console.error('Error:', error);
-    console.groupEnd();
+    // Log the primary error for developer awareness, but keep it clean.
+    if (process.env.NODE_ENV === 'development') {
+      console.error('ERP Runtime Error:', error);
+    }
   }
 
   render() {
