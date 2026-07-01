@@ -33,9 +33,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { useTranslation } from "@/hooks/use-translation"
-import { addDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates"
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { toast } from "@/hooks/use-toast"
 import { Input } from "@/components/ui/input"
+
+const UNITS = [
+  "Pcs", "Kg", "Gram", "Liter", "ML", "Meter (Mtr)", "Rft", "Feet", 
+  "Box", "Pack", "Carton", "Set", "Pair", "Roll", "Piece", "Unit", 
+  "Bundle", "Dozen"
+];
 
 export default function InventoryPage() {
   const { companyId, branchId } = useTenant();
@@ -44,13 +50,15 @@ export default function InventoryPage() {
   
   // State
   const [searchTerm, setSearchTerm] = React.useState("");
-  const deferredSearch = React.useDeferredValue(searchTerm); // Optimization: search in background
+  const deferredSearch = React.useDeferredValue(searchTerm);
   const [brandFilter, setBrandFilter] = React.useState("all");
   const [categoryFilter, setCategoryFilter] = React.useState("all");
   const [isAddOpen, setIsAddOpen] = React.useState(false);
+  const [isEditOpen, setIsEditOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [selectedProduct, setSelectedProduct] = React.useState<any>(null);
 
-  // Queries - Optimization: limit initial load to 100 products for performance
+  // Queries
   const productsQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
     return query(
@@ -61,7 +69,7 @@ export default function InventoryPage() {
   }, [db, companyId, branchId]);
   const { data: products, isLoading } = useCollection(productsQuery);
 
-  // Derived Data - Optimization: memoized results
+  // Derived Data
   const stats = React.useMemo(() => ({
     totalProducts: products?.length || 0,
     lowStock: products?.filter(p => (p.currentStock || 0) <= (p.minStockLevel || 5)).length || 0,
@@ -86,7 +94,7 @@ export default function InventoryPage() {
     });
   }, [products, deferredSearch, brandFilter, categoryFilter]);
 
-  const handleAddProduct = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveProduct = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!db || !companyId || !branchId || isSubmitting) return;
 
@@ -101,20 +109,28 @@ export default function InventoryPage() {
       brand: formData.get("brand") as string,
       model: formData.get("model") as string,
       category: formData.get("category") as string,
+      unit: formData.get("unit") as string || "Pcs",
       unitPrice: Number(formData.get("unitPrice")),
       costPrice: Number(formData.get("costPrice")),
       currentStock: Number(formData.get("currentStock")),
       minStockLevel: Number(formData.get("minStockLevel") || 5),
       serialNumberTrackingRequired: formData.get("serialRequired") === "on",
       isActive: true,
-      createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
 
     try {
-      await addDocumentNonBlocking(collection(db, "companies", companyId, "branches", branchId, "products"), productData);
+      if (isEditOpen && selectedProduct) {
+        const docRef = doc(db, "companies", companyId, "branches", branchId, "products", selectedProduct.id);
+        updateDocumentNonBlocking(docRef, productData);
+      } else {
+        const colRef = collection(db, "companies", companyId, "branches", branchId, "products");
+        addDocumentNonBlocking(colRef, { ...productData, createdAt: serverTimestamp() });
+      }
       toast({ title: t('success') });
       setIsAddOpen(false);
+      setIsEditOpen(false);
+      setSelectedProduct(null);
     } catch (err: any) {
       toast({ variant: "destructive", title: t('error'), description: err.message });
     } finally {
@@ -129,6 +145,11 @@ export default function InventoryPage() {
     toast({ title: t('success') });
   }, [db, companyId, branchId, t]);
 
+  const openEdit = (p: any) => {
+    setSelectedProduct(p);
+    setIsEditOpen(true);
+  };
+
   return (
     <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -136,7 +157,7 @@ export default function InventoryPage() {
           <h1 className="text-xl font-bold font-headline text-blue-600 uppercase tracking-tight">{t('inventory')}</h1>
           <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{t('happeningToday')}</p>
         </div>
-        <Button className="rounded-full gap-2 h-10 px-8 bg-blue-600 hover:bg-blue-700 font-bold text-[10px] uppercase shadow-xl shadow-blue-100 transition-all active:scale-95" onClick={() => setIsAddOpen(true)}>
+        <Button className="rounded-full gap-2 h-10 px-8 bg-blue-600 hover:bg-blue-700 font-bold text-[10px] uppercase shadow-xl shadow-blue-100 transition-all active:scale-95 w-full md:w-auto" onClick={() => setIsAddOpen(true)}>
           <Plus className="h-4 w-4" /> {t('addProduct')}
         </Button>
       </div>
@@ -218,10 +239,10 @@ export default function InventoryPage() {
                     <TableCell className="text-center">
                       <div className="flex flex-col items-center">
                         <span className={cn(
-                          "text-xs font-black h-6 w-10 flex items-center justify-center rounded-lg",
+                          "text-xs font-black h-6 px-3 flex items-center justify-center rounded-lg whitespace-nowrap",
                           (p.currentStock || 0) <= (p.minStockLevel || 5) ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"
                         )}>
-                          {p.currentStock || 0}
+                          {p.currentStock || 0} {p.unit || 'Pcs'}
                         </span>
                         {p.serialNumberTrackingRequired && (
                           <div className="flex items-center gap-1 mt-1">
@@ -240,7 +261,7 @@ export default function InventoryPage() {
                           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-blue-50 text-blue-600 transition-colors opacity-0 group-hover:opacity-100"><MoreVertical className="h-4 w-4" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-32 rounded-xl shadow-xl">
-                          <DropdownMenuItem className="text-xs font-bold"><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs font-bold" onClick={() => openEdit(p)}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
                           <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => handleDelete(p.id)}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -253,44 +274,57 @@ export default function InventoryPage() {
         </Card>
       )}
 
-      {/* ADD PRODUCT DIALOG */}
-      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+      {/* ADD/EDIT PRODUCT DIALOG */}
+      <Dialog open={isAddOpen || isEditOpen} onOpenChange={(open) => { if(!open) { setIsAddOpen(false); setIsEditOpen(false); setSelectedProduct(null); } }}>
         <DialogContent className="max-w-2xl p-0 overflow-hidden border-none shadow-2xl rounded-[2rem]">
           <DialogHeader className="bg-blue-600 p-6 text-white flex-row items-center gap-4 space-y-0">
             <div className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md">
               <Package className="h-6 w-6" />
             </div>
             <div>
-              <DialogTitle className="text-xl font-bold font-headline uppercase tracking-tight">{t('addProduct')}</DialogTitle>
+              <DialogTitle className="text-xl font-bold font-headline uppercase tracking-tight">{isEditOpen ? t('edit') : t('addProduct')}</DialogTitle>
               <p className="text-[10px] font-black uppercase opacity-60 tracking-widest">{t('initialize')}</p>
             </div>
           </DialogHeader>
           
-          <form onSubmit={handleAddProduct} className="p-8 space-y-6 bg-slate-50">
+          <form onSubmit={handleSaveProduct} className="p-8 space-y-6 bg-slate-50">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Basic Info */}
               <div className="space-y-4">
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('itemDescription')}</Label>
-                  <Input name="name" required className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white" placeholder="e.g. Sony 4K PTZ Camera" />
+                  <Input name="name" required defaultValue={selectedProduct?.name} className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white" placeholder="e.g. Sony 4K PTZ Camera" />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('sku')}</Label>
-                  <Input name="sku" required className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white font-mono" placeholder="CAM-SNY-001" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('sku')}</Label>
+                    <Input name="sku" required defaultValue={selectedProduct?.sku} className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white font-mono" placeholder="CAM-SNY-001" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Unit</Label>
+                    <Select name="unit" defaultValue={selectedProduct?.unit || "Pcs"}>
+                      <SelectTrigger className="h-11 rounded-xl border-none ring-1 ring-slate-200 bg-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('brand')}</Label>
-                    <Input name="brand" className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white" placeholder="Sony" />
+                    <Input name="brand" defaultValue={selectedProduct?.brand} className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white" placeholder="Sony" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('model')}</Label>
-                    <Input name="model" className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white" placeholder="X-500" />
+                    <Input name="model" defaultValue={selectedProduct?.model} className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white" placeholder="X-500" />
                   </div>
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('category')}</Label>
-                  <Input name="category" className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white" placeholder="CCTV" />
+                  <Input name="category" defaultValue={selectedProduct?.category} className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white" placeholder="CCTV" />
                 </div>
               </div>
 
@@ -299,21 +333,21 @@ export default function InventoryPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('costPrice')} (৳)</Label>
-                    <Input name="costPrice" type="number" required className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white font-black" placeholder="0.00" />
+                    <Input name="costPrice" type="number" required defaultValue={selectedProduct?.costPrice} className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white font-black" placeholder="0.00" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('price')} (৳)</Label>
-                    <Input name="unitPrice" type="number" required className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white font-black text-blue-600" placeholder="0.00" />
+                    <Input name="unitPrice" type="number" required defaultValue={selectedProduct?.unitPrice} className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white font-black text-blue-600" placeholder="0.00" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('stock')}</Label>
-                    <Input name="currentStock" type="number" required className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white font-black" placeholder="0" />
+                    <Input name="currentStock" type="number" required defaultValue={selectedProduct?.currentStock} className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white font-black" placeholder="0" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Min. Level</Label>
-                    <Input name="minStockLevel" type="number" defaultValue="5" className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white font-black" />
+                    <Input name="minStockLevel" type="number" defaultValue={selectedProduct?.minStockLevel || 5} className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white font-black" />
                   </div>
                 </div>
 
@@ -323,14 +357,14 @@ export default function InventoryPage() {
                       <Label className="text-xs font-black uppercase text-slate-900 tracking-tight">{t('serialRequired')}</Label>
                       <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Track individual units via unique S/N</p>
                     </div>
-                    <Switch name="serialRequired" className="data-[state=checked]:bg-blue-600" />
+                    <Switch name="serialRequired" defaultChecked={selectedProduct?.serialNumberTrackingRequired} className="data-[state=checked]:bg-blue-600" />
                   </div>
                 </div>
               </div>
             </div>
 
             <DialogFooter className="pt-4 border-t gap-3 flex-col sm:flex-row">
-              <Button type="button" variant="ghost" className="rounded-full text-[10px] font-black uppercase tracking-widest px-8" onClick={() => setIsAddOpen(false)}>{t('cancel')}</Button>
+              <Button type="button" variant="ghost" className="rounded-full text-[10px] font-black uppercase tracking-widest px-8" onClick={() => { setIsAddOpen(false); setIsEditOpen(false); }}>{t('cancel')}</Button>
               <Button type="submit" disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700 rounded-full px-12 h-12 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-100 transition-all active:scale-95">
                 {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : t('save')}
               </Button>

@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -64,7 +63,7 @@ export function ThermalLayout({
                 <p className="font-bold uppercase">{item.name}</p>
                 {item.serialNumber && <p className="text-[8px]">S/N: {item.serialNumber}</p>}
               </td>
-              <td className="py-1 text-center align-top">{item.quantity}</td>
+              <td className="py-1 text-center align-top">{item.quantity} {item.unit}</td>
               <td className="py-1 text-right align-top">{currencySymbol}{item.total.toLocaleString()}</td>
             </tr>
           ))}

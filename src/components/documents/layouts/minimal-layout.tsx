@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -45,7 +44,7 @@ export function MinimalLayout({
       <div className="space-y-4 mb-16">
         <div className="grid grid-cols-12 border-b border-slate-200 pb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
           <div className="col-span-6">Description</div>
-          <div className="col-span-2 text-center">Qty</div>
+          <div className="col-span-2 text-center">Qty / Unit</div>
           <div className="col-span-2 text-right">Price</div>
           <div className="col-span-2 text-right">Total</div>
         </div>
@@ -55,7 +54,7 @@ export function MinimalLayout({
               <p className="font-medium">{item.name}</p>
               {item.serialNumber && <p className="text-[10px] text-slate-400 font-mono mt-0.5">SN: {item.serialNumber}</p>}
             </div>
-            <div className="col-span-2 text-center">{item.quantity}</div>
+            <div className="col-span-2 text-center">{item.quantity} {item.unit || 'Pcs'}</div>
             <div className="col-span-2 text-right">{currencySymbol}{item.unitPrice.toLocaleString()}</div>
             <div className="col-span-2 text-right font-bold">{currencySymbol}{item.total.toLocaleString()}</div>
           </div>

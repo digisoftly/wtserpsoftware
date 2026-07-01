@@ -53,6 +53,7 @@ interface ChallanItem {
   name: string;
   sku: string;
   quantity: number;
+  unit: string;
   unitPrice: number;
   total: number;
   isCustom?: boolean;
@@ -139,6 +140,7 @@ export default function ChallansPage() {
         name: product.name,
         sku: product.sku || "N/A",
         quantity: 1,
+        unit: product.unit || "Pcs",
         unitPrice: product.unitPrice || 0,
         total: product.unitPrice || 0,
         isCustom: false
@@ -152,6 +154,7 @@ export default function ChallansPage() {
       name: "",
       sku: "CUSTOM",
       quantity: 1,
+      unit: "Pcs",
       unitPrice: 0,
       total: 0,
       isCustom: true
@@ -246,7 +249,6 @@ export default function ChallansPage() {
 
         transaction.set(challanRef, challanData, { merge: true });
 
-        // Stock adjustment only on new creation for simplicity in prototype
         if (!isEditModalOpen) {
           for (const item of lineItems) {
             if (!item.isCustom) {
@@ -502,7 +504,7 @@ export default function ChallansPage() {
                       <SelectContent className="max-h-[300px] rounded-xl">
                         {products?.map(p => (
                           <SelectItem key={p.id} value={p.id} className="text-xs font-bold">
-                            {p.name} <span className="text-[9px] opacity-60 ml-2 font-mono">(STOCK: {p.currentStock})</span>
+                            {p.name} <span className="text-[9px] opacity-60 ml-2 font-mono">(STOCK: {p.currentStock} {p.unit})</span>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -528,7 +530,7 @@ export default function ChallansPage() {
                       <TableHeader className="bg-slate-50/50 sticky top-0 z-10 backdrop-blur-md">
                         <TableRow>
                           <TableHead className="text-[10px] uppercase font-black py-4 pl-4 md:pl-8">{t('itemDescription')}</TableHead>
-                          <TableHead className="text-[10px] uppercase font-black text-center w-24">{t('qty')}</TableHead>
+                          <TableHead className="text-[10px] uppercase font-black text-center w-40">{t('qty')} / Unit</TableHead>
                           <TableHead className="text-[10px] uppercase font-black text-right w-32">{t('unitPrice')}</TableHead>
                           <TableHead className="text-[10px] uppercase font-black text-right w-32 pr-4 md:pr-8">{t('total')}</TableHead>
                           <TableHead className="w-10"></TableHead>
@@ -571,12 +573,15 @@ export default function ChallansPage() {
                                 )}
                               </TableCell>
                               <TableCell className="text-center">
-                                <Input 
-                                  type="number" 
-                                  className="h-10 w-20 mx-auto text-center font-black text-sm bg-slate-100 border-none rounded-lg" 
-                                  value={item.quantity} 
-                                  onChange={e => updateItem(idx, 'quantity', e.target.value)}
-                                />
+                                <div className="flex items-center gap-2 justify-center">
+                                  <Input 
+                                    type="number" 
+                                    className="h-10 w-20 text-center font-black text-sm bg-slate-100 border-none rounded-lg" 
+                                    value={item.quantity} 
+                                    onChange={e => updateItem(idx, 'quantity', e.target.value)}
+                                  />
+                                  <span className="text-[10px] font-black uppercase text-muted-foreground w-8 text-left">{item.unit || 'Pcs'}</span>
+                                </div>
                               </TableCell>
                               <TableCell className="text-right">
                                 <Input 
@@ -702,6 +707,7 @@ export default function ChallansPage() {
                 items={selectedRecord.items.map((i: any) => ({
                   name: i.name,
                   quantity: i.quantity,
+                  unit: i.unit,
                   unitPrice: i.unitPrice,
                   total: i.total,
                   description: i.isCustom ? "Individual / Custom Item" : `SKU: ${i.sku}`

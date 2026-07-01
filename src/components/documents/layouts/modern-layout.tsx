@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -69,7 +68,7 @@ export function ModernLayout({
             <thead className="bg-slate-50 border-b">
               <tr>
                 <th className="px-6 py-4 text-left text-[10px] font-bold uppercase text-slate-400">Items</th>
-                <th className="px-6 py-4 text-center text-[10px] font-bold uppercase text-slate-400">Qty</th>
+                <th className="px-6 py-4 text-center text-[10px] font-bold uppercase text-slate-400">Qty / Unit</th>
                 <th className="px-6 py-4 text-right text-[10px] font-bold uppercase text-slate-400">Rate</th>
                 <th className="px-6 py-4 text-right text-[10px] font-bold uppercase text-slate-400">Amount</th>
               </tr>
@@ -81,7 +80,7 @@ export function ModernLayout({
                     <p className="font-bold text-sm text-slate-900">{item.name}</p>
                     {item.serialNumber && <p className="text-[10px] text-slate-400 mt-1 font-mono">#{item.serialNumber}</p>}
                   </td>
-                  <td className="px-6 py-4 text-center text-sm font-medium">{item.quantity}</td>
+                  <td className="px-6 py-4 text-center text-sm font-medium">{item.quantity} {item.unit || 'Pcs'}</td>
                   <td className="px-6 py-4 text-right text-sm">{currencySymbol}{item.unitPrice.toLocaleString()}</td>
                   <td className="px-6 py-4 text-right text-sm font-bold text-slate-900">{currencySymbol}{item.total.toLocaleString()}</td>
                 </tr>

@@ -26,6 +26,7 @@ interface POItem {
   productId: string;
   name: string;
   quantity: number;
+  unit: string;
   unitCost: number;
   total: number;
 }
@@ -97,16 +98,20 @@ export default function PurchasesPage() {
         productId: product.id,
         name: product.name,
         quantity: 1,
+        unit: product.unit || "Pcs",
         unitCost: product.costPrice || 0,
         total: product.costPrice || 0
       }]);
     }
   };
 
-  const handleUpdateLine = (idx: number, field: keyof POItem, val: number) => {
+  const handleUpdateLine = (idx: number, field: keyof POItem, val: any) => {
     const updated = [...lineItems];
-    updated[idx] = { ...updated[idx], [field]: val };
-    updated[idx].total = updated[idx].quantity * updated[idx].unitCost;
+    if (field === 'quantity' || field === 'unitCost') {
+      const numVal = Number(val) || 0;
+      (updated[idx] as any)[field] = numVal;
+      updated[idx].total = updated[idx].quantity * updated[idx].unitCost;
+    }
     setLineItems(updated);
   };
 
@@ -299,7 +304,7 @@ export default function PurchasesPage() {
                       <SelectValue placeholder={t('addProduct')} />
                     </SelectTrigger>
                     <SelectContent>
-                      {products?.map(p => <SelectItem key={p.id} value={p.id} className="text-xs font-bold">{p.name} (Stock: {p.currentStock})</SelectItem>)}
+                      {products?.map(p => <SelectItem key={p.id} value={p.id} className="text-xs font-bold">{p.name} (Stock: {p.currentStock} {p.unit})</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
@@ -312,7 +317,7 @@ export default function PurchasesPage() {
                     <TableHeader className="bg-slate-50/50 sticky top-0 z-10 backdrop-blur-md">
                       <TableRow>
                         <TableHead className="text-[10px] uppercase font-black py-4 pl-8">{t('itemDescription')}</TableHead>
-                        <TableHead className="text-[10px] uppercase font-black text-center w-32">{t('qty')}</TableHead>
+                        <TableHead className="text-[10px] uppercase font-black text-center w-40">{t('qty')} / Unit</TableHead>
                         <TableHead className="text-[10px] uppercase font-black text-right w-40">{t('unitPrice')}</TableHead>
                         <TableHead className="text-[10px] uppercase font-black text-right w-40 pr-8">{t('total')}</TableHead>
                         <TableHead className="w-10"></TableHead>
@@ -335,19 +340,22 @@ export default function PurchasesPage() {
                               <span className="text-[11px] md:text-sm font-black text-slate-900 uppercase tracking-tighter truncate">{item.name}</span>
                             </TableCell>
                             <TableCell>
-                              <Input 
-                                type="number" 
-                                className="h-10 text-center font-black text-sm rounded-xl w-24 bg-slate-50 border-none mx-auto" 
-                                value={item.quantity} 
-                                onChange={e => handleUpdateLine(idx, 'quantity', Number(e.target.value))} 
-                              />
+                              <div className="flex items-center gap-2 justify-center">
+                                <Input 
+                                  type="number" 
+                                  className="h-10 text-center font-black text-sm rounded-xl w-20 bg-slate-50 border-none" 
+                                  value={item.quantity} 
+                                  onChange={e => handleUpdateLine(idx, 'quantity', e.target.value)} 
+                                />
+                                <span className="text-[10px] font-black uppercase text-muted-foreground w-8 text-left">{item.unit || 'Pcs'}</span>
+                              </div>
                             </TableCell>
                             <TableCell className="text-right">
                               <Input 
                                 type="number" 
                                 className="h-10 text-right font-black text-sm rounded-xl w-32 bg-slate-50 border-none ml-auto" 
                                 value={item.unitCost} 
-                                onChange={e => handleUpdateLine(idx, 'unitCost', Number(e.target.value))} 
+                                onChange={e => handleUpdateLine(idx, 'unitCost', e.target.value)} 
                               />
                             </TableCell>
                             <TableCell className="text-right pr-8 text-sm font-black text-orange-600">
@@ -430,6 +438,7 @@ export default function PurchasesPage() {
                 items={selectedRecord.items.map((i: any) => ({
                   name: i.name,
                   quantity: i.quantity,
+                  unit: i.unit,
                   unitPrice: i.unitCost,
                   total: i.total
                 }))}

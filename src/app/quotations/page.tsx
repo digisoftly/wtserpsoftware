@@ -43,6 +43,7 @@ interface QuoteItem {
   productId: string;
   name: string;
   quantity: number;
+  unit: string;
   unitPrice: number;
   total: number;
 }
@@ -87,7 +88,7 @@ export default function QuotationsPage() {
   const { data: products } = useCollection(productsQuery);
 
   // Calculations
-  const subtotal = lineItems.reduce((sum, item) => sum + item.total, 0);
+  const subtotal = React.useMemo(() => lineItems.reduce((sum, item) => sum + item.total, 0), [lineItems]);
   const totalValue = subtotal - discount;
 
   const stats = React.useMemo(() => ({
@@ -112,6 +113,7 @@ export default function QuotationsPage() {
         productId: product.id,
         name: product.name,
         quantity: 1,
+        unit: product.unit || "Pcs",
         unitPrice: product.unitPrice || 0,
         total: product.unitPrice || 0
       }]);
@@ -362,7 +364,7 @@ export default function QuotationsPage() {
                       <SelectValue placeholder={t('addProduct')} />
                     </SelectTrigger>
                     <SelectContent>
-                      {products?.map(p => <SelectItem key={p.id} value={p.id} className="text-xs font-bold">{p.name} (৳{p.unitPrice})</SelectItem>)}
+                      {products?.map(p => <SelectItem key={p.id} value={p.id} className="text-xs font-bold">{p.name} (৳{p.unitPrice} / {p.unit || 'Pcs'})</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
@@ -375,7 +377,7 @@ export default function QuotationsPage() {
                     <TableHeader className="bg-slate-50 sticky top-0 z-10">
                       <TableRow>
                         <TableHead className="text-[10px] uppercase font-black py-4 pl-8">{t('itemDescription')}</TableHead>
-                        <TableHead className="text-[10px] uppercase font-black text-center w-32">{t('qty')}</TableHead>
+                        <TableHead className="text-[10px] uppercase font-black text-center w-40">{t('qty')} / Unit</TableHead>
                         <TableHead className="text-[10px] uppercase font-black text-right w-40">{t('unitPrice')}</TableHead>
                         <TableHead className="text-[10px] uppercase font-black text-right w-40 pr-8">{t('total')}</TableHead>
                         <TableHead className="w-10"></TableHead>
@@ -398,12 +400,15 @@ export default function QuotationsPage() {
                               <span className="text-xs font-black text-slate-900 uppercase tracking-tighter">{item.name}</span>
                             </TableCell>
                             <TableCell>
-                              <Input 
-                                type="number" 
-                                className="h-9 text-center font-black text-xs rounded-xl w-24 bg-slate-50 border-none mx-auto" 
-                                value={item.quantity} 
-                                onChange={e => handleUpdateLineQty(idx, Number(e.target.value))} 
-                              />
+                              <div className="flex items-center gap-2 justify-center">
+                                <Input 
+                                  type="number" 
+                                  className="h-9 text-center font-black text-xs rounded-xl w-16 md:w-20 bg-slate-50 border-none" 
+                                  value={item.quantity} 
+                                  onChange={e => handleUpdateLineQty(idx, Number(e.target.value))} 
+                                />
+                                <span className="text-[10px] font-black uppercase text-muted-foreground w-8 text-left">{item.unit || 'Pcs'}</span>
+                              </div>
                             </TableCell>
                             <TableCell className="text-right text-xs font-bold text-slate-500">৳{item.unitPrice.toLocaleString()}</TableCell>
                             <TableCell className="text-right pr-8 text-xs font-black text-purple-600">৳{item.total.toLocaleString()}</TableCell>
@@ -480,6 +485,7 @@ export default function QuotationsPage() {
                 items={selectedRecord.items.map((i: any) => ({
                   name: i.name,
                   quantity: i.quantity,
+                  unit: i.unit,
                   unitPrice: i.unitPrice,
                   total: i.total
                 }))}

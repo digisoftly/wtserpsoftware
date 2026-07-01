@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -81,7 +80,7 @@ export function ProfessionalLayout({
           <TableHeader className="bg-primary text-primary-foreground">
             <TableRow className="hover:bg-primary border-none">
               <TableHead className="text-primary-foreground font-bold uppercase text-xs">Description</TableHead>
-              <TableHead className="text-primary-foreground font-bold uppercase text-xs text-center w-24">Qty</TableHead>
+              <TableHead className="text-primary-foreground font-bold uppercase text-xs text-center w-32">Qty / Unit</TableHead>
               <TableHead className="text-primary-foreground font-bold uppercase text-xs text-right w-32">Unit Price</TableHead>
               <TableHead className="text-primary-foreground font-bold uppercase text-xs text-right w-32">Total</TableHead>
             </TableRow>
@@ -94,7 +93,7 @@ export function ProfessionalLayout({
                   {item.serialNumber && <div className="text-[10px] text-muted-foreground font-mono mt-1">S/N: {item.serialNumber}</div>}
                   {item.description && <div className="text-[10px] text-muted-foreground italic mt-0.5">{item.description}</div>}
                 </TableCell>
-                <TableCell className="text-center font-medium">{item.quantity}</TableCell>
+                <TableCell className="text-center font-medium">{item.quantity} {item.unit || 'Pcs'}</TableCell>
                 <TableCell className="text-right font-medium">{currencySymbol}{item.unitPrice.toLocaleString()}</TableCell>
                 <TableCell className="text-right font-bold">{currencySymbol}{item.total.toLocaleString()}</TableCell>
               </TableRow>

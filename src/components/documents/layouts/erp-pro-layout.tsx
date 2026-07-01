@@ -92,7 +92,7 @@ export function ERPProLayout({
             <TableRow className="hover:bg-slate-50 border-b">
               <TableHead className="w-12 text-[9px] font-black uppercase text-slate-400 text-center">SL</TableHead>
               <TableHead className="text-[9px] font-black uppercase text-slate-400">Description</TableHead>
-              <TableHead className="w-24 text-[9px] font-black uppercase text-slate-400 text-center">Qty / Unit</TableHead>
+              <TableHead className="w-32 text-[9px] font-black uppercase text-slate-400 text-center">Qty / Unit</TableHead>
               <TableHead className="w-28 text-[9px] font-black uppercase text-slate-400 text-right">Price</TableHead>
               <TableHead className="w-24 text-[9px] font-black uppercase text-slate-400 text-right">Disc %</TableHead>
               <TableHead className="w-32 text-[9px] font-black uppercase text-slate-400 text-right">Total</TableHead>
@@ -107,7 +107,7 @@ export function ERPProLayout({
                   {item.serialNumber && <p className="text-[8px] font-mono text-slate-500 mt-1">S/N: {item.serialNumber}</p>}
                 </TableCell>
                 <TableCell className="text-center">
-                  <p className="text-[11px] font-bold text-slate-700">{item.quantity} units</p>
+                  <p className="text-[11px] font-bold text-slate-700">{item.quantity} {item.unit || 'Pcs'}</p>
                 </TableCell>
                 <TableCell className="text-right text-[11px] font-bold text-slate-700">
                   {currencySymbol}{item.unitPrice.toLocaleString()}
@@ -129,7 +129,7 @@ export function ERPProLayout({
         <div className="flex-1">
           <div className="p-4 rounded-xl bg-slate-50 border-2 border-dashed border-slate-200">
             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Amount in Words</p>
-            <p className="text-[11px] font-bold text-slate-600 italic">One Hundred and Fifty BDT Only (Sample)</p>
+            <p className="text-[11px] font-bold text-slate-600 italic">Official Digital Receipt</p>
           </div>
           {notes && (
             <div className="mt-4">

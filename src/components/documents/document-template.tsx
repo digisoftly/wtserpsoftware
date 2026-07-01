@@ -13,6 +13,7 @@ export interface DocumentItem {
   name: string;
   description?: string;
   quantity: number;
+  unit?: string;
   unitPrice: number;
   total: number;
   serialNumber?: string;

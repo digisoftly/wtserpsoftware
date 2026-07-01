@@ -46,6 +46,7 @@ interface ReturnLineItem {
   productId: string;
   name: string;
   qty: number;
+  unit: string;
   price: number;
   total: number;
 }
@@ -95,7 +96,7 @@ export default function ReturnsPage() {
   const { data: purchaseOrders } = useCollection(poQuery);
 
   // Totals
-  const totalReturnAmount = lineItems.reduce((sum, item) => sum + item.total, 0);
+  const totalReturnAmount = React.useMemo(() => lineItems.reduce((sum, item) => sum + item.total, 0), [lineItems]);
 
   const stats = React.useMemo(() => ({
     salesAmount: salesReturns?.reduce((s, r) => s + (r.totalAmount || 0), 0) || 0,
@@ -113,6 +114,7 @@ export default function ReturnsPage() {
           productId: item.productId,
           name: item.name,
           qty: 1, 
+          unit: item.unit || "Pcs",
           price: item.price || item.unitPrice || 0,
           total: item.price || item.unitPrice || 0
         })));
@@ -124,6 +126,7 @@ export default function ReturnsPage() {
           productId: item.productId,
           name: item.name,
           qty: 1,
+          unit: item.unit || "Pcs",
           price: item.unitCost || 0,
           total: item.unitCost || 0
         })));
@@ -168,7 +171,6 @@ export default function ReturnsPage() {
 
         transaction.set(returnRef, returnData, { merge: true });
 
-        // ADJUST STOCK only on new creation to avoid double counting in prototype
         if (!isEditModalOpen) {
           const stockAdjustment = activeTab === "sales" ? 1 : -1;
           for (const item of lineItems) {
@@ -399,7 +401,7 @@ export default function ReturnsPage() {
                     <TableHeader className="bg-slate-50 sticky top-0 z-10">
                       <TableRow>
                         <TableHead className="text-[10px] uppercase font-black py-4 pl-8">{t('itemDescription')}</TableHead>
-                        <TableHead className="text-[10px] uppercase font-black text-center w-32">{t('qty')}</TableHead>
+                        <TableHead className="text-[10px] uppercase font-black text-center w-40">{t('qty')} / Unit</TableHead>
                         <TableHead className="text-[10px] uppercase font-black text-right w-40">{t('price')}</TableHead>
                         <TableHead className="text-[10px] uppercase font-black text-right w-40 pr-8">{t('total')}</TableHead>
                         <TableHead className="w-10"></TableHead>
@@ -422,12 +424,15 @@ export default function ReturnsPage() {
                               <span className="text-xs font-black text-slate-900 uppercase tracking-tighter">{item.name}</span>
                             </TableCell>
                             <TableCell>
-                              <Input 
-                                type="number" 
-                                className="h-9 text-center font-black text-xs rounded-xl w-24 bg-slate-50 border-none mx-auto" 
-                                value={item.qty} 
-                                onChange={e => handleUpdateQty(idx, Number(e.target.value))} 
-                              />
+                              <div className="flex items-center gap-2 justify-center">
+                                <Input 
+                                  type="number" 
+                                  className="h-9 text-center font-black text-xs rounded-xl w-16 md:w-20 bg-slate-50 border-none" 
+                                  value={item.qty} 
+                                  onChange={e => handleUpdateQty(idx, Number(e.target.value))} 
+                                />
+                                <span className="text-[10px] font-black uppercase text-muted-foreground w-8 text-left">{item.unit || 'Pcs'}</span>
+                              </div>
                             </TableCell>
                             <TableCell className="text-right text-xs font-bold text-slate-500">৳{item.price.toLocaleString()}</TableCell>
                             <TableCell className="text-right pr-8 text-xs font-black text-red-600">৳{item.total.toLocaleString()}</TableCell>
@@ -502,6 +507,7 @@ export default function ReturnsPage() {
                 items={selectedRecord.items.map((i: any) => ({
                   name: i.name,
                   quantity: i.qty,
+                  unit: i.unit,
                   unitPrice: i.price,
                   total: i.total
                 }))}

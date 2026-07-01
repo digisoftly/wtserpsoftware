@@ -49,6 +49,7 @@ interface InvoiceItem {
   productId: string;
   name: string;
   qty: number;
+  unit: string;
   price: number;
   total: number;
   serials: string[];
@@ -67,7 +68,7 @@ export default function SalesPage() {
   const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
   const [selectedRecord, setSelectedRecord] = React.useState<any>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
-  const deferredSearch = React.useDeferredValue(searchTerm); // Background filtering
+  const deferredSearch = React.useDeferredValue(searchTerm);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // POS Scanner State
@@ -85,7 +86,7 @@ export default function SalesPage() {
   const [paidAmount, setPaidAmount] = React.useState(0);
   const [paymentMethod, setPaymentMethod] = React.useState("cash");
 
-  // Queries - Optimization: Added limits to prevent browser freezing on large datasets
+  // Queries
   const invoicesQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
     return query(
@@ -118,7 +119,7 @@ export default function SalesPage() {
   }, [db, companyId, branchId]);
   const { data: availableSerials } = useCollection(serialsQuery);
 
-  // Optimization: Memoized calculations
+  // Calculations
   const subtotal = React.useMemo(() => lineItems.reduce((sum, item) => sum + item.total, 0), [lineItems]);
   const vatAmount = React.useMemo(() => (subtotal - discount) * (vatPercent / 100), [subtotal, discount, vatPercent]);
   const totalAmount = React.useMemo(() => subtotal - discount + vatAmount, [subtotal, discount, vatAmount]);
@@ -153,6 +154,7 @@ export default function SalesPage() {
           productId: product.id,
           name: product.name,
           qty: 1,
+          unit: product.unit || "Pcs",
           price: product.unitPrice || 0,
           total: product.unitPrice || 0,
           isSerialized: product.serialNumberTrackingRequired || false,
@@ -168,6 +170,7 @@ export default function SalesPage() {
       productId: `custom-${Date.now()}`,
       name: "",
       qty: 1,
+      unit: "Pcs",
       price: 0,
       total: 0,
       isSerialized: false,
@@ -200,6 +203,7 @@ export default function SalesPage() {
               productId: product.id,
               name: product.name,
               qty: 1,
+              unit: product.unit || "Pcs",
               price: product.unitPrice || 0,
               total: product.unitPrice || 0,
               isSerialized: true,
@@ -330,10 +334,24 @@ export default function SalesPage() {
     setSelectedCustomerId("");
     setIsManualCustomer(false);
     setManualCustomerName("");
+    setManualCustomerPhone("");
     setLineItems([]);
     setDiscount(0);
     setPaidAmount(0);
     setInvoiceDate(new Date().toISOString().split('T')[0]);
+  };
+
+  const openEdit = (inv: any) => {
+    setSelectedRecord(inv);
+    setIsManualCustomer(inv.customerId === 'manual');
+    setManualCustomerName(inv.customerId === 'manual' ? inv.customerName : "");
+    setSelectedCustomerId(inv.customerId === 'manual' ? "" : inv.customerId);
+    setLineItems(inv.items || []);
+    setDiscount(inv.discount || 0);
+    setVatPercent(inv.vatPercent || 15);
+    setPaidAmount(inv.paidAmount || 0);
+    setInvoiceDate(inv.invoiceDate || new Date().toISOString().split('T')[0]);
+    setIsEditModalOpen(true);
   };
 
   const filteredInvoices = React.useMemo(() => {
@@ -379,17 +397,17 @@ export default function SalesPage() {
             <Table>
               <TableHeader className="bg-muted/10">
                 <TableRow>
-                  <TableHead className="h-10 text-[10px] uppercase font-black">{t('invoiceNumber')}</TableHead>
+                  <TableHead className="h-10 text-[10px] uppercase font-black pl-6">{t('invoiceNumber')}</TableHead>
                   <TableHead className="h-10 text-[10px] uppercase font-black">{t('customer')}</TableHead>
                   <TableHead className="h-10 text-[10px] uppercase font-black">{t('amount')}</TableHead>
                   <TableHead className="h-10 text-[10px] uppercase font-black">{t('status')}</TableHead>
-                  <TableHead className="h-10 text-right"></TableHead>
+                  <TableHead className="h-10 text-right pr-6"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredInvoices?.map((inv) => (
                   <TableRow key={inv.id} className="h-14 hover:bg-muted/5 transition-colors">
-                    <TableCell className="font-bold text-xs uppercase text-blue-600">{inv.invoiceNumber}</TableCell>
+                    <TableCell className="pl-6 font-bold text-xs uppercase text-blue-600">{inv.invoiceNumber}</TableCell>
                     <TableCell className="text-xs font-bold text-slate-700">{inv.customerName}</TableCell>
                     <TableCell className="font-black text-xs">৳{inv.totalAmount?.toLocaleString()}</TableCell>
                     <TableCell>
@@ -399,7 +417,7 @@ export default function SalesPage() {
                         {t(`${inv.status}_status` as any)}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right pr-6">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-blue-50 text-blue-600 transition-colors"><MoreVertical className="h-4 w-4" /></Button>
@@ -491,7 +509,7 @@ export default function SalesPage() {
                       <SelectContent className="max-h-[300px] rounded-xl">
                         {products?.map(p => (
                           <SelectItem key={p.id} value={p.id} className="text-xs font-bold">
-                            {p.name} <span className="text-[9px] opacity-60 ml-2 font-mono">(STOCK: {p.currentStock})</span>
+                            {p.name} <span className="text-[9px] opacity-60 ml-2 font-mono">(STOCK: {p.currentStock} {p.unit || 'Pcs'})</span>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -520,7 +538,7 @@ export default function SalesPage() {
                       <TableHeader className="bg-slate-50/50 sticky top-0 z-10 backdrop-blur-md">
                         <TableRow>
                           <TableHead className="text-[10px] uppercase font-black py-4 pl-4 md:pl-8">{t('itemDescription')}</TableHead>
-                          <TableHead className="text-[10px] uppercase font-black text-center w-24 md:w-32">{t('qty')}</TableHead>
+                          <TableHead className="text-[10px] uppercase font-black text-center w-32 md:w-40">{t('qty')} / Unit</TableHead>
                           <TableHead className="text-[10px] uppercase font-black text-right w-24 md:w-40">{t('unitPrice')}</TableHead>
                           <TableHead className="text-[10px] uppercase font-black text-right w-24 md:w-40 pr-4 md:pr-8">{t('total')}</TableHead>
                           <TableHead className="w-10"></TableHead>
@@ -563,13 +581,16 @@ export default function SalesPage() {
                                 </div>
                               </TableCell>
                               <TableCell className="text-center">
-                                <Input 
-                                  type="number" 
-                                  className="h-9 text-center font-black text-xs rounded-xl w-16 md:w-24 bg-slate-50 border-none mx-auto" 
-                                  value={item.qty} 
-                                  disabled={item.isSerialized}
-                                  onChange={e => handleUpdateItem(idx, 'qty', e.target.value)} 
-                                />
+                                <div className="flex items-center gap-2 justify-center">
+                                  <Input 
+                                    type="number" 
+                                    className="h-9 text-center font-black text-xs rounded-xl w-16 md:w-20 bg-slate-50 border-none" 
+                                    value={item.qty} 
+                                    disabled={item.isSerialized}
+                                    onChange={e => handleUpdateItem(idx, 'qty', e.target.value)} 
+                                  />
+                                  <span className="text-[10px] font-black uppercase text-muted-foreground w-8 text-left">{item.unit || 'Pcs'}</span>
+                                </div>
                               </TableCell>
                               <TableCell className="text-right">
                                 <Input 
@@ -643,7 +664,7 @@ export default function SalesPage() {
                 >
                   <span className="relative z-10 flex items-center gap-3">
                     {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <ArrowRight className="h-5 w-5" />}
-                    {t('postTransaction')}
+                    {isEditModalOpen ? "Update Transaction" : t('postTransaction')}
                   </span>
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                 </Button>
@@ -652,6 +673,59 @@ export default function SalesPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* VIEW CHALLAN DIALOG */}
+      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+        <DialogContent className="max-w-[21cm] w-[95vw] p-0 border-none bg-transparent shadow-none overflow-y-auto max-h-[95vh] rounded-none">
+          <DialogHeader className="sr-only">
+            <DialogTitle>View Sale Invoice</DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 mb-4 no-print fixed top-4 right-4 md:top-6 md:right-6 z-[100]">
+             <Button onClick={() => window.print()} className="bg-white text-blue-600 hover:bg-blue-50 shadow-2xl rounded-full font-black text-[10px] uppercase h-10 px-6 gap-2 border-none ring-1 ring-blue-100">
+              <Download className="h-4 w-4" /> Download PDF
+            </Button>
+          </div>
+          {selectedRecord && (
+            <div className="bg-white shadow-2xl rounded-none md:rounded-[2rem] overflow-hidden">
+              <DocumentTemplate
+                title="Sales Invoice"
+                type="invoice"
+                docNumber={selectedRecord.invoiceNumber}
+                date={selectedRecord.invoiceDate}
+                customerName={selectedRecord.customerName}
+                items={selectedRecord.items.map((i: any) => ({
+                  name: i.name,
+                  quantity: i.qty,
+                  unit: i.unit,
+                  unitPrice: i.price,
+                  total: i.total,
+                  serialNumber: i.serials?.join(', ')
+                }))}
+                subtotal={selectedRecord.subtotal}
+                discount={selectedRecord.discount}
+                taxAmount={selectedRecord.vatAmount}
+                taxRate={selectedRecord.vatPercent}
+                grandTotal={selectedRecord.totalAmount}
+                status={selectedRecord.status}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* DELETE ALERT */}
+      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+        <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tight text-slate-900">{t('delete')}?</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs font-medium leading-relaxed">{t('errorSub')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-8 gap-3">
+            <AlertDialogCancel className="rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest">{t('cancel')}</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest" onClick={() => { if(selectedRecord) deleteDocumentNonBlocking(doc(db!, "companies", companyId!, "branches", branchId!, "sales_invoices", selectedRecord.id)); setIsDeleteAlertOpen(false); toast({ title: t('success') }); }}>{t('delete')}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

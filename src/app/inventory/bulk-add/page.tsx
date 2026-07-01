@@ -32,12 +32,15 @@ interface BulkItem {
   id: string
   name: string
   sku: string
+  unit: string
   costPrice: number
   unitPrice: number
   quantity: number
   serials: string
   isSerialized: boolean
 }
+
+const UNITS = ["Pcs", "Kg", "Gram", "Liter", "ML", "Meter (Mtr)", "Rft", "Feet", "Box", "Pack", "Carton", "Set", "Pair", "Roll", "Piece", "Unit", "Bundle", "Dozen"];
 
 export default function BulkInventoryPage() {
   const router = useRouter()
@@ -59,6 +62,7 @@ export default function BulkInventoryPage() {
       id: Math.random().toString(36).substr(2, 9),
       name: "",
       sku: "",
+      unit: "Pcs",
       costPrice: 0,
       unitPrice: 0,
       quantity: 1,
@@ -103,6 +107,7 @@ export default function BulkInventoryPage() {
           id: Math.random().toString(36).substr(2, 9),
           name: row.name || row.Name || "",
           sku: row.sku || row.SKU || "",
+          unit: row.unit || row.Unit || "Pcs",
           costPrice: Number(row.costPrice || row.Cost || 0),
           unitPrice: Number(row.unitPrice || row.Price || 0),
           quantity: Number(row.quantity || row.Qty || 1),
@@ -119,7 +124,7 @@ export default function BulkInventoryPage() {
   }
 
   const downloadTemplate = () => {
-    const csvContent = "name,sku,costPrice,unitPrice,quantity,isSerialized,serials\nSample Product,SKU-001,100,150,1,false,\nSerial Product,SKU-002,500,750,2,true,\"SN123,SN124\""
+    const csvContent = "name,sku,unit,costPrice,unitPrice,quantity,isSerialized,serials\nSample Product,SKU-001,Pcs,100,150,1,false,\nSerial Product,SKU-002,Box,500,750,2,true,\"SN123,SN124\""
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement("a")
     const url = URL.createObjectURL(blob)
@@ -169,6 +174,7 @@ export default function BulkInventoryPage() {
             branchId: targetBranchId,
             name: item.name,
             sku: item.sku,
+            unit: item.unit || "Pcs",
             unitPrice: item.unitPrice,
             costPrice: item.costPrice,
             currentStock: item.quantity,
@@ -280,6 +286,7 @@ export default function BulkInventoryPage() {
                 <TableRow>
                   <TableHead className="w-[250px]">Product Name</TableHead>
                   <TableHead className="w-[150px]">SKU / ID</TableHead>
+                  <TableHead className="w-[120px]">Unit</TableHead>
                   <TableHead className="w-[120px]">Cost (৳)</TableHead>
                   <TableHead className="w-[120px]">Sale (৳)</TableHead>
                   <TableHead className="w-[100px]">Qty</TableHead>
@@ -306,6 +313,16 @@ export default function BulkInventoryPage() {
                         onChange={(e) => handleUpdateItem(item.id, 'sku', e.target.value)}
                         className="h-9 border-transparent focus:border-orange-200 bg-transparent font-mono text-xs uppercase"
                       />
+                    </TableCell>
+                    <TableCell>
+                      <Select value={item.unit} onValueChange={(val) => handleUpdateItem(item.id, 'unit', val)}>
+                        <SelectTrigger className="h-9 border-transparent bg-transparent text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell>
                       <Input 
@@ -392,8 +409,7 @@ export default function BulkInventoryPage() {
               {items.filter(i => i.isSerialized).length} Unique SKU(s)
             </div>
           </CardContent>
-        </Card>
-      </div>
+        </div>
 
       <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-2xl border-2 border-dashed border-blue-200">
         <AlertCircle className="h-6 w-6 text-blue-600" />
