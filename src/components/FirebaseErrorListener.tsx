@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -14,7 +13,7 @@ export function FirebaseErrorListener() {
 
   useEffect(() => {
     const handleError = (error: FirestorePermissionError) => {
-      console.error("Firestore Permission Denied:", error.request);
+      // We no longer console.error here as it's handled by the throw below
       setError(error);
     };
 

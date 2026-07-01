@@ -42,18 +42,9 @@ service cloud.firestore {
     }
 
     // Branch and Sub-collection Access
-    match /companies/{companyId}/branches/{branchId} {
+    // Unified recursive match to ensure all sub-collections (like invoices/challans) are accessible
+    match /companies/{companyId}/branches/{branchId}/{allPaths=**} {
       allow read, write: if isMember(companyId);
-      
-      // Explicit sub-collection matching for clarity and reliability
-      match /{collectionName}/{docId} {
-        allow read, write: if isMember(companyId);
-      }
-      
-      // Recursive match for any other deep paths
-      match /{allPaths=**} {
-        allow read, write: if isMember(companyId);
-      }
     }
 
     // Root collections
