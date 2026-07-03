@@ -2,7 +2,35 @@
 "use client"
 
 import * as React from "react"
-import { LayoutDashboard, ShoppingCart, FileText, Package, RotateCcw, Boxes, Scan, Folder, Layers, Wrench, Users, Truck, Wallet, UserRoundCog, BarChart3, TrendingUp, Settings, ShieldCheck, LogOut, Target, LifeBuoy, Receipt, Building2, Truck as DispatchIcon } from "lucide-react"
+import { 
+  LayoutDashboard, 
+  ShoppingCart, 
+  FileText, 
+  Package, 
+  RotateCcw, 
+  Boxes, 
+  Scan, 
+  Folder, 
+  Layers, 
+  Wrench, 
+  Users, 
+  Truck, 
+  Wallet, 
+  UserRoundCog, 
+  BarChart3, 
+  TrendingUp, 
+  Settings, 
+  ShieldCheck, 
+  LogOut, 
+  Target, 
+  LifeBuoy, 
+  Receipt, 
+  Building2, 
+  Truck as DispatchIcon,
+  Database,
+  ChevronDown,
+  ChevronRight
+} from "lucide-react"
 
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarGroup, useSidebar } from "@/components/ui/sidebar"
 import Link from "next/link"
@@ -12,6 +40,17 @@ import { signOut } from "firebase/auth"
 import { usePermissions } from "@/hooks/use-permissions"
 import { useSettings } from "@/hooks/use-settings"
 import { useTranslation } from "@/hooks/use-translation"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+
+const MASTER_MODULES = [
+  { name: "units", key: "units", path: "/master/units" },
+  { name: "categories", key: "categories", path: "/master/categories" },
+  { name: "brands", key: "brands", path: "/master/brands" },
+  { name: "models", key: "models", path: "/master/models" },
+  { name: "productTypes", key: "productTypes", path: "/master/product-types" },
+  { name: "serviceTypes", key: "serviceTypes", path: "/master/service-types" },
+  { name: "customFields", key: "customFields", path: "/master/custom-fields" },
+]
 
 const MODULES = [
   { name: "dashboard", key: "dashboard", icon: LayoutDashboard, color: "text-blue-500", path: "/" },
@@ -47,13 +86,13 @@ export function AppSidebar() {
   const { can } = usePermissions()
   const { settings } = useSettings()
   const { t } = useTranslation()
+  const [masterOpen, setMasterOpen] = React.useState(pathname.startsWith('/master'))
 
   const handleLogout = async () => {
     await signOut(auth)
     router.push('/login')
   }
 
-  // Respect Admin's custom menu order if saved, otherwise use default
   const order = settings?.sidebarMenuOrder || MODULES.map(m => m.key);
   const sortedModules = [...MODULES].sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key));
   const allowedModules = sortedModules.filter(m => can(m.key, 'view'))
@@ -81,6 +120,34 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
+
+            {/* Master Management Collapsible */}
+            <Collapsible open={masterOpen} onOpenChange={setMasterOpen}>
+              <SidebarMenuItem>
+                <CollapsibleTrigger asChild>
+                  <SidebarMenuButton tooltip={t('masterManagement')} className="hover:bg-white/5 h-10 px-4">
+                    <Database className="text-pink-500 h-4 w-4 shrink-0" />
+                    <span className="text-[13px] font-medium text-white/70">{t('masterManagement')}</span>
+                    {state === "expanded" && (
+                      masterOpen ? <ChevronDown className="ml-auto h-3 w-3" /> : <ChevronRight className="ml-auto h-3 w-3" />
+                    )}
+                  </SidebarMenuButton>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <SidebarMenu className="ml-4 border-l border-white/5 pl-2 mt-1 space-y-1">
+                    {MASTER_MODULES.map((sub) => (
+                      <SidebarMenuItem key={sub.key}>
+                        <SidebarMenuButton asChild isActive={pathname === sub.path} className="h-8 px-4 hover:bg-white/5 rounded-md">
+                          <Link href={sub.path} className="text-[11px] font-medium text-white/50 group-data-[active=true]:text-pink-400">
+                            {t(sub.name as any)}
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </CollapsibleContent>
+              </SidebarMenuItem>
+            </Collapsible>
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>

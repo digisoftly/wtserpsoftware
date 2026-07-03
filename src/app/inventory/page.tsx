@@ -38,12 +38,6 @@ import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlo
 import { toast } from "@/hooks/use-toast"
 import { Input } from "@/components/ui/input"
 
-const UNITS = [
-  "Pcs", "Kg", "Gram", "Liter", "ML", "Meter (Mtr)", "Rft", "Feet", 
-  "Box", "Pack", "Carton", "Set", "Pair", "Roll", "Piece", "Unit", 
-  "Bundle", "Dozen"
-];
-
 export default function InventoryPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
@@ -70,6 +64,37 @@ export default function InventoryPage() {
   }, [db, companyId, branchId]);
   const { data: products, isLoading } = useCollection(productsQuery);
 
+  // Master Data Queries
+  const unitsQuery = useMemoFirebase(() => {
+    if (!db || !companyId) return null;
+    return query(collection(db, "companies", companyId, "master_units"), orderBy("name"));
+  }, [db, companyId]);
+  const { data: masterUnits } = useCollection(unitsQuery);
+
+  const catsQuery = useMemoFirebase(() => {
+    if (!db || !companyId) return null;
+    return query(collection(db, "companies", companyId, "master_categories"), orderBy("name"));
+  }, [db, companyId]);
+  const { data: masterCats } = useCollection(catsQuery);
+
+  const brandsQuery = useMemoFirebase(() => {
+    if (!db || !companyId) return null;
+    return query(collection(db, "companies", companyId, "master_brands"), orderBy("name"));
+  }, [db, companyId]);
+  const { data: masterBrands } = useCollection(brandsQuery);
+
+  const modelsQuery = useMemoFirebase(() => {
+    if (!db || !companyId) return null;
+    return query(collection(db, "companies", companyId, "master_models"), orderBy("name"));
+  }, [db, companyId]);
+  const { data: masterModels } = useCollection(modelsQuery);
+
+  const customFieldsQuery = useMemoFirebase(() => {
+    if (!db || !companyId) return null;
+    return query(collection(db, "companies", companyId, "master_custom_fields"), orderBy("label"));
+  }, [db, companyId]);
+  const { data: masterCustomFields } = useCollection(customFieldsQuery);
+
   // Derived Data
   const stats = React.useMemo(() => ({
     totalProducts: products?.length || 0,
@@ -77,20 +102,12 @@ export default function InventoryPage() {
     totalValue: products?.reduce((s, p) => s + ((p.currentStock || 0) * (p.unitPrice || 0)), 0) || 0
   }), [products]);
 
-  const brands = React.useMemo(() => 
-    ["all", ...Array.from(new Set(products?.map(p => p.brand).filter(Boolean) as string[]))], 
-  [products]);
-
-  const categories = React.useMemo(() => 
-    ["all", ...Array.from(new Set(products?.map(p => p.category).filter(Boolean) as string[]))], 
-  [products]);
-
   const filtered = React.useMemo(() => {
     return products?.filter(p => {
       const matchesSearch = p.name?.toLowerCase().includes(deferredSearch.toLowerCase()) || 
                             p.sku?.toLowerCase().includes(deferredSearch.toLowerCase());
-      const matchesBrand = brandFilter === "all" || p.brand === brandFilter;
-      const matchesCategory = categoryFilter === "all" || p.category === categoryFilter;
+      const matchesBrand = brandFilter === "all" || p.brandId === brandFilter;
+      const matchesCategory = categoryFilter === "all" || p.categoryId === categoryFilter;
       return matchesSearch && matchesBrand && matchesCategory;
     });
   }, [products, deferredSearch, brandFilter, categoryFilter]);
@@ -102,20 +119,28 @@ export default function InventoryPage() {
     setIsSubmitting(true);
     const formData = new FormData(e.currentTarget);
     
+    // Extract custom fields
+    const customFields: Record<string, any> = {};
+    masterCustomFields?.filter(f => f.targetModule === 'product').forEach(f => {
+      const val = formData.get(`cf_${f.id}`);
+      customFields[f.id] = f.type === 'checkbox' ? val === 'on' : val;
+    });
+
     const productData = {
       companyId,
       branchId,
       name: formData.get("name") as string,
       sku: formData.get("sku") as string,
-      brand: formData.get("brand") as string,
-      model: formData.get("model") as string,
-      category: formData.get("category") as string,
-      unit: formData.get("unit") as string || "Pcs",
+      brandId: formData.get("brandId") as string,
+      modelId: formData.get("modelId") as string,
+      categoryId: formData.get("categoryId") as string,
+      unitId: formData.get("unitId") as string,
       unitPrice: Number(formData.get("unitPrice")),
       costPrice: Number(formData.get("costPrice")),
       currentStock: Number(formData.get("currentStock")),
       minStockLevel: Number(formData.get("minStockLevel") || 5),
       serialNumberTrackingRequired: formData.get("serialRequired") === "on",
+      customFields,
       isActive: true,
       updatedAt: serverTimestamp(),
     };
@@ -137,18 +162,6 @@ export default function InventoryPage() {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleDelete = React.useCallback((id: string) => {
-    if (!db || !companyId || !branchId) return;
-    const docRef = doc(db, "companies", companyId, "branches", branchId, "products", id);
-    deleteDocumentNonBlocking(docRef);
-    toast({ title: t('success') });
-  }, [db, companyId, branchId, t]);
-
-  const openEdit = (p: any) => {
-    setSelectedProduct(p);
-    setIsEditOpen(true);
   };
 
   return (
@@ -186,7 +199,8 @@ export default function InventoryPage() {
                 <SelectValue placeholder={t('brand')} />
               </SelectTrigger>
               <SelectContent>
-                {brands.map(b => <SelectItem key={b} value={b} className="text-xs uppercase">{b === "all" ? t('allBrands') : b}</SelectItem>)}
+                <SelectItem value="all" className="text-xs uppercase">{t('allBrands')}</SelectItem>
+                {masterBrands?.map(b => <SelectItem key={b.id} value={b.id} className="text-xs uppercase">{b.name}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
@@ -194,7 +208,8 @@ export default function InventoryPage() {
                 <SelectValue placeholder={t('category')} />
               </SelectTrigger>
               <SelectContent>
-                {categories.map(c => <SelectItem key={c} value={c} className="text-xs uppercase">{c === "all" ? t('allCategories') : c}</SelectItem>)}
+                <SelectItem value="all" className="text-xs uppercase">{t('allCategories')}</SelectItem>
+                {masterCats?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs uppercase">{c.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -228,13 +243,13 @@ export default function InventoryPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-bold uppercase text-blue-600">{p.brand || "---"}</span>
-                        <span className="text-[10px] font-medium text-slate-500 uppercase">{p.model || "Standard"}</span>
+                        <span className="text-[10px] font-bold uppercase text-blue-600">{masterBrands?.find(b => b.id === p.brandId)?.name || "---"}</span>
+                        <span className="text-[10px] font-medium text-slate-500 uppercase">{masterModels?.find(m => m.id === p.modelId)?.name || "Standard"}</span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-[8px] font-black uppercase border-none bg-slate-100 text-slate-600 h-5">
-                        {p.category || "General"}
+                        {masterCats?.find(c => c.id === p.categoryId)?.name || "General"}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">
@@ -243,7 +258,7 @@ export default function InventoryPage() {
                           "text-xs font-black h-6 px-3 flex items-center justify-center rounded-lg whitespace-nowrap",
                           (p.currentStock || 0) <= (p.minStockLevel || 5) ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"
                         )}>
-                          {p.currentStock || 0} {p.unit || 'Pcs'}
+                          {p.currentStock || 0} {masterUnits?.find(u => u.id === p.unitId)?.shortName || 'Pcs'}
                         </span>
                         {p.serialNumberTrackingRequired && (
                           <div className="flex items-center gap-1 mt-1">
@@ -262,8 +277,8 @@ export default function InventoryPage() {
                           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-blue-50 text-blue-600 transition-colors opacity-0 group-hover:opacity-100"><MoreVertical className="h-4 w-4" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-32 rounded-xl shadow-xl">
-                          <DropdownMenuItem className="text-xs font-bold" onClick={() => openEdit(p)}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
-                          <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => handleDelete(p.id)}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedProduct(p); setIsEditOpen(true); }}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => deleteDocumentNonBlocking(doc(db!, "companies", companyId!, "branches", branchId!, "products", p.id))}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -294,21 +309,21 @@ export default function InventoryPage() {
               <div className="space-y-4">
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('itemDescription')}</Label>
-                  <Input name="name" required defaultValue={selectedProduct?.name} className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white" placeholder="e.g. Sony 4K PTZ Camera" />
+                  <Input name="name" required defaultValue={selectedProduct?.name} className="h-11 rounded-xl border-none ring-1 ring-slate-200 bg-white" placeholder="e.g. Sony 4K PTZ Camera" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('sku')}</Label>
-                    <Input name="sku" required defaultValue={selectedProduct?.sku} className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white font-mono" placeholder="CAM-SNY-001" />
+                    <Input name="sku" required defaultValue={selectedProduct?.sku} className="h-11 rounded-xl border-none ring-1 ring-slate-200 bg-white font-mono" placeholder="CAM-SNY-001" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Unit</Label>
-                    <Select name="unit" defaultValue={selectedProduct?.unit || "Pcs"}>
+                    <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('units')}</Label>
+                    <Select name="unitId" defaultValue={selectedProduct?.unitId || masterUnits?.find(u => u.isDefault)?.id}>
                       <SelectTrigger className="h-11 rounded-xl border-none ring-1 ring-slate-200 bg-white">
-                        <SelectValue />
+                        <SelectValue placeholder="Select Unit" />
                       </SelectTrigger>
                       <SelectContent>
-                        {UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                        {masterUnits?.map(u => <SelectItem key={u.id} value={u.id} className="text-xs font-bold">{u.name} ({u.shortName})</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
@@ -316,16 +331,37 @@ export default function InventoryPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('brand')}</Label>
-                    <Input name="brand" defaultValue={selectedProduct?.brand} className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white" placeholder="Sony" />
+                    <Select name="brandId" defaultValue={selectedProduct?.brandId}>
+                      <SelectTrigger className="h-11 rounded-xl border-none ring-1 ring-slate-200 bg-white">
+                        <SelectValue placeholder="Brand" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {masterBrands?.map(b => <SelectItem key={b.id} value={b.id} className="text-xs font-bold">{b.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('model')}</Label>
-                    <Input name="model" defaultValue={selectedProduct?.model} className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white" placeholder="X-500" />
+                    <Select name="modelId" defaultValue={selectedProduct?.modelId}>
+                      <SelectTrigger className="h-11 rounded-xl border-none ring-1 ring-slate-200 bg-white">
+                        <SelectValue placeholder="Model" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {masterModels?.map(m => <SelectItem key={m.id} value={m.id} className="text-xs font-bold">{m.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('category')}</Label>
-                  <Input name="category" defaultValue={selectedProduct?.category} className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white" placeholder="CCTV" />
+                  <Select name="categoryId" defaultValue={selectedProduct?.categoryId}>
+                    <SelectTrigger className="h-11 rounded-xl border-none ring-1 ring-slate-200 bg-white">
+                      <SelectValue placeholder="Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {masterCats?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-bold">{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -334,32 +370,57 @@ export default function InventoryPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('costPrice')} (৳)</Label>
-                    <Input name="costPrice" type="number" required defaultValue={selectedProduct?.costPrice} className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white font-black" placeholder="0.00" />
+                    <Input name="costPrice" type="number" required defaultValue={selectedProduct?.costPrice} className="h-11 rounded-xl border-none ring-1 ring-slate-200 bg-white font-black" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('price')} (৳)</Label>
-                    <Input name="unitPrice" type="number" required defaultValue={selectedProduct?.unitPrice} className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white font-black text-blue-600" placeholder="0.00" />
+                    <Input name="unitPrice" type="number" required defaultValue={selectedProduct?.unitPrice} className="h-11 rounded-xl border-none ring-1 ring-slate-200 bg-white font-black text-blue-600" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('stock')}</Label>
-                    <Input name="currentStock" type="number" required defaultValue={selectedProduct?.currentStock} className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white font-black" placeholder="0" />
+                    <Input name="currentStock" type="number" required defaultValue={selectedProduct?.currentStock} className="h-11 rounded-xl border-none ring-1 ring-slate-200 bg-white font-black" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Min. Level</Label>
-                    <Input name="minStockLevel" type="number" defaultValue={selectedProduct?.minStockLevel || 5} className="h-11 rounded-xl border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 bg-white font-black" />
+                    <Input name="minStockLevel" type="number" defaultValue={selectedProduct?.minStockLevel || 5} className="h-11 rounded-xl border-none ring-1 ring-slate-200 bg-white font-black" />
                   </div>
                 </div>
 
-                <div className="p-5 bg-white rounded-3xl ring-1 ring-slate-200 shadow-sm space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-xs font-black uppercase text-slate-900 tracking-tight">{t('serialRequired')}</Label>
-                      <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Track individual units via unique S/N</p>
-                    </div>
-                    <Switch name="serialRequired" defaultChecked={selectedProduct?.serialNumberTrackingRequired} className="data-[state=checked]:bg-blue-600" />
+                {/* Custom Fields Section */}
+                {masterCustomFields?.filter(f => f.targetModule === 'product').length > 0 && (
+                  <div className="p-5 bg-white rounded-3xl ring-1 ring-slate-200 shadow-sm space-y-4">
+                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Master Custom Fields</p>
+                    {masterCustomFields.filter(f => f.targetModule === 'product').map(f => (
+                      <div key={f.id} className="space-y-1.5">
+                        <Label className="text-[9px] font-bold uppercase">{f.label}</Label>
+                        {f.type === 'dropdown' ? (
+                          <Select name={`cf_${f.id}`} defaultValue={selectedProduct?.customFields?.[f.id]}>
+                            <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {f.options?.map((opt: string) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        ) : f.type === 'checkbox' ? (
+                          <div className="flex items-center gap-2">
+                             <Switch name={`cf_${f.id}`} defaultChecked={selectedProduct?.customFields?.[f.id]} />
+                             <span className="text-[10px] font-bold uppercase text-muted-foreground">Enabled</span>
+                          </div>
+                        ) : (
+                          <Input name={`cf_${f.id}`} type={f.type === 'number' ? 'number' : 'text'} defaultValue={selectedProduct?.customFields?.[f.id]} className="h-9 text-xs" />
+                        )}
+                      </div>
+                    ))}
                   </div>
+                )}
+
+                <div className="p-5 bg-white rounded-3xl ring-1 ring-slate-200 shadow-sm flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="text-xs font-black uppercase text-slate-900 tracking-tight">{t('serialRequired')}</Label>
+                    <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Track individual units</p>
+                  </div>
+                  <Switch name="serialRequired" defaultChecked={selectedProduct?.serialNumberTrackingRequired} className="data-[state=checked]:bg-blue-600" />
                 </div>
               </div>
             </div>

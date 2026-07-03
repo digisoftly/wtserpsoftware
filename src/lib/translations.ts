@@ -1,3 +1,4 @@
+
 export type Language = 'EN' | 'BN';
 
 export const translations = {
@@ -27,7 +28,30 @@ export const translations = {
     users: "Users & Roles",
     backup: "Backup",
     dispatch: "Delivery Challan",
+    masterManagement: "Master Management",
     
+    // Master Management
+    units: "Units",
+    categories: "Categories",
+    brands: "Brands",
+    models: "Models",
+    productTypes: "Product Types",
+    serviceTypes: "Service Types",
+    customFields: "Custom Fields",
+    shortName: "Short Name",
+    isDefault: "Is Default?",
+    parentCategory: "Parent Category",
+    targetModule: "Target Module",
+    fieldType: "Field Type",
+    options: "Options (Comma separated)",
+    addUnit: "Add Unit",
+    addCategory: "Add Category",
+    addBrand: "Add Brand",
+    addModel: "Add Model",
+    addProductType: "Add Product Type",
+    addServiceType: "Add Service Type",
+    addCustomField: "Add Custom Field",
+
     // Common Actions
     save: "Save",
     cancel: "Cancel",
@@ -315,7 +339,30 @@ export const translations = {
     users: "ইউজার ও রোল",
     backup: "ব্যাকআপ",
     dispatch: "ডেলিভারি চালান",
+    masterManagement: "মাস্টার ম্যানেজমেন্ট",
     
+    // Master Management
+    units: "ইউনিট",
+    categories: "ক্যাটাগরি",
+    brands: "ব্র্যান্ড",
+    models: "মডেল",
+    productTypes: "পণ্যের ধরন",
+    serviceTypes: "সার্ভিস ধরন",
+    customFields: "কাস্টম ফিল্ড",
+    shortName: "সংক্ষিপ্ত নাম",
+    isDefault: "ডিফল্ট?",
+    parentCategory: "প্যারেন্ট ক্যাটাগরি",
+    targetModule: "টার্গেট মডিউল",
+    fieldType: "ফিল্ড ধরন",
+    options: "বিকল্পসমূহ",
+    addUnit: "ইউনিট যোগ করুন",
+    addCategory: "ক্যাটাগরি যোগ করুন",
+    addBrand: "ব্র্যান্ড যোগ করুন",
+    addModel: "মডেল যোগ করুন",
+    addProductType: "পণ্যের ধরন যোগ করুন",
+    addServiceType: "সার্ভিস ধরন যোগ করুন",
+    addCustomField: "কাস্টম ফিল্ড যোগ করুন",
+
     // Common Actions
     save: "সংরক্ষণ",
     cancel: "বাতিল",

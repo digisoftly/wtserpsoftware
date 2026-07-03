@@ -1,101 +1,56 @@
 
 {
   "entities": {
-    "ProjectPayment": {
-      "title": "Project Payment",
-      "type": "object",
-      "description": "Payment receipt for client projects.",
-      "properties": {
-        "id": { "type": "string" },
-        "receiptNumber": { "type": "string" },
-        "customerId": { "type": "string" },
-        "customerName": { "type": "string" },
-        "totalPaid": { "type": "number" },
-        "paymentDate": { "type": "string", "format": "date-time" },
-        "allocationType": { "type": "string", "enum": ["auto", "manual"] },
-        "allocations": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "projectId": { "type": "string" },
-              "projectName": { "type": "string" },
-              "amountAllocated": { "type": "number" }
-            }
-          }
-        }
-      },
-      "required": ["id", "customerId", "totalPaid", "paymentDate", "allocations"]
-    },
-    "Project": {
-      "title": "Project",
+    "MasterUnit": {
+      "title": "Master Unit",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
-        "customerId": { "type": "string" },
-        "budget": { "type": "number" },
-        "paidAmount": { "type": "number" },
-        "progress": { "type": "number" },
-        "status": { "type": "string", "enum": ["pending", "active", "completed"] }
+        "shortName": { "type": "string" },
+        "isDefault": { "type": "boolean" }
       }
     },
-    "ServiceContract": {
-      "title": "Service Contract",
-      "type": "object",
-      "description": "Recurring service agreement for maintenance or subscriptions.",
-      "properties": {
-        "id": { "type": "string" },
-        "contractNumber": { "type": "string" },
-        "customerId": { "type": "string" },
-        "customerName": { "type": "string" },
-        "serviceName": { "type": "string" },
-        "serviceType": { "type": "string", "enum": ["CCTV", "Internet", "AMC", "Support"] },
-        "startDate": { "type": "string", "format": "date" },
-        "endDate": { "type": "string", "format": "date" },
-        "monthlyAmount": { "type": "number" },
-        "billingCycle": { "type": "string", "enum": ["Monthly", "Quarterly", "Yearly"] },
-        "paymentType": { "type": "string", "enum": ["Advance", "Postpaid"] },
-        "status": { "type": "string", "enum": ["active", "inactive", "expired"] }
-      },
-      "required": ["id", "customerId", "serviceName", "startDate", "monthlyAmount"]
-    },
-    "SalesInvoice": {
-      "title": "Sales Invoice",
+    "MasterCategory": {
+      "title": "Master Category",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "invoiceNumber": { "type": "string" },
-        "customerId": { "type": "string" },
-        "customerName": { "type": "string" },
-        "totalAmount": { "type": "number" },
-        "status": { "type": "string", "enum": ["paid", "partial", "due"] }
+        "name": { "type": "string" },
+        "parentId": { "type": "string" },
+        "description": { "type": "string" }
       }
     },
-    "DeliveryChallan": {
-      "title": "Delivery Challan",
+    "MasterBrand": {
+      "title": "Master Brand",
       "type": "object",
-      "description": "Product dispatch and delivery documentation.",
       "properties": {
         "id": { "type": "string" },
-        "challanNumber": { "type": "string" },
-        "invoiceId": { "type": "string" },
-        "invoiceNumber": { "type": "string" },
-        "customerId": { "type": "string" },
-        "customerName": { "type": "string" },
-        "customerPhone": { "type": "string" },
-        "customerAddress": { "type": "string" },
-        "dispatchDate": { "type": "string", "format": "date" },
-        "deliveryDate": { "type": "string", "format": "date" },
-        "deliveryMethod": { "type": "string" },
-        "vehicleNumber": { "type": "string" },
-        "driverName": { "type": "string" },
-        "status": { "type": "string", "enum": ["pending", "processing", "delivered", "cancelled"] },
-        "items": { "type": "array" },
-        "totalAmount": { "type": "number" },
-        "notes": { "type": "string" }
-      },
-      "required": ["id", "challanNumber", "customerId", "dispatchDate", "status"]
+        "name": { "type": "string" },
+        "logo": { "type": "string" },
+        "description": { "type": "string" }
+      }
+    },
+    "MasterModel": {
+      "title": "Master Model",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "brandId": { "type": "string" },
+        "name": { "type": "string" }
+      }
+    },
+    "CustomField": {
+      "title": "Custom Field Definition",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "type": { "type": "string", "enum": ["text", "number", "dropdown", "date", "checkbox", "textarea"] },
+        "targetModule": { "type": "string", "enum": ["product", "customer", "supplier", "project", "contract"] },
+        "options": { "type": "array", "items": { "type": "string" } },
+        "isRequired": { "type": "boolean" }
+      }
     }
   },
   "auth": {
@@ -103,80 +58,13 @@
   },
   "firestore": {
     "/companies/{companyId}/branches/{branchId}/project_payments/{paymentId}": {
-      "schema": { "$ref": "#/backend/entities/ProjectPayment" },
+      "schema": { "type": "object" },
       "description": "Financial records for project-based revenue."
     },
-    "/companies/{companyId}/branches/{branchId}/projects/{projectId}": {
-      "schema": { "$ref": "#/backend/entities/Project" },
-      "description": "Client installation projects."
-    },
-    "/companies/{companyId}/branches/{branchId}/service_contracts/{contractId}": {
-      "schema": { "$ref": "#/backend/entities/ServiceContract" },
-      "description": "Ongoing service and maintenance agreements."
-    },
-    "/companies/{companyId}/branches/{branchId}/contract_invoices/{invoiceId}": {
-      "schema": { "type": "object" },
-      "description": "Monthly billing records generated from service contracts."
-    },
-    "/companies/{companyId}/branches/{branchId}/sales_invoices/{invoiceId}": {
-      "schema": { "$ref": "#/backend/entities/SalesInvoice" },
-      "description": "Direct sales records for equipment and services."
-    },
-    "/companies/{companyId}/branches/{branchId}/delivery_challans/{challanId}": {
-      "schema": { "$ref": "#/backend/entities/DeliveryChallan" },
-      "description": "Product dispatch and delivery documentation."
-    },
-    "/companies/{companyId}/branches/{branchId}/purchase_orders/{orderId}": {
-      "schema": { "type": "object" },
-      "description": "Inbound inventory procurement orders."
-    },
-    "/companies/{companyId}/branches/{branchId}/serial_numbers/{serialId}": {
-      "schema": { "type": "object" },
-      "description": "Individual unit tracking records."
-    },
-    "/companies/{companyId}/branches/{branchId}/sales_returns/{returnId}": {
-      "schema": { "type": "object" },
-      "description": "Customer return records."
-    },
-    "/companies/{companyId}/branches/{branchId}/purchase_returns/{returnId}": {
-      "schema": { "type": "object" },
-      "description": "Supplier return records."
-    },
-    "/companies/{companyId}/branches/{branchId}/products/{productId}": {
-      "schema": { "type": "object" },
-      "description": "Master inventory catalog items."
-    },
-    "/companies/{companyId}/branches/{branchId}/customers/{customerId}": {
-      "schema": { "type": "object" },
-      "description": "Customer profiles."
-    },
-    "/companies/{companyId}/branches/{branchId}/suppliers/{supplierId}": {
-      "schema": { "type": "object" },
-      "description": "Vendor profiles."
-    },
-    "/companies/{companyId}/branches/{branchId}/leads/{leadId}": {
-      "schema": { "type": "object" },
-      "description": "Potential sales opportunities."
-    },
-    "/companies/{companyId}/branches/{branchId}/tickets/{ticketId}": {
-      "schema": { "type": "object" },
-      "description": "Customer support cases."
-    },
-    "/companies/{companyId}/branches/{branchId}/transactions/{txId}": {
-      "schema": { "type": "object" },
-      "description": "Financial journal entries."
-    },
-    "/companies/{companyId}/branches/{branchId}/expenses/{expId}": {
-      "schema": { "type": "object" },
-      "description": "Operational expense records."
-    },
-    "/companies/{companyId}/branches/{branchId}/employees/{empId}": {
-      "schema": { "type": "object" },
-      "description": "Staff and human resource records."
-    },
-    "/companies/{companyId}/system/config": {
-      "schema": { "type": "object" },
-      "description": "Global ERP branding and operational configuration."
-    }
+    "/companies/{companyId}/master_units/{id}": { "schema": { "$ref": "#/backend/entities/MasterUnit" }, "description": "Global quantity units." },
+    "/companies/{companyId}/master_categories/{id}": { "schema": { "$ref": "#/backend/entities/MasterCategory" }, "description": "Global product categories." },
+    "/companies/{companyId}/master_brands/{id}": { "schema": { "$ref": "#/backend/entities/MasterBrand" }, "description": "Global brands." },
+    "/companies/{companyId}/master_models/{id}": { "schema": { "$ref": "#/backend/entities/MasterModel" }, "description": "Global models linked to brands." },
+    "/companies/{companyId}/master_custom_fields/{id}": { "schema": { "$ref": "#/backend/entities/CustomField" }, "description": "Dynamic custom fields for various modules." }
   }
 }
