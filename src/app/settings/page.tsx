@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -35,11 +36,30 @@ import { toast } from "@/hooks/use-toast"
 import { useTranslation } from "@/hooks/use-translation"
 
 const DEFAULT_MENU_ORDER = [
-  "dashboard", "sales", "quotations", "purchases", "returns", "inventory", 
-  "serialTracking", "projects", "billing", "contracts", 
-  "customers", "suppliers", "accounts", "expenses", "support", 
-  "crm", "hrm", "branches", "reports", "ai", "backup", 
-  "settings", "users"
+  "dashboard", 
+  "sales", 
+  "quotations", 
+  "dispatch", 
+  "purchases", 
+  "returns", 
+  "inventory", 
+  "masterManagement", 
+  "serialTracking", 
+  "projects", 
+  "project-billing", 
+  "contracts", 
+  "customers", 
+  "suppliers", 
+  "accounts", 
+  "expenses", 
+  "support", 
+  "crm", 
+  "hrm", 
+  "branches", 
+  "reports", 
+  "ai", 
+  "settings", 
+  "users"
 ];
 
 export default function SettingsPage() {

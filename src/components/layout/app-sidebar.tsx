@@ -60,6 +60,7 @@ const MODULES = [
   { name: "purchases", key: "purchases", icon: Package, color: "text-orange-500", path: "/purchases" },
   { name: "returns", key: "returns", icon: RotateCcw, color: "text-red-500", path: "/returns" },
   { name: "inventory", key: "inventory", icon: Boxes, color: "text-yellow-600", path: "/inventory" },
+  { name: "masterManagement", key: "masterManagement", icon: Database, color: "text-pink-500", path: "/master/units" },
   { name: "serialTracking", key: "serialTracking", icon: Scan, color: "text-blue-400", path: "/serial-inventory" },
   { name: "projects", key: "projects", icon: Folder, color: "text-teal-500", path: "/projects" },
   { name: "billing", key: "project-billing", icon: Layers, color: "text-violet-500", path: "/project-billing" },
@@ -110,44 +111,49 @@ export function AppSidebar() {
       <SidebarContent className="py-2">
         <SidebarGroup>
           <SidebarMenu>
-            {allowedModules.map((item) => (
-              <SidebarMenuItem key={item.key}>
-                <SidebarMenuButton asChild isActive={pathname === item.path} tooltip={t(item.name as any)} className="hover:bg-white/5 active:bg-blue-600/10 h-10 px-4">
-                  <Link href={item.path} className="flex items-center gap-3">
-                    <item.icon className={`${item.color} h-4 w-4 shrink-0`} />
-                    <span className="text-[13px] font-medium text-white/70 group-data-[active=true]:text-white">{t(item.name as any)}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-
-            {/* Master Management Collapsible */}
-            <Collapsible open={masterOpen} onOpenChange={setMasterOpen}>
-              <SidebarMenuItem>
-                <CollapsibleTrigger asChild>
-                  <SidebarMenuButton tooltip={t('masterManagement')} className="hover:bg-white/5 h-10 px-4">
-                    <Database className="text-pink-500 h-4 w-4 shrink-0" />
-                    <span className="text-[13px] font-medium text-white/70">{t('masterManagement')}</span>
-                    {state === "expanded" && (
-                      masterOpen ? <ChevronDown className="ml-auto h-3 w-3" /> : <ChevronRight className="ml-auto h-3 w-3" />
-                    )}
-                  </SidebarMenuButton>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <SidebarMenu className="ml-4 border-l border-white/5 pl-2 mt-1 space-y-1">
-                    {MASTER_MODULES.map((sub) => (
-                      <SidebarMenuItem key={sub.key}>
-                        <SidebarMenuButton asChild isActive={pathname === sub.path} className="h-8 px-4 hover:bg-white/5 rounded-md">
-                          <Link href={sub.path} className="text-[11px] font-medium text-white/50 group-data-[active=true]:text-pink-400">
-                            {t(sub.name as any)}
-                          </Link>
+            {allowedModules.map((item) => {
+              if (item.key === 'masterManagement') {
+                return (
+                  <Collapsible key={item.key} open={masterOpen} onOpenChange={setMasterOpen}>
+                    <SidebarMenuItem>
+                      <CollapsibleTrigger asChild>
+                        <SidebarMenuButton tooltip={t('masterManagement')} className="hover:bg-white/5 h-10 px-4">
+                          <Database className="text-pink-500 h-4 w-4 shrink-0" />
+                          <span className="text-[13px] font-medium text-white/70">{t('masterManagement')}</span>
+                          {state === "expanded" && (
+                            masterOpen ? <ChevronDown className="ml-auto h-3 w-3" /> : <ChevronRight className="ml-auto h-3 w-3" />
+                          )}
                         </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </CollapsibleContent>
-              </SidebarMenuItem>
-            </Collapsible>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <SidebarMenu className="ml-4 border-l border-white/5 pl-2 mt-1 space-y-1">
+                          {MASTER_MODULES.map((sub) => (
+                            <SidebarMenuItem key={sub.key}>
+                              <SidebarMenuButton asChild isActive={pathname === sub.path} className="h-8 px-4 hover:bg-white/5 rounded-md">
+                                <Link href={sub.path} className="text-[11px] font-medium text-white/50 group-data-[active=true]:text-pink-400">
+                                  {t(sub.name as any)}
+                                </Link>
+                              </SidebarMenuButton>
+                            </SidebarMenuItem>
+                          ))}
+                        </SidebarMenu>
+                      </CollapsibleContent>
+                    </SidebarMenuItem>
+                  </Collapsible>
+                );
+              }
+
+              return (
+                <SidebarMenuItem key={item.key}>
+                  <SidebarMenuButton asChild isActive={pathname === item.path} tooltip={t(item.name as any)} className="hover:bg-white/5 active:bg-blue-600/10 h-10 px-4">
+                    <Link href={item.path} className="flex items-center gap-3">
+                      <item.icon className={`${item.color} h-4 w-4 shrink-0`} />
+                      <span className="text-[13px] font-medium text-white/70 group-data-[active=true]:text-white">{t(item.name as any)}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            })}
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
