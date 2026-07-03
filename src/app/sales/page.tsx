@@ -31,7 +31,7 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
@@ -454,7 +454,7 @@ export default function SalesPage() {
 
       {/* POS INVOICE BUILDER */}
       <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) resetForm(); setIsAddModalOpen(false); setIsEditModalOpen(false); }}>
-        <DialogContent className="max-w-[95vw] w-[1400px] p-0 overflow-hidden border-none shadow-2xl bg-slate-50 rounded-[2rem] md:rounded-[2.5rem]">
+        <DialogContent className="max-w-[95vw] w-[1400px] p-0 overflow-hidden border-none shadow-2xl bg-slate-50 rounded-[2.5rem] md:rounded-[2.5rem]">
           <DialogHeader className={cn("p-5 text-white flex-row items-center justify-between space-y-0", isEditModalOpen ? "bg-indigo-600" : "bg-blue-600")}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center shrink-0">
@@ -469,8 +469,8 @@ export default function SalesPage() {
 
           <div className="flex flex-col lg:flex-row h-[85vh] lg:h-[80vh] overflow-hidden">
             {/* Main POS Interface */}
-            <div className="flex-1 flex flex-col p-4 md:p-6 space-y-4 md:space-y-6 overflow-y-auto lg:overflow-hidden">
-              <div className="bg-white p-4 md:p-6 rounded-2xl ring-1 ring-slate-100 shadow-sm space-y-4">
+            <div className="flex-1 flex flex-col p-4 md:p-6 space-y-4 md:space-y-6 overflow-y-auto lg:overflow-hidden custom-scrollbar">
+              <div className="bg-white p-4 md:p-6 rounded-3xl ring-1 ring-slate-100 shadow-sm space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4 border-slate-50">
                   <h3 className="text-[10px] font-black uppercase text-slate-900 flex items-center gap-2 tracking-widest">
                     <User className="h-4 w-4 text-blue-600" /> {t('customer')} Identification
@@ -513,12 +513,12 @@ export default function SalesPage() {
                 )}
               </div>
 
-              <div className="bg-white p-4 rounded-2xl ring-1 ring-slate-100 shadow-sm border border-blue-50 space-y-4">
+              <div className="bg-white p-4 rounded-3xl ring-1 ring-slate-100 shadow-sm border border-blue-50 space-y-4">
                 <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-end">
                   <div className="flex-1 space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Catalog Search</Label>
                     <Select onValueChange={handleAddProduct}>
-                      <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 shadow-sm transition-all focus:ring-2 focus:ring-blue-500 font-bold text-xs">
+                      <SelectTrigger className="h-12 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 shadow-sm transition-all focus:ring-2 focus:ring-blue-500 font-bold text-xs">
                         <SelectValue placeholder={t('addProduct')} />
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px] rounded-xl">
@@ -530,7 +530,7 @@ export default function SalesPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button variant="outline" className="h-12 rounded-xl gap-2 border-blue-200 text-blue-700 font-black text-[10px] uppercase bg-blue-50/50 transition-all hover:bg-blue-100 shadow-sm" onClick={handleAddCustomItem}>
+                  <Button variant="outline" className="h-12 rounded-2xl gap-2 border-blue-200 text-blue-700 font-black text-[10px] uppercase bg-blue-50/50 transition-all hover:bg-blue-100 shadow-sm" onClick={handleAddCustomItem}>
                     <PackagePlus className="h-4 w-4" /> {t('addCustomItem')}
                   </Button>
                 </div>
@@ -539,14 +539,14 @@ export default function SalesPage() {
                   <Scan className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-600 animate-pulse" />
                   <Input 
                     placeholder={t('scanPrompt')}
-                    className="h-11 pl-11 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-100 shadow-sm text-xs font-bold focus:ring-2 focus:ring-blue-600 transition-all"
+                    className="h-12 pl-12 rounded-2xl bg-slate-50/50 border-none ring-1 ring-slate-100 shadow-sm text-xs font-bold focus:ring-2 focus:ring-blue-600 transition-all"
                     value={scannerInput}
                     onChange={e => setScannerInput(e.target.value)}
                   />
                 </form>
               </div>
 
-              <div className="flex-1 bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-sm ring-1 ring-slate-100 overflow-hidden flex flex-col border border-slate-50 min-h-[400px]">
+              <div className="flex-1 bg-white rounded-[2rem] shadow-sm ring-1 ring-slate-100 overflow-hidden flex flex-col border border-slate-50 min-h-[400px]">
                 <div className="overflow-x-auto flex-1 custom-scrollbar">
                   <div className="min-w-[800px]">
                     <Table>
@@ -576,7 +576,7 @@ export default function SalesPage() {
                                 <div className="flex flex-col min-w-0">
                                   {item.isCustom ? (
                                     <Input 
-                                      className="h-9 text-[11px] font-black uppercase border-none ring-1 ring-slate-100 bg-slate-50/30 w-full" 
+                                      className="h-10 text-[11px] font-black uppercase border-none ring-1 ring-slate-100 bg-slate-50/30 w-full rounded-xl" 
                                       value={item.name} 
                                       onChange={e => handleUpdateItem(idx, 'name', e.target.value)} 
                                       placeholder="Type product name..."
@@ -599,7 +599,7 @@ export default function SalesPage() {
                                 <div className="flex items-center gap-2 justify-center">
                                   <Input 
                                     type="number" 
-                                    className="h-9 text-center font-black text-xs rounded-xl w-16 md:w-20 bg-slate-50 border-none" 
+                                    className="h-10 text-center font-black text-sm rounded-xl w-16 md:w-20 bg-slate-50 border-none" 
                                     value={item.qty} 
                                     disabled={item.isSerialized}
                                     onChange={e => handleUpdateItem(idx, 'qty', e.target.value)} 
@@ -610,7 +610,7 @@ export default function SalesPage() {
                               <TableCell className="text-right">
                                 <Input 
                                   type="number" 
-                                  className="h-9 text-right font-black text-xs rounded-xl w-24 md:w-32 bg-slate-50 border-none ml-auto" 
+                                  className="h-10 text-right font-black text-xs rounded-xl w-24 md:w-32 bg-slate-50 border-none ml-auto" 
                                   value={item.price} 
                                   disabled={!item.isCustom}
                                   onChange={e => handleUpdateItem(idx, 'price', e.target.value)} 
@@ -620,7 +620,7 @@ export default function SalesPage() {
                                 <span className="font-black text-xs md:text-sm text-blue-600">৳{item.total.toLocaleString()}</span>
                               </TableCell>
                               <TableCell>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-50 rounded-full" onClick={() => handleRemoveItem(idx)}>
+                                <Button variant="ghost" size="icon" className="h-9 w-9 text-red-500 hover:bg-red-50 rounded-full" onClick={() => handleRemoveItem(idx)}>
                                   <X className="h-4 w-4" />
                                 </Button>
                               </TableCell>
@@ -636,7 +636,7 @@ export default function SalesPage() {
 
             <div className="w-full lg:w-[400px] bg-white border-l border-slate-100 p-4 md:p-8 space-y-4 md:space-y-8 flex flex-col shadow-2xl relative z-20 shrink-0 overflow-y-auto custom-scrollbar">
               <div className="space-y-4 md:space-y-6">
-                <div className={cn("p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl space-y-4 relative overflow-hidden group shrink-0 text-white", isEditModalOpen ? "bg-indigo-600" : "bg-blue-600")}>
+                <div className={cn("p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl space-y-4 relative overflow-hidden group shrink-0 text-white", isEditModalOpen ? "bg-indigo-600" : "bg-blue-600")}>
                   <Calculator className="absolute -bottom-6 -right-6 h-24 w-24 md:h-32 md:w-32 opacity-10 group-hover:scale-125 transition-transform duration-700" />
                   <div className="space-y-1 text-center relative z-10">
                     <p className="text-[9px] md:text-[10px] uppercase font-black opacity-60 tracking-[0.2em]">{t('netFinalAmount')}</p>
@@ -653,11 +653,11 @@ export default function SalesPage() {
                   <div className="grid grid-cols-2 gap-3 md:gap-4">
                     <div className="space-y-2">
                       <Label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('discount')}</Label>
-                      <Input type="number" className="h-10 md:h-11 rounded-xl bg-slate-50 border-none font-bold text-xs" value={discount || ''} onChange={e => setDiscount(Number(e.target.value))} />
+                      <Input type="number" className="h-11 rounded-2xl bg-slate-50 border-none font-bold text-xs" value={discount || ''} onChange={e => setDiscount(Number(e.target.value))} />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('vat')} %</Label>
-                      <Input type="number" className="h-10 md:h-11 rounded-xl bg-slate-50 border-none font-bold text-xs" value={vatPercent || ''} onChange={e => setVatPercent(Number(e.target.value))} />
+                      <Input type="number" className="h-11 rounded-2xl bg-slate-50 border-none font-bold text-xs" value={vatPercent || ''} onChange={e => setVatPercent(Number(e.target.value))} />
                     </div>
                   </div>
 
@@ -665,7 +665,7 @@ export default function SalesPage() {
                     <Label className="text-[9px] md:text-[10px] font-black uppercase text-blue-600 tracking-[0.2em]">{t('paid')}</Label>
                     <div className="relative">
                       <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-blue-600" />
-                      <Input type="number" placeholder="0.00" className="h-12 md:h-14 pl-12 text-xl md:text-2xl font-black text-blue-600 rounded-2xl bg-blue-50/30 border-2 border-blue-50 transition-all focus:bg-blue-50 focus:border-blue-200 shadow-inner" value={paidAmount || ''} onChange={e => setPaidAmount(Number(e.target.value))} />
+                      <Input type="number" placeholder="0.00" className="h-14 md:h-16 pl-12 text-xl md:text-2xl font-black text-blue-600 rounded-2xl bg-blue-50/30 border-2 border-blue-50 transition-all focus:bg-blue-50 focus:border-blue-200 shadow-inner" value={paidAmount || ''} onChange={e => setPaidAmount(Number(e.target.value))} />
                     </div>
                   </div>
                 </div>
@@ -673,7 +673,7 @@ export default function SalesPage() {
 
               <div className="mt-auto pt-4 md:pt-6">
                 <Button 
-                  className={cn("w-full h-14 md:h-16 rounded-[1.25rem] md:rounded-[1.5rem] font-black text-[11px] md:text-xs uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 group overflow-hidden text-white", isEditModalOpen ? "bg-indigo-600 hover:bg-indigo-700" : "bg-blue-600 hover:bg-blue-700")} 
+                  className={cn("w-full h-16 md:h-20 rounded-[1.5rem] md:rounded-[2rem] font-black text-[11px] md:text-xs uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 group overflow-hidden text-white", isEditModalOpen ? "bg-indigo-600 hover:bg-indigo-700" : "bg-blue-600 hover:bg-blue-700")} 
                   disabled={isSubmitting || lineItems.length === 0} 
                   onClick={handleSaveInvoice}
                 >
@@ -688,59 +688,6 @@ export default function SalesPage() {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* VIEW CHALLAN DIALOG */}
-      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
-        <DialogContent className="max-w-[21cm] w-[95vw] p-0 border-none bg-transparent shadow-none overflow-y-auto max-h-[95vh] rounded-none">
-          <DialogHeader className="sr-only">
-            <DialogTitle>View Sale Invoice</DialogTitle>
-          </DialogHeader>
-          <div className="flex justify-end gap-3 mb-4 no-print fixed top-4 right-4 md:top-6 md:right-6 z-[100]">
-             <Button onClick={() => window.print()} className="bg-white text-blue-600 hover:bg-blue-50 shadow-2xl rounded-full font-black text-[10px] uppercase h-10 px-6 gap-2 border-none ring-1 ring-blue-100">
-              <Printer className="h-4 w-4" /> {t('print')}
-            </Button>
-          </div>
-          {selectedRecord && (
-            <div className="bg-white shadow-2xl rounded-none md:rounded-[2rem] overflow-hidden">
-              <DocumentTemplate
-                title="Sales Invoice"
-                type="invoice"
-                docNumber={selectedRecord.invoiceNumber}
-                date={selectedRecord.invoiceDate}
-                customerName={selectedRecord.customerName}
-                items={selectedRecord.items.map((i: any) => ({
-                  name: i.name,
-                  quantity: i.qty,
-                  unit: i.unit,
-                  unitPrice: i.price,
-                  total: i.total,
-                  serialNumber: i.serials?.join(', ')
-                }))}
-                subtotal={selectedRecord.subtotal}
-                discount={selectedRecord.discount}
-                taxAmount={selectedRecord.vatAmount}
-                taxRate={selectedRecord.vatPercent}
-                grandTotal={selectedRecord.totalAmount}
-                status={selectedRecord.status}
-              />
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* DELETE ALERT */}
-      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-        <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tight text-slate-900">{t('delete')}?</AlertDialogTitle>
-            <AlertDialogDescription className="text-xs font-medium leading-relaxed">{t('errorSub')}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="mt-8 gap-3">
-            <AlertDialogCancel className="rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest">{t('cancel')}</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700 rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest" onClick={() => { if(selectedRecord) deleteDocumentNonBlocking(doc(db!, "companies", companyId!, "branches", branchId!, "sales_invoices", selectedRecord.id)); setIsDeleteAlertOpen(false); toast({ title: t('success') }); }}>{t('delete')}</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }
