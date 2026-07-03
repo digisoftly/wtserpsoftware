@@ -123,6 +123,17 @@ export const translations = {
     welcome_back: "Welcome Back",
     signin_to_continue: "Please enter your details to sign in",
 
+    // Session
+    sessionManagement: "Session Control",
+    sessionTimeout: "Session Timeout (Minutes)",
+    autoLogoutEnabled: "Enable Auto Logout",
+    sessionExpiring: "Session Expiring",
+    sessionExpiringSub: "Your session will expire in 1 minute due to inactivity.",
+    continueSession: "Continue Session",
+    logoutNow: "Logout Now",
+    sessionExpired: "Session Expired",
+    sessionExpiredSub: "You have been logged out due to inactivity.",
+
     // Dashboard
     goodMorning: "Good Morning",
     happeningToday: "Here's what's happening today",
@@ -400,6 +411,17 @@ export const translations = {
     forgot_password: "পাসওয়ার্ড ভুলে গেছেন?",
     welcome_back: "স্বাগতম",
     signin_to_continue: "সাইন ইন করতে আপনার বিবরণ লিখুন",
+
+    // Session
+    sessionManagement: "সেশন কন্ট্রোল",
+    sessionTimeout: "সেশন টাইমআউট (মিনিট)",
+    autoLogoutEnabled: "অটো লগআউট সক্ষম করুন",
+    sessionExpiring: "সেশন শেষ হতে চলেছে",
+    sessionExpiringSub: "নিষ্ক্রিয়তার কারণে ১ মিনিটের মধ্যে আপনার সেশন শেষ হবে।",
+    continueSession: "চালিয়ে যান",
+    logoutNow: "এখনই লগআউট",
+    sessionExpired: "সেশন শেষ হয়েছে",
+    sessionExpiredSub: "নিষ্ক্রিয়তার কারণে আপনাকে লগআউট করা হয়েছে।",
 
     // Add Actions
     addItem: "আইটেম যোগ করুন",

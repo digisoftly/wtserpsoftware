@@ -36,5 +36,8 @@ export function useSettings() {
     invoicePrefix: get_setting('invoicePrefix', 'INV'),
     lowStockLevel: Number(get_setting('lowStockLevel', 5)),
     autoStockUpdate: get_setting('autoStockUpdate', true),
+    // Session Settings
+    sessionTimeout: Number(get_setting('sessionTimeout', 60)),
+    autoLogoutEnabled: get_setting('autoLogoutEnabled', false),
   };
 }

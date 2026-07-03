@@ -7,6 +7,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
 import { useUser } from '@/firebase';
+import { SessionTimeoutHandler } from '@/components/auth/session-timeout-handler';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -20,7 +21,11 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const showShell = user && !isLoginPage;
 
   if (!showShell) {
-    return <div className="h-screen w-full overflow-hidden bg-background">{children}</div>;
+    return (
+      <div className="h-screen w-full overflow-hidden bg-background">
+        {children}
+      </div>
+    );
   }
 
   return (
@@ -29,10 +34,11 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
         <AppSidebar />
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
           <AppHeader />
-          <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-background">
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-background custom-scrollbar">
             {children}
           </main>
         </div>
+        <SessionTimeoutHandler />
       </div>
     </SidebarProvider>
   );

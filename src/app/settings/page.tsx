@@ -19,7 +19,9 @@ import {
   Loader2,
   ArrowUp,
   ArrowDown,
-  Globe
+  Globe,
+  Clock,
+  ShieldAlert
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -116,10 +118,12 @@ export default function SettingsPage() {
       companyLogo: logoPreview,
       sidebarMenuOrder: menuOrder,
       systemDefaultLanguage: formData.get("systemDefaultLanguage"),
+      autoLogoutEnabled: formData.get("autoLogoutEnabled") === "on",
+      sessionTimeout: Number(formData.get("sessionTimeout") || 60),
     };
 
     formData.forEach((value, key) => {
-      if (key !== "systemDefaultLanguage" && key !== "companyLogo") {
+      if (key !== "systemDefaultLanguage" && key !== "companyLogo" && key !== "autoLogoutEnabled" && key !== "sessionTimeout") {
         updates[key] = value;
       }
     });
@@ -134,7 +138,7 @@ export default function SettingsPage() {
     }
   };
 
-  if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-blue-600" /></div>;
+  if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-blue-600" /></div>;
 
   return (
     <div className="space-y-6 pb-20">
@@ -157,7 +161,7 @@ export default function SettingsPage() {
             <TabsTrigger value="general" className="rounded-lg gap-2 flex-1 min-w-[120px] py-2">{t('general')}</TabsTrigger>
             <TabsTrigger value="navigation" className="rounded-lg gap-2 flex-1 min-w-[120px] py-2">{t('navigation')}</TabsTrigger>
             <TabsTrigger value="business" className="rounded-lg gap-2 flex-1 min-w-[120px] py-2">{t('businessRules')}</TabsTrigger>
-            <TabsTrigger value="billing" className="rounded-lg gap-2 flex-1 min-w-[120px] py-2">{t('billing')}</TabsTrigger>
+            <TabsTrigger value="security" className="rounded-lg gap-2 flex-1 min-w-[120px] py-2">{t('sessionManagement')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="space-y-6">
@@ -176,7 +180,6 @@ export default function SettingsPage() {
                           <SelectItem value="EN">English (US)</SelectItem>
                         </SelectContent>
                       </Select>
-                      <p className="text-[10px] text-muted-foreground mt-1">{t('systemLanguageSub')}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -196,7 +199,7 @@ export default function SettingsPage() {
                 </div>
                 <Button variant="outline" className="rounded-full gap-2" asChild>
                   <label className="cursor-pointer">
-                    <Upload className="h-4 w-4" /> {t('export')}
+                    <Upload className="h-4 w-4" /> Change Logo
                     <input type="file" className="hidden" accept="image/*" onChange={handleLogoChange} />
                   </label>
                 </Button>
@@ -206,7 +209,10 @@ export default function SettingsPage() {
 
           <TabsContent value="navigation" className="space-y-6">
             <Card className="border-none shadow-sm rounded-xl">
-              <CardHeader><CardTitle className="text-lg font-headline">{t('navigation')}</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="text-lg font-headline">{t('navigation')}</CardTitle>
+                <CardDescription>Drag and reorder items to customize the sidebar sequence.</CardDescription>
+              </CardHeader>
               <CardContent>
                 <div className="space-y-2 max-w-2xl">
                   {menuOrder.map((key, index) => (
@@ -228,7 +234,7 @@ export default function SettingsPage() {
 
           <TabsContent value="business" className="space-y-6">
              <Card className="border-none shadow-sm rounded-xl">
-               <CardHeader><CardTitle className="text-lg font-headline">{t('opsLogic')}</CardTitle></CardHeader>
+               <CardHeader><CardTitle className="text-lg font-headline">{t('businessRules')}</CardTitle></CardHeader>
                <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-4">
@@ -244,6 +250,55 @@ export default function SettingsPage() {
                   </div>
                </CardContent>
              </Card>
+          </TabsContent>
+
+          <TabsContent value="security" className="space-y-6">
+            <Card className="border-none shadow-sm rounded-xl overflow-hidden">
+              <CardHeader className="bg-slate-50 border-b">
+                <CardTitle className="text-lg font-headline flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-blue-600" /> {t('sessionManagement')}
+                </CardTitle>
+                <CardDescription>Configure auto-logout policies for enhanced security.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-8 space-y-8">
+                <div className="flex items-center justify-between p-6 bg-blue-50/50 rounded-2xl border-2 border-dashed border-blue-100">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-black uppercase text-blue-900">{t('autoLogoutEnabled')}</Label>
+                    <p className="text-xs text-blue-700">Protect accounts by logging out inactive users automatically.</p>
+                  </div>
+                  <Switch name="autoLogoutEnabled" defaultChecked={settings?.autoLogoutEnabled} className="data-[state=checked]:bg-blue-600" />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-3">
+                    <Label className="text-xs font-bold uppercase tracking-widest text-slate-500">{t('sessionTimeout')}</Label>
+                    <Select name="sessionTimeout" defaultValue={String(settings?.sessionTimeout || 60)}>
+                      <SelectTrigger className="h-12 rounded-xl border-2 border-slate-100 font-bold">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="15">15 Minutes</SelectItem>
+                        <SelectItem value="30">30 Minutes</SelectItem>
+                        <SelectItem value="60">60 Minutes</SelectItem>
+                        <SelectItem value="120">120 Minutes</SelectItem>
+                        <SelectItem value="240">4 Hours</SelectItem>
+                        <SelectItem value="480">8 Hours</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="bg-slate-50 p-6 rounded-2xl flex items-center gap-4">
+                    <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-amber-500 shadow-sm">
+                      <ShieldAlert className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-900">Proximity Warning</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5 uppercase tracking-tighter">A popup will appear 1 minute before expiration.</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </form>
