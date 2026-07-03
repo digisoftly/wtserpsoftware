@@ -23,7 +23,8 @@ import {
   PackagePlus,
   Download,
   Edit,
-  ArrowRight
+  ArrowRight,
+  Printer
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -34,7 +35,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, doc, runTransaction, serverTimestamp, increment, where, limit } from "firebase/firestore"
@@ -93,7 +94,7 @@ export default function SalesPage() {
     return query(
       collection(db, "companies", companyId, "branches", branchId, "sales_invoices"), 
       orderBy("createdAt", "desc"),
-      limit(50)
+      limit(100)
     );
   }, [db, companyId, branchId]);
   const { data: invoices, isLoading } = useCollection(invoicesQuery);
@@ -356,7 +357,10 @@ export default function SalesPage() {
   };
 
   const filteredInvoices = React.useMemo(() => {
-    return invoices?.filter(inv => inv.invoiceNumber?.toLowerCase().includes(deferredSearch.toLowerCase()));
+    return invoices?.filter(inv => 
+      inv.invoiceNumber?.toLowerCase().includes(deferredSearch.toLowerCase()) ||
+      inv.customerName?.toLowerCase().includes(deferredSearch.toLowerCase())
+    );
   }, [invoices, deferredSearch]);
 
   return (
@@ -394,7 +398,7 @@ export default function SalesPage() {
         <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
       ) : (
         <Card className="border-none shadow-sm overflow-hidden rounded-2xl bg-white ring-1 ring-slate-100">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto custom-scrollbar">
             <Table>
               <TableHeader className="bg-muted/10">
                 <TableRow>
@@ -402,12 +406,12 @@ export default function SalesPage() {
                   <TableHead className="h-10 text-[10px] uppercase font-black">{t('customer')}</TableHead>
                   <TableHead className="h-10 text-[10px] uppercase font-black">{t('amount')}</TableHead>
                   <TableHead className="h-10 text-[10px] uppercase font-black">{t('status')}</TableHead>
-                  <TableHead className="h-10 text-right pr-6"></TableHead>
+                  <TableHead className="h-10 text-right pr-6 sticky right-0 bg-white/95 backdrop-blur-sm z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">{t('actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredInvoices?.map((inv) => (
-                  <TableRow key={inv.id} className="h-14 hover:bg-muted/5 transition-colors">
+                  <TableRow key={inv.id} className="h-14 hover:bg-muted/5 transition-colors group">
                     <TableCell className="pl-6 font-bold text-xs uppercase text-blue-600">{inv.invoiceNumber}</TableCell>
                     <TableCell className="text-xs font-bold text-slate-700">{inv.customerName}</TableCell>
                     <TableCell className="font-black text-xs">৳{inv.totalAmount?.toLocaleString()}</TableCell>
@@ -418,17 +422,27 @@ export default function SalesPage() {
                         {t(`${inv.status}_status` as any)}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right pr-6">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-blue-50 text-blue-600 transition-colors"><MoreVertical className="h-4 w-4" /></Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-xl">
-                          <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedRecord(inv); setIsViewModalOpen(true); }}><Eye className="mr-2 h-3.5 w-3.5" /> {t('view')}</DropdownMenuItem>
-                          <DropdownMenuItem className="text-xs font-bold" onClick={() => openEdit(inv)}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
-                          <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(inv); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <TableCell className="text-right pr-6 sticky right-0 bg-white/90 backdrop-blur-sm group-hover:bg-slate-50/90 transition-colors z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                      <div className="flex justify-end items-center gap-1">
+                        <div className="hidden md:flex items-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-blue-600 hover:bg-blue-50" onClick={() => { setSelectedRecord(inv); setIsViewModalOpen(true); }} title={t('view')}><Eye className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-amber-600 hover:bg-amber-50" onClick={() => openEdit(inv)} title={t('edit')}><Edit className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-slate-600 hover:bg-slate-100" onClick={() => { setSelectedRecord(inv); setIsViewModalOpen(true); }} title={t('print')}><Printer className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-red-600 hover:bg-red-50" onClick={() => { setSelectedRecord(inv); setIsDeleteAlertOpen(true); }} title={t('delete')}><Trash2 className="h-3.5 w-3.5" /></Button>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden rounded-full hover:bg-blue-50 text-blue-600 transition-colors"><MoreVertical className="h-4 w-4" /></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-xl">
+                            <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedRecord(inv); setIsViewModalOpen(true); }}><Eye className="mr-2 h-3.5 w-3.5" /> {t('view')}</DropdownMenuItem>
+                            <DropdownMenuItem className="text-xs font-bold" onClick={() => openEdit(inv)}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
+                            <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedRecord(inv); setIsViewModalOpen(true); }}><Download className="mr-2 h-3.5 w-3.5" /> {t('export')}</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(inv); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -683,7 +697,7 @@ export default function SalesPage() {
           </DialogHeader>
           <div className="flex justify-end gap-3 mb-4 no-print fixed top-4 right-4 md:top-6 md:right-6 z-[100]">
              <Button onClick={() => window.print()} className="bg-white text-blue-600 hover:bg-blue-50 shadow-2xl rounded-full font-black text-[10px] uppercase h-10 px-6 gap-2 border-none ring-1 ring-blue-100">
-              <Download className="h-4 w-4" /> Download PDF
+              <Printer className="h-4 w-4" /> {t('print')}
             </Button>
           </div>
           {selectedRecord && (

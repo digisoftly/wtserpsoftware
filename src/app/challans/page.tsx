@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -351,7 +352,7 @@ export default function ChallansPage() {
         <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-amber-600" /></div>
       ) : (
         <Card className="border-none shadow-sm overflow-hidden rounded-2xl bg-white ring-1 ring-slate-100">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto custom-scrollbar">
             <Table>
               <TableHeader className="bg-muted/10">
                 <TableRow>
@@ -359,14 +360,14 @@ export default function ChallansPage() {
                   <TableHead className="h-10 text-[10px] uppercase font-black">{t('customer')}</TableHead>
                   <TableHead className="h-10 text-[10px] uppercase font-black">{t('dispatchDate')}</TableHead>
                   <TableHead className="h-10 text-[10px] uppercase font-black text-center">{t('status')}</TableHead>
-                  <TableHead className="h-10 text-right pr-6"></TableHead>
+                  <TableHead className="h-10 text-right pr-6 sticky right-0 bg-white/95 backdrop-blur-sm z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">{t('actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredChallans?.map((c) => (
                   <TableRow key={c.id} className="h-14 hover:bg-muted/5 transition-colors group">
-                    <TableCell className="pl-6">
-                      <span className="font-black text-xs uppercase text-amber-600">{c.challanNumber}</span>
+                    <TableCell className="pl-6 font-black text-xs uppercase text-amber-600">
+                      {c.challanNumber}
                       <p className="text-[8px] text-muted-foreground font-bold mt-0.5">INV: {c.invoiceNumber}</p>
                     </TableCell>
                     <TableCell className="text-xs font-bold text-slate-700">{c.customerName}</TableCell>
@@ -379,19 +380,27 @@ export default function ChallansPage() {
                         {t(`${c.status}_status` as any)}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right pr-6">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-amber-50 text-amber-600 transition-colors"><MoreVertical className="h-4 w-4" /></Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl">
-                          <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedRecord(c); setIsViewModalOpen(true); }}><Eye className="mr-2 h-3.5 w-3.5" /> {t('view')}</DropdownMenuItem>
-                          <DropdownMenuItem className="text-xs font-bold" onClick={() => openEdit(c)}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
-                          <DropdownMenuItem className="text-xs font-bold" onClick={() => handleShareWhatsApp(c)}><Share2 className="mr-2 h-3.5 w-3.5" /> {t('share')}</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(c); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <TableCell className="text-right pr-6 sticky right-0 bg-white/90 backdrop-blur-sm group-hover:bg-slate-50/90 transition-colors z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                      <div className="flex justify-end items-center gap-1">
+                        <div className="hidden md:flex items-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-blue-600 hover:bg-blue-50" onClick={() => { setSelectedRecord(c); setIsViewModalOpen(true); }} title={t('view')}><Eye className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-amber-600 hover:bg-amber-50" onClick={() => openEdit(c)} title={t('edit')}><Edit className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-slate-600 hover:bg-slate-100" onClick={() => { setSelectedRecord(c); setIsViewModalOpen(true); }} title={t('print')}><Printer className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-red-600 hover:bg-red-50" onClick={() => { setSelectedRecord(c); setIsDeleteAlertOpen(true); }} title={t('delete')}><Trash2 className="h-3.5 w-3.5" /></Button>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden rounded-full hover:bg-amber-50 text-amber-600 transition-colors"><MoreVertical className="h-4 w-4" /></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl">
+                            <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedRecord(c); setIsViewModalOpen(true); }}><Eye className="mr-2 h-3.5 w-3.5" /> {t('view')}</DropdownMenuItem>
+                            <DropdownMenuItem className="text-xs font-bold" onClick={() => openEdit(c)}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
+                            <DropdownMenuItem className="text-xs font-bold" onClick={() => handleShareWhatsApp(c)}><Share2 className="mr-2 h-3.5 w-3.5" /> {t('share')}</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(c); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

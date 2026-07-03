@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -266,7 +267,7 @@ export default function QuotationsPage() {
         <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-purple-600" /></div>
       ) : (
         <Card className="border-none shadow-sm overflow-hidden rounded-2xl bg-white ring-1 ring-slate-100">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto custom-scrollbar">
             <Table>
               <TableHeader className="bg-muted/10">
                 <TableRow>
@@ -274,16 +275,13 @@ export default function QuotationsPage() {
                   <TableHead className="h-12 text-[10px] uppercase font-black">{t('customer')}</TableHead>
                   <TableHead className="h-12 text-[10px] uppercase font-black">{t('amount')}</TableHead>
                   <TableHead className="h-12 text-[10px] uppercase font-black text-center">{t('status')}</TableHead>
-                  <TableHead className="h-12 text-right pr-6"></TableHead>
+                  <TableHead className="h-12 text-right pr-6 sticky right-0 bg-white/95 backdrop-blur-sm z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">{t('actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredQuotations?.map((q) => (
                   <TableRow key={q.id} className="h-16 hover:bg-muted/5 transition-colors group">
-                    <TableCell className="pl-6">
-                      <span className="font-black text-xs uppercase text-purple-600">{q.quotationNumber}</span>
-                      <p className="text-[8px] text-muted-foreground font-bold mt-0.5">{new Date(q.quotationDate).toLocaleDateString()}</p>
-                    </TableCell>
+                    <TableCell className="pl-6 font-black text-xs uppercase text-purple-600">{q.quotationNumber}</TableCell>
                     <TableCell className="text-xs font-bold text-slate-700">{q.customerName}</TableCell>
                     <TableCell className="font-black text-xs text-slate-900">৳{q.totalAmount?.toLocaleString()}</TableCell>
                     <TableCell className="text-center">
@@ -293,26 +291,22 @@ export default function QuotationsPage() {
                         {t(`${q.status}_status` as any)}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right pr-6">
-                      <div className="flex justify-end gap-1">
-                        {q.status !== 'converted' && (
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 rounded-full text-green-600 hover:bg-green-50"
-                            onClick={() => handleConvertToInvoice(q)}
-                            title={t('sales')}
-                          >
-                            <ShoppingCart className="h-4 w-4" />
-                          </Button>
-                        )}
+                    <TableCell className="text-right pr-6 sticky right-0 bg-white/90 backdrop-blur-sm group-hover:bg-slate-50/90 transition-colors z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                      <div className="flex justify-end items-center gap-1">
+                        <div className="hidden md:flex items-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-blue-600 hover:bg-blue-50" onClick={() => { setSelectedRecord(q); setIsViewModalOpen(true); }} title={t('view')}><Eye className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-amber-600 hover:bg-amber-50" disabled={q.status === 'converted'} onClick={() => openEdit(q)} title={t('edit')}><Edit className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-slate-600 hover:bg-slate-100" onClick={() => { setSelectedRecord(q); setIsViewModalOpen(true); }} title={t('print')}><Printer className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-red-600 hover:bg-red-50" onClick={() => { setSelectedRecord(q); setIsDeleteAlertOpen(true); }} title={t('delete')}><Trash2 className="h-3.5 w-3.5" /></Button>
+                        </div>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-purple-50 text-purple-600 transition-colors"><MoreVertical className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden rounded-full hover:bg-purple-50 text-purple-600 transition-colors"><MoreVertical className="h-4 w-4" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-xl">
                             <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedRecord(q); setIsViewModalOpen(true); }}><Eye className="mr-2 h-3.5 w-3.5" /> {t('view')}</DropdownMenuItem>
                             <DropdownMenuItem className="text-xs font-bold" disabled={q.status === 'converted'} onClick={() => openEdit(q)}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
+                            <DropdownMenuItem className="text-xs font-bold" onClick={() => handleConvertToInvoice(q)}><ShoppingCart className="mr-2 h-3.5 w-3.5" /> {t('sales')}</DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(q); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
                           </DropdownMenuContent>
@@ -429,7 +423,7 @@ export default function QuotationsPage() {
             {/* Summary Side */}
             <div className="w-full lg:w-[350px] bg-white border-l border-slate-100 p-8 space-y-8 flex flex-col shadow-2xl relative z-20">
               <div className="space-y-6">
-                <div className={cn("p-8 rounded-[2.5rem] shadow-2xl space-y-4 text-center", isEditModalOpen ? "bg-blue-600 text-white" : "bg-purple-600 text-white")}>
+                <div className={cn("p-8 rounded-[2.5rem] shadow-2xl space-y-4 text-center text-white", isEditModalOpen ? "bg-blue-600 shadow-blue-100" : "bg-purple-600 shadow-purple-100")}>
                   <p className="text-[10px] uppercase font-black opacity-60 tracking-[0.2em]">{t('grandTotal')}</p>
                   <h2 className="text-4xl font-headline font-black tracking-tighter">৳{totalValue.toLocaleString()}</h2>
                   <div className="pt-4 space-y-2 border-t border-white/10 text-[10px] font-bold uppercase tracking-wider">
@@ -451,7 +445,7 @@ export default function QuotationsPage() {
 
               <div className="mt-auto">
                 <Button 
-                  className={cn("w-full h-14 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95", isEditModalOpen ? "bg-blue-600 hover:bg-blue-700 shadow-blue-100" : "bg-purple-600 hover:bg-purple-700 shadow-purple-100")} 
+                  className={cn("w-full h-14 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 text-white", isEditModalOpen ? "bg-blue-600 hover:bg-blue-700 shadow-blue-100" : "bg-purple-600 hover:bg-purple-700 shadow-purple-100")} 
                   disabled={isSubmitting || lineItems.length === 0} 
                   onClick={handleSaveQuote}
                 >

@@ -17,7 +17,9 @@ import {
   Layers, 
   Package,
   ShieldCheck,
-  ChevronDown
+  ChevronDown,
+  Eye,
+  Printer
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -220,7 +222,7 @@ export default function InventoryPage() {
         <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
       ) : (
         <Card className="border-none shadow-sm overflow-hidden rounded-2xl bg-white ring-1 ring-slate-100">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto custom-scrollbar">
             <Table>
               <TableHeader className="bg-muted/10">
                 <TableRow>
@@ -229,7 +231,7 @@ export default function InventoryPage() {
                   <TableHead className="h-12 text-[10px] uppercase font-black">{t('category')}</TableHead>
                   <TableHead className="h-12 text-[10px] uppercase font-black text-center">{t('stock')}</TableHead>
                   <TableHead className="h-12 text-[10px] uppercase font-black text-right">{t('price')}</TableHead>
-                  <TableHead className="h-12 text-right pr-6"></TableHead>
+                  <TableHead className="h-12 text-right pr-6 sticky right-0 bg-white/95 backdrop-blur-sm z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[150px]">{t('actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -271,16 +273,23 @@ export default function InventoryPage() {
                     <TableCell className="text-right">
                       <span className="font-black text-xs text-slate-900">৳{p.unitPrice?.toLocaleString()}</span>
                     </TableCell>
-                    <TableCell className="text-right pr-6">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-blue-50 text-blue-600 transition-colors opacity-0 group-hover:opacity-100"><MoreVertical className="h-4 w-4" /></Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-32 rounded-xl shadow-xl">
-                          <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedProduct(p); setIsEditOpen(true); }}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
-                          <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => deleteDocumentNonBlocking(doc(db!, "companies", companyId!, "branches", branchId!, "products", p.id))}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <TableCell className="text-right pr-6 sticky right-0 bg-white/90 backdrop-blur-sm group-hover:bg-slate-50/90 transition-colors z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                      <div className="flex justify-end items-center gap-1">
+                        <div className="hidden md:flex items-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-blue-600 hover:bg-blue-50" onClick={() => { setSelectedProduct(p); setIsEditOpen(true); }} title={t('view')}><Eye className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-amber-600 hover:bg-amber-50" onClick={() => { setSelectedProduct(p); setIsEditOpen(true); }} title={t('edit')}><Edit className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-red-600 hover:bg-red-50" onClick={() => deleteDocumentNonBlocking(doc(db!, "companies", companyId!, "branches", branchId!, "products", p.id))} title={t('delete')}><Trash2 className="h-3.5 w-3.5" /></Button>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden rounded-full hover:bg-blue-50 text-blue-600 transition-colors"><MoreVertical className="h-4 w-4" /></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-32 rounded-xl shadow-xl">
+                            <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedProduct(p); setIsEditOpen(true); }}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
+                            <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => deleteDocumentNonBlocking(doc(db!, "companies", companyId!, "branches", branchId!, "products", p.id))}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
