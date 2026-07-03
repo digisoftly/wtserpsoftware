@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -47,7 +48,7 @@ export default function Dashboard() {
 
   const productsQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
-    return query(collection(db, "companies", companyId, "branches", branchId, "products"), limit(100));
+    return query(collection(db, "companies", companyId, "branches", branchId, "products"), limit(50));
   }, [db, companyId, branchId]);
   const { data: products } = useCollection(productsQuery);
 
@@ -99,10 +100,10 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title={t('totalRevenue')} value={`৳${stats.totalSales.toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-600" subtext={t('revenueGrowth')} />
-        <KPICard title={t('totalOrders')} value={allInvoices?.length || 0} icon={ShoppingCart} colorClass="bg-blue-600" subtext={t('orderGrowth')} />
-        <KPICard title={t('pendingInvoices')} value={`৳${stats.dues.toLocaleString()}`} icon={AlertCircle} colorClass="bg-orange-600" subtext={t('overdueCount')} />
-        <KPICard title={t('activeCustomers')} value="3,847" icon={Target} colorClass="bg-purple-600" subtext={t('newCustomers')} />
+        <KPICard title={t('totalRevenue')} value={`৳${stats.totalSales.toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-600" />
+        <KPICard title={t('totalOrders')} value={allInvoices?.length || 0} icon={ShoppingCart} colorClass="bg-blue-600" />
+        <KPICard title={t('pendingInvoices')} value={`৳${stats.dues.toLocaleString()}`} icon={AlertCircle} colorClass="bg-orange-600" />
+        <KPICard title={t('activeCustomers')} value="3,847" icon={Target} colorClass="bg-purple-600" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
