@@ -14,6 +14,7 @@ export const translations = {
     serialTracking: "Serial Tracking",
     projects: "Projects",
     billing: "Project Billing",
+    projectAndBilling: "Project & Billing System",
     contracts: "Service Contracts",
     customers: "Customers",
     suppliers: "Suppliers",
@@ -314,6 +315,8 @@ export const translations = {
     engineers: "Engineers",
     running: "Running",
     totalBilling: "Total Billing",
+    payments: "Payments",
+    billingAndInvoices: "Billing & Invoices",
 
     // Statuses
     paid_status: "Paid",
@@ -349,6 +352,7 @@ export const translations = {
     serialTracking: "সিরিয়াল ট্র্যাকিং",
     projects: "প্রকল্প",
     billing: "প্রকল্প বিলিং",
+    projectAndBilling: "প্রকল্প ও বিলিং সিস্টেম",
     contracts: "সার্ভিস চুক্তি",
     customers: "গ্রাহক",
     suppliers: "সরবরাহকারী",
@@ -649,6 +653,8 @@ export const translations = {
     engineers: "ইঞ্জিনিয়ার",
     running: "চলমান",
     totalBilling: "মোট বিলিং",
+    payments: "পেমেন্ট",
+    billingAndInvoices: "বিলিং ও ইনভয়েস",
 
     // Statuses
     paid_status: "পরিশোধিত",

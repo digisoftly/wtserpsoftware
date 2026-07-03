@@ -29,7 +29,8 @@ import {
   Truck as DispatchIcon,
   Database,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  ClipboardList
 } from "lucide-react"
 
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarGroup, useSidebar } from "@/components/ui/sidebar"
@@ -62,8 +63,7 @@ const MODULES = [
   { name: "inventory", key: "inventory", icon: Boxes, color: "text-yellow-600", path: "/inventory" },
   { name: "masterManagement", key: "masterManagement", icon: Database, color: "text-pink-500", path: "/master/units" },
   { name: "serialTracking", key: "serialTracking", icon: Scan, color: "text-blue-400", path: "/serial-inventory" },
-  { name: "projects", key: "projects", icon: Folder, color: "text-teal-500", path: "/projects" },
-  { name: "billing", key: "project-billing", icon: Layers, color: "text-violet-500", path: "/project-billing" },
+  { name: "projectAndBilling", key: "project-billing", icon: ClipboardList, color: "text-teal-500", path: "/projects" },
   { name: "contracts", key: "contracts", icon: Wrench, color: "text-emerald-500", path: "/contracts" },
   { name: "customers", key: "customers", icon: Users, color: "text-cyan-500", path: "/customers" },
   { name: "suppliers", key: "suppliers", icon: Truck, color: "text-amber-700", path: "/suppliers" },

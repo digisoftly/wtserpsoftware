@@ -47,7 +47,6 @@ const DEFAULT_MENU_ORDER = [
   "inventory", 
   "masterManagement", 
   "serialTracking", 
-  "projects", 
   "project-billing", 
   "contracts", 
   "customers", 
