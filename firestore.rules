@@ -9,44 +9,45 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
     // --- RULES ---
 
-    // Public read for branding/config
+    // 1. Public Configuration
     match /companies/{companyId}/system/config {
       allow read: if true;
     }
 
-    // Explicitly allow users to read/write their own profile in the company context
-    // This solves the 'chicken-and-egg' problem where they need a profile to read company data
+    // 2. User Profiles (Owner Access)
+    // Users must be able to read/write their own profile to join a company context
     match /companies/{companyId}/users/{userId} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
+      allow read, write: if isOwner(userId);
     }
 
-    // Robust recursive rule for the demo company
-    // Grants full access to all sub-collections for signed-in users
-    match /companies/warrior-demo-corp/{allPaths=**} {
-      allow read, write: if isSignedIn();
-    }
-
-    // Rule for other companies (if any)
+    // 3. Unified Company Data Rule
+    // Handles both the Demo Company (Public to signed-in users) 
+    // and Private Companies (Profile/Admin restricted)
     match /companies/{companyId}/{allPaths=**} {
       allow read, write: if isSignedIn() && (
+        companyId == 'warrior-demo-corp' ||
         exists(/databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid)) ||
         exists(/databases/$(database)/documents/super_admins/$(request.auth.uid))
       );
     }
 
-    // Root level user preferences
+    // 4. Global User Preferences (Root Level)
     match /users/{userId} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
+      allow read, write: if isOwner(userId);
     }
 
-    // Global bypass for Super Admins
+    // 5. Global Bypass for Super Admins
     match /{allPaths=**} {
       allow read, write: if isSignedIn() && exists(/databases/$(database)/documents/super_admins/$(request.auth.uid));
     }
 
-    // Default Deny
+    // 6. Default Deny
     match /{path=**} {
       allow read, write: if false;
     }

@@ -120,6 +120,38 @@
         "status": { "type": "string" },
         "monthlyAmount": { "type": "number" }
       }
+    },
+    "Employee": {
+      "title": "Employee Profile",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "jobTitle": { "type": "string" },
+        "department": { "type": "string" },
+        "employmentStatus": { "type": "string" }
+      }
+    },
+    "Lead": {
+      "title": "CRM Lead",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "company": { "type": "string" },
+        "status": { "type": "string" }
+      }
+    },
+    "SupportTicket": {
+      "title": "Support Ticket",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "subject": { "type": "string" },
+        "priority": { "type": "string" },
+        "status": { "type": "string" }
+      }
     }
   },
   "auth": {
@@ -134,10 +166,19 @@
     "/companies/{companyId}/master_data/{id}": { "schema": { "$ref": "#/backend/entities/GenericMaster" }, "description": "Centralized storage for various master modules like WarrantyTypes, Tax, etc." },
     "/companies/{companyId}/users/{userId}": { "schema": "object", "description": "Company-specific user profiles." },
     "/companies/{companyId}/branches/{branchId}/products/{id}": { "schema": { "$ref": "#/backend/entities/Product" }, "description": "Inventory catalog." },
+    "/companies/{companyId}/branches/{branchId}/employees/{id}": { "schema": { "$ref": "#/backend/entities/Employee" }, "description": "Staff directory." },
     "/companies/{companyId}/branches/{branchId}/projects/{id}": { "schema": { "$ref": "#/backend/entities/Project" }, "description": "Client projects." },
     "/companies/{companyId}/branches/{branchId}/sales_invoices/{id}": { "schema": { "$ref": "#/backend/entities/SalesInvoice" }, "description": "Sales records." },
     "/companies/{companyId}/branches/{branchId}/delivery_challans/{id}": { "schema": "object", "description": "Dispatch records." },
     "/companies/{companyId}/branches/{branchId}/service_contracts/{id}": { "schema": { "$ref": "#/backend/entities/ServiceContract" }, "description": "Maintenance agreements." },
-    "/companies/{companyId}/branches/{branchId}/contract_invoices/{id}": { "schema": "object", "description": "Periodic billing for contracts." }
+    "/companies/{companyId}/branches/{branchId}/contract_invoices/{id}": { "schema": "object", "description": "Periodic billing for contracts." },
+    "/companies/{companyId}/branches/{branchId}/leads/{id}": { "schema": { "$ref": "#/backend/entities/Lead" }, "description": "Sales prospects." },
+    "/companies/{companyId}/branches/{branchId}/tickets/{id}": { "schema": { "$ref": "#/backend/entities/SupportTicket" }, "description": "Customer support cases." },
+    "/companies/{companyId}/branches/{branchId}/project_payments/{id}": { "schema": "object", "description": "Combined project settlements." },
+    "/companies/{companyId}/branches/{branchId}/project_expenses/{id}": { "schema": "object", "description": "Costs associated with projects." },
+    "/companies/{companyId}/branches/{branchId}/sales_returns/{id}": { "schema": "object", "description": "Customer returns." },
+    "/companies/{companyId}/branches/{branchId}/purchase_returns/{id}": { "schema": "object", "description": "Supplier returns." },
+    "/companies/{companyId}/branches/{branchId}/purchase_orders/{id}": { "schema": "object", "description": "Inventory procurement." },
+    "/companies/{companyId}/branches/{branchId}/serial_numbers/{id}": { "schema": "object", "description": "Individual unit tracking." }
   }
 }
