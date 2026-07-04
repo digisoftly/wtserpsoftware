@@ -18,14 +18,17 @@ import {
   Scan,
   LayoutGrid,
   Info,
-  Barcode
+  Barcode,
+  Copy,
+  Download
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, query, orderBy, serverTimestamp, doc, limit, writeBatch, where } from "firebase/firestore"
+import { collection, query, orderBy, serverTimestamp, doc, limit, writeBatch, where, deleteDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { cn } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -39,6 +42,8 @@ import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlo
 import { toast } from "@/hooks/use-toast"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { useBulkSelection } from "@/hooks/use-bulk-selection"
+import { BulkActionToolbar } from "@/components/layout/bulk-action-toolbar"
 
 export default function InventoryPage() {
   const { companyId, branchId } = useTenant();
@@ -100,6 +105,17 @@ export default function InventoryPage() {
     return query(collection(db, "companies", companyId, "master_data"), where("type", "==", "warrantyTypes"), where("isActive", "==", true), orderBy("name"));
   }, [db, companyId]);
   const { data: masterWarranties } = useCollection(warrantyQuery);
+
+  // Bulk Selection
+  const { 
+    selectedIds, 
+    isAllSelected, 
+    isSomeSelected, 
+    toggleSelect, 
+    toggleSelectAll, 
+    clearSelection, 
+    selectedCount 
+  } = useBulkSelection(products);
 
   // Stats
   const stats = React.useMemo(() => ({
@@ -189,6 +205,29 @@ export default function InventoryPage() {
     }
   };
 
+  const handleBulkAction = async (action: string) => {
+    if (!db || !companyId || !branchId || selectedIds.length === 0) return;
+
+    if (action === 'delete') {
+      if (confirm(`Delete ${selectedIds.length} products?`)) {
+        setIsSubmitting(true);
+        try {
+          for (const id of selectedIds) {
+            await deleteDoc(doc(db, "companies", companyId, "branches", branchId, "products", id));
+          }
+          toast({ title: t('success'), description: `${selectedIds.length} items removed.` });
+          clearSelection();
+        } catch (e) {
+          toast({ variant: "destructive", title: t('error') });
+        } finally {
+          setIsSubmitting(false);
+        }
+      }
+    } else {
+      toast({ title: "Bulk Action", description: `${action} triggered for ${selectedIds.length} products.` });
+    }
+  };
+
   const resetForm = () => {
     setSelectedProduct(null);
     setIsSerialTracking(false);
@@ -258,7 +297,10 @@ export default function InventoryPage() {
             <Table>
               <TableHeader className="bg-slate-50/50">
                 <TableRow>
-                  <TableHead className="h-12 text-[10px] uppercase font-black pl-8">{t('itemDescription')}</TableHead>
+                  <TableHead className="w-12 pl-8">
+                    <Checkbox checked={isAllSelected} onCheckedChange={toggleSelectAll} />
+                  </TableHead>
+                  <TableHead className="h-12 text-[10px] uppercase font-black">{t('itemDescription')}</TableHead>
                   <TableHead className="h-12 text-[10px] uppercase font-black">{t('brand')}</TableHead>
                   <TableHead className="h-12 text-[10px] uppercase font-black text-center">{t('stock')}</TableHead>
                   <TableHead className="h-12 text-[10px] uppercase font-black text-right">{t('price')}</TableHead>
@@ -267,8 +309,11 @@ export default function InventoryPage() {
               </TableHeader>
               <TableBody>
                 {filtered?.map((p) => (
-                  <TableRow key={p.id} className="h-20 hover:bg-muted/5 transition-colors group">
+                  <TableRow key={p.id} className={cn("h-20 hover:bg-muted/5 transition-colors group", selectedIds.includes(p.id) && "bg-blue-50/30")}>
                     <TableCell className="pl-8">
+                      <Checkbox checked={selectedIds.includes(p.id)} onCheckedChange={() => toggleSelect(p.id)} />
+                    </TableCell>
+                    <TableCell>
                       <div className="flex flex-col">
                         <span className="font-black text-xs uppercase tracking-tight text-slate-900">{p.name}</span>
                         <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mt-0.5">{p.sku}</span>
@@ -382,6 +427,14 @@ export default function InventoryPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Action Toolbar */}
+      <BulkActionToolbar 
+        selectedCount={selectedCount} 
+        onClear={clearSelection} 
+        onAction={handleBulkAction}
+        isLoading={isSubmitting}
+      />
     </div>
   )
 }

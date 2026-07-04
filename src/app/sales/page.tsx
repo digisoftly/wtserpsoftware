@@ -35,10 +35,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import { Checkbox } from "@/components/ui/checkbox"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, query, orderBy, doc, runTransaction, serverTimestamp, increment, where, limit } from "firebase/firestore"
+import { collection, query, orderBy, doc, runTransaction, serverTimestamp, increment, where, limit, deleteDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { cn } from "@/lib/utils"
 import { toast } from "@/hooks/use-toast"
@@ -46,6 +47,8 @@ import { deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { useTranslation } from "@/hooks/use-translation"
 import { DocumentTemplate } from "@/components/documents/document-template"
+import { useBulkSelection } from "@/hooks/use-bulk-selection"
+import { BulkActionToolbar } from "@/components/layout/bulk-action-toolbar"
 
 interface InvoiceItem {
   productId: string;
@@ -120,6 +123,17 @@ export default function SalesPage() {
     );
   }, [db, companyId, branchId]);
   const { data: availableSerials } = useCollection(serialsQuery);
+
+  // Bulk Selection
+  const { 
+    selectedIds, 
+    isAllSelected, 
+    isSomeSelected, 
+    toggleSelect, 
+    toggleSelectAll, 
+    clearSelection, 
+    selectedCount 
+  } = useBulkSelection(invoices);
 
   // Calculations
   const subtotal = React.useMemo(() => lineItems.reduce((sum, item) => sum + item.total, 0), [lineItems]);
@@ -332,6 +346,31 @@ export default function SalesPage() {
     }
   };
 
+  const handleBulkAction = async (action: string) => {
+    if (!db || !companyId || !branchId || selectedIds.length === 0) return;
+
+    if (action === 'delete') {
+      if (confirm(`Delete ${selectedIds.length} invoices?`)) {
+        setIsSubmitting(true);
+        try {
+          for (const id of selectedIds) {
+            await deleteDoc(doc(db, "companies", companyId, "branches", branchId, "sales_invoices", id));
+          }
+          toast({ title: t('success'), description: `${selectedIds.length} items removed.` });
+          clearSelection();
+        } catch (e) {
+          toast({ variant: "destructive", title: t('error') });
+        } finally {
+          setIsSubmitting(false);
+        }
+      }
+    } else if (action === 'print') {
+      window.print();
+    } else {
+      toast({ title: "Bulk Action", description: `${action} triggered for ${selectedIds.length} items.` });
+    }
+  };
+
   const resetForm = () => {
     setSelectedCustomerId("");
     setIsManualCustomer(false);
@@ -402,7 +441,10 @@ export default function SalesPage() {
             <Table>
               <TableHeader className="bg-muted/10">
                 <TableRow>
-                  <TableHead className="h-10 text-[10px] uppercase font-black pl-6">{t('invoiceNumber')}</TableHead>
+                  <TableHead className="w-12 pl-6">
+                    <Checkbox checked={isAllSelected} onCheckedChange={toggleSelectAll} />
+                  </TableHead>
+                  <TableHead className="h-10 text-[10px] uppercase font-black">{t('invoiceNumber')}</TableHead>
                   <TableHead className="h-10 text-[10px] uppercase font-black">{t('customer')}</TableHead>
                   <TableHead className="h-10 text-[10px] uppercase font-black">{t('amount')}</TableHead>
                   <TableHead className="h-10 text-[10px] uppercase font-black">{t('status')}</TableHead>
@@ -411,8 +453,11 @@ export default function SalesPage() {
               </TableHeader>
               <TableBody>
                 {filteredInvoices?.map((inv) => (
-                  <TableRow key={inv.id} className="h-14 hover:bg-muted/5 transition-colors group">
-                    <TableCell className="pl-6 font-bold text-xs uppercase text-blue-600">{inv.invoiceNumber}</TableCell>
+                  <TableRow key={inv.id} className={cn("h-14 hover:bg-muted/5 transition-colors group", selectedIds.includes(inv.id) && "bg-blue-50/30")}>
+                    <TableCell className="pl-6">
+                      <Checkbox checked={selectedIds.includes(inv.id)} onCheckedChange={() => toggleSelect(inv.id)} />
+                    </TableCell>
+                    <TableCell className="font-bold text-xs uppercase text-blue-600">{inv.invoiceNumber}</TableCell>
                     <TableCell className="text-xs font-bold text-slate-700">{inv.customerName}</TableCell>
                     <TableCell className="font-black text-xs">৳{inv.totalAmount?.toLocaleString()}</TableCell>
                     <TableCell>
@@ -454,7 +499,7 @@ export default function SalesPage() {
 
       {/* POS INVOICE BUILDER */}
       <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) resetForm(); setIsAddModalOpen(false); setIsEditModalOpen(false); }}>
-        <DialogContent className="max-w-[95vw] w-[1400px] p-0 overflow-hidden border-none shadow-2xl bg-slate-50 rounded-[2.5rem] md:rounded-[2.5rem]">
+        <DialogContent className="max-w-[95vw] w-[1400px] p-0 overflow-hidden border-none shadow-2xl bg-slate-50 rounded-[2rem] md:rounded-[2.5rem]">
           <DialogHeader className={cn("p-5 text-white flex-row items-center justify-between space-y-0", isEditModalOpen ? "bg-indigo-600" : "bg-blue-600")}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center shrink-0">
@@ -634,7 +679,7 @@ export default function SalesPage() {
               </div>
             </div>
 
-            <div className="w-full lg:w-[400px] bg-white border-l border-slate-100 p-4 md:p-8 space-y-4 md:space-y-8 flex flex-col shadow-2xl relative z-20 shrink-0 overflow-y-auto custom-scrollbar">
+            <div className="w-full lg:w-[400px] bg-white border-l border-slate-100 p-4 md:p-8 space-y-4 md:space-y-6 flex flex-col shadow-2xl relative z-20 shrink-0 overflow-y-auto custom-scrollbar">
               <div className="space-y-4 md:space-y-6">
                 <div className={cn("p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl space-y-4 relative overflow-hidden group shrink-0 text-white", isEditModalOpen ? "bg-indigo-600" : "bg-blue-600")}>
                   <Calculator className="absolute -bottom-6 -right-6 h-24 w-24 md:h-32 md:w-32 opacity-10 group-hover:scale-125 transition-transform duration-700" />
@@ -688,6 +733,14 @@ export default function SalesPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Action Toolbar */}
+      <BulkActionToolbar 
+        selectedCount={selectedCount} 
+        onClear={clearSelection} 
+        onAction={handleBulkAction}
+        isLoading={isSubmitting}
+      />
     </div>
   )
 }

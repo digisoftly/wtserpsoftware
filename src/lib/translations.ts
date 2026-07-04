@@ -31,6 +31,21 @@ export const translations = {
     dispatch: "Delivery Challan",
     masterManagement: "Master Management",
     
+    // Bulk Actions
+    itemsSelected: "items selected",
+    bulkActions: "Bulk Actions",
+    deleteSelected: "Delete Selected",
+    printSelected: "Print Selected",
+    downloadSelected: "Download Selected",
+    exportSelected: "Export Selected",
+    changeStatus: "Change Status",
+    addTags: "Add Tags",
+    moveCategory: "Move Category",
+    duplicateSelected: "Duplicate",
+    restoreSelected: "Restore Selected",
+    selectAll: "Select All",
+    deselectAll: "Deselect All",
+
     // Master Management Expanded
     units: "Units",
     categories: "Categories",
@@ -393,6 +408,21 @@ export const translations = {
     dispatch: "ডেলিভারি চালান",
     masterManagement: "মাস্টার ম্যানেজমেন্ট",
     
+    // Bulk Actions
+    itemsSelected: "টি নির্বাচিত",
+    bulkActions: "একযোগে অ্যাকশন",
+    deleteSelected: "নির্বাচিতগুলো মুছুন",
+    printSelected: "নির্বাচিতগুলো প্রিন্ট",
+    downloadSelected: "নির্বাচিতগুলো ডাউনলোড",
+    exportSelected: "নির্বাচিতগুলো এক্সপোর্ট",
+    changeStatus: "স্ট্যাটাস পরিবর্তন",
+    addTags: "ট্যাগ যোগ করুন",
+    moveCategory: "ক্যাটাগরি পরিবর্তন",
+    duplicateSelected: "ডুপ্লিকেট",
+    restoreSelected: "পুনরুদ্ধার করুন",
+    selectAll: "সব নির্বাচন",
+    deselectAll: "সব বাতিল",
+
     // Master Management Expanded
     units: "ইউনিট",
     categories: "ক্যাটাগরি",
