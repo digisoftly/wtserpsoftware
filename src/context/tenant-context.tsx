@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -32,10 +33,6 @@ const TenantContext = React.createContext<TenantContextType>({
   isLoading: true,
 });
 
-/**
- * TenantProvider handles the global ERP context including company identity,
- * active branch, user roles, and system-wide localization.
- */
 export function TenantProvider({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
@@ -47,16 +44,13 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const companyId = "warrior-demo-corp";
 
   React.useEffect(() => {
-    // Safety failsafe to ensure UI loads even if initialization hangs
     const failsafe = setTimeout(() => {
       if (isInitializing) {
-        console.warn("Tenant initialization timeout. Proceeding with safe defaults.");
         setIsInitializing(false);
       }
-    }, 3000);
+    }, 5000);
 
     const initTenant = async () => {
-      // If user is not logged in, initialization is done immediately (for login page)
       if (!isUserLoading && !user) {
         setIsInitializing(false);
         return;
@@ -64,16 +58,24 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
       if (!isUserLoading && user && db) {
         try {
-          // 1. Fetch System Settings (fallback if permission fails)
+          // 1. Fetch System Settings
           const settingsRef = doc(db, "companies", companyId, "system", "config");
           const settingsSnap = await getDoc(settingsRef).catch(() => null);
           let systemDefaultLang: Language = 'BN';
+          let isSeeded = false;
           
           if (settingsSnap?.exists()) {
             const settingsData = settingsSnap.data();
-            if (settingsData.systemDefaultLanguage) {
-              systemDefaultLang = settingsData.systemDefaultLanguage as Language;
-            }
+            systemDefaultLang = (settingsData.systemDefaultLanguage as Language) || 'BN';
+            isSeeded = !!settingsData.isMasterDataSeeded;
+          } else {
+            // Create initial config if missing
+            await setDoc(settingsRef, {
+              companyName: "Warrior ERP",
+              systemDefaultLanguage: "BN",
+              isMasterDataSeeded: false,
+              createdAt: serverTimestamp()
+            }, { merge: true });
           }
 
           // 2. Fetch User Profile
@@ -84,7 +86,6 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           let activeBranchId = "dhaka-main";
 
           if (userSnap && !userSnap.exists()) {
-            // Register new user profile automatically
             const userData = {
               id: user.uid,
               companyId,
@@ -98,10 +99,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp(),
             };
-            
-            await setDoc(userRef, userData, { merge: true }).catch(err => {
-              console.error("User profile sync failed:", err);
-            });
+            await setDoc(userRef, userData, { merge: true });
             setLanguage(systemDefaultLang);
           } else if (userSnap) {
             const data = userSnap.data();
@@ -116,16 +114,26 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           const roleRef = doc(db, "companies", companyId, "roles", roleId);
           const roleSnap = await getDoc(roleRef).catch(() => null);
 
+          let currentRole: Role | null = null;
           if (roleSnap?.exists()) {
-            setUserRole({ id: roleSnap.id, ...roleSnap.data() } as Role);
+            currentRole = { id: roleSnap.id, ...roleSnap.data() } as Role;
+            setUserRole(currentRole);
           } else if (roleId === "super-admin") {
-            setUserRole({
+            currentRole = {
               id: "super-admin",
               name: "Super Administrator",
               isSuperAdmin: true,
               permissions: {} 
-            });
+            };
+            setUserRole(currentRole);
           }
+
+          // 4. AUTO-SEED MASTER DATA (If Admin and not seeded)
+          if (currentRole?.isSuperAdmin && !isSeeded) {
+            const { seedMasterData } = await import('@/lib/seed-data');
+            await seedMasterData(db, companyId);
+          }
+
         } catch (error) {
           console.error("Tenant configuration error:", error);
         } finally {
