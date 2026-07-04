@@ -31,7 +31,7 @@ export const translations = {
     dispatch: "Delivery Challan",
     masterManagement: "Master Management",
     
-    // Master Management
+    // Master Management Expanded
     units: "Units",
     categories: "Categories",
     brands: "Brands",
@@ -39,6 +39,27 @@ export const translations = {
     productTypes: "Product Types",
     serviceTypes: "Service Types",
     customFields: "Custom Fields",
+    warrantyTypes: "Warranty Types",
+    taxVat: "Tax / VAT",
+    productAttributes: "Product Attributes",
+    productVariants: "Product Variants",
+    supplierGroups: "Supplier Groups",
+    customerGroups: "Customer Groups",
+    expenseCategories: "Expense Categories",
+    paymentMethods: "Payment Methods",
+    paymentTerms: "Payment Terms",
+    projectTypes: "Project Types",
+    ticketCategories: "Ticket Categories",
+    contractTypes: "Contract Types",
+    branchTypes: "Branch Types",
+    departments: "Departments",
+    designations: "Designations",
+    leaveTypes: "Leave Types",
+    documentTypes: "Document Types",
+    barcodeSettings: "Barcode Settings",
+    statusManagement: "Status Management",
+    tagsManagement: "Tags Management",
+
     shortName: "Short Name",
     isDefault: "Is Default?",
     parentCategory: "Parent Category",
@@ -52,6 +73,7 @@ export const translations = {
     addProductType: "Add Product Type",
     addServiceType: "Add Service Type",
     addCustomField: "Add Custom Field",
+    addGeneric: "Add New Record",
 
     // Common Actions
     save: "Save",
@@ -80,6 +102,8 @@ export const translations = {
     refNo: "Ref No",
     amountInWords: "Amount in Words",
     workingList: "Working List",
+    isActive: "Active",
+    inactive: "Inactive",
     
     // Add Actions
     addItem: "Add Item",
@@ -369,7 +393,7 @@ export const translations = {
     dispatch: "ডেলিভারি চালান",
     masterManagement: "মাস্টার ম্যানেজমেন্ট",
     
-    // Master Management
+    // Master Management Expanded
     units: "ইউনিট",
     categories: "ক্যাটাগরি",
     brands: "ব্র্যান্ড",
@@ -377,6 +401,27 @@ export const translations = {
     productTypes: "পণ্যের ধরন",
     serviceTypes: "সার্ভিস ধরন",
     customFields: "কাস্টম ফিল্ড",
+    warrantyTypes: "ওয়ারেন্টি ধরন",
+    taxVat: "ট্যাক্স / ভ্যাট",
+    productAttributes: "পণ্যের বৈশিষ্ট্য",
+    productVariants: "পণ্যের ভেরিয়েন্ট",
+    supplierGroups: "সরবরাহকারী গ্রুপ",
+    customerGroups: "গ্রাহক গ্রুপ",
+    expenseCategories: "ব্যয়ের ক্যাটাগরি",
+    paymentMethods: "পেমেন্ট পদ্ধতি",
+    paymentTerms: "পেমেন্ট শর্তাবলী",
+    projectTypes: "প্রকল্প ধরন",
+    ticketCategories: "টিকেট ক্যাটাগরি",
+    contractTypes: "চুক্তি ধরন",
+    branchTypes: "শাখা ধরন",
+    departments: "বিভাগ",
+    designations: "পদবি",
+    leaveTypes: "ছুটির ধরন",
+    documentTypes: "ডকুমেন্ট ধরন",
+    barcodeSettings: "বারকোড সেটিংস",
+    statusManagement: "স্ট্যাটাস ম্যানেজমেন্ট",
+    tagsManagement: "ট্যাগ ম্যানেজমেন্ট",
+
     shortName: "সংক্ষিপ্ত নাম",
     isDefault: "ডিফল্ট?",
     parentCategory: "প্যারেন্ট ক্যাটাগরি",
@@ -390,6 +435,7 @@ export const translations = {
     addProductType: "পণ্যের ধরন যোগ করুন",
     addServiceType: "সার্ভিস ধরন যোগ করুন",
     addCustomField: "কাস্টম ফিল্ড যোগ করুন",
+    addGeneric: "নতুন রেকর্ড যোগ করুন",
 
     // Common Actions
     save: "সংরক্ষণ",
@@ -418,6 +464,8 @@ export const translations = {
     refNo: "রেফ নং",
     amountInWords: "কথায়",
     workingList: "ওয়ার্কিং লিস্ট",
+    isActive: "সক্রিয়",
+    inactive: "নিষ্ক্রিয়",
 
     // Auth
     login: "সাইন ইন",

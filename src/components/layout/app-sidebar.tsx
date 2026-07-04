@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -30,7 +29,29 @@ import {
   Database,
   ChevronDown,
   ChevronRight,
-  ClipboardList
+  ClipboardList,
+  Fingerprint,
+  Tag,
+  ShieldAlert,
+  Percent,
+  Layers3,
+  GitMerge,
+  UserPlus,
+  Users2,
+  FileBarChart,
+  CreditCard,
+  History,
+  Briefcase,
+  AlertCircle,
+  FileCheck,
+  MapPin,
+  Network,
+  UserCheck,
+  CalendarClock,
+  FileSearch,
+  QrCode,
+  Flag,
+  Hash
 } from "lucide-react"
 
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarGroup, useSidebar } from "@/components/ui/sidebar"
@@ -44,13 +65,33 @@ import { useTranslation } from "@/hooks/use-translation"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 
 const MASTER_MODULES = [
-  { name: "units", key: "units", path: "/master/units" },
-  { name: "categories", key: "categories", path: "/master/categories" },
-  { name: "brands", key: "brands", path: "/master/brands" },
-  { name: "models", key: "models", path: "/master/models" },
-  { name: "productTypes", key: "productTypes", path: "/master/product-types" },
-  { name: "serviceTypes", key: "serviceTypes", path: "/master/service-types" },
-  { name: "customFields", key: "customFields", path: "/master/custom-fields" },
+  { name: "units", key: "units", icon: Database, path: "/master/units" },
+  { name: "categories", key: "categories", icon: Layers3, path: "/master/categories" },
+  { name: "brands", key: "brands", icon: Tag, path: "/master/brands" },
+  { name: "models", key: "models", icon: Hash, path: "/master/models" },
+  { name: "productTypes", key: "productTypes", icon: Boxes, path: "/master/product-types" },
+  { name: "serviceTypes", key: "serviceTypes", icon: Wrench, path: "/master/service-types" },
+  { name: "customFields", key: "customFields", icon: Fingerprint, path: "/master/custom-fields" },
+  { name: "warrantyTypes", key: "warrantyTypes", icon: ShieldAlert, path: "/master/warranty-types" },
+  { name: "taxVat", key: "taxVat", icon: Percent, path: "/master/tax-vat" },
+  { name: "productAttributes", key: "productAttributes", icon: Layers, path: "/master/product-attributes" },
+  { name: "productVariants", key: "productVariants", icon: GitMerge, path: "/master/product-variants" },
+  { name: "supplierGroups", key: "supplierGroups", icon: UserPlus, path: "/master/supplier-groups" },
+  { name: "customerGroups", key: "customerGroups", icon: Users2, path: "/master/customer-groups" },
+  { name: "expenseCategories", key: "expenseCategories", icon: FileBarChart, path: "/master/expense-categories" },
+  { name: "paymentMethods", key: "paymentMethods", icon: CreditCard, path: "/master/payment-methods" },
+  { name: "paymentTerms", key: "paymentTerms", icon: History, path: "/master/payment-terms" },
+  { name: "projectTypes", key: "projectTypes", icon: Briefcase, path: "/master/project-types" },
+  { name: "ticketCategories", key: "ticketCategories", icon: AlertCircle, path: "/master/ticket-categories" },
+  { name: "contractTypes", key: "contractTypes", icon: FileCheck, path: "/master/contract-types" },
+  { name: "branchTypes", key: "branchTypes", icon: MapPin, path: "/master/branch-types" },
+  { name: "departments", key: "departments", icon: Network, path: "/master/departments" },
+  { name: "designations", key: "designations", icon: UserCheck, path: "/master/designations" },
+  { name: "leaveTypes", key: "leaveTypes", icon: CalendarClock, path: "/master/leave-types" },
+  { name: "documentTypes", key: "documentTypes", icon: FileSearch, path: "/master/document-types" },
+  { name: "barcodeSettings", key: "barcodeSettings", icon: QrCode, path: "/master/barcode-settings" },
+  { name: "statusManagement", key: "statusManagement", icon: Flag, path: "/master/status-management" },
+  { name: "tagsManagement", key: "tagsManagement", icon: Tag, path: "/master/tags-management" },
 ]
 
 const MODULES = [
@@ -126,12 +167,15 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                       </CollapsibleTrigger>
                       <CollapsibleContent>
-                        <SidebarMenu className="ml-4 border-l border-white/5 pl-2 mt-1 space-y-1">
+                        <SidebarMenu className="ml-4 border-l border-white/5 pl-2 mt-1 space-y-0.5 max-h-[50vh] overflow-y-auto no-scrollbar">
                           {MASTER_MODULES.map((sub) => (
                             <SidebarMenuItem key={sub.key}>
-                              <SidebarMenuButton asChild isActive={pathname === sub.path} className="h-8 px-4 hover:bg-white/5 rounded-md">
-                                <Link href={sub.path} className="text-[11px] font-medium text-white/50 group-data-[active=true]:text-pink-400">
-                                  {t(sub.name as any)}
+                              <SidebarMenuButton asChild isActive={pathname === sub.path} className="h-8 px-3 hover:bg-white/5 rounded-md">
+                                <Link href={sub.path} className="flex items-center gap-2">
+                                  <sub.icon className="h-3 w-3 text-pink-400/60" />
+                                  <span className="text-[10px] font-medium text-white/40 group-data-[active=true]:text-pink-400 uppercase tracking-tighter">
+                                    {t(sub.name as any)}
+                                  </span>
                                 </Link>
                               </SidebarMenuButton>
                             </SidebarMenuItem>

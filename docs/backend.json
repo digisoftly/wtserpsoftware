@@ -8,7 +8,8 @@
         "id": { "type": "string" },
         "name": { "type": "string" },
         "shortName": { "type": "string" },
-        "isDefault": { "type": "boolean" }
+        "isDefault": { "type": "boolean" },
+        "isActive": { "type": "boolean" }
       }
     },
     "MasterCategory": {
@@ -18,7 +19,8 @@
         "id": { "type": "string" },
         "name": { "type": "string" },
         "parentId": { "type": "string" },
-        "description": { "type": "string" }
+        "description": { "type": "string" },
+        "isActive": { "type": "boolean" }
       }
     },
     "MasterBrand": {
@@ -28,7 +30,8 @@
         "id": { "type": "string" },
         "name": { "type": "string" },
         "logo": { "type": "string" },
-        "description": { "type": "string" }
+        "description": { "type": "string" },
+        "isActive": { "type": "boolean" }
       }
     },
     "MasterModel": {
@@ -37,7 +40,8 @@
       "properties": {
         "id": { "type": "string" },
         "brandId": { "type": "string" },
-        "name": { "type": "string" }
+        "name": { "type": "string" },
+        "isActive": { "type": "boolean" }
       }
     },
     "CustomField": {
@@ -47,9 +51,21 @@
         "id": { "type": "string" },
         "label": { "type": "string" },
         "type": { "type": "string", "enum": ["text", "number", "dropdown", "date", "checkbox", "textarea"] },
-        "targetModule": { "type": "string", "enum": ["product", "customer", "supplier", "project", "contract"] },
+        "targetModule": { "type": "string", "enum": ["product", "customer", "supplier", "project", "contract", "hrm"] },
         "options": { "type": "array", "items": { "type": "string" } },
-        "isRequired": { "type": "boolean" }
+        "isRequired": { "type": "boolean" },
+        "isActive": { "type": "boolean" }
+      }
+    },
+    "GenericMaster": {
+      "title": "Generic Master Entry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "type": { "type": "string" }
       }
     }
   },
@@ -57,14 +73,11 @@
     "providers": ["password", "anonymous"]
   },
   "firestore": {
-    "/companies/{companyId}/branches/{branchId}/project_payments/{paymentId}": {
-      "schema": { "type": "object" },
-      "description": "Financial records for project-based revenue."
-    },
     "/companies/{companyId}/master_units/{id}": { "schema": { "$ref": "#/backend/entities/MasterUnit" }, "description": "Global quantity units." },
     "/companies/{companyId}/master_categories/{id}": { "schema": { "$ref": "#/backend/entities/MasterCategory" }, "description": "Global product categories." },
     "/companies/{companyId}/master_brands/{id}": { "schema": { "$ref": "#/backend/entities/MasterBrand" }, "description": "Global brands." },
     "/companies/{companyId}/master_models/{id}": { "schema": { "$ref": "#/backend/entities/MasterModel" }, "description": "Global models linked to brands." },
-    "/companies/{companyId}/master_custom_fields/{id}": { "schema": { "$ref": "#/backend/entities/CustomField" }, "description": "Dynamic custom fields for various modules." }
+    "/companies/{companyId}/master_custom_fields/{id}": { "schema": { "$ref": "#/backend/entities/CustomField" }, "description": "Dynamic custom fields." },
+    "/companies/{companyId}/master_data/{id}": { "schema": { "$ref": "#/backend/entities/GenericMaster" }, "description": "Centralized storage for various master modules like WarrantyTypes, Tax, etc." }
   }
 }
