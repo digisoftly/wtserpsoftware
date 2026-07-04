@@ -38,7 +38,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, query, orderBy, doc, runTransaction, serverTimestamp, increment, where, limit, deleteDoc, writeBatch } from "firebase/firestore"
+import { collection, query, orderBy, doc, runTransaction, serverTimestamp, increment, where, limit, deleteDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { cn } from "@/lib/utils"
 import { toast } from "@/hooks/use-toast"
@@ -351,26 +351,37 @@ export default function SalesPage() {
     if (!db || !companyId || !branchId || selectedIds.length === 0) return;
 
     if (action === 'delete') {
-      if (confirm(`Delete ${selectedIds.length} invoices?`)) {
+      if (confirm(`Delete ${selectedIds.length} items?`)) {
         setIsSubmitting(true);
-        try {
-          const batch = writeBatch(db);
-          selectedIds.forEach(id => {
-            const docRef = doc(db, "companies", companyId, "branches", branchId, "sales_invoices", id);
-            batch.delete(docRef);
+        
+        // Execute deletions in parallel with settled promise for O(N) stability
+        const promises = selectedIds.map(id => {
+          const docRef = doc(db, "companies", companyId, "branches", branchId, "sales_invoices", id);
+          return deleteDoc(docRef);
+        });
+
+        const results = await Promise.allSettled(promises);
+        const succeeded = results.filter(r => r.status === 'fulfilled').length;
+        const failed = results.filter(r => r.status === 'rejected').length;
+
+        if (failed > 0) {
+          toast({ 
+            variant: "destructive", 
+            title: "Partial Success", 
+            description: `${succeeded} deleted, ${failed} failed. Check permissions.` 
           });
-          await batch.commit();
-          toast({ title: t('success'), description: `${selectedIds.length} items removed.` });
-          clearSelection();
-        } catch (e) {
+          
+          // Emit error if any fail
           errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: `companies/${companyId}/branches/${branchId}/sales_invoices/...`,
             operation: 'delete'
           }));
-          toast({ variant: "destructive", title: t('error') });
-        } finally {
-          setIsSubmitting(false);
+        } else {
+          toast({ title: t('success'), description: `${succeeded} items removed.` });
         }
+        
+        clearSelection();
+        setIsSubmitting(false);
       }
     } else if (action === 'print') {
       window.print();

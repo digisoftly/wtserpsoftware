@@ -210,29 +210,39 @@ export default function InventoryPage() {
     if (!db || !companyId || !branchId || selectedIds.length === 0) return;
 
     if (action === 'delete') {
-      if (confirm(`Delete ${selectedIds.length} products?`)) {
+      if (confirm(`Delete ${selectedIds.length} items?`)) {
         setIsSubmitting(true);
-        try {
-          const batch = writeBatch(db);
-          selectedIds.forEach(id => {
-            const docRef = doc(db, "companies", companyId, "branches", branchId, "products", id);
-            batch.delete(docRef);
+        
+        // Parallel deletion with settled results for partial failure support
+        const promises = selectedIds.map(id => {
+          const docRef = doc(db, "companies", companyId, "branches", branchId, "products", id);
+          return deleteDoc(docRef);
+        });
+
+        const results = await Promise.allSettled(promises);
+        const succeeded = results.filter(r => r.status === 'fulfilled').length;
+        const failed = results.filter(r => r.status === 'rejected').length;
+
+        if (failed > 0) {
+          toast({ 
+            variant: "destructive", 
+            title: "Partial Success", 
+            description: `${succeeded} deleted, ${failed} failed.` 
           });
-          await batch.commit();
-          toast({ title: t('success'), description: `${selectedIds.length} items removed.` });
-          clearSelection();
-        } catch (e) {
+          
           errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: `companies/${companyId}/branches/${branchId}/products/...`,
             operation: 'delete'
           }));
-          toast({ variant: "destructive", title: t('error') });
-        } finally {
-          setIsSubmitting(false);
+        } else {
+          toast({ title: t('success'), description: `${succeeded} items removed.` });
         }
+        
+        clearSelection();
+        setIsSubmitting(false);
       }
     } else {
-      toast({ title: "Bulk Action", description: `${action} triggered for ${selectedIds.length} products.` });
+      toast({ title: "Bulk Action", description: `${action} triggered for ${selectedIds.length} items.` });
     }
   };
 
@@ -363,7 +373,7 @@ export default function InventoryPage() {
               <div className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md"><Package className="h-6 w-6" /></div>
               <div>
                 <DialogTitle className="text-xl font-black font-headline uppercase tracking-tight">{isEditOpen ? t('edit') : t('addProduct')}</DialogTitle>
-                <p className="text-[10px] font-black uppercase opacity-60 tracking-[0.2em] mt-0.5">Inventory Catalog Definition</p>
+                <p className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em] mt-0.5">Inventory Catalog Definition</p>
               </div>
             </div>
           </DialogHeader>

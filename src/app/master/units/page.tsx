@@ -82,23 +82,32 @@ export default function MasterUnitsPage() {
     if (action === 'delete') {
       if (confirm(`Delete ${selectedIds.length} items?`)) {
         setIsSubmitting(true);
-        try {
-          const batch = writeBatch(db);
-          selectedIds.forEach(id => {
-            batch.delete(doc(db, "companies", companyId, "master_units", id));
+        
+        const promises = selectedIds.map(id => {
+          return deleteDoc(doc(db, "companies", companyId, "master_units", id));
+        });
+
+        const results = await Promise.allSettled(promises);
+        const succeeded = results.filter(r => r.status === 'fulfilled').length;
+        const failed = results.filter(r => r.status === 'rejected').length;
+
+        if (failed > 0) {
+          toast({ 
+            variant: "destructive", 
+            title: "Partial Success", 
+            description: `${succeeded} deleted, ${failed} failed.` 
           });
-          await batch.commit();
-          toast({ title: t('success'), description: `${selectedIds.length} items removed.` });
-          clearSelection();
-        } catch (e) {
+          
           errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: `companies/${companyId}/master_units/...`,
             operation: 'delete'
           }));
-          toast({ variant: "destructive", title: t('error') });
-        } finally {
-          setIsSubmitting(false);
+        } else {
+          toast({ title: t('success'), description: `${succeeded} items removed.` });
         }
+        
+        clearSelection();
+        setIsSubmitting(false);
       }
     }
   };

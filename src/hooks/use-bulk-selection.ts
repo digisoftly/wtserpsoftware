@@ -1,16 +1,39 @@
-
 'use client';
 
 import * as React from 'react';
 
 /**
  * useBulkSelection provides logic for multi-item selection in tables.
+ * Optimized with stable array conversion and automatic sync with source items.
  */
 export function useBulkSelection<T extends { id: string }>(items: T[] | null | undefined) {
-  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+  const [selectedIdsSet, setSelectedIdsSet] = React.useState<Set<string>>(new Set());
+
+  // Automatically remove IDs that are no longer in the items list (e.g. deleted elsewhere)
+  React.useEffect(() => {
+    if (!items) {
+      if (selectedIdsSet.size > 0) setSelectedIdsSet(new Set());
+      return;
+    }
+    
+    const currentItemIds = new Set(items.map(i => i.id));
+    setSelectedIdsSet(prev => {
+      const next = new Set<string>();
+      let hasChanges = false;
+      prev.forEach(id => {
+        if (currentItemIds.has(id)) {
+          next.add(id);
+        } else {
+          hasChanges = true;
+        }
+      });
+      if (hasChanges) return next;
+      return prev;
+    });
+  }, [items]);
 
   const toggleSelect = React.useCallback((id: string) => {
-    setSelectedIds(prev => {
+    setSelectedIdsSet(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -20,26 +43,25 @@ export function useBulkSelection<T extends { id: string }>(items: T[] | null | u
 
   const toggleSelectAll = React.useCallback(() => {
     if (!items) return;
-    setSelectedIds(prev => {
-      if (prev.size === items.length) return new Set();
+    setSelectedIdsSet(prev => {
+      if (prev.size === items.length && items.length > 0) return new Set();
       return new Set(items.map(i => i.id));
     });
   }, [items]);
 
   const clearSelection = React.useCallback(() => {
-    setSelectedIds(new Set());
+    setSelectedIdsSet(new Set());
   }, []);
 
-  const isAllSelected = items ? selectedIds.size === items.length && items.length > 0 : false;
-  const isSomeSelected = selectedIds.size > 0;
+  const selectedIdsArray = React.useMemo(() => Array.from(selectedIdsSet), [selectedIdsSet]);
 
   return {
-    selectedIds: Array.from(selectedIds),
-    isAllSelected,
-    isSomeSelected,
+    selectedIds: selectedIdsArray,
+    isAllSelected: items ? selectedIdsSet.size === items.length && items.length > 0 : false,
+    isSomeSelected: selectedIdsSet.size > 0,
     toggleSelect,
     toggleSelectAll,
     clearSelection,
-    selectedCount: selectedIds.size,
+    selectedCount: selectedIdsSet.size,
   };
 }
