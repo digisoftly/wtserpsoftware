@@ -4,7 +4,7 @@
 import * as React from "react"
 import { Plus, Search, Loader2, MoreVertical, Edit, Trash2, Settings2, Fingerprint } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, query, orderBy, doc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore"
+import { collection, query, orderBy, doc, setDoc, deleteDoc, serverTimestamp, writeBatch } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -18,6 +18,10 @@ import { useTranslation } from "@/hooks/use-translation"
 import { toast } from "@/hooks/use-toast"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { KPICard } from "@/components/dashboard/kpi-card"
+import { Checkbox } from "@/components/ui/checkbox"
+import { useBulkSelection } from "@/hooks/use-bulk-selection"
+import { BulkActionToolbar } from "@/components/layout/bulk-action-toolbar"
+import { cn } from "@/lib/utils"
 
 export default function MasterCustomFieldsPage() {
   const { companyId } = useTenant();
@@ -34,6 +38,17 @@ export default function MasterCustomFieldsPage() {
   }, [db, companyId]);
 
   const { data: fields, isLoading } = useCollection(fieldsQuery);
+
+  // Bulk Selection
+  const { 
+    selectedIds, 
+    isAllSelected, 
+    isSomeSelected, 
+    toggleSelect, 
+    toggleSelectAll, 
+    clearSelection, 
+    selectedCount 
+  } = useBulkSelection(fields);
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -60,6 +75,29 @@ export default function MasterCustomFieldsPage() {
       toast({ variant: "destructive", title: t('error'), description: err.message });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleBulkAction = async (action: string) => {
+    if (!db || !companyId || selectedIds.length === 0) return;
+
+    if (action === 'delete') {
+      if (confirm(`Delete ${selectedIds.length} custom fields?`)) {
+        setIsSubmitting(true);
+        try {
+          const batch = writeBatch(db);
+          selectedIds.forEach(id => {
+            batch.delete(doc(db, "companies", companyId, "master_custom_fields", id));
+          });
+          await batch.commit();
+          toast({ title: t('success'), description: `${selectedIds.length} items removed.` });
+          clearSelection();
+        } catch (e) {
+          toast({ variant: "destructive", title: t('error') });
+        } finally {
+          setIsSubmitting(false);
+        }
+      }
     }
   };
 
@@ -93,6 +131,9 @@ export default function MasterCustomFieldsPage() {
           <Table>
             <TableHeader className="bg-muted/10">
               <TableRow>
+                <TableHead className="w-12 pl-6">
+                  <Checkbox checked={isAllSelected} onCheckedChange={toggleSelectAll} />
+                </TableHead>
                 <TableHead className="h-10 text-[10px] uppercase font-black pl-6">{t('label')}</TableHead>
                 <TableHead className="h-10 text-[10px] uppercase font-black">{t('targetModule')}</TableHead>
                 <TableHead className="h-10 text-[10px] uppercase font-black">{t('fieldType')}</TableHead>
@@ -101,7 +142,10 @@ export default function MasterCustomFieldsPage() {
             </TableHeader>
             <TableBody>
               {filtered?.map((f) => (
-                <TableRow key={f.id} className="h-12 hover:bg-muted/5 transition-colors">
+                <TableRow key={f.id} className={cn("h-12 hover:bg-muted/5 transition-colors group", selectedIds.includes(f.id) && "bg-blue-50/30")}>
+                  <TableCell className="pl-6">
+                    <Checkbox checked={selectedIds.includes(f.id)} onCheckedChange={() => toggleSelect(f.id)} />
+                  </TableCell>
                   <TableCell className="pl-6 font-bold text-xs uppercase">{f.label}</TableCell>
                   <TableCell className="text-[10px] font-black text-pink-600 uppercase">{f.targetModule}</TableCell>
                   <TableCell className="text-[10px] font-bold text-muted-foreground uppercase">{f.type}</TableCell>
@@ -171,6 +215,13 @@ export default function MasterCustomFieldsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <BulkActionToolbar 
+        selectedCount={selectedCount} 
+        onClear={clearSelection} 
+        onAction={handleBulkAction}
+        isLoading={isSubmitting}
+      />
     </div>
   )
 }

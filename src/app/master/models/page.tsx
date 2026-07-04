@@ -4,7 +4,7 @@
 import * as React from "react"
 import { Plus, Search, Loader2, MoreVertical, Edit, Trash2, Box } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, query, orderBy, doc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore"
+import { collection, query, orderBy, doc, setDoc, deleteDoc, serverTimestamp, writeBatch } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -17,6 +17,10 @@ import { useTranslation } from "@/hooks/use-translation"
 import { toast } from "@/hooks/use-toast"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { KPICard } from "@/components/dashboard/kpi-card"
+import { Checkbox } from "@/components/ui/checkbox"
+import { useBulkSelection } from "@/hooks/use-bulk-selection"
+import { BulkActionToolbar } from "@/components/layout/bulk-action-toolbar"
+import { cn } from "@/lib/utils"
 
 export default function MasterModelsPage() {
   const { companyId } = useTenant();
@@ -38,6 +42,17 @@ export default function MasterModelsPage() {
     return query(collection(db, "companies", companyId, "master_brands"), orderBy("name"));
   }, [db, companyId]);
   const { data: brands } = useCollection(brandsQuery);
+
+  // Bulk Selection
+  const { 
+    selectedIds, 
+    isAllSelected, 
+    isSomeSelected, 
+    toggleSelect, 
+    toggleSelectAll, 
+    clearSelection, 
+    selectedCount 
+  } = useBulkSelection(models);
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -61,6 +76,29 @@ export default function MasterModelsPage() {
       toast({ variant: "destructive", title: t('error'), description: err.message });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleBulkAction = async (action: string) => {
+    if (!db || !companyId || selectedIds.length === 0) return;
+
+    if (action === 'delete') {
+      if (confirm(`Delete ${selectedIds.length} models?`)) {
+        setIsSubmitting(true);
+        try {
+          const batch = writeBatch(db);
+          selectedIds.forEach(id => {
+            batch.delete(doc(db, "companies", companyId, "master_models", id));
+          });
+          await batch.commit();
+          toast({ title: t('success'), description: `${selectedIds.length} items removed.` });
+          clearSelection();
+        } catch (e) {
+          toast({ variant: "destructive", title: t('error') });
+        } finally {
+          setIsSubmitting(false);
+        }
+      }
     }
   };
 
@@ -94,6 +132,9 @@ export default function MasterModelsPage() {
           <Table>
             <TableHeader className="bg-muted/10">
               <TableRow>
+                <TableHead className="w-12 pl-6">
+                  <Checkbox checked={isAllSelected} onCheckedChange={toggleSelectAll} />
+                </TableHead>
                 <TableHead className="h-10 text-[10px] uppercase font-black pl-6">{t('label')}</TableHead>
                 <TableHead className="h-10 text-[10px] uppercase font-black">{t('brand')}</TableHead>
                 <TableHead className="text-right h-10 pr-6"></TableHead>
@@ -101,7 +142,10 @@ export default function MasterModelsPage() {
             </TableHeader>
             <TableBody>
               {filtered?.map((m) => (
-                <TableRow key={m.id} className="h-12 hover:bg-muted/5 transition-colors">
+                <TableRow key={m.id} className={cn("h-12 hover:bg-muted/5 transition-colors group", selectedIds.includes(m.id) && "bg-blue-50/30")}>
+                  <TableCell className="pl-6">
+                    <Checkbox checked={selectedIds.includes(m.id)} onCheckedChange={() => toggleSelect(m.id)} />
+                  </TableCell>
                   <TableCell className="pl-6 font-bold text-xs uppercase">{m.name}</TableCell>
                   <TableCell className="text-[10px] font-black text-pink-600 uppercase">
                     {brands?.find(b => b.id === m.brandId)?.name || "Unknown"}
@@ -144,6 +188,13 @@ export default function MasterModelsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <BulkActionToolbar 
+        selectedCount={selectedCount} 
+        onClear={clearSelection} 
+        onAction={handleBulkAction}
+        isLoading={isSubmitting}
+      />
     </div>
   )
 }

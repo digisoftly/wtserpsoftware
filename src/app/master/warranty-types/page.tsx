@@ -4,7 +4,7 @@
 import * as React from "react"
 import { Plus, Search, Loader2, MoreVertical, Edit, Trash2, ShieldCheck, CheckCircle2, X } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, query, orderBy, doc, setDoc, deleteDoc, serverTimestamp, where } from "firebase/firestore"
+import { collection, query, orderBy, doc, setDoc, deleteDoc, serverTimestamp, where, writeBatch } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -17,6 +17,10 @@ import { toast } from "@/hooks/use-toast"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
+import { useBulkSelection } from "@/hooks/use-bulk-selection"
+import { BulkActionToolbar } from "@/components/layout/bulk-action-toolbar"
+import { cn } from "@/lib/utils"
 
 export default function GenericMasterPage() {
   const { companyId } = useTenant();
@@ -43,6 +47,17 @@ export default function GenericMasterPage() {
   }, [db, companyId, masterType]);
 
   const { data: records, isLoading } = useCollection(masterQuery);
+
+  // Bulk Selection
+  const { 
+    selectedIds, 
+    isAllSelected, 
+    isSomeSelected, 
+    toggleSelect, 
+    toggleSelectAll, 
+    clearSelection, 
+    selectedCount 
+  } = useBulkSelection(records);
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -71,6 +86,44 @@ export default function GenericMasterPage() {
     }
   };
 
+  const handleBulkAction = async (action: string) => {
+    if (!db || !companyId || selectedIds.length === 0) return;
+
+    if (action === 'delete') {
+      if (confirm(`Delete ${selectedIds.length} records?`)) {
+        setIsSubmitting(true);
+        try {
+          const batch = writeBatch(db);
+          selectedIds.forEach(id => {
+            batch.delete(doc(db, "companies", companyId, collectionName, id));
+          });
+          await batch.commit();
+          toast({ title: t('success'), description: `${selectedIds.length} items removed.` });
+          clearSelection();
+        } catch (e) {
+          toast({ variant: "destructive", title: t('error') });
+        } finally {
+          setIsSubmitting(false);
+        }
+      }
+    } else if (action === 'status') {
+       setIsSubmitting(true);
+       try {
+         const batch = writeBatch(db);
+         selectedIds.forEach(id => {
+           batch.update(doc(db, "companies", companyId, collectionName, id), { isActive: true, updatedAt: serverTimestamp() });
+         });
+         await batch.commit();
+         toast({ title: t('success'), description: "Status updated for selected items." });
+         clearSelection();
+       } catch (e) {
+         toast({ variant: "destructive", title: t('error') });
+       } finally {
+         setIsSubmitting(false);
+       }
+    }
+  };
+
   const filtered = records?.filter(r => r.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
@@ -96,6 +149,9 @@ export default function GenericMasterPage() {
           <Table>
             <TableHeader className="bg-muted/10">
               <TableRow>
+                <TableHead className="w-12 pl-6">
+                  <Checkbox checked={isAllSelected} onCheckedChange={toggleSelectAll} />
+                </TableHead>
                 <TableHead className="h-10 text-[10px] uppercase font-black pl-6">{t('label')}</TableHead>
                 <TableHead className="h-10 text-[10px] uppercase font-black">{t('details')}</TableHead>
                 <TableHead className="h-10 text-[10px] uppercase font-black text-center">{t('status')}</TableHead>
@@ -104,7 +160,10 @@ export default function GenericMasterPage() {
             </TableHeader>
             <TableBody>
               {filtered?.map((r) => (
-                <TableRow key={r.id} className="h-12 hover:bg-muted/5 transition-colors">
+                <TableRow key={r.id} className={cn("h-12 hover:bg-muted/5 transition-colors group", selectedIds.includes(r.id) && "bg-blue-50/30")}>
+                  <TableCell className="pl-6">
+                    <Checkbox checked={selectedIds.includes(r.id)} onCheckedChange={() => toggleSelect(r.id)} />
+                  </TableCell>
                   <TableCell className="pl-6 font-bold text-xs uppercase">{r.name}</TableCell>
                   <TableCell className="text-[10px] font-bold text-muted-foreground uppercase">{r.description || "---"}</TableCell>
                   <TableCell className="text-center">
@@ -141,6 +200,13 @@ export default function GenericMasterPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <BulkActionToolbar 
+        selectedCount={selectedCount} 
+        onClear={clearSelection} 
+        onAction={handleBulkAction}
+        isLoading={isSubmitting}
+      />
     </div>
   )
 }
