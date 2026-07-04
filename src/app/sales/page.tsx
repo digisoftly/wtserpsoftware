@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -39,7 +38,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, query, orderBy, doc, runTransaction, serverTimestamp, increment, where, limit, deleteDoc } from "firebase/firestore"
+import { collection, query, orderBy, doc, runTransaction, serverTimestamp, increment, where, limit, deleteDoc, writeBatch } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { cn } from "@/lib/utils"
 import { toast } from "@/hooks/use-toast"
@@ -49,6 +48,8 @@ import { useTranslation } from "@/hooks/use-translation"
 import { DocumentTemplate } from "@/components/documents/document-template"
 import { useBulkSelection } from "@/hooks/use-bulk-selection"
 import { BulkActionToolbar } from "@/components/layout/bulk-action-toolbar"
+import { errorEmitter } from "@/firebase/error-emitter"
+import { FirestorePermissionError } from "@/firebase/errors"
 
 interface InvoiceItem {
   productId: string;
@@ -353,12 +354,19 @@ export default function SalesPage() {
       if (confirm(`Delete ${selectedIds.length} invoices?`)) {
         setIsSubmitting(true);
         try {
-          for (const id of selectedIds) {
-            await deleteDoc(doc(db, "companies", companyId, "branches", branchId, "sales_invoices", id));
-          }
+          const batch = writeBatch(db);
+          selectedIds.forEach(id => {
+            const docRef = doc(db, "companies", companyId, "branches", branchId, "sales_invoices", id);
+            batch.delete(docRef);
+          });
+          await batch.commit();
           toast({ title: t('success'), description: `${selectedIds.length} items removed.` });
           clearSelection();
         } catch (e) {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: `companies/${companyId}/branches/${branchId}/sales_invoices/...`,
+            operation: 'delete'
+          }));
           toast({ variant: "destructive", title: t('error') });
         } finally {
           setIsSubmitting(false);

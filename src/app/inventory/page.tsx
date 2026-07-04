@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -44,6 +43,8 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useBulkSelection } from "@/hooks/use-bulk-selection"
 import { BulkActionToolbar } from "@/components/layout/bulk-action-toolbar"
+import { errorEmitter } from "@/firebase/error-emitter"
+import { FirestorePermissionError } from "@/firebase/errors"
 
 export default function InventoryPage() {
   const { companyId, branchId } = useTenant();
@@ -212,12 +213,19 @@ export default function InventoryPage() {
       if (confirm(`Delete ${selectedIds.length} products?`)) {
         setIsSubmitting(true);
         try {
-          for (const id of selectedIds) {
-            await deleteDoc(doc(db, "companies", companyId, "branches", branchId, "products", id));
-          }
+          const batch = writeBatch(db);
+          selectedIds.forEach(id => {
+            const docRef = doc(db, "companies", companyId, "branches", branchId, "products", id);
+            batch.delete(docRef);
+          });
+          await batch.commit();
           toast({ title: t('success'), description: `${selectedIds.length} items removed.` });
           clearSelection();
         } catch (e) {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: `companies/${companyId}/branches/${branchId}/products/...`,
+            operation: 'delete'
+          }));
           toast({ variant: "destructive", title: t('error') });
         } finally {
           setIsSubmitting(false);

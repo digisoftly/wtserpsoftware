@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -21,6 +20,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { useBulkSelection } from "@/hooks/use-bulk-selection"
 import { BulkActionToolbar } from "@/components/layout/bulk-action-toolbar"
 import { cn } from "@/lib/utils"
+import { errorEmitter } from "@/firebase/error-emitter"
+import { FirestorePermissionError } from "@/firebase/errors"
 
 export default function MasterModelsPage() {
   const { companyId } = useTenant();
@@ -83,7 +84,7 @@ export default function MasterModelsPage() {
     if (!db || !companyId || selectedIds.length === 0) return;
 
     if (action === 'delete') {
-      if (confirm(`Delete ${selectedIds.length} models?`)) {
+      if (confirm(`Delete ${selectedIds.length} items?`)) {
         setIsSubmitting(true);
         try {
           const batch = writeBatch(db);
@@ -94,6 +95,10 @@ export default function MasterModelsPage() {
           toast({ title: t('success'), description: `${selectedIds.length} items removed.` });
           clearSelection();
         } catch (e) {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: `companies/${companyId}/master_models/...`,
+            operation: 'delete'
+          }));
           toast({ variant: "destructive", title: t('error') });
         } finally {
           setIsSubmitting(false);
