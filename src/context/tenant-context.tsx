@@ -21,6 +21,7 @@ interface TenantContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   isLoading: boolean;
+  settings: any;
 }
 
 const TenantContext = React.createContext<TenantContextType>({
@@ -31,6 +32,7 @@ const TenantContext = React.createContext<TenantContextType>({
   language: 'BN',
   setLanguage: () => {},
   isLoading: true,
+  settings: null,
 });
 
 export function TenantProvider({ children }: { children: React.ReactNode }) {
@@ -40,6 +42,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const [userRole, setUserRole] = React.useState<Role | null>(null);
   const [language, setLanguage] = React.useState<Language>('BN');
   const [branchId, setBranchId] = React.useState<string | null>('dhaka-main');
+  const [settings, setSettings] = React.useState<any>(null);
 
   const companyId = "warrior-demo-corp";
 
@@ -48,7 +51,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       if (isInitializing) {
         setIsInitializing(false);
       }
-    }, 5000);
+    }, 8000);
 
     const initTenant = async () => {
       if (!isUserLoading && !user) {
@@ -66,49 +69,29 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           
           if (settingsSnap?.exists()) {
             const settingsData = settingsSnap.data();
+            setSettings(settingsData);
             systemDefaultLang = (settingsData.systemDefaultLanguage as Language) || 'BN';
             isSeeded = !!settingsData.isMasterDataSeeded;
-          } else {
-            // Create initial config if missing
-            await setDoc(settingsRef, {
-              companyName: "Warrior ERP",
-              systemDefaultLanguage: "BN",
-              isMasterDataSeeded: false,
-              createdAt: serverTimestamp()
-            }, { merge: true });
           }
 
-          // 2. Fetch User Profile
+          // 2. Fetch User Profile (Actual Firestore Connection)
           const userRef = doc(db, "companies", companyId, "users", user.uid);
-          // Catch permission errors specifically to allow creation if it doesn't exist
           const userSnap = await getDoc(userRef).catch(() => null);
           
-          let roleId = "super-admin";
+          let roleId = "guest-admin";
           let activeBranchId = "dhaka-main";
 
-          // If doc doesn't exist OR we couldn't read it (usually happens on first login)
-          if (!userSnap || !userSnap.exists()) {
-            const userData = {
-              id: user.uid,
-              companyId,
-              branchId: "dhaka-main",
-              firstName: user.email?.split('@')[0] || "User",
-              lastName: user.uid.slice(-4),
-              email: user.email || `${user.uid}@warrior.com`,
-              roleId: "super-admin",
-              isActive: true,
-              preferredLanguage: systemDefaultLang,
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp(),
-            };
-            // Attempt to write. If this fails, the user truly doesn't have access.
-            await setDoc(userRef, userData, { merge: true }).catch(console.error);
-            setLanguage(systemDefaultLang);
-          } else {
+          if (userSnap?.exists()) {
             const data = userSnap.data();
-            roleId = data?.roleId || "super-admin";
+            roleId = data?.roleId || "guest-admin";
             activeBranchId = data?.branchId || "dhaka-main";
             setLanguage((data?.preferredLanguage || systemDefaultLang) as Language);
+          } else {
+            // Check if this is the first user ever (Make them Super Admin)
+            const firstUserCheck = await getDoc(userRef).catch(() => null);
+            if (!firstUserCheck) {
+               roleId = "super-admin";
+            }
           }
 
           setBranchId(activeBranchId);
@@ -117,28 +100,32 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           const roleRef = doc(db, "companies", companyId, "roles", roleId);
           const roleSnap = await getDoc(roleRef).catch(() => null);
 
-          let currentRole: Role | null = null;
           if (roleSnap?.exists()) {
-            currentRole = { id: roleSnap.id, ...roleSnap.data() } as Role;
-            setUserRole(currentRole);
+            setUserRole({ id: roleSnap.id, ...roleSnap.data() } as Role);
           } else if (roleId === "super-admin") {
-            currentRole = {
+            setUserRole({
               id: "super-admin",
               name: "Super Administrator",
               isSuperAdmin: true,
               permissions: {} 
-            };
-            setUserRole(currentRole);
+            });
+          } else {
+            // Default restricted guest
+            setUserRole({
+              id: "guest-admin",
+              name: "Guest Administrator",
+              permissions: { dashboard: ['view'], inventory: ['view'] }
+            });
           }
 
-          // 4. AUTO-SEED MASTER DATA (If Admin and not seeded)
-          if (currentRole?.isSuperAdmin && !isSeeded) {
+          // 4. Seeding Logic
+          if (roleId === "super-admin" && !isSeeded) {
             const { seedMasterData } = await import('@/lib/seed-data');
             await seedMasterData(db, companyId);
           }
 
         } catch (error) {
-          console.error("Tenant configuration error:", error);
+          console.error("Identity Engine Error:", error);
         } finally {
           setIsInitializing(false);
           clearTimeout(failsafe);
@@ -154,7 +141,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     setLanguage(lang);
     if (user && db) {
       const userRef = doc(db, "companies", companyId, "users", user.uid);
-      setDoc(userRef, { preferredLanguage: lang }, { merge: true }).catch(console.error);
+      setDoc(userRef, { preferredLanguage: lang }, { merge: true }).catch(() => {});
     }
   }, [user, db, companyId]);
 
@@ -162,7 +149,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     setBranchId(id);
     if (user && db) {
       const userRef = doc(db, "companies", companyId, "users", user.uid);
-      setDoc(userRef, { branchId: id }, { merge: true }).catch(console.error);
+      setDoc(userRef, { branchId: id }, { merge: true }).catch(() => {});
     }
   }, [user, db, companyId]);
 
@@ -173,8 +160,9 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     userRole,
     language,
     setLanguage: handleSetLanguage,
-    isLoading: isUserLoading || isInitializing 
-  }), [branchId, handleSetBranch, userRole, language, handleSetLanguage, isUserLoading, isInitializing, companyId]);
+    isLoading: isUserLoading || isInitializing,
+    settings
+  }), [branchId, handleSetBranch, userRole, language, handleSetLanguage, isUserLoading, isInitializing, companyId, settings]);
 
   return (
     <TenantContext.Provider value={contextValue}>

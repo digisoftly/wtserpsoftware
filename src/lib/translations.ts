@@ -31,6 +31,25 @@ export const translations = {
     dispatch: "Delivery Challan",
     masterManagement: "Master Management",
     
+    // Users & Roles
+    addUser: "Add User",
+    editUser: "Edit User",
+    userList: "User Directory",
+    roleList: "Roles & Permissions",
+    assignRole: "Assign Role",
+    resetPassword: "Reset Password",
+    disableUser: "Disable User",
+    enableUser: "Enable User",
+    fullName: "Full Name",
+    username: "Username",
+    permissions: "Permissions",
+    matrix: "Permission Matrix",
+    demoManagement: "Demo Management",
+    demoMode: "Demo Mode Active",
+    demoModeSub: "Restrict destructive actions and protect core data.",
+    enableDemo: "Enable Demo Access",
+    guestAdmin: "Guest Administrator",
+    
     // Bulk Actions
     itemsSelected: "items selected",
     bulkActions: "Bulk Actions",
@@ -417,6 +436,25 @@ export const translations = {
     dispatch: "ডেলিভারি চালান",
     masterManagement: "মাস্টার ম্যানেজমেন্ট",
     
+    // Users & Roles
+    addUser: "ইউজার যোগ করুন",
+    editUser: "ইউজার এডিট",
+    userList: "ইউজার ডিরেক্টরি",
+    roleList: "রোল ও পারমিশন",
+    assignRole: "রোল বরাদ্দ করুন",
+    resetPassword: "পাসওয়ার্ড রিসেট",
+    disableUser: "অক্ষম করুন",
+    enableUser: "সক্ষম করুন",
+    fullName: "পুরো নাম",
+    username: "ইউজারনেম",
+    permissions: "পারমিশন",
+    matrix: "পারমিশন মেট্রিক্স",
+    demoManagement: "ডেমো ম্যানেজমেন্ট",
+    demoMode: "ডেমো মোড সক্রিয়",
+    demoModeSub: "ধ্বংসাত্মক কার্যক্রম সীমাবদ্ধ করুন এবং মূল ডাটা সুরক্ষিত রাখুন।",
+    enableDemo: "ডেমো অ্যাক্সেস সক্ষম করুন",
+    guestAdmin: "গেস্ট অ্যাডমিনিস্ট্রেটর",
+
     // Bulk Actions
     itemsSelected: "টি নির্বাচিত",
     bulkActions: "একযোগে অ্যাকশন",
