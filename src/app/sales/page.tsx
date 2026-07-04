@@ -353,8 +353,6 @@ export default function SalesPage() {
     if (action === 'delete') {
       if (confirm(`Delete ${selectedIds.length} items?`)) {
         setIsSubmitting(true);
-        
-        // Execute deletions in parallel with settled promise for O(N) stability
         const promises = selectedIds.map(id => {
           const docRef = doc(db, "companies", companyId, "branches", branchId, "sales_invoices", id);
           return deleteDoc(docRef);
@@ -365,13 +363,7 @@ export default function SalesPage() {
         const failed = results.filter(r => r.status === 'rejected').length;
 
         if (failed > 0) {
-          toast({ 
-            variant: "destructive", 
-            title: "Partial Success", 
-            description: `${succeeded} deleted, ${failed} failed. Check permissions.` 
-          });
-          
-          // Emit error if any fail
+          toast({ variant: "destructive", title: "Partial Success", description: `${succeeded} deleted, ${failed} failed.` });
           errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: `companies/${companyId}/branches/${branchId}/sales_invoices/...`,
             operation: 'delete'
@@ -379,14 +371,11 @@ export default function SalesPage() {
         } else {
           toast({ title: t('success'), description: `${succeeded} items removed.` });
         }
-        
         clearSelection();
         setIsSubmitting(false);
       }
     } else if (action === 'print') {
       window.print();
-    } else {
-      toast({ title: "Bulk Action", description: `${action} triggered for ${selectedIds.length} items.` });
     }
   };
 
@@ -422,13 +411,13 @@ export default function SalesPage() {
   }, [invoices, deferredSearch]);
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-6 pb-10 w-full overflow-hidden">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold font-headline text-blue-600 uppercase tracking-tight">{t('sales')}</h1>
+          <h1 className="text-xl md:text-2xl font-bold font-headline text-blue-600 uppercase tracking-tight">{t('sales')}</h1>
           <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{t('lastActiveSales')}</p>
         </div>
-        <Button className="rounded-full gap-2 h-10 px-8 bg-blue-600 hover:bg-blue-700 font-bold text-[10px] uppercase shadow-xl shadow-blue-100 transition-all active:scale-95 w-full md:w-auto" onClick={() => { resetForm(); setIsAddModalOpen(true); }}>
+        <Button className="rounded-full gap-2 h-9 md:h-10 px-6 md:px-8 bg-blue-600 hover:bg-blue-700 font-bold text-[10px] uppercase shadow-xl shadow-blue-100 transition-all active:scale-95 w-full md:w-auto" onClick={() => { resetForm(); setIsAddModalOpen(true); }}>
           <Plus className="h-4 w-4" /> {t('newInvoice')}
         </Button>
       </div>
@@ -456,28 +445,28 @@ export default function SalesPage() {
         <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
       ) : (
         <Card className="border-none shadow-sm overflow-hidden rounded-2xl bg-white ring-1 ring-slate-100">
-          <div className="overflow-x-auto custom-scrollbar">
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader className="bg-muted/10">
                 <TableRow>
                   <TableHead className="w-12 pl-6">
                     <Checkbox checked={isAllSelected} onCheckedChange={toggleSelectAll} />
                   </TableHead>
-                  <TableHead className="h-10 text-[10px] uppercase font-black">{t('invoiceNumber')}</TableHead>
-                  <TableHead className="h-10 text-[10px] uppercase font-black">{t('customer')}</TableHead>
-                  <TableHead className="h-10 text-[10px] uppercase font-black">{t('amount')}</TableHead>
-                  <TableHead className="h-10 text-[10px] uppercase font-black">{t('status')}</TableHead>
-                  <TableHead className="h-10 text-right pr-6 sticky right-0 bg-white/95 backdrop-blur-sm z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">{t('actions')}</TableHead>
+                  <TableHead className="h-12 text-[10px] uppercase font-black">{t('invoiceNumber')}</TableHead>
+                  <TableHead className="h-12 text-[10px] uppercase font-black">{t('customer')}</TableHead>
+                  <TableHead className="h-12 text-[10px] uppercase font-black">{t('amount')}</TableHead>
+                  <TableHead className="h-12 text-[10px] uppercase font-black">{t('status')}</TableHead>
+                  <TableHead className="h-12 text-right pr-6 sticky right-0 bg-white/95 backdrop-blur-sm z-20 w-[150px]">{t('actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredInvoices?.map((inv) => (
-                  <TableRow key={inv.id} className={cn("h-14 hover:bg-muted/5 transition-colors group", selectedIds.includes(inv.id) && "bg-blue-50/30")}>
+                  <TableRow key={inv.id} className={cn("h-16 hover:bg-muted/5 transition-colors group", selectedIds.includes(inv.id) && "bg-blue-50/30")}>
                     <TableCell className="pl-6">
                       <Checkbox checked={selectedIds.includes(inv.id)} onCheckedChange={() => toggleSelect(inv.id)} />
                     </TableCell>
-                    <TableCell className="font-bold text-xs uppercase text-blue-600">{inv.invoiceNumber}</TableCell>
-                    <TableCell className="text-xs font-bold text-slate-700">{inv.customerName}</TableCell>
+                    <TableCell className="font-bold text-xs uppercase text-blue-600 truncate max-w-[120px]">{inv.invoiceNumber}</TableCell>
+                    <TableCell className="text-xs font-bold text-slate-700 truncate max-w-[150px]">{inv.customerName}</TableCell>
                     <TableCell className="font-black text-xs">৳{inv.totalAmount?.toLocaleString()}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={cn("text-[8px] h-5 uppercase border-none px-2 font-black", 
@@ -488,24 +477,9 @@ export default function SalesPage() {
                     </TableCell>
                     <TableCell className="text-right pr-6 sticky right-0 bg-white/90 backdrop-blur-sm group-hover:bg-slate-50/90 transition-colors z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
                       <div className="flex justify-end items-center gap-1">
-                        <div className="hidden md:flex items-center gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-blue-600 hover:bg-blue-50" onClick={() => { setSelectedRecord(inv); setIsViewModalOpen(true); }} title={t('view')}><Eye className="h-3.5 w-3.5" /></Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-amber-600 hover:bg-amber-50" onClick={() => openEdit(inv)} title={t('edit')}><Edit className="h-3.5 w-3.5" /></Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-slate-600 hover:bg-slate-100" onClick={() => { setSelectedRecord(inv); setIsViewModalOpen(true); }} title={t('print')}><Printer className="h-3.5 w-3.5" /></Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-red-600 hover:bg-red-50" onClick={() => { setSelectedRecord(inv); setIsDeleteAlertOpen(true); }} title={t('delete')}><Trash2 className="h-3.5 w-3.5" /></Button>
-                        </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden rounded-full hover:bg-blue-50 text-blue-600 transition-colors"><MoreVertical className="h-4 w-4" /></Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-xl">
-                            <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedRecord(inv); setIsViewModalOpen(true); }}><Eye className="mr-2 h-3.5 w-3.5" /> {t('view')}</DropdownMenuItem>
-                            <DropdownMenuItem className="text-xs font-bold" onClick={() => openEdit(inv)}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
-                            <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedRecord(inv); setIsViewModalOpen(true); }}><Download className="mr-2 h-3.5 w-3.5" /> {t('export')}</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(inv); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-blue-600" onClick={() => { setSelectedRecord(inv); setIsViewModalOpen(true); }}><Eye className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-amber-600" onClick={() => openEdit(inv)}><Edit className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-red-600" onClick={() => { setSelectedRecord(inv); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -518,8 +492,8 @@ export default function SalesPage() {
 
       {/* POS INVOICE BUILDER */}
       <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) resetForm(); setIsAddModalOpen(false); setIsEditModalOpen(false); }}>
-        <DialogContent className="max-w-[95vw] w-[1400px] p-0 overflow-hidden border-none shadow-2xl bg-slate-50 rounded-[2rem] md:rounded-[2.5rem]">
-          <DialogHeader className={cn("p-5 text-white flex-row items-center justify-between space-y-0", isEditModalOpen ? "bg-indigo-600" : "bg-blue-600")}>
+        <DialogContent className="max-w-[95vw] w-[1400px] p-0 overflow-hidden border-none shadow-2xl bg-slate-50 rounded-[2rem] md:rounded-[2.5rem] max-h-[96vh]">
+          <DialogHeader className={cn("p-5 text-white flex-row items-center justify-between space-y-0 shrink-0", isEditModalOpen ? "bg-indigo-600" : "bg-blue-600")}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center shrink-0">
                 <ShoppingCart className="h-5 w-5" />
@@ -531,9 +505,9 @@ export default function SalesPage() {
             </div>
           </DialogHeader>
 
-          <div className="flex flex-col lg:flex-row h-[85vh] lg:h-[80vh] overflow-hidden">
+          <div className="flex flex-col lg:flex-row h-[calc(96vh-80px)] overflow-hidden">
             {/* Main POS Interface */}
-            <div className="flex-1 flex flex-col p-4 md:p-6 space-y-4 md:space-y-6 overflow-y-auto lg:overflow-hidden custom-scrollbar">
+            <div className="flex-1 flex flex-col p-4 md:p-6 space-y-4 md:space-y-6 overflow-y-auto custom-scrollbar">
               <div className="bg-white p-4 md:p-6 rounded-3xl ring-1 ring-slate-100 shadow-sm space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4 border-slate-50">
                   <h3 className="text-[10px] font-black uppercase text-slate-900 flex items-center gap-2 tracking-widest">
@@ -545,69 +519,75 @@ export default function SalesPage() {
                   </div>
                 </div>
 
-                {isManualCustomer ? (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in slide-in-from-top-1 duration-300">
-                    <div className="space-y-1.5 md:col-span-2">
-                      <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Full Name</Label>
-                      <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerName} onChange={e => setManualCustomerName(e.target.value)} placeholder="e.g. John Doe" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Phone Number</Label>
-                      <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerPhone} onChange={e => setManualCustomerPhone(e.target.value)} placeholder="+880..." />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('customer')}</Label>
-                      <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                        <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 shadow-sm font-bold text-xs">
-                          <SelectValue placeholder={t('search')} />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-[250px] rounded-xl">
-                          {customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-bold">{c.firstName} {c.lastName}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('date')}</Label>
-                      <Input type="date" className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-black" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} />
-                    </div>
-                  </div>
-                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {isManualCustomer ? (
+                    <>
+                      <div className="space-y-1.5 lg:col-span-2">
+                        <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Full Name</Label>
+                        <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerName} onChange={e => setManualCustomerName(e.target.value)} placeholder="e.g. John Doe" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Phone Number</Label>
+                        <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerPhone} onChange={e => setManualCustomerPhone(e.target.value)} placeholder="+880..." />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="space-y-1.5 lg:col-span-2">
+                        <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('customer')}</Label>
+                        <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                          <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 shadow-sm font-bold text-xs">
+                            <SelectValue placeholder={t('search')} />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[250px] rounded-xl">
+                            {customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-bold">{c.firstName} {c.lastName}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('date')}</Label>
+                        <Input type="date" className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-black" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} />
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
 
               <div className="bg-white p-4 rounded-3xl ring-1 ring-slate-100 shadow-sm border border-blue-50 space-y-4">
-                <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-end">
-                  <div className="flex-1 space-y-1.5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Catalog Search</Label>
-                    <Select onValueChange={handleAddProduct}>
-                      <SelectTrigger className="h-12 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 shadow-sm transition-all focus:ring-2 focus:ring-blue-500 font-bold text-xs">
-                        <SelectValue placeholder={t('addProduct')} />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[300px] rounded-xl">
-                        {products?.map(p => (
-                          <SelectItem key={p.id} value={p.id} className="text-xs font-bold">
-                            {p.name} <span className="text-[9px] opacity-60 ml-2 font-mono">(STOCK: {p.currentStock} {p.unit || 'Pcs'})</span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex gap-2">
+                      <Select onValueChange={handleAddProduct}>
+                        <SelectTrigger className="h-12 flex-1 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 shadow-sm transition-all focus:ring-2 focus:ring-blue-500 font-bold text-xs">
+                          <SelectValue placeholder={t('addProduct')} />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[300px] rounded-xl">
+                          {products?.map(p => (
+                            <SelectItem key={p.id} value={p.id} className="text-xs font-bold">
+                              {p.name} <span className="text-[9px] opacity-60 ml-2 font-mono">(STOCK: {p.currentStock} {p.unit || 'Pcs'})</span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl border-blue-200 text-blue-700 bg-blue-50/50" onClick={handleAddCustomItem} title={t('addCustomItem')}>
+                        <PackagePlus className="h-5 w-5" />
+                      </Button>
+                    </div>
                   </div>
-                  <Button variant="outline" className="h-12 rounded-2xl gap-2 border-blue-200 text-blue-700 font-black text-[10px] uppercase bg-blue-50/50 transition-all hover:bg-blue-100 shadow-sm" onClick={handleAddCustomItem}>
-                    <PackagePlus className="h-4 w-4" /> {t('addCustomItem')}
-                  </Button>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('scanPrompt')}</Label>
+                    <form onSubmit={handleScannerInput} className="relative group">
+                      <Scan className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-600 animate-pulse" />
+                      <Input 
+                        placeholder="Scan or type SKU..."
+                        className="h-12 pl-12 rounded-2xl bg-slate-50/50 border-none ring-1 ring-slate-100 shadow-sm text-xs font-bold focus:ring-2 focus:ring-blue-600 transition-all"
+                        value={scannerInput}
+                        onChange={e => setScannerInput(e.target.value)}
+                      />
+                    </form>
+                  </div>
                 </div>
-
-                <form onSubmit={handleScannerInput} className="relative group shrink-0">
-                  <Scan className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-600 animate-pulse" />
-                  <Input 
-                    placeholder={t('scanPrompt')}
-                    className="h-12 pl-12 rounded-2xl bg-slate-50/50 border-none ring-1 ring-slate-100 shadow-sm text-xs font-bold focus:ring-2 focus:ring-blue-600 transition-all"
-                    value={scannerInput}
-                    onChange={e => setScannerInput(e.target.value)}
-                  />
-                </form>
               </div>
 
               <div className="flex-1 bg-white rounded-[2rem] shadow-sm ring-1 ring-slate-100 overflow-hidden flex flex-col border border-slate-50 min-h-[400px]">
@@ -618,76 +598,40 @@ export default function SalesPage() {
                         <TableRow>
                           <TableHead className="text-[10px] uppercase font-black py-4 pl-4 md:pl-8">{t('itemDescription')}</TableHead>
                           <TableHead className="text-[10px] uppercase font-black text-center w-32 md:w-40">{t('qty')} / Unit</TableHead>
-                          <TableHead className="text-[10px] uppercase font-black text-right w-24 md:w-40">{t('unitPrice')}</TableHead>
-                          <TableHead className="text-[10px] uppercase font-black text-right w-24 md:w-40 pr-4 md:pr-8">{t('total')}</TableHead>
+                          <TableHead className="text-[10px] uppercase font-black text-right w-32 md:w-40">{t('unitPrice')}</TableHead>
+                          <TableHead className="text-[10px] uppercase font-black text-right w-32 md:w-40 pr-4 md:pr-8">{t('total')}</TableHead>
                           <TableHead className="w-10"></TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {lineItems.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={5} className="h-48 md:h-64 text-center">
-                              <div className="flex flex-col items-center opacity-20">
-                                <ShoppingBag className="h-12 w-12 md:h-16 md:w-16 mb-4" />
-                                <p className="text-[10px] md:text-xs uppercase font-black tracking-[0.3em]">{t('noItemsSelected')}</p>
-                              </div>
-                            </TableCell>
-                          </TableRow>
+                          <TableRow><TableCell colSpan={5} className="h-64 text-center opacity-20"><ShoppingBag className="h-12 w-12 mx-auto mb-4" /><p className="text-xs uppercase font-black tracking-widest">{t('noItemsSelected')}</p></TableCell></TableRow>
                         ) : (
                           lineItems.map((item, idx) => (
-                            <TableRow key={idx} className="group hover:bg-slate-50/50 transition-colors h-16 md:h-20">
+                            <TableRow key={idx} className="group hover:bg-slate-50/50 transition-colors h-20">
                               <TableCell className="pl-4 md:pl-8">
                                 <div className="flex flex-col min-w-0">
                                   {item.isCustom ? (
-                                    <Input 
-                                      className="h-10 text-[11px] font-black uppercase border-none ring-1 ring-slate-100 bg-slate-50/30 w-full rounded-xl" 
-                                      value={item.name} 
-                                      onChange={e => handleUpdateItem(idx, 'name', e.target.value)} 
-                                      placeholder="Type product name..."
-                                    />
+                                    <Input className="h-10 text-[11px] font-black uppercase border-none ring-1 ring-slate-100 bg-slate-50/30 w-full rounded-xl" value={item.name} onChange={e => handleUpdateItem(idx, 'name', e.target.value)} placeholder="Type product name..." />
                                   ) : (
                                     <span className="text-[11px] md:text-sm font-black text-slate-900 uppercase tracking-tighter truncate">{item.name}</span>
                                   )}
                                   {item.isSerialized && (
-                                    <div className="flex flex-wrap gap-1 mt-1.5">
-                                      {item.serials.map((s, si) => (
-                                        <Badge key={si} variant="secondary" className="text-[7px] md:text-[8px] h-3.5 md:h-4 bg-blue-50 text-blue-700 border-none font-mono">
-                                          {s}
-                                        </Badge>
-                                      ))}
-                                    </div>
+                                    <div className="flex flex-wrap gap-1 mt-1.5">{item.serials.map((s, si) => <Badge key={si} variant="secondary" className="text-[7px] h-3.5 bg-blue-50 text-blue-700 border-none font-mono uppercase">{s}</Badge>)}</div>
                                   )}
                                 </div>
                               </TableCell>
                               <TableCell className="text-center">
                                 <div className="flex items-center gap-2 justify-center">
-                                  <Input 
-                                    type="number" 
-                                    className="h-10 text-center font-black text-sm rounded-xl w-16 md:w-20 bg-slate-50 border-none" 
-                                    value={item.qty} 
-                                    disabled={item.isSerialized}
-                                    onChange={e => handleUpdateItem(idx, 'qty', e.target.value)} 
-                                  />
+                                  <Input type="number" className="h-10 text-center font-black text-sm rounded-xl w-16 md:w-20 bg-slate-50 border-none" value={item.qty} disabled={item.isSerialized} onChange={e => handleUpdateItem(idx, 'qty', e.target.value)} />
                                   <span className="text-[10px] font-black uppercase text-muted-foreground w-8 text-left">{item.unit || 'Pcs'}</span>
                                 </div>
                               </TableCell>
                               <TableCell className="text-right">
-                                <Input 
-                                  type="number" 
-                                  className="h-10 text-right font-black text-xs rounded-xl w-24 md:w-32 bg-slate-50 border-none ml-auto" 
-                                  value={item.price} 
-                                  disabled={!item.isCustom}
-                                  onChange={e => handleUpdateItem(idx, 'price', e.target.value)} 
-                                />
+                                <Input type="number" className="h-10 text-right font-black text-xs rounded-xl w-24 md:w-32 bg-slate-50 border-none ml-auto" value={item.price} disabled={!item.isCustom} onChange={e => handleUpdateItem(idx, 'price', e.target.value)} />
                               </TableCell>
-                              <TableCell className="text-right pr-4 md:pr-8">
-                                <span className="font-black text-xs md:text-sm text-blue-600">৳{item.total.toLocaleString()}</span>
-                              </TableCell>
-                              <TableCell>
-                                <Button variant="ghost" size="icon" className="h-9 w-9 text-red-500 hover:bg-red-50 rounded-full" onClick={() => handleRemoveItem(idx)}>
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </TableCell>
+                              <TableCell className="text-right pr-4 md:pr-8"><span className="font-black text-xs md:text-sm text-blue-600">৳{item.total.toLocaleString()}</span></TableCell>
+                              <TableCell><Button variant="ghost" size="icon" className="h-9 w-9 text-red-500 hover:bg-red-50 rounded-full" onClick={() => handleRemoveItem(idx)}><X className="h-4 w-4" /></Button></TableCell>
                             </TableRow>
                           ))
                         )}
@@ -698,68 +642,39 @@ export default function SalesPage() {
               </div>
             </div>
 
-            <div className="w-full lg:w-[400px] bg-white border-l border-slate-100 p-4 md:p-8 space-y-4 md:space-y-6 flex flex-col shadow-2xl relative z-20 shrink-0 overflow-y-auto custom-scrollbar">
-              <div className="space-y-4 md:space-y-6">
-                <div className={cn("p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl space-y-4 relative overflow-hidden group shrink-0 text-white", isEditModalOpen ? "bg-indigo-600" : "bg-blue-600")}>
-                  <Calculator className="absolute -bottom-6 -right-6 h-24 w-24 md:h-32 md:w-32 opacity-10 group-hover:scale-125 transition-transform duration-700" />
-                  <div className="space-y-1 text-center relative z-10">
-                    <p className="text-[9px] md:text-[10px] uppercase font-black opacity-60 tracking-[0.2em]">{t('netFinalAmount')}</p>
-                    <h2 className="text-3xl md:text-5xl font-headline font-black tracking-tighter">৳{totalAmount.toLocaleString()}</h2>
-                  </div>
-                  <div className="pt-4 md:pt-6 space-y-2 md:space-y-3 border-t border-white/10 text-[10px] md:text-[11px] font-bold uppercase tracking-wider relative z-10">
+            <div className="w-full lg:w-[400px] bg-white border-l border-slate-100 p-6 md:p-8 space-y-6 flex flex-col shadow-2xl relative z-20 shrink-0 overflow-y-auto custom-scrollbar">
+              <div className="space-y-6">
+                <div className={cn("p-8 rounded-[2.5rem] shadow-2xl space-y-4 text-center text-white", isEditModalOpen ? "bg-indigo-600" : "bg-blue-600")}>
+                  <p className="text-[9px] uppercase font-black opacity-60 tracking-[0.2em]">{t('netFinalAmount')}</p>
+                  <h2 className="text-3xl md:text-4xl font-headline font-black tracking-tighter">৳{totalAmount.toLocaleString()}</h2>
+                  <div className="pt-6 space-y-2 border-t border-white/10 text-[10px] font-bold uppercase tracking-wider">
                     <div className="flex justify-between opacity-70"><span>{t('subtotal')}</span><span>৳{subtotal.toLocaleString()}</span></div>
                     <div className="flex justify-between text-red-200"><span>{t('discount')}</span><span>- ৳{discount.toLocaleString()}</span></div>
                     <div className="flex justify-between opacity-70"><span>{t('vat')} ({vatPercent}%)</span><span>+ ৳{vatAmount.toLocaleString()}</span></div>
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3 md:gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('discount')}</Label>
-                      <Input type="number" className="h-11 rounded-2xl bg-slate-50 border-none font-bold text-xs" value={discount || ''} onChange={e => setDiscount(Number(e.target.value))} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('vat')} %</Label>
-                      <Input type="number" className="h-11 rounded-2xl bg-slate-50 border-none font-bold text-xs" value={vatPercent || ''} onChange={e => setVatPercent(Number(e.target.value))} />
-                    </div>
-                  </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">{t('discount')}</Label><Input type="number" className="h-11 rounded-2xl bg-slate-50 border-none font-bold text-xs" value={discount || ''} onChange={e => setDiscount(Number(e.target.value))} /></div>
+                  <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">{t('vat')} %</Label><Input type="number" className="h-11 rounded-2xl bg-slate-50 border-none font-bold text-xs" value={vatPercent || ''} onChange={e => setVatPercent(Number(e.target.value))} /></div>
+                </div>
 
-                  <div className="space-y-3 pt-4 border-t border-slate-50">
-                    <Label className="text-[9px] md:text-[10px] font-black uppercase text-blue-600 tracking-[0.2em]">{t('paid')}</Label>
-                    <div className="relative">
-                      <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-blue-600" />
-                      <Input type="number" placeholder="0.00" className="h-14 md:h-16 pl-12 text-xl md:text-2xl font-black text-blue-600 rounded-2xl bg-blue-50/30 border-2 border-blue-50 transition-all focus:bg-blue-50 focus:border-blue-200 shadow-inner" value={paidAmount || ''} onChange={e => setPaidAmount(Number(e.target.value))} />
-                    </div>
-                  </div>
+                <div className="space-y-3 pt-4 border-t">
+                  <Label className="text-[10px] font-black uppercase text-blue-600 tracking-widest">{t('paid')}</Label>
+                  <Input type="number" placeholder="0.00" className="h-14 text-2xl font-black text-blue-600 rounded-2xl bg-blue-50/30 border-2 border-blue-50 text-center" value={paidAmount || ''} onChange={e => setPaidAmount(Number(e.target.value))} />
                 </div>
               </div>
 
-              <div className="mt-auto pt-4 md:pt-6">
-                <Button 
-                  className={cn("w-full h-16 md:h-20 rounded-[1.5rem] md:rounded-[2rem] font-black text-[11px] md:text-xs uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 group overflow-hidden text-white", isEditModalOpen ? "bg-indigo-600 hover:bg-indigo-700" : "bg-blue-600 hover:bg-blue-700")} 
-                  disabled={isSubmitting || lineItems.length === 0} 
-                  onClick={handleSaveInvoice}
-                >
-                  <span className="relative z-10 flex items-center gap-3">
-                    {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <ArrowRight className="h-5 w-5" />}
-                    {isEditModalOpen ? "Update Transaction" : t('postTransaction')}
-                  </span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                </Button>
-              </div>
+              <Button className={cn("w-full h-16 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl mt-auto transition-all active:scale-95 text-white", isEditModalOpen ? "bg-indigo-600 hover:bg-indigo-700" : "bg-blue-600 hover:bg-blue-700")} disabled={isSubmitting || lineItems.length === 0} onClick={handleSaveInvoice}>
+                {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <ArrowRight className="h-5 w-5" />}
+                {isEditModalOpen ? "Update Sale" : t('postTransaction')}
+              </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Bulk Action Toolbar */}
-      <BulkActionToolbar 
-        selectedCount={selectedCount} 
-        onClear={clearSelection} 
-        onAction={handleBulkAction}
-        isLoading={isSubmitting}
-      />
+      <BulkActionToolbar selectedCount={selectedCount} onClear={clearSelection} onAction={handleBulkAction} isLoading={isSubmitting} />
     </div>
   )
 }

@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -21,18 +20,16 @@ export default function Dashboard() {
   const db = useFirestore();
   const { t } = useTranslation();
 
-  // Optimization: Memoized shortcuts array to prevent re-renders
   const shortcuts = React.useMemo(() => [
     { label: t('sales'), icon: ShoppingCart, color: "bg-green-500", path: "/sales" },
     { label: t('purchases'), icon: Truck, color: "bg-orange-500", path: "/purchases" },
     { label: t('quotations'), icon: FileText, color: "bg-purple-500", path: "/quotations" },
     { label: t('invoiceShortcut'), icon: Receipt, color: "bg-blue-500", path: "/sales" },
-    { label: t('billing'), icon: Layers, color: "bg-violet-500", path: "/project-billing" },
-    { label: t('paymentShortcut'), icon: Wallet, color: "bg-indigo-500", path: "/project-billing" },
+    { label: t('billing'), icon: Layers, color: "bg-violet-500", path: "/projects" },
+    { label: t('paymentShortcut'), icon: Wallet, color: "bg-indigo-500", path: "/projects" },
     { label: t('accounts'), icon: Landmark, color: "bg-cyan-500", path: "/accounts" },
   ], [t]);
 
-  // Optimization: Ensure all main data listeners are capped for performance
   const invoicesQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
     return query(collection(db, "companies", companyId, "branches", branchId, "sales_invoices"), orderBy("createdAt", "desc"), limit(5));
@@ -41,7 +38,6 @@ export default function Dashboard() {
 
   const allInvoicesQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
-    // Capping total invoice fetch to 100 for recent stats calculation
     return query(collection(db, "companies", companyId, "branches", branchId, "sales_invoices"), orderBy("createdAt", "desc"), limit(100));
   }, [db, companyId, branchId]);
   const { data: allInvoices } = useCollection(allInvoicesQuery);
@@ -60,7 +56,7 @@ export default function Dashboard() {
   }, [allInvoices, products]);
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-6 pb-10 w-full overflow-hidden">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold font-headline text-slate-900 leading-none">{t('goodMorning')}, {t('admin')} 👋</h1>
@@ -80,9 +76,9 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Bubble Shortcuts - Primary Navigation */}
-      <div className="bg-white p-4 md:p-6 rounded-[2rem] border shadow-sm ring-1 ring-slate-100 overflow-x-auto custom-scrollbar no-scrollbar md:overflow-visible">
-        <div className="flex items-center gap-6 md:gap-4 min-w-max md:min-w-0 md:grid md:grid-cols-7">
+      {/* Bubble Shortcuts - Improved Responsive Grid */}
+      <div className="bg-white p-4 md:p-6 rounded-[2rem] border shadow-sm ring-1 ring-slate-100 overflow-x-auto no-scrollbar">
+        <div className="flex md:grid md:grid-cols-7 gap-6 md:gap-4 min-w-max md:min-w-0">
           {shortcuts.map((s, i) => (
             <Link key={i} href={s.path} className="flex flex-col items-center gap-3 group shrink-0 transition-all">
               <div className={cn(
@@ -99,6 +95,7 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* KPI Grid - Responsive 1-2-4 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard title={t('totalRevenue')} value={`৳${stats.totalSales.toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-600" />
         <KPICard title={t('totalOrders')} value={allInvoices?.length || 0} icon={ShoppingCart} colorClass="bg-blue-600" />
@@ -135,7 +132,7 @@ export default function Dashboard() {
                     {recentInvoices.map((inv) => (
                       <TableRow key={inv.id} className="h-14 hover:bg-slate-50/50 transition-colors group">
                         <TableCell className="font-bold text-xs pl-6 text-blue-600 uppercase tracking-tighter">{inv.invoiceNumber}</TableCell>
-                        <TableCell className="text-xs font-bold text-slate-900">
+                        <TableCell className="text-xs font-bold text-slate-900 truncate max-w-[120px]">
                           {inv.customerName || t('walkingClient')}
                         </TableCell>
                         <TableCell className="font-black text-xs">৳{inv.totalAmount?.toLocaleString()}</TableCell>
@@ -179,7 +176,7 @@ export default function Dashboard() {
                   <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-3">
                     <CheckCircle2 className="h-6 w-6 text-green-500" />
                   </div>
-                  <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">{t('allHealthy')}</p>
+                  <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">{t('allHealthy')}</p>
                 </div>
               )}
             </div>
