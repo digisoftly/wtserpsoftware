@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -32,7 +31,8 @@ import {
   BarChart3,
   Download,
   Printer,
-  ChevronRight
+  ChevronRight,
+  Wallet
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
