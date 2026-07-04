@@ -24,7 +24,9 @@ import {
   ShieldAlert,
   ShieldX,
   MonitorPlay,
-  RotateCcw
+  RotateCcw,
+  MessageSquareWarning,
+  AlertCircle
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -40,6 +42,7 @@ import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { toast } from "@/hooks/use-toast"
 import { useTranslation } from "@/hooks/use-translation"
 import { cn } from "@/lib/utils"
+import { Textarea } from "@/components/ui/textarea"
 
 const DEFAULT_MENU_ORDER = [
   "dashboard", 
@@ -164,6 +167,7 @@ export default function SettingsPage() {
           <TabsList className="bg-white border rounded-xl p-1 mb-6 shadow-sm flex overflow-x-auto h-auto no-scrollbar ring-1 ring-slate-100">
             <TabsTrigger value="general" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">{t('general')}</TabsTrigger>
             <TabsTrigger value="navigation" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">{t('navigation')}</TabsTrigger>
+            <TabsTrigger value="messages" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">{t('messages')}</TabsTrigger>
             <TabsTrigger value="business" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">{t('businessRules')}</TabsTrigger>
             <TabsTrigger value="demo" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">{t('demoManagement')}</TabsTrigger>
             <TabsTrigger value="security" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">{t('sessionManagement')}</TabsTrigger>
@@ -234,6 +238,75 @@ export default function SettingsPage() {
                   ))}
                 </div>
               </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="messages" className="space-y-6">
+            <Card className="border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 overflow-hidden">
+               <CardHeader className="bg-slate-50/50 p-8 border-b">
+                 <div className="flex items-center gap-3">
+                   <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
+                     <MessageSquareWarning className="h-5 w-5" />
+                   </div>
+                   <div>
+                     <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-900">{t('errorAndPermissions')}</CardTitle>
+                     <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1">Global Terminal Notification Overrides</p>
+                   </div>
+                 </div>
+               </CardHeader>
+               <CardContent className="p-8 space-y-8">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Permission Error Block */}
+                    <div className="space-y-4 p-6 rounded-3xl bg-slate-50 ring-1 ring-slate-100">
+                       <h3 className="text-xs font-black uppercase tracking-widest text-red-600 flex items-center gap-2">
+                         <ShieldAlert className="h-4 w-4" /> {t('accessRestricted')}
+                       </h3>
+                       <div className="space-y-4 pt-4 border-t border-slate-200">
+                          <div className="space-y-1.5">
+                             <Label className="text-[9px] font-black uppercase text-slate-400">English Header</Label>
+                             <Input name="msgTitle_permission_EN" defaultValue={settings?.msgTitle_permission_EN || t('accessRestricted')} className="h-10 text-xs font-bold" />
+                          </div>
+                          <div className="space-y-1.5">
+                             <Label className="text-[9px] font-black uppercase text-slate-400">English Message</Label>
+                             <Textarea name="msgBody_permission_EN" defaultValue={settings?.msgBody_permission_EN || t('accessRestrictedMsg')} className="text-xs min-h-[80px]" />
+                          </div>
+                          <div className="space-y-1.5 pt-4 border-t border-slate-200/50">
+                             <Label className="text-[9px] font-black uppercase text-slate-400">বাংলা শিরোনাম</Label>
+                             <Input name="msgTitle_permission_BN" defaultValue={settings?.msgTitle_permission_BN || "অ্যাক্সেস সীমিত"} className="h-10 text-xs font-bold" />
+                          </div>
+                          <div className="space-y-1.5">
+                             <Label className="text-[9px] font-black uppercase text-slate-400">বাংলা বার্তা</Label>
+                             <Textarea name="msgBody_permission_BN" defaultValue={settings?.msgBody_permission_BN || "এই ফিচারটি ব্যবহার করার জন্য আপনাকে অনুমতি দেওয়া হয়নি।"} className="text-xs min-h-[80px]" />
+                          </div>
+                       </div>
+                    </div>
+
+                    {/* System Error Block */}
+                    <div className="space-y-4 p-6 rounded-3xl bg-slate-50 ring-1 ring-slate-100">
+                       <h3 className="text-xs font-black uppercase tracking-widest text-blue-600 flex items-center gap-2">
+                         <AlertCircle className="h-4 w-4" /> {t('serverError')}
+                       </h3>
+                       <div className="space-y-4 pt-4 border-t border-slate-200">
+                          <div className="space-y-1.5">
+                             <Label className="text-[9px] font-black uppercase text-slate-400">English Header</Label>
+                             <Input name="msgTitle_system_EN" defaultValue={settings?.msgTitle_system_EN || t('serverError')} className="h-10 text-xs font-bold" />
+                          </div>
+                          <div className="space-y-1.5">
+                             <Label className="text-[9px] font-black uppercase text-slate-400">English Message</Label>
+                             <Textarea name="msgBody_system_EN" defaultValue={settings?.msgBody_system_EN || t('serverErrorMsg')} className="text-xs min-h-[80px]" />
+                          </div>
+                          <div className="space-y-1.5 pt-4 border-t border-slate-200/50">
+                             <Label className="text-[9px] font-black uppercase text-slate-400">বাংলা শিরোনাম</Label>
+                             <Input name="msgTitle_system_BN" defaultValue={settings?.msgTitle_system_BN || "সিস্টেম ত্রুটি"} className="h-10 text-xs font-bold" />
+                          </div>
+                          <div className="space-y-1.5">
+                             <Label className="text-[9px] font-black uppercase text-slate-400">বাংলা বার্তা</Label>
+                             <Textarea name="msgBody_system_BN" defaultValue={settings?.msgBody_system_BN || "সাময়িক সমস্যা হয়েছে, পরে আবার চেষ্টা করুন।"} className="text-xs min-h-[80px]" />
+                          </div>
+                       </div>
+                    </div>
+                  </div>
+               </CardContent>
             </Card>
           </TabsContent>
 

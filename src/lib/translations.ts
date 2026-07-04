@@ -406,6 +406,19 @@ export const translations = {
     processing_status: "Processing",
     delivered_status: "Delivered",
     cancelled_status: "Cancelled",
+
+    // Error & Permission Messages
+    accessRestricted: "Access Restricted",
+    accessRestrictedMsg: "You do not have permission to access this feature. Please contact your administrator.",
+    networkError: "Network Connection Issue",
+    networkErrorMsg: "There seems to be an issue with your internet connection.",
+    serverError: "System Interruption",
+    serverErrorMsg: "We've encountered a temporary issue. Please try again later.",
+    dataNotFound: "Record Not Found",
+    dataNotFoundMsg: "The requested information could not be located in the terminal.",
+    messages: "System Messages",
+    errorAndPermissions: "Error & Permission Messages",
+    goDashboard: "Dashboard",
   },
   BN: {
     // Navigation
@@ -580,7 +593,6 @@ export const translations = {
     addTicket: "সাপোর্ট কেস",
     addReturn: "নতুন রিটার্ন",
     addContract: "নতুন চুক্তি",
-    addContract_S: "চুক্তি যোগ করুন",
     addProject: "প্রকল্প শুরু",
     addChallan: "নতুন চালান",
     newInvoice: "নতুন ইনভয়েস",
@@ -812,5 +824,18 @@ export const translations = {
     processing_status: "প্রক্রিয়াজাত",
     delivered_status: "ডেলিভারি সম্পন্ন",
     cancelled_status: "বাতিল",
+
+    // Error & Permission Messages
+    accessRestricted: "অ্যাক্সেস সীমিত",
+    accessRestrictedMsg: "এই ফিচারটি ব্যবহার করার জন্য আপনাকে অনুমতি দেওয়া হয়নি। ফিচারটি ব্যবহার করতে দয়া করে এডমিন এর সাথে যোগাযোগ করুন।",
+    networkError: "নেটওয়ার্ক সমস্যা",
+    networkErrorMsg: "ইন্টারনেট সংযোগ সমস্যা হয়েছে। দয়া করে আপনার সংযোগটি চেক করুন।",
+    serverError: "সিস্টেম ত্রুটি",
+    serverErrorMsg: "সাময়িক সমস্যা হয়েছে, পরে আবার চেষ্টা করুন।",
+    dataNotFound: "তথ্য পাওয়া যায়নি",
+    dataNotFoundMsg: "অনুরোধ করা তথ্যটি খুঁজে পাওয়া যায়নি।",
+    messages: "সিস্টেম মেসেজ",
+    errorAndPermissions: "ত্রুটি ও পারমিশন মেসেজ",
+    goDashboard: "ড্যাশবোর্ড",
   }
 };
