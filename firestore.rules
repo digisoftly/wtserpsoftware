@@ -9,45 +9,52 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isOwner(userId) {
+    function isOwner(companyId, userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // --- RULES ---
-
-    // 1. Public Configuration
-    match /companies/{companyId}/system/config {
-      allow read: if true;
-    }
-
-    // 2. User Profiles (Owner Access)
-    // Users must be able to read/write their own profile to join a company context
-    match /companies/{companyId}/users/{userId} {
-      allow read, write: if isOwner(userId);
-    }
-
-    // 3. Unified Company Data Rule
-    // Handles both the Demo Company (Public to signed-in users) 
-    // and Private Companies (Profile/Admin restricted)
-    match /companies/{companyId}/{allPaths=**} {
-      allow read, write: if isSignedIn() && (
-        companyId == 'warrior-demo-corp' ||
+    function isCompanyMember(companyId) {
+      return isSignedIn() && (
         exists(/databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid)) ||
         exists(/databases/$(database)/documents/super_admins/$(request.auth.uid))
       );
     }
 
-    // 4. Global User Preferences (Root Level)
-    match /users/{userId} {
-      allow read, write: if isOwner(userId);
+    // --- RULES ---
+
+    // 1. System Configuration (Public Read)
+    match /companies/{companyId}/system/config {
+      allow read: if true;
+      allow write: if isCompanyMember(companyId);
     }
 
-    // 5. Global Bypass for Super Admins
+    // 2. User Profiles (Owner Access)
+    // Critical for first-time profile creation and login
+    match /companies/{companyId}/users/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // 3. Warrior Demo Corp (Full access for prototyping)
+    match /companies/warrior-demo-corp/{allPaths=**} {
+      allow read, write: if isSignedIn();
+    }
+
+    // 4. Standard Company Data (Membership Restricted)
+    match /companies/{companyId}/{allPaths=**} {
+      allow read, write: if isCompanyMember(companyId);
+    }
+
+    // 5. Root Level User Preferences
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // 6. Global Super Admin Bypass
     match /{allPaths=**} {
       allow read, write: if isSignedIn() && exists(/databases/$(database)/documents/super_admins/$(request.auth.uid));
     }
 
-    // 6. Default Deny
+    // 7. Default Deny
     match /{path=**} {
       allow read, write: if false;
     }
