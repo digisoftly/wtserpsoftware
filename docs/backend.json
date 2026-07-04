@@ -67,6 +67,59 @@
         "isActive": { "type": "boolean" },
         "type": { "type": "string" }
       }
+    },
+    "Product": {
+      "title": "Inventory Product",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "sku": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "brandId": { "type": "string" },
+        "unitId": { "type": "string" },
+        "unitPrice": { "type": "number" },
+        "costPrice": { "type": "number" },
+        "currentStock": { "type": "number" },
+        "minStockLevel": { "type": "number" },
+        "serialNumberTrackingRequired": { "type": "boolean" }
+      }
+    },
+    "Project": {
+      "title": "Project",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "projectCode": { "type": "string" },
+        "customerId": { "type": "string" },
+        "status": { "type": "string" },
+        "budget": { "type": "number" },
+        "paidAmount": { "type": "number" },
+        "progress": { "type": "number" }
+      }
+    },
+    "SalesInvoice": {
+      "title": "Sales Invoice",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "invoiceNumber": { "type": "string" },
+        "customerId": { "type": "string" },
+        "totalAmount": { "type": "number" },
+        "status": { "type": "string" }
+      }
+    },
+    "ServiceContract": {
+      "title": "Service Contract",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "contractNumber": { "type": "string" },
+        "customerId": { "type": "string" },
+        "status": { "type": "string" },
+        "monthlyAmount": { "type": "number" }
+      }
     }
   },
   "auth": {
@@ -78,6 +131,13 @@
     "/companies/{companyId}/master_brands/{id}": { "schema": { "$ref": "#/backend/entities/MasterBrand" }, "description": "Global brands." },
     "/companies/{companyId}/master_models/{id}": { "schema": { "$ref": "#/backend/entities/MasterModel" }, "description": "Global models linked to brands." },
     "/companies/{companyId}/master_custom_fields/{id}": { "schema": { "$ref": "#/backend/entities/CustomField" }, "description": "Dynamic custom fields." },
-    "/companies/{companyId}/master_data/{id}": { "schema": { "$ref": "#/backend/entities/GenericMaster" }, "description": "Centralized storage for various master modules like WarrantyTypes, Tax, etc." }
+    "/companies/{companyId}/master_data/{id}": { "schema": { "$ref": "#/backend/entities/GenericMaster" }, "description": "Centralized storage for various master modules like WarrantyTypes, Tax, etc." },
+    "/companies/{companyId}/users/{userId}": { "schema": "object", "description": "Company-specific user profiles." },
+    "/companies/{companyId}/branches/{branchId}/products/{id}": { "schema": { "$ref": "#/backend/entities/Product" }, "description": "Inventory catalog." },
+    "/companies/{companyId}/branches/{branchId}/projects/{id}": { "schema": { "$ref": "#/backend/entities/Project" }, "description": "Client projects." },
+    "/companies/{companyId}/branches/{branchId}/sales_invoices/{id}": { "schema": { "$ref": "#/backend/entities/SalesInvoice" }, "description": "Sales records." },
+    "/companies/{companyId}/branches/{branchId}/delivery_challans/{id}": { "schema": "object", "description": "Dispatch records." },
+    "/companies/{companyId}/branches/{branchId}/service_contracts/{id}": { "schema": { "$ref": "#/backend/entities/ServiceContract" }, "description": "Maintenance agreements." },
+    "/companies/{companyId}/branches/{branchId}/contract_invoices/{id}": { "schema": "object", "description": "Periodic billing for contracts." }
   }
 }

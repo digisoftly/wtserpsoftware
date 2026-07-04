@@ -16,6 +16,12 @@ service cloud.firestore {
       allow read: if true;
     }
 
+    // Explicitly allow users to read/write their own profile in the company context
+    // This solves the 'chicken-and-egg' problem where they need a profile to read company data
+    match /companies/{companyId}/users/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
     // Robust recursive rule for the demo company
     // Grants full access to all sub-collections for signed-in users
     match /companies/warrior-demo-corp/{allPaths=**} {
@@ -24,7 +30,10 @@ service cloud.firestore {
 
     // Rule for other companies (if any)
     match /companies/{companyId}/{allPaths=**} {
-      allow read, write: if isSignedIn() && exists(/databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid));
+      allow read, write: if isSignedIn() && (
+        exists(/databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid)) ||
+        exists(/databases/$(database)/documents/super_admins/$(request.auth.uid))
+      );
     }
 
     // Root level user preferences

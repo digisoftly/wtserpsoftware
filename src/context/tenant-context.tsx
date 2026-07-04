@@ -80,12 +80,14 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
           // 2. Fetch User Profile
           const userRef = doc(db, "companies", companyId, "users", user.uid);
+          // Catch permission errors specifically to allow creation if it doesn't exist
           const userSnap = await getDoc(userRef).catch(() => null);
           
           let roleId = "super-admin";
           let activeBranchId = "dhaka-main";
 
-          if (userSnap && !userSnap.exists()) {
+          // If doc doesn't exist OR we couldn't read it (usually happens on first login)
+          if (!userSnap || !userSnap.exists()) {
             const userData = {
               id: user.uid,
               companyId,
@@ -99,9 +101,10 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp(),
             };
-            await setDoc(userRef, userData, { merge: true });
+            // Attempt to write. If this fails, the user truly doesn't have access.
+            await setDoc(userRef, userData, { merge: true }).catch(console.error);
             setLanguage(systemDefaultLang);
-          } else if (userSnap) {
+          } else {
             const data = userSnap.data();
             roleId = data?.roleId || "super-admin";
             activeBranchId = data?.branchId || "dhaka-main";
