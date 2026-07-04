@@ -356,6 +356,15 @@ export const translations = {
     totalBilling: "Total Billing",
     payments: "Payments",
     billingAndInvoices: "Billing & Invoices",
+    tasks: "Tasks",
+    profit: "Profit",
+
+    // Project Statuses
+    pending: "Pending",
+    in_progress: "In Progress",
+    on_hold: "On Hold",
+    completed: "Completed",
+    cancelled: "Cancelled",
 
     // Statuses
     paid_status: "Paid",
@@ -533,6 +542,7 @@ export const translations = {
     addTicket: "সাপোর্ট কেস",
     addReturn: "নতুন রিটার্ন",
     addContract: "নতুন চুক্তি",
+    addContract_S: "চুক্তি যোগ করুন",
     addProject: "প্রকল্প শুরু",
     addChallan: "নতুন চালান",
     newInvoice: "নতুন ইনভয়েস",
@@ -733,6 +743,15 @@ export const translations = {
     totalBilling: "মোট বিলিং",
     payments: "পেমেন্ট",
     billingAndInvoices: "বিলিং ও ইনভয়েস",
+    tasks: "কাজ",
+    profit: "লাভ",
+
+    // Project Statuses
+    pending: "পেন্ডিং",
+    in_progress: "চলমান",
+    on_hold: "স্থগিত",
+    completed: "সম্পন্ন",
+    cancelled: "বাতিল",
 
     // Statuses
     paid_status: "পরিশোধিত",

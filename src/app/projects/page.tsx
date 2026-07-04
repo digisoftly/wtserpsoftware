@@ -16,24 +16,23 @@ import {
   Edit, 
   Trash2, 
   Eye, 
-  ChevronRight,
-  Target,
-  User,
-  MapPin,
-  DollarSign,
+  DollarSign, 
+  AlertCircle, 
+  CheckCircle2, 
+  X, 
+  Package, 
+  Calculator, 
+  ArrowRight, 
+  History, 
+  Receipt, 
+  Layers, 
+  LineChart,
+  Truck,
   Wrench,
-  AlertCircle,
-  CheckCircle2,
-  X,
-  Package,
-  FileSpreadsheet,
-  Calculator,
-  ArrowRight,
-  History,
-  ShieldCheck,
-  Receipt,
-  Layers,
-  LineChart
+  BarChart3,
+  Download,
+  Printer,
+  ChevronRight
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -42,6 +41,8 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, serverTimestamp, query, orderBy, doc, setDoc, updateDoc, runTransaction, increment, where } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
@@ -53,9 +54,6 @@ import { toast } from "@/hooks/use-toast"
 import { useTranslation } from "@/hooks/use-translation"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Switch } from "@/components/ui/switch"
 
 interface ProjectAllocation {
   projectId: string;
@@ -64,7 +62,7 @@ interface ProjectAllocation {
   amountAllocated: number;
 }
 
-export default function UnifiedProjectBillingPage() {
+export default function ProjectBillingSystem() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
   const { t } = useTranslation();
@@ -92,40 +90,32 @@ export default function UnifiedProjectBillingPage() {
   }, [db, companyId, branchId]);
   const { data: payments } = useCollection(paymentsQuery);
 
+  const expensesQuery = useMemoFirebase(() => {
+    if (!db || !companyId || !branchId) return null;
+    return query(collection(db, "companies", companyId, "branches", branchId, "project_expenses"), orderBy("createdAt", "desc"));
+  }, [db, companyId, branchId]);
+  const { data: expenses } = useCollection(expensesQuery);
+
   const customersQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
     return collection(db, "companies", companyId, "branches", branchId, "customers");
   }, [db, companyId, branchId]);
   const { data: customers } = useCollection(customersQuery);
 
-  // Dynamic Masters
-  const pTypesQuery = useMemoFirebase(() => {
-    if (!db || !companyId) return null;
-    return query(collection(db, "companies", companyId, "master_data"), where("type", "==", "projectTypes"), where("isActive", "==", true), orderBy("name"));
-  }, [db, companyId]);
-  const { data: masterPTypes } = useCollection(pTypesQuery);
-
-  const statusQuery = useMemoFirebase(() => {
-    if (!db || !companyId) return null;
-    return query(collection(db, "companies", companyId, "master_data"), where("type", "==", "statusManagement"), where("isActive", "==", true), orderBy("name"));
-  }, [db, companyId]);
-  const { data: masterStatuses } = useCollection(statusQuery);
-
   // --- STATS CALCULATION ---
   const stats = React.useMemo(() => ({
     total: projects?.length || 0,
-    running: projects?.filter(p => p.status === 'active' || p.status === 'Processing').length || 0,
-    completed: projects?.filter(p => p.status === 'completed' || p.status === 'Completed').length || 0,
+    running: projects?.filter(p => ['Pending', 'Processing', 'In Progress'].includes(p.status)).length || 0,
+    completed: projects?.filter(p => ['Completed', 'completed'].includes(p.status)).length || 0,
     totalBudget: projects?.reduce((s, p) => s + (Number(p.budget) || 0), 0) || 0,
     paidAmount: projects?.reduce((s, p) => s + (Number(p.paidAmount) || 0), 0) || 0,
-  }), [projects]);
+    totalExpenses: expenses?.reduce((s, e) => s + (Number(e.amount) || 0), 0) || 0,
+  }), [projects, expenses]);
 
   // --- COMBINED BILLING STATE ---
   const [selectedCustomerId, setSelectedCustomerId] = React.useState<string>("");
   const [selectedProjectIds, setSelectedProjectIds] = React.useState<string[]>([]);
   const [totalPaymentAmount, setTotalPaymentAmount] = React.useState<number>(0);
-  const [isAutoAllocation, setIsAutoAllocation] = React.useState<boolean>(true);
-  const [manualAllocations, setManualAllocations] = React.useState<Record<string, number>>({});
 
   const availableProjects = React.useMemo(() => {
     if (!selectedCustomerId || !projects) return [];
@@ -137,16 +127,11 @@ export default function UnifiedProjectBillingPage() {
     const selectedData = availableProjects.filter(p => selectedProjectIds.includes(p.id));
     return selectedData.map(p => {
       const due = p.budget - (p.paidAmount || 0);
-      let allocated = 0;
-      if (isAutoAllocation) {
-        allocated = Math.min(remainingPayment, due);
-        remainingPayment -= allocated;
-      } else {
-        allocated = manualAllocations[p.id] || 0;
-      }
+      const allocated = Math.min(remainingPayment, due);
+      remainingPayment -= allocated;
       return { projectId: p.id, projectName: p.name, currentDue: due, amountAllocated: allocated };
     });
-  }, [availableProjects, selectedProjectIds, totalPaymentAmount, isAutoAllocation, manualAllocations]);
+  }, [availableProjects, selectedProjectIds, totalPaymentAmount]);
 
   const allocatedTotal = allocations.reduce((sum, a) => sum + a.amountAllocated, 0);
 
@@ -164,7 +149,6 @@ export default function UnifiedProjectBillingPage() {
       projectCode: isEditModalOpen ? selectedRecord.projectCode : `PRJ-${Date.now().toString().slice(-6)}`,
       customerId: custId,
       customerName: customer ? `${customer.firstName} ${customer.lastName}` : "Client",
-      projectTypeId: formData.get("projectTypeId"),
       startDate: formData.get("startDate") as string,
       deadline: formData.get("deadline") as string,
       budget: Number(formData.get("budget")),
@@ -220,6 +204,7 @@ export default function UnifiedProjectBillingPage() {
       });
       toast({ title: t('success') });
       setIsPaymentModalOpen(false);
+      resetBillingForm();
     } catch (e: any) {
       toast({ variant: "destructive", title: t('error'), description: e.message });
     } finally {
@@ -227,41 +212,79 @@ export default function UnifiedProjectBillingPage() {
     }
   };
 
+  const resetBillingForm = () => {
+    setSelectedCustomerId("");
+    setSelectedProjectIds([]);
+    setTotalPaymentAmount(0);
+  };
+
+  const filteredProjects = projects?.filter(p => 
+    p.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    p.customerName?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="space-y-6 pb-20">
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black font-headline text-teal-600 uppercase tracking-tight">{t('projectAndBilling')}</h1>
           <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{t('happeningToday')}</p>
         </div>
         <div className="flex gap-2">
-           <Button className="bg-indigo-600 hover:bg-indigo-700 gap-2 rounded-full px-8 shadow-xl shadow-indigo-100 h-10 text-[10px] uppercase font-black transition-all" onClick={() => setIsPaymentModalOpen(true)}>
+           <Button className="bg-indigo-600 hover:bg-indigo-700 gap-2 rounded-full px-8 shadow-xl shadow-indigo-100 h-10 text-[10px] uppercase font-black transition-all active:scale-95" onClick={() => setIsPaymentModalOpen(true)}>
              <Receipt className="h-4 w-4" /> {t('receiveCombined')}
            </Button>
-           <Button className="bg-teal-600 hover:bg-teal-700 gap-2 rounded-full px-8 shadow-xl shadow-teal-100 h-10 text-[10px] uppercase font-black transition-all" onClick={() => { setSelectedRecord(null); setIsAddModalOpen(true); }}>
+           <Button className="bg-teal-600 hover:bg-teal-700 gap-2 rounded-full px-8 shadow-xl shadow-teal-100 h-10 text-[10px] uppercase font-black transition-all active:scale-95" onClick={() => { setSelectedRecord(null); setIsAddModalOpen(true); }}>
              <Plus className="h-4 w-4" /> {t('addProject')}
            </Button>
         </div>
       </div>
 
+      {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard title={t('running')} value={stats.running} icon={TrendingUp} colorClass="bg-teal-600" />
         <KPICard title={t('totalBilling')} value={`৳${stats.totalBudget.toLocaleString()}`} icon={DollarSign} colorClass="bg-blue-600" />
         <KPICard title={t('paidAmount')} value={`৳${stats.paidAmount.toLocaleString()}`} icon={CheckCircle2} colorClass="bg-green-600" />
-        <KPICard title={t('dueAmount')} value={`৳${(stats.totalBudget - stats.paidAmount).toLocaleString()}`} icon={AlertCircle} colorClass="bg-red-600" />
+        <KPICard title={t('profit')} value={`৳${(stats.paidAmount - stats.totalExpenses).toLocaleString()}`} icon={LineChart} colorClass="bg-purple-600" />
       </div>
 
+      {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-white border p-1 rounded-2xl shadow-sm mb-6 flex overflow-x-auto no-scrollbar h-auto">
+        <TabsList className="bg-white border p-1 rounded-2xl shadow-sm mb-6 flex overflow-x-auto no-scrollbar h-auto ring-1 ring-slate-100">
           <TabsTrigger value="list" className="rounded-xl gap-2 flex-1 py-3 text-[10px] uppercase font-black tracking-widest min-w-[140px] data-[state=active]:bg-teal-50 data-[state=active]:text-teal-600">
-            <ClipboardCheck className="h-4 w-4" /> {t('projects')}
+            <ClipboardCheck className="h-4 w-4" /> {t('project')} List
+          </TabsTrigger>
+          <TabsTrigger value="billing" className="rounded-xl gap-2 flex-1 py-3 text-[10px] uppercase font-black tracking-widest min-w-[140px] data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
+            <Receipt className="h-4 w-4" /> {t('billingAndInvoices')}
           </TabsTrigger>
           <TabsTrigger value="payments" className="rounded-xl gap-2 flex-1 py-3 text-[10px] uppercase font-black tracking-widest min-w-[140px] data-[state=active]:bg-green-50 data-[state=active]:text-green-600">
             <Wallet className="h-4 w-4" /> {t('payments')}
           </TabsTrigger>
+          <TabsTrigger value="expenses" className="rounded-xl gap-2 flex-1 py-3 text-[10px] uppercase font-black tracking-widest min-w-[140px] data-[state=active]:bg-red-50 data-[state=active]:text-red-600">
+            <Truck className="h-4 w-4" /> {t('expenses')}
+          </TabsTrigger>
+          <TabsTrigger value="progress" className="rounded-xl gap-2 flex-1 py-3 text-[10px] uppercase font-black tracking-widest min-w-[140px] data-[state=active]:bg-amber-50 data-[state=active]:text-amber-600">
+            <Wrench className="h-4 w-4" /> {t('progress')}
+          </TabsTrigger>
+          <TabsTrigger value="reports" className="rounded-xl gap-2 flex-1 py-3 text-[10px] uppercase font-black tracking-widest min-w-[140px] data-[state=active]:bg-purple-50 data-[state=active]:text-purple-600">
+            <BarChart3 className="h-4 w-4" /> {t('reports')}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="list" className="space-y-4">
+          <div className="flex gap-2 bg-white p-3 rounded-2xl border shadow-sm ring-1 ring-slate-100">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <input 
+                placeholder={t('search')} 
+                className="pl-9 h-10 w-full rounded-xl bg-slate-50/50 border-none text-xs focus:ring-2 focus:ring-teal-500 outline-none" 
+                value={searchTerm} 
+                onChange={e => setSearchTerm(e.target.value)} 
+              />
+            </div>
+          </div>
+
           {isProjectsLoading ? (
             <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-teal-600" /></div>
           ) : (
@@ -274,11 +297,11 @@ export default function UnifiedProjectBillingPage() {
                       <TableHead className="h-12 text-[10px] uppercase font-black">{t('customer')}</TableHead>
                       <TableHead className="h-12 text-[10px] uppercase font-black text-center">{t('status')}</TableHead>
                       <TableHead className="h-12 text-[10px] uppercase font-black text-right">{t('budget')}</TableHead>
-                      <TableHead className="h-12 text-right pr-8 sticky right-0 bg-white/95 backdrop-blur-sm z-20 w-[140px]">{t('actions')}</TableHead>
+                      <TableHead className="h-12 text-right pr-8 sticky right-0 bg-white/95 backdrop-blur-sm z-20 w-[160px]">{t('actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {projects?.map((p) => (
+                    {filteredProjects?.map((p) => (
                       <TableRow key={p.id} className="h-20 hover:bg-muted/5 transition-colors group">
                         <TableCell className="pl-8">
                           <div className="flex flex-col">
@@ -289,16 +312,16 @@ export default function UnifiedProjectBillingPage() {
                         <TableCell className="text-xs font-bold text-slate-700">{p.customerName}</TableCell>
                         <TableCell className="text-center">
                           <Badge className={cn("text-[8px] h-5 uppercase border-none px-2 font-black", 
-                            p.status === 'Completed' || p.status === 'completed' ? "bg-green-50 text-green-700" : "bg-teal-50 text-teal-700")}>
-                            {p.status}
+                            p.status === 'Completed' ? "bg-green-50 text-green-700" : "bg-teal-50 text-teal-700")}>
+                            {t(p.status?.toLowerCase().replace(' ', '_') as any) || p.status}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right font-black text-xs">৳{p.budget?.toLocaleString()}</TableCell>
-                        <TableCell className="text-right pr-8 sticky right-0 bg-white/90 backdrop-blur-sm z-20">
+                        <TableCell className="text-right pr-8 sticky right-0 bg-white/90 backdrop-blur-sm group-hover:bg-slate-50/90 transition-colors z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
                            <div className="flex justify-end gap-1">
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-blue-600" onClick={() => setSelectedRecord(p)}><Eye className="h-4 w-4" /></Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-amber-600" onClick={() => { setSelectedRecord(p); setIsEditModalOpen(true); }}><Edit className="h-4 w-4" /></Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-red-600" onClick={() => { if(confirm('Delete?')) deleteDocumentNonBlocking(doc(db!, "companies", companyId!, "branches", branchId!, "projects", p.id)); }}><Trash2 className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-blue-600 hover:bg-blue-50"><Eye className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-amber-600 hover:bg-amber-50" onClick={() => { setSelectedRecord(p); setIsEditModalOpen(true); }}><Edit className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-red-600 hover:bg-red-50" onClick={() => { setSelectedRecord(p); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
                            </div>
                         </TableCell>
                       </TableRow>
@@ -308,6 +331,13 @@ export default function UnifiedProjectBillingPage() {
               </div>
             </Card>
           )}
+        </TabsContent>
+
+        <TabsContent value="billing" className="space-y-4">
+           <div className="p-20 text-center bg-white rounded-3xl border border-dashed ring-1 ring-slate-100">
+             <Receipt className="h-10 w-10 text-blue-200 mx-auto mb-4" />
+             <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Billing records are summarized in the project list.</p>
+           </div>
         </TabsContent>
 
         <TabsContent value="payments" className="space-y-4">
@@ -331,7 +361,7 @@ export default function UnifiedProjectBillingPage() {
                       <TableCell className="text-xs font-bold text-slate-700">{pay.customerName}</TableCell>
                       <TableCell className="text-right font-black text-xs text-green-600">৳{pay.totalPaid?.toLocaleString()}</TableCell>
                       <TableCell className="text-right pr-8">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-indigo-600"><Eye className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-indigo-600 hover:bg-indigo-50"><Eye className="h-4 w-4" /></Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -340,7 +370,122 @@ export default function UnifiedProjectBillingPage() {
             </div>
           </Card>
         </TabsContent>
+
+        <TabsContent value="expenses" className="space-y-4">
+          <div className="flex justify-end">
+            <Button className="bg-red-600 hover:bg-red-700 rounded-full h-9 px-6 text-[10px] uppercase font-black">Record Expense</Button>
+          </div>
+          <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-white ring-1 ring-slate-100">
+            <Table>
+              <TableHeader className="bg-slate-50/50">
+                <TableRow>
+                  <TableHead className="h-12 text-[10px] uppercase font-black pl-8">{t('date')}</TableHead>
+                  <TableHead className="h-12 text-[10px] uppercase font-black">{t('project')}</TableHead>
+                  <TableHead className="h-12 text-[10px] uppercase font-black">{t('type')}</TableHead>
+                  <TableHead className="h-12 text-[10px] uppercase font-black text-right">{t('amount')}</TableHead>
+                  <TableHead className="text-right pr-8"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {expenses?.map((e) => (
+                  <TableRow key={e.id} className="h-16 hover:bg-muted/5 transition-colors">
+                    <TableCell className="pl-8 text-[10px] font-bold text-slate-500 uppercase">{new Date(e.createdAt?.toDate()).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-xs font-bold">{projects?.find(p => p.id === e.projectId)?.name}</TableCell>
+                    <TableCell className="text-[10px] font-black uppercase text-slate-400">{e.type}</TableCell>
+                    <TableCell className="text-right font-black text-xs text-red-600">৳{e.amount?.toLocaleString()}</TableCell>
+                    <TableCell className="text-right pr-8"><Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-3.5 w-3.5" /></Button></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="progress" className="space-y-6">
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+             {projects?.filter(p => p.status !== 'Completed').map(p => (
+               <Card key={p.id} className="border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-6 space-y-4">
+                 <div className="flex justify-between items-start">
+                   <h3 className="font-black text-sm uppercase tracking-tight">{p.name}</h3>
+                   <Badge className="bg-teal-50 text-teal-600 text-[8px] uppercase border-none font-black">{p.status}</Badge>
+                 </div>
+                 <div className="space-y-2">
+                   <div className="flex justify-between text-[9px] font-bold uppercase text-muted-foreground">
+                     <span>Deployment Progress</span>
+                     <span>{p.progress || 0}%</span>
+                   </div>
+                   <Progress value={p.progress || 0} className="h-2 bg-slate-100" />
+                 </div>
+                 <div className="pt-4 border-t border-slate-50 flex items-center justify-between">
+                    <div className="flex -space-x-2">
+                       {[1,2,3].map(i => <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[8px] font-bold">U{i}</div>)}
+                    </div>
+                    <Button variant="ghost" size="sm" className="h-7 px-3 text-[9px] font-black uppercase text-teal-600 hover:bg-teal-50 rounded-full">Update <ChevronRight className="h-3 w-3 ml-1" /></Button>
+                 </div>
+               </Card>
+             ))}
+           </div>
+        </TabsContent>
+
+        <TabsContent value="reports" className="space-y-4">
+           <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-white ring-1 ring-slate-100">
+             <div className="p-20 text-center text-muted-foreground italic text-[10px] uppercase font-black tracking-widest">
+               Financial reports and profitability analysis will load here.
+             </div>
+           </Card>
+        </TabsContent>
       </Tabs>
+
+      {/* MODALS */}
+      <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) { setIsAddModalOpen(false); setIsEditModalOpen(false); setSelectedRecord(null); } }}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden border-none shadow-2xl rounded-[2.5rem] bg-slate-50 max-h-[96vh]">
+          <DialogHeader className="bg-teal-600 p-6 text-white flex-row items-center gap-4 space-y-0">
+             <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md shrink-0"><Folder className="h-6 w-6" /></div>
+             <div>
+               <DialogTitle className="text-xl font-bold font-headline uppercase tracking-tight">{isEditModalOpen ? t('edit') : t('addProject')}</DialogTitle>
+               <p className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em] mt-0.5">Project Identity Terminal</p>
+             </div>
+          </DialogHeader>
+          <form onSubmit={handleSaveProject} className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto custom-scrollbar">
+            <div className="space-y-4">
+              <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-muted-foreground">{t('project')} Name *</Label><Input name="name" required defaultValue={selectedRecord?.name} className="h-11 rounded-xl" /></div>
+              <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-muted-foreground">{t('customer')} *</Label>
+                <Select name="customerId" required defaultValue={selectedRecord?.customerId}>
+                  <SelectTrigger className="h-11 rounded-xl bg-white"><SelectValue placeholder="Select Client" /></SelectTrigger>
+                  <SelectContent>{customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-bold">{c.firstName} {c.lastName}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-muted-foreground">{t('startDate')}</Label><Input name="startDate" type="date" required defaultValue={selectedRecord?.startDate} className="h-11 rounded-xl" /></div>
+                <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-muted-foreground">{t('deadline')}</Label><Input name="deadline" type="date" required defaultValue={selectedRecord?.deadline} className="h-11 rounded-xl" /></div>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-muted-foreground">{t('estimatedBudget')} (৳) *</Label><Input name="budget" type="number" required defaultValue={selectedRecord?.budget} className="h-11 rounded-xl font-black text-blue-600" /></div>
+              <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-muted-foreground">{t('status')}</Label>
+                <Select name="status" defaultValue={selectedRecord?.status || "Pending"}>
+                  <SelectTrigger className="h-11 rounded-xl bg-white"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Pending" className="text-xs font-bold">{t('pending')}</SelectItem>
+                    <SelectItem value="In Progress" className="text-xs font-bold">{t('in_progress')}</SelectItem>
+                    <SelectItem value="On Hold" className="text-xs font-bold">{t('on_hold')}</SelectItem>
+                    <SelectItem value="Completed" className="text-xs font-bold">{t('completed')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-muted-foreground">Progress %</Label><Input name="progress" type="number" defaultValue={selectedRecord?.progress || 0} className="h-11 rounded-xl" /></div>
+            </div>
+            <div className="md:col-span-2 space-y-1.5"><Label className="text-[10px] font-black uppercase text-muted-foreground">Team Members / Engineers</Label><Input name="team" placeholder="e.g. Engr. Rahim, Tech. Karim..." defaultValue={selectedRecord?.team} className="h-11 rounded-xl" /></div>
+            <div className="md:col-span-2 space-y-1.5"><Label className="text-[10px] font-black uppercase text-muted-foreground">{t('details')}</Label><textarea name="description" className="w-full min-h-[100px] rounded-xl bg-white border ring-1 ring-slate-200 p-4 text-xs" defaultValue={selectedRecord?.description} /></div>
+            <div className="md:col-span-2 pt-6 border-t flex justify-end gap-3">
+              <Button type="button" variant="ghost" className="rounded-full px-8 h-12 text-[10px] uppercase font-black" onClick={() => { setIsAddModalOpen(false); setIsEditModalOpen(false); }}>{t('cancel')}</Button>
+              <Button type="submit" disabled={isSubmitting} className="bg-teal-600 hover:bg-teal-700 rounded-full px-12 h-12 text-[10px] uppercase font-black shadow-lg">
+                {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : t('save')}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
         <DialogContent className="max-w-[1200px] w-[95vw] p-0 overflow-hidden border-none shadow-2xl rounded-[2.5rem] bg-slate-50">
@@ -389,47 +534,18 @@ export default function UnifiedProjectBillingPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="max-w-4xl p-0 overflow-hidden border-none shadow-2xl rounded-[2.5rem] bg-slate-50">
-          <DialogHeader className="bg-teal-600 p-6 text-white flex-row items-center gap-4 space-y-0">
-             <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md shrink-0"><Folder className="h-6 w-6" /></div>
-             <div><DialogTitle className="text-xl font-bold font-headline uppercase tracking-tight">{isEditModalOpen ? t('edit') : t('addProject')}</DialogTitle></div>
-          </DialogHeader>
-          <form onSubmit={handleSaveProject} className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
-            <div className="space-y-4">
-              <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-muted-foreground">{t('project')} Name *</Label><Input name="name" required defaultValue={selectedRecord?.name} className="h-11 rounded-xl" /></div>
-              <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-muted-foreground">{t('customer')} *</Label>
-                <Select name="customerId" required defaultValue={selectedRecord?.customerId}>
-                  <SelectTrigger className="h-11 rounded-xl bg-white"><SelectValue placeholder="Select Client" /></SelectTrigger>
-                  <SelectContent>{customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-bold">{c.firstName} {c.lastName}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-muted-foreground">{t('projectTypes')}</Label>
-                <Select name="projectTypeId" defaultValue={selectedRecord?.projectTypeId}>
-                  <SelectTrigger className="h-11 rounded-xl bg-white"><SelectValue /></SelectTrigger>
-                  <SelectContent>{masterPTypes?.map(t => <SelectItem key={t.id} value={t.id} className="text-xs uppercase">{t.name}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-muted-foreground">{t('estimatedBudget')} (৳) *</Label><Input name="budget" type="number" required defaultValue={selectedRecord?.budget} className="h-11 rounded-xl font-black text-blue-600" /></div>
-              <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-muted-foreground">{t('status')}</Label>
-                <Select name="status" defaultValue={selectedRecord?.status}>
-                  <SelectTrigger className="h-11 rounded-xl bg-white"><SelectValue /></SelectTrigger>
-                  <SelectContent>{masterStatuses?.map(s => <SelectItem key={s.id} value={s.name} className="text-xs uppercase">{s.name}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-muted-foreground">Progress %</Label><Input name="progress" type="number" defaultValue={selectedRecord?.progress || 0} className="h-11 rounded-xl" /></div>
-            </div>
-            <div className="md:col-span-2 pt-6 border-t flex justify-end gap-3">
-              <Button type="button" variant="ghost" className="rounded-full px-8 h-12 text-[10px] uppercase font-black" onClick={() => { setIsAddModalOpen(false); setIsEditModalOpen(false); }}>{t('cancel')}</Button>
-              <Button type="submit" disabled={isSubmitting} className="bg-teal-600 hover:bg-teal-700 rounded-full px-12 h-12 text-[10px] uppercase font-black shadow-lg">
-                {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : t('save')}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+        <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tight text-slate-900">{t('delete')}?</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs font-medium leading-relaxed">{t('projectArchived')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-8 gap-3">
+            <AlertDialogCancel className="rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest">{t('cancel')}</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest" onClick={() => { if(selectedRecord) { deleteDocumentNonBlocking(doc(db!, "companies", companyId!, "branches", branchId!, "projects", selectedRecord.id)); setIsDeleteAlertOpen(false); toast({ title: t('success') }); } }}>{t('delete')}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

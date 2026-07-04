@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -9,8 +10,6 @@ import {
   RotateCcw, 
   Boxes, 
   Scan, 
-  Folder, 
-  Layers, 
   Wrench, 
   Users, 
   Truck, 
@@ -74,7 +73,7 @@ const MASTER_MODULES = [
   { name: "customFields", key: "customFields", icon: Fingerprint, path: "/master/custom-fields" },
   { name: "warrantyTypes", key: "warrantyTypes", icon: ShieldAlert, path: "/master/warranty-types" },
   { name: "taxVat", key: "taxVat", icon: Percent, path: "/master/tax-vat" },
-  { name: "productAttributes", key: "productAttributes", icon: Layers, path: "/master/product-attributes" },
+  { name: "productAttributes", key: "productAttributes", icon: LayoutDashboard, path: "/master/product-attributes" },
   { name: "productVariants", key: "productVariants", icon: GitMerge, path: "/master/product-variants" },
   { name: "supplierGroups", key: "supplierGroups", icon: UserPlus, path: "/master/supplier-groups" },
   { name: "customerGroups", key: "customerGroups", icon: Users2, path: "/master/customer-groups" },
