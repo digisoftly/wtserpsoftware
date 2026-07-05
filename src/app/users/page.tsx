@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -94,7 +93,7 @@ export default function UsersPage() {
 
   const branchesQuery = useMemoFirebase(() => {
     if (!db || !companyId) return null;
-    return query(collection(db, "companies", companyId, "branches"), orderBy("name"));
+    return query(collection(db, "companies", companyId, "branches"), orderBy("branchName"));
   }, [db, companyId]);
   const { data: branches } = useCollection(branchesQuery);
 
@@ -271,8 +270,8 @@ export default function UsersPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users?.map((u) => (
-                      <TableRow key={u.id} className="h-20 hover:bg-muted/5 transition-colors group">
+                    {users?.map((u, idx) => (
+                      <TableRow key={u.id || `user-${idx}`} className="h-20 hover:bg-muted/5 transition-colors group">
                         <TableCell className="pl-8">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-2xl bg-violet-100 text-violet-600 flex items-center justify-center font-black text-xs uppercase shadow-sm">
@@ -327,8 +326,8 @@ export default function UsersPage() {
             <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-violet-600" /></div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {roles?.map((role) => (
-                <Card key={role.id} className="border-none shadow-sm hover:shadow-md transition-all group overflow-hidden rounded-[2rem] bg-white ring-1 ring-slate-100">
+              {roles?.map((role, idx) => (
+                <Card key={role.id || `role-${idx}`} className="border-none shadow-sm hover:shadow-md transition-all group overflow-hidden rounded-[2rem] bg-white ring-1 ring-slate-100">
                   <div className={cn("h-1.5", role.isSuperAdmin ? "bg-violet-600" : "bg-slate-100")} />
                   <CardHeader className="flex flex-row items-center justify-between p-6">
                     <div>
@@ -403,8 +402,8 @@ export default function UsersPage() {
               </div>
 
               <div className="space-y-2">
-                {MODULES.map((mod) => (
-                  <div key={mod.key} className="flex flex-col md:flex-row items-center justify-between p-4 bg-white rounded-2xl ring-1 ring-slate-100 hover:ring-violet-200 transition-all group">
+                {MODULES.map((mod, modIdx) => (
+                  <div key={`${mod.key}-${modIdx}`} className="flex flex-col md:flex-row items-center justify-between p-4 bg-white rounded-2xl ring-1 ring-slate-100 hover:ring-violet-200 transition-all group">
                     <div className="flex items-center gap-3 w-full md:w-auto mb-4 md:mb-0">
                       <Checkbox 
                         id={`all-${mod.key}`}
@@ -419,7 +418,7 @@ export default function UsersPage() {
                     </div>
                     <div className="flex gap-4 w-full md:w-auto justify-between md:justify-start">
                       {ACTIONS.map((action) => (
-                        <div key={action} className="w-10 md:w-16 flex flex-col items-center gap-2">
+                        <div key={`${mod.key}-${action}`} className="w-10 md:w-16 flex flex-col items-center gap-2">
                           <span className="md:hidden text-[7px] font-black uppercase text-slate-400">{action}</span>
                           <Checkbox 
                             checked={(permissions[mod.key] || []).includes(action)}
@@ -475,7 +474,7 @@ export default function UsersPage() {
                     <Select name="department" defaultValue={selectedUser?.department}>
                       <SelectTrigger className="h-11 rounded-xl bg-white"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {departments.map(d => <SelectItem key={d.id} value={d.name} className="text-xs font-bold">{d.name}</SelectItem>)}
+                        {departments.map((d, idx) => <SelectItem key={`dept-opt-${d.id}-${idx}`} value={d.name} className="text-xs font-bold">{d.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                  </div>
@@ -489,7 +488,7 @@ export default function UsersPage() {
                     <Select name="designation" defaultValue={selectedUser?.designation}>
                       <SelectTrigger className="h-11 rounded-xl bg-white"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {designations.map(d => <SelectItem key={d.id} value={d.name} className="text-xs font-bold">{d.name}</SelectItem>)}
+                        {designations.map((d, idx) => <SelectItem key={`desig-opt-${d.id}-${idx}`} value={d.name} className="text-xs font-bold">{d.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                  </div>
@@ -497,7 +496,7 @@ export default function UsersPage() {
                     <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Target Location</Label>
                     <Select name="branchId" defaultValue={selectedUser?.branchId || branchId || ""}>
                       <SelectTrigger className="h-11 rounded-xl bg-white"><SelectValue /></SelectTrigger>
-                      <SelectContent>{branches?.map(b => <SelectItem key={b.id} value={b.id} className="text-xs font-bold">{b.name}</SelectItem>)}</SelectContent>
+                      <SelectContent>{branches?.map((b, idx) => <SelectItem key={`user-branch-opt-${b.id}-${idx}`} value={b.id} className="text-xs font-bold">{b.branchName}</SelectItem>)}</SelectContent>
                     </Select>
                  </div>
                </div>
@@ -508,7 +507,7 @@ export default function UsersPage() {
                   <Label className="text-[10px] font-black uppercase text-violet-600 tracking-widest">Assign Role</Label>
                   <Select name="roleId" defaultValue={selectedUser?.roleId || "guest-admin"}>
                     <SelectTrigger className="h-11 rounded-xl bg-white border-violet-100 ring-1 ring-violet-100"><SelectValue /></SelectTrigger>
-                    <SelectContent>{roles?.map(r => <SelectItem key={r.id} value={r.id} className="text-xs font-bold">{r.name}</SelectItem>)}</SelectContent>
+                    <SelectContent>{roles?.map((r, idx) => <SelectItem key={`user-role-opt-${r.id}-${idx}`} value={r.id} className="text-xs font-bold">{r.name}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">

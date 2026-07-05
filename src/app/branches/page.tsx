@@ -179,8 +179,8 @@ export default function BranchesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredBranches?.map((b) => (
-                  <TableRow key={b.id} className="h-20 hover:bg-muted/5 transition-colors group">
+                {filteredBranches?.map((b, idx) => (
+                  <TableRow key={b.id || `branch-${idx}`} className="h-20 hover:bg-muted/5 transition-colors group">
                     <TableCell className="pl-8">
                       <div className="flex flex-col">
                         <span className="font-black text-xs uppercase tracking-tight text-slate-900">{b.branchName}</span>
@@ -268,7 +268,7 @@ export default function BranchesPage() {
                   <SelectContent className="rounded-xl">
                     {branchTypes && branchTypes.length > 0 ? (
                       branchTypes.map((type, idx) => (
-                        <SelectItem key={`branch-type-opt-${type.id || idx}`} value={type.name} className="text-xs font-bold">{type.name}</SelectItem>
+                        <SelectItem key={`branch-type-opt-${type.id}-${idx}`} value={type.name} className="text-xs font-bold">{type.name}</SelectItem>
                       ))
                     ) : (
                       <>
