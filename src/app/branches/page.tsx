@@ -266,9 +266,11 @@ export default function BranchesPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    {branchTypes?.map(type => (
-                      <SelectItem key={type.id} value={type.name} className="text-xs font-bold">{type.name}</SelectItem>
-                    )) || (
+                    {branchTypes && branchTypes.length > 0 ? (
+                      branchTypes.map((type, idx) => (
+                        <SelectItem key={type.id || `type-${idx}`} value={type.name} className="text-xs font-bold">{type.name}</SelectItem>
+                      ))
+                    ) : (
                       <>
                         <SelectItem value="Head Office" className="text-xs font-bold">Head Office</SelectItem>
                         <SelectItem value="Sales Center" className="text-xs font-bold">Sales Center</SelectItem>
