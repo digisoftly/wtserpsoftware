@@ -49,6 +49,7 @@ export const translations = {
     demoModeSub: "Restrict destructive actions and protect core data.",
     enableDemo: "Enable Demo Access",
     guestAdmin: "Guest Administrator",
+    registrationDisabled: "Account registration is disabled. Please contact administrator.",
     
     // Bulk Actions
     itemsSelected: "items selected",
@@ -467,6 +468,7 @@ export const translations = {
     demoModeSub: "ধ্বংসাত্মক কার্যক্রম সীমাবদ্ধ করুন এবং মূল ডাটা সুরক্ষিত রাখুন।",
     enableDemo: "ডেমো অ্যাক্সেস সক্ষম করুন",
     guestAdmin: "গেস্ট অ্যাডমিনিস্ট্রেটর",
+    registrationDisabled: "নতুন অ্যাকাউন্ট তৈরি বন্ধ আছে। অ্যাকাউন্টের জন্য এডমিনের সাথে যোগাযোগ করুন।",
 
     // Bulk Actions
     itemsSelected: "টি নির্বাচিত",

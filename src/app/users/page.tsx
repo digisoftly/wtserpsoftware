@@ -22,7 +22,10 @@ import {
   UserCheck,
   Building,
   Briefcase,
-  Key
+  Key,
+  Mail,
+  Phone,
+  UserCircle
 } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, doc, setDoc, deleteDoc, updateDoc, serverTimestamp } from "firebase/firestore"
@@ -95,6 +98,15 @@ export default function UsersPage() {
   }, [db, companyId]);
   const { data: branches } = useCollection(branchesQuery);
 
+  const masterDataQuery = useMemoFirebase(() => {
+    if (!db || !companyId) return null;
+    return collection(db, "companies", companyId, "master_data");
+  }, [db, companyId]);
+  const { data: masterData } = useCollection(masterDataQuery);
+
+  const departments = masterData?.filter(d => d.type === 'departments') || [];
+  const designations = masterData?.filter(d => d.type === 'designations') || [];
+
   // Role Form State
   const [roleName, setRoleName] = React.useState("");
   const [permissions, setPermissions] = React.useState<Record<string, string[]>>({});
@@ -126,16 +138,28 @@ export default function UsersPage() {
   const handleSaveUser = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!db || !companyId) return;
-    setIsSubmitting(true);
+    
     const formData = new FormData(e.currentTarget);
+    const password = formData.get("password") as string;
+    const confirmPassword = formData.get("confirmPassword") as string;
 
+    if (!selectedUser && password !== confirmPassword) {
+      toast({ variant: "destructive", title: t('error'), description: "Passwords do not match." });
+      return;
+    }
+
+    setIsSubmitting(true);
     const userData = {
       firstName: formData.get("firstName") as string,
       lastName: formData.get("lastName") as string,
+      username: formData.get("username") as string,
       email: formData.get("email") as string,
+      phoneNumber: formData.get("phoneNumber") as string,
       roleId: formData.get("roleId") as string,
       branchId: formData.get("branchId") as string,
-      isActive: true,
+      department: formData.get("department") as string,
+      designation: formData.get("designation") as string,
+      isActive: formData.get("status") === "active",
       updatedAt: serverTimestamp(),
     };
 
@@ -143,8 +167,6 @@ export default function UsersPage() {
       if (selectedUser) {
         await updateDoc(doc(db, "companies", companyId, "users", selectedUser.id), userData);
       } else {
-        // In real ERP, this would call a cloud function to create Firebase Auth user
-        // For prototype, we simulate identity document creation
         const newRef = doc(collection(db, "companies", companyId, "users"));
         await setDoc(newRef, { ...userData, id: newRef.id, createdAt: serverTimestamp() });
       }
@@ -207,7 +229,7 @@ export default function UsersPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl md:text-2xl font-black font-headline text-violet-600 uppercase tracking-tight">{t('users')}</h1>
-          <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{t('happeningToday')}</p>
+          <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">Admin Controlled User Management</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {activeTab === "roles" ? (
@@ -241,16 +263,16 @@ export default function UsersPage() {
                 <Table>
                   <TableHeader className="bg-slate-50/50">
                     <TableRow>
-                      <TableHead className="h-12 text-[10px] uppercase font-black pl-8">User</TableHead>
+                      <TableHead className="h-12 text-[10px] uppercase font-black pl-8">Identity</TableHead>
+                      <TableHead className="h-12 text-[10px] uppercase font-black">Designation</TableHead>
                       <TableHead className="h-12 text-[10px] uppercase font-black">Role</TableHead>
-                      <TableHead className="h-12 text-[10px] uppercase font-black">Location</TableHead>
                       <TableHead className="h-12 text-[10px] uppercase font-black">Status</TableHead>
                       <TableHead className="h-12 text-right pr-8">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {users?.map((u) => (
-                      <TableRow key={u.id} className="h-20 hover:bg-muted/5 transition-colors">
+                      <TableRow key={u.id} className="h-20 hover:bg-muted/5 transition-colors group">
                         <TableCell className="pl-8">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-2xl bg-violet-100 text-violet-600 flex items-center justify-center font-black text-xs uppercase shadow-sm">
@@ -258,23 +280,23 @@ export default function UsersPage() {
                             </div>
                             <div>
                               <div className="font-black text-xs uppercase tracking-tight text-slate-900">{u.firstName} {u.lastName}</div>
-                              <div className="text-[10px] font-bold text-muted-foreground">{u.email}</div>
+                              <div className="text-[9px] font-bold text-muted-foreground">@{u.username || 'user'} • {u.email}</div>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary" className="capitalize text-[10px] font-black h-5 px-2 bg-slate-100 border-none">
-                            {roles?.find(r => r.id === u.roleId)?.name || "Restricted Guest"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500">
-                             <Building className="h-3 w-3" />
-                             {branches?.find(b => b.id === u.branchId)?.name || "Unassigned"}
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-black uppercase text-slate-700">{u.designation || '---'}</span>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase">{u.department || '---'}</span>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge className={cn("text-[9px] h-5 uppercase font-black border-none", u.isActive ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700")}>
+                          <Badge variant="secondary" className="capitalize text-[9px] font-black h-5 px-2 bg-slate-100 border-none">
+                            {roles?.find(r => r.id === u.roleId)?.name || "Restricted"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={cn("text-[8px] h-4 uppercase font-black border-none px-2", u.isActive ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700")}>
                             {u.isActive ? "Active" : "Disabled"}
                           </Badge>
                         </TableCell>
@@ -282,13 +304,12 @@ export default function UsersPage() {
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-violet-50 text-violet-600"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl">
-                              <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedUser(u); setIsUserModalOpen(true); }}><Edit className="h-3.5 w-3.5 mr-2" /> Modify Profile</DropdownMenuItem>
+                              <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedUser(u); setIsUserModalOpen(true); }}><Edit className="h-3.5 w-3.5 mr-2" /> {t('edit')}</DropdownMenuItem>
                               <DropdownMenuItem className="text-xs font-bold" onClick={() => toggleUserStatus(u)}>
                                 {u.isActive ? <><UserX className="h-3.5 w-3.5 mr-2" /> Disable User</> : <><UserCheck className="h-3.5 w-3.5 mr-2" /> Enable User</>}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem className="text-xs font-bold"><Key className="h-3.5 w-3.5 mr-2" /> Reset Password</DropdownMenuItem>
-                              <DropdownMenuItem className="text-red-600 text-xs font-bold" onClick={() => deleteDoc(doc(db!, "companies", companyId!, "users", u.id))}><Trash2 className="h-3.5 w-3.5 mr-2" /> Permanently Delete</DropdownMenuItem>
+                              <DropdownMenuItem className="text-red-600 text-xs font-bold" onClick={() => deleteDoc(doc(db!, "companies", companyId!, "users", u.id))}><Trash2 className="h-3.5 w-3.5 mr-2" /> {t('delete')}</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -433,34 +454,84 @@ export default function UsersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* USER MODAL */}
+      {/* USER PROVISIONING MODAL */}
       <Dialog open={isUserModalOpen} onOpenChange={setIsUserModalOpen}>
-        <DialogContent className="max-w-md p-0 border-none shadow-2xl rounded-[2rem] bg-slate-50 overflow-hidden">
+        <DialogContent className="max-w-2xl w-[95vw] p-0 border-none shadow-2xl rounded-[2.5rem] bg-slate-50 overflow-hidden">
           <DialogHeader className="bg-violet-600 p-6 text-white flex-row items-center gap-3 space-y-0">
-             <UserPlus className="h-6 w-6" />
-             <DialogTitle className="text-xl font-black font-headline uppercase tracking-tight">{selectedUser ? t('editUser') : t('addUser')}</DialogTitle>
+             <UserCircle className="h-6 w-6" />
+             <div>
+               <DialogTitle className="text-xl font-black font-headline uppercase tracking-tight">{selectedUser ? t('editUser') : t('addUser')}</DialogTitle>
+               <p className="text-[9px] font-black uppercase opacity-60 tracking-widest mt-0.5">Admin-Controlled Provisioning</p>
+             </div>
           </DialogHeader>
-          <form onSubmit={handleSaveUser} className="p-8 space-y-5">
-             <div className="grid grid-cols-2 gap-4">
-               <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">First Name</Label><Input name="firstName" required defaultValue={selectedUser?.firstName} className="h-11 rounded-xl" /></div>
-               <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Last Name</Label><Input name="lastName" required defaultValue={selectedUser?.lastName} className="h-11 rounded-xl" /></div>
+          <form onSubmit={handleSaveUser} className="p-8 space-y-6 overflow-y-auto max-h-[75vh] custom-scrollbar">
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+               <div className="space-y-4">
+                 <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">First Name</Label><Input name="firstName" required defaultValue={selectedUser?.firstName} className="h-11 rounded-xl" /></div>
+                 <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Last Name</Label><Input name="lastName" required defaultValue={selectedUser?.lastName} className="h-11 rounded-xl" /></div>
+                 <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Username</Label><Input name="username" required defaultValue={selectedUser?.username} className="h-11 rounded-xl" /></div>
+                 <div className="space-y-1.5">
+                    <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Department</Label>
+                    <Select name="department" defaultValue={selectedUser?.department}>
+                      <SelectTrigger className="h-11 rounded-xl bg-white"><SelectValue /></SelectTrigger>
+                      <SelectContent>{departments.map(d => <SelectItem key={d.id} value={d.name} className="text-xs font-bold">{d.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                 </div>
+               </div>
+
+               <div className="space-y-4">
+                 <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Email Address</Label><Input name="email" type="email" required defaultValue={selectedUser?.email} className="h-11 rounded-xl" /></div>
+                 <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Phone Number</Label><Input name="phoneNumber" defaultValue={selectedUser?.phoneNumber} className="h-11 rounded-xl" /></div>
+                 <div className="space-y-1.5">
+                    <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Designation</Label>
+                    <Select name="designation" defaultValue={selectedUser?.designation}>
+                      <SelectTrigger className="h-11 rounded-xl bg-white"><SelectValue /></SelectTrigger>
+                      <SelectContent>{designations.map(d => <SelectItem key={d.id} value={d.name} className="text-xs font-bold">{d.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                 </div>
+                 <div className="space-y-1.5">
+                    <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Target Location</Label>
+                    <Select name="branchId" defaultValue={selectedUser?.branchId || branchId || ""}>
+                      <SelectTrigger className="h-11 rounded-xl bg-white"><SelectValue /></SelectTrigger>
+                      <SelectContent>{branches?.map(b => <SelectItem key={b.id} value={b.id} className="text-xs font-bold">{b.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                 </div>
+               </div>
              </div>
-             <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Email Address</Label><Input name="email" type="email" required defaultValue={selectedUser?.email} className="h-11 rounded-xl" /></div>
-             <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Assign Role</Label>
-                <Select name="roleId" defaultValue={selectedUser?.roleId || "guest-admin"}>
-                  <SelectTrigger className="h-11 rounded-xl bg-white"><SelectValue /></SelectTrigger>
-                  <SelectContent>{roles?.map(r => <SelectItem key={r.id} value={r.id} className="text-xs font-bold">{r.name}</SelectItem>)}</SelectContent>
-                </Select>
+
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-200/60">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-violet-600 tracking-widest">Assign Role</Label>
+                  <Select name="roleId" defaultValue={selectedUser?.roleId || "guest-admin"}>
+                    <SelectTrigger className="h-11 rounded-xl bg-white border-violet-100 ring-1 ring-violet-100"><SelectValue /></SelectTrigger>
+                    <SelectContent>{roles?.map(r => <SelectItem key={r.id} value={r.id} className="text-xs font-bold">{r.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Status</Label>
+                  <Select name="status" defaultValue={selectedUser?.isActive !== false ? "active" : "inactive"}>
+                    <SelectTrigger className="h-11 rounded-xl bg-white"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active" className="text-xs font-bold text-green-600">Active</SelectItem>
+                      <SelectItem value="inactive" className="text-xs font-bold text-red-600">Disabled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
              </div>
-             <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Target Location</Label>
-                <Select name="branchId" defaultValue={selectedUser?.branchId || branchId || ""}>
-                  <SelectTrigger className="h-11 rounded-xl bg-white"><SelectValue /></SelectTrigger>
-                  <SelectContent>{branches?.map(b => <SelectItem key={b.id} value={b.id} className="text-xs font-bold">{b.name}</SelectItem>)}</SelectContent>
-                </Select>
-             </div>
-             <Button type="submit" disabled={isSubmitting} className="w-full bg-violet-600 hover:bg-violet-700 h-14 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-violet-100 transition-all active:scale-95 mt-4">
-                {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : t('save')}
-             </Button>
+
+             {!selectedUser && (
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                 <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Password</Label><Input name="password" type="password" required className="h-11 rounded-xl" /></div>
+                 <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Confirm Password</Label><Input name="confirmPassword" type="password" required className="h-11 rounded-xl" /></div>
+               </div>
+             )}
+
+             <DialogFooter className="pt-6 border-t border-slate-200/60 flex flex-col sm:flex-row gap-3">
+                <Button type="button" variant="ghost" className="rounded-full px-8 h-12 text-[10px] font-black uppercase tracking-widest" onClick={() => setIsUserModalOpen(false)}>{t('cancel')}</Button>
+                <Button type="submit" disabled={isSubmitting} className="bg-violet-600 hover:bg-violet-700 h-12 rounded-2xl px-12 text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-violet-100 transition-all active:scale-95">
+                  {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : t('save')}
+                </Button>
+             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
