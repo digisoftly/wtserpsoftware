@@ -474,7 +474,9 @@ export default function UsersPage() {
                     <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Department</Label>
                     <Select name="department" defaultValue={selectedUser?.department}>
                       <SelectTrigger className="h-11 rounded-xl bg-white"><SelectValue /></SelectTrigger>
-                      <SelectContent>{departments.map(d => <SelectItem key={d.id} value={d.name} className="text-xs font-bold">{d.name}</SelectItem>)}</SelectContent>
+                      <SelectContent>
+                        {departments.map(d => <SelectItem key={d.id} value={d.name} className="text-xs font-bold">{d.name}</SelectItem>)}
+                      </SelectContent>
                     </Select>
                  </div>
                </div>
@@ -486,7 +488,9 @@ export default function UsersPage() {
                     <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Designation</Label>
                     <Select name="designation" defaultValue={selectedUser?.designation}>
                       <SelectTrigger className="h-11 rounded-xl bg-white"><SelectValue /></SelectTrigger>
-                      <SelectContent>{designations.map(d => <SelectItem key={d.id} value={d.name} className="text-xs font-bold">{d.name}</SelectItem>)}</SelectContent>
+                      <SelectContent>
+                        {designations.map(d => <SelectItem key={d.id} value={d.name} className="text-xs font-bold">{d.name}</SelectItem>)}
+                      </SelectContent>
                     </Select>
                  </div>
                  <div className="space-y-1.5">
