@@ -271,7 +271,7 @@ export default function UsersPage() {
                   </TableHeader>
                   <TableBody>
                     {users?.map((u, idx) => (
-                      <TableRow key={u.id || `user-${idx}`} className="h-20 hover:bg-muted/5 transition-colors group">
+                      <TableRow key={`${u.id}-${idx}`} className="h-20 hover:bg-muted/5 transition-colors group">
                         <TableCell className="pl-8">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-2xl bg-violet-100 text-violet-600 flex items-center justify-center font-black text-xs uppercase shadow-sm">
@@ -327,7 +327,7 @@ export default function UsersPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {roles?.map((role, idx) => (
-                <Card key={role.id || `role-${idx}`} className="border-none shadow-sm hover:shadow-md transition-all group overflow-hidden rounded-[2rem] bg-white ring-1 ring-slate-100">
+                <Card key={`${role.id}-${idx}`} className="border-none shadow-sm hover:shadow-md transition-all group overflow-hidden rounded-[2rem] bg-white ring-1 ring-slate-100">
                   <div className={cn("h-1.5", role.isSuperAdmin ? "bg-violet-600" : "bg-slate-100")} />
                   <CardHeader className="flex flex-row items-center justify-between p-6">
                     <div>
@@ -352,8 +352,8 @@ export default function UsersPage() {
                   </CardHeader>
                   <CardContent className="p-6 pt-0">
                     <div className="flex flex-wrap gap-1.5 mt-2">
-                      {Object.entries(role.permissions || {}).slice(0, 4).map(([mod, actions]) => (
-                        <Badge key={mod} variant="outline" className="text-[8px] uppercase font-black bg-slate-50 border-none h-4">
+                      {Object.entries(role.permissions || {}).slice(0, 4).map(([mod, actions], eIdx) => (
+                        <Badge key={`${mod}-${eIdx}`} variant="outline" className="text-[8px] uppercase font-black bg-slate-50 border-none h-4">
                           {mod}: {(actions as string[]).length}
                         </Badge>
                       ))}
@@ -417,8 +417,8 @@ export default function UsersPage() {
                       </div>
                     </div>
                     <div className="flex gap-4 w-full md:w-auto justify-between md:justify-start">
-                      {ACTIONS.map((action) => (
-                        <div key={`${mod.key}-${action}`} className="w-10 md:w-16 flex flex-col items-center gap-2">
+                      {ACTIONS.map((action, aIdx) => (
+                        <div key={`${mod.key}-${action}-${aIdx}`} className="w-10 md:w-16 flex flex-col items-center gap-2">
                           <span className="md:hidden text-[7px] font-black uppercase text-slate-400">{action}</span>
                           <Checkbox 
                             checked={(permissions[mod.key] || []).includes(action)}
@@ -474,7 +474,11 @@ export default function UsersPage() {
                     <Select name="department" defaultValue={selectedUser?.department}>
                       <SelectTrigger className="h-11 rounded-xl bg-white"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {departments.map((d, idx) => <SelectItem key={`dept-opt-${d.id}-${idx}`} value={d.name} className="text-xs font-bold">{d.name}</SelectItem>)}
+                        {departments.map((d, idx) => (
+                          <SelectItem key={`dept-opt-${d.id}-${idx}`} value={d.name} className="text-xs font-bold">
+                            {d.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                  </div>
@@ -488,7 +492,11 @@ export default function UsersPage() {
                     <Select name="designation" defaultValue={selectedUser?.designation}>
                       <SelectTrigger className="h-11 rounded-xl bg-white"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {designations.map((d, idx) => <SelectItem key={`desig-opt-${d.id}-${idx}`} value={d.name} className="text-xs font-bold">{d.name}</SelectItem>)}
+                        {designations.map((d, idx) => (
+                          <SelectItem key={`desig-opt-${d.id}-${idx}`} value={d.name} className="text-xs font-bold">
+                            {d.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                  </div>
@@ -496,7 +504,13 @@ export default function UsersPage() {
                     <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Target Location</Label>
                     <Select name="branchId" defaultValue={selectedUser?.branchId || branchId || ""}>
                       <SelectTrigger className="h-11 rounded-xl bg-white"><SelectValue /></SelectTrigger>
-                      <SelectContent>{branches?.map((b, idx) => <SelectItem key={`user-branch-opt-${b.id}-${idx}`} value={b.id} className="text-xs font-bold">{b.branchName}</SelectItem>)}</SelectContent>
+                      <SelectContent>
+                        {branches?.map((b, idx) => (
+                          <SelectItem key={`user-branch-opt-${b.id}-${idx}`} value={b.id} className="text-xs font-bold">
+                            {b.branchName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
                     </Select>
                  </div>
                </div>
@@ -507,7 +521,13 @@ export default function UsersPage() {
                   <Label className="text-[10px] font-black uppercase text-violet-600 tracking-widest">Assign Role</Label>
                   <Select name="roleId" defaultValue={selectedUser?.roleId || "guest-admin"}>
                     <SelectTrigger className="h-11 rounded-xl bg-white border-violet-100 ring-1 ring-violet-100"><SelectValue /></SelectTrigger>
-                    <SelectContent>{roles?.map((r, idx) => <SelectItem key={`user-role-opt-${r.id}-${idx}`} value={r.id} className="text-xs font-bold">{r.name}</SelectItem>)}</SelectContent>
+                    <SelectContent>
+                      {roles?.map((r, idx) => (
+                        <SelectItem key={`user-role-opt-${r.id}-${idx}`} value={r.id} className="text-xs font-bold">
+                          {r.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
@@ -515,8 +535,8 @@ export default function UsersPage() {
                   <Select name="status" defaultValue={selectedUser?.isActive !== false ? "active" : "inactive"}>
                     <SelectTrigger className="h-11 rounded-xl bg-white"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="active" className="text-xs font-bold text-green-600">Active</SelectItem>
-                      <SelectItem value="inactive" className="text-xs font-bold text-red-600">Disabled</SelectItem>
+                      <SelectItem key="status-opt-active" value="active" className="text-xs font-bold text-green-600">Active</SelectItem>
+                      <SelectItem key="status-opt-inactive" value="inactive" className="text-xs font-bold text-red-600">Disabled</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

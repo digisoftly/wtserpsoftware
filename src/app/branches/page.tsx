@@ -44,7 +44,7 @@ import { cn } from "@/lib/utils"
 export default function BranchesPage() {
   const { companyId } = useTenant();
   const db = useFirestore();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
@@ -80,11 +80,28 @@ export default function BranchesPage() {
     e.preventDefault();
     if (!db || !companyId) return;
 
-    setIsSubmitting(true);
     const formData = new FormData(e.currentTarget);
+    const branchName = formData.get("branchName") as string;
+
+    // VALIDATION: Prevent duplicate names
+    const exists = branches?.some(b => 
+      b.branchName?.toLowerCase() === branchName.toLowerCase() && 
+      b.id !== selectedRecord?.id
+    );
+
+    if (exists) {
+      toast({ 
+        variant: "destructive", 
+        title: language === 'BN' ? "এই নামের রেকর্ড আগে থেকেই আছে" : "Record already exists",
+        description: branchName
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
     
     const branchData = {
-      branchName: formData.get("branchName") as string,
+      branchName,
       branchCode: formData.get("branchCode") as string,
       branchType: formData.get("branchType") as string,
       contactPerson: formData.get("contactPerson") as string,
@@ -180,7 +197,7 @@ export default function BranchesPage() {
               </TableHeader>
               <TableBody>
                 {filteredBranches?.map((b, idx) => (
-                  <TableRow key={b.id || `branch-${idx}`} className="h-20 hover:bg-muted/5 transition-colors group">
+                  <TableRow key={`${b.id}-${idx}`} className="h-20 hover:bg-muted/5 transition-colors group">
                     <TableCell className="pl-8">
                       <div className="flex flex-col">
                         <span className="font-black text-xs uppercase tracking-tight text-slate-900">{b.branchName}</span>
@@ -272,10 +289,10 @@ export default function BranchesPage() {
                       ))
                     ) : (
                       <>
-                        <SelectItem key="def-ho" value="Head Office" className="text-xs font-bold">Head Office</SelectItem>
-                        <SelectItem key="def-sc" value="Sales Center" className="text-xs font-bold">Sales Center</SelectItem>
-                        <SelectItem key="def-wh" value="Warehouse" className="text-xs font-bold">Warehouse</SelectItem>
-                        <SelectItem key="def-sp" value="Service Point" className="text-xs font-bold">Service Point</SelectItem>
+                        <SelectItem key="def-ho-key" value="Head Office" className="text-xs font-bold">Head Office</SelectItem>
+                        <SelectItem key="def-sc-key" value="Sales Center" className="text-xs font-bold">Sales Center</SelectItem>
+                        <SelectItem key="def-wh-key" value="Warehouse" className="text-xs font-bold">Warehouse</SelectItem>
+                        <SelectItem key="def-sp-key" value="Service Point" className="text-xs font-bold">Service Point</SelectItem>
                       </>
                     )}
                   </SelectContent>
