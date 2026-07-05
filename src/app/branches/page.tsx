@@ -268,14 +268,14 @@ export default function BranchesPage() {
                   <SelectContent className="rounded-xl">
                     {branchTypes && branchTypes.length > 0 ? (
                       branchTypes.map((type, idx) => (
-                        <SelectItem key={type.id || `type-${idx}`} value={type.name} className="text-xs font-bold">{type.name}</SelectItem>
+                        <SelectItem key={`branch-type-opt-${type.id || idx}`} value={type.name} className="text-xs font-bold">{type.name}</SelectItem>
                       ))
                     ) : (
                       <>
-                        <SelectItem value="Head Office" className="text-xs font-bold">Head Office</SelectItem>
-                        <SelectItem value="Sales Center" className="text-xs font-bold">Sales Center</SelectItem>
-                        <SelectItem value="Warehouse" className="text-xs font-bold">Warehouse</SelectItem>
-                        <SelectItem value="Service Point" className="text-xs font-bold">Service Point</SelectItem>
+                        <SelectItem key="def-ho" value="Head Office" className="text-xs font-bold">Head Office</SelectItem>
+                        <SelectItem key="def-sc" value="Sales Center" className="text-xs font-bold">Sales Center</SelectItem>
+                        <SelectItem key="def-wh" value="Warehouse" className="text-xs font-bold">Warehouse</SelectItem>
+                        <SelectItem key="def-sp" value="Service Point" className="text-xs font-bold">Service Point</SelectItem>
                       </>
                     )}
                   </SelectContent>
