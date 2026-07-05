@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -71,12 +70,14 @@ const DEFAULT_MENU_ORDER = [
 ];
 
 export default function SettingsPage() {
-  const { companyId } = useTenant();
+  const { companyId, userRole } = useTenant();
   const db = useFirestore();
   const { t } = useTranslation();
   const [isSaving, setIsSaving] = React.useState(false);
   const [logoPreview, setLogoPreview] = React.useState<string | null>(null);
   const [menuOrder, setMenuOrder] = React.useState<string[]>(DEFAULT_MENU_ORDER);
+
+  const isSuperAdmin = userRole?.isSuperAdmin === true;
 
   const settingsRef = useMemoFirebase(() => {
     if (!db || !companyId) return null;
@@ -169,7 +170,7 @@ export default function SettingsPage() {
             <TabsTrigger value="navigation" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">{t('navigation')}</TabsTrigger>
             <TabsTrigger value="messages" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">{t('messages')}</TabsTrigger>
             <TabsTrigger value="business" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">{t('businessRules')}</TabsTrigger>
-            <TabsTrigger value="demo" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">{t('demoManagement')}</TabsTrigger>
+            {isSuperAdmin && <TabsTrigger value="demo" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">{t('demoManagement')}</TabsTrigger>}
             <TabsTrigger value="security" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">{t('sessionManagement')}</TabsTrigger>
           </TabsList>
 
@@ -256,7 +257,6 @@ export default function SettingsPage() {
                </CardHeader>
                <CardContent className="p-8 space-y-8">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Permission Error Block */}
                     <div className="space-y-4 p-6 rounded-3xl bg-slate-50 ring-1 ring-slate-100">
                        <h3 className="text-xs font-black uppercase tracking-widest text-red-600 flex items-center gap-2">
                          <ShieldAlert className="h-4 w-4" /> {t('accessRestricted')}
@@ -281,7 +281,6 @@ export default function SettingsPage() {
                        </div>
                     </div>
 
-                    {/* System Error Block */}
                     <div className="space-y-4 p-6 rounded-3xl bg-slate-50 ring-1 ring-slate-100">
                        <h3 className="text-xs font-black uppercase tracking-widest text-blue-600 flex items-center gap-2">
                          <AlertCircle className="h-4 w-4" /> {t('serverError')}
@@ -330,48 +329,50 @@ export default function SettingsPage() {
              </Card>
           </TabsContent>
 
-          <TabsContent value="demo" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="border-none shadow-xl rounded-[2.5rem] bg-violet-600 text-white overflow-hidden relative">
-                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-                 <CardHeader className="p-8">
-                    <div className="flex items-center gap-4 mb-4">
-                       <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center"><MonitorPlay className="h-6 w-6" /></div>
-                       <CardTitle className="text-xl font-black font-headline uppercase tracking-tight">{t('demoManagement')}</CardTitle>
-                    </div>
-                    <CardDescription className="text-xs text-white/60 font-bold uppercase leading-relaxed">{t('demoModeSub')}</CardDescription>
-                 </CardHeader>
-                 <CardContent className="p-8 pt-0">
-                    <div className="flex items-center justify-between p-6 bg-white/10 rounded-3xl backdrop-blur-xl border border-white/20">
-                       <div className="space-y-0.5">
-                          <Label className="text-sm font-black uppercase tracking-widest">{t('enableDemo')}</Label>
-                          <p className="text-[9px] font-bold text-white/50">Guest users will have read-only access</p>
-                       </div>
-                       <Switch name="demoModeEnabled" defaultChecked={settings?.demoModeEnabled} className="data-[state=checked]:bg-white data-[state=checked]:[&>span]:bg-violet-600" />
-                    </div>
-                 </CardContent>
-              </Card>
-
-              <Card className="border-none shadow-sm rounded-[2.5rem] bg-white ring-1 ring-slate-100 p-8 space-y-6">
-                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Demo Guard Rules</h3>
-                 <div className="space-y-3">
-                    {[
-                      { icon: ShieldX, label: "Block Destructive Actions", desc: "Guests cannot delete invoices, inventory or users." },
-                      { icon: RotateCcw, label: "Automatic Reset Pattern", desc: "Data reverts to baseline every 24 hours." },
-                      { icon: ShieldAlert, label: "System Config Lock", desc: "Master settings are disabled for guest accounts." }
-                    ].map((rule, i) => (
-                      <div key={i} className="flex gap-4 items-start p-4 bg-slate-50 rounded-2xl">
-                         <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-violet-600 shadow-sm shrink-0"><rule.icon className="h-5 w-5" /></div>
-                         <div>
-                            <p className="text-[11px] font-black uppercase text-slate-900">{rule.label}</p>
-                            <p className="text-[9px] font-bold text-slate-500 uppercase mt-0.5">{rule.desc}</p>
-                         </div>
+          {isSuperAdmin && (
+            <TabsContent value="demo" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="border-none shadow-xl rounded-[2.5rem] bg-violet-600 text-white overflow-hidden relative">
+                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                   <CardHeader className="p-8">
+                      <div className="flex items-center gap-4 mb-4">
+                         <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center"><MonitorPlay className="h-6 w-6" /></div>
+                         <CardTitle className="text-xl font-black font-headline uppercase tracking-tight">{t('demoManagement')}</CardTitle>
                       </div>
-                    ))}
-                 </div>
-              </Card>
-            </div>
-          </TabsContent>
+                      <CardDescription className="text-xs text-white/60 font-bold uppercase leading-relaxed">{t('demoModeSub')}</CardDescription>
+                   </CardHeader>
+                   <CardContent className="p-8 pt-0">
+                      <div className="flex items-center justify-between p-6 bg-white/10 rounded-3xl backdrop-blur-xl border border-white/20">
+                         <div className="space-y-0.5">
+                            <Label className="text-sm font-black uppercase tracking-widest">{t('enableDemo')}</Label>
+                            <p className="text-[9px] font-bold text-white/50">Guest users will have sandbox access</p>
+                         </div>
+                         <Switch name="demoModeEnabled" defaultChecked={settings?.demoModeEnabled} className="data-[state=checked]:bg-white data-[state=checked]:[&>span]:bg-violet-600" />
+                      </div>
+                   </CardContent>
+                </Card>
+
+                <Card className="border-none shadow-sm rounded-[2.5rem] bg-white ring-1 ring-slate-100 p-8 space-y-6">
+                   <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Sandbox Guard Rules</h3>
+                   <div className="space-y-3">
+                      {[
+                        { icon: ShieldX, label: "Block Destructive Actions", desc: "Guests cannot delete invoices, inventory or users." },
+                        { icon: RotateCcw, label: "Automatic Reset Pattern", desc: "Data reverts to baseline every 24 hours." },
+                        { icon: ShieldAlert, label: "System Config Lock", desc: "Master settings are disabled for guest accounts." }
+                      ].map((rule, i) => (
+                        <div key={i} className="flex gap-4 items-start p-4 bg-slate-50 rounded-2xl">
+                           <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-violet-600 shadow-sm shrink-0"><rule.icon className="h-5 w-5" /></div>
+                           <div>
+                              <p className="text-[11px] font-black uppercase text-slate-900">{rule.label}</p>
+                              <p className="text-[9px] font-bold text-slate-500 uppercase mt-0.5">{rule.desc}</p>
+                           </div>
+                        </div>
+                      ))}
+                   </div>
+                </Card>
+              </div>
+            </TabsContent>
+          )}
 
           <TabsContent value="security" className="space-y-6">
             <Card className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white ring-1 ring-slate-100">

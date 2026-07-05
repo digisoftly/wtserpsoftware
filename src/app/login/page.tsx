@@ -21,8 +21,7 @@ import { cn } from '@/lib/utils';
 
 /**
  * LoginPage provides a high-fidelity, device-optimized SaaS login experience.
- * Desktop: Keeps existing split-pane UI.
- * Mobile/Tablet: Implements new gradient-top/white-card design.
+ * Production Mode is active by default. Demo features are hidden unless enabled in settings.
  */
 export default function LoginPage() {
   const auth = useAuth();
@@ -32,7 +31,6 @@ export default function LoginPage() {
   const { setLanguage, userRole } = useTenant();
   const router = useRouter();
   
-  // Default prototype credentials
   const [email, setEmail] = React.useState('erpwts@gmail.com');
   const [password, setPassword] = React.useState('adminwts123');
   const [authMode, setAuthMode] = React.useState<'login' | 'register'>('login');
@@ -94,17 +92,14 @@ export default function LoginPage() {
   if (!mounted) return null;
 
   const loginHero = PlaceHolderImages.find(img => img.id === 'login-hero');
+  const isDemoEnabled = settings?.demoModeEnabled === true;
 
   return (
     <div className="min-h-svh bg-slate-50 overflow-x-hidden">
       
-      {/* -----------------------------------
-          MOBILE & TABLET UI (< 1024px)
-          ----------------------------------- */}
+      {/* MOBILE & TABLET UI */}
       <div className="flex flex-col min-h-svh lg:hidden">
-        {/* TOP SECTION (40% Height) */}
         <div className="h-[40svh] w-full bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-900 flex flex-col items-center justify-center p-6 text-white text-center relative overflow-hidden shrink-0">
-          {/* Subtle background patterns */}
           <div className="absolute inset-0 opacity-10 pointer-events-none">
             <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-white rounded-full blur-3xl" />
             <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-blue-400 rounded-full blur-3xl" />
@@ -129,7 +124,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* BOTTOM SECTION (White Login Card) */}
         <div className="mt-[-2.5rem] bg-white rounded-t-[3rem] p-8 flex-1 shadow-2xl relative z-10 flex flex-col animate-in fade-in slide-in-from-bottom-6 duration-700">
           <div className="w-12 h-1.5 bg-slate-100 rounded-full mx-auto mb-8 shrink-0" />
           
@@ -194,6 +188,18 @@ export default function LoginPage() {
                 {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : t('login')}
               </Button>
 
+              {isDemoEnabled && (
+                <Button 
+                  type="button"
+                  variant="outline" 
+                  className="w-full h-12 rounded-xl gap-3 border-dashed border-blue-200 hover:bg-blue-50 text-blue-600 font-bold" 
+                  onClick={handleDemoLogin}
+                  disabled={isLoading}
+                >
+                  <ShieldCheck className="h-4 w-4" /> Guest Administrator
+                </Button>
+              )}
+
               <div className="pt-4 flex items-center justify-center gap-4">
                 <Button 
                   variant="ghost" 
@@ -216,11 +222,8 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* -----------------------------------
-          DESKTOP UI (> 1024px) - UNCHANGED
-          ----------------------------------- */}
+      {/* DESKTOP UI */}
       <div className="hidden lg:flex min-h-svh flex-row items-stretch bg-slate-50">
-        {/* LEFT PANE: BRANDING & ILLUSTRATION */}
         <div className="w-1/2 bg-blue-600 relative overflow-hidden flex items-center justify-center p-16 shrink-0">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-900" />
           <div className="absolute inset-0 opacity-30 mix-blend-overlay">
@@ -262,7 +265,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* RIGHT PANE: AUTH FORM */}
         <div className="flex-1 flex flex-col items-center justify-center p-12 relative">
           <div className="absolute top-6 right-6 z-20">
             <Button 
@@ -278,10 +280,7 @@ export default function LoginPage() {
 
           <div className="w-full max-w-md space-y-6 relative">
             <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl shadow-slate-200 border border-slate-100 animate-in fade-in zoom-in-95 duration-500 overflow-hidden relative">
-              <div className="absolute -top-1 -right-1 bg-blue-50 text-blue-600 px-6 py-2 rounded-bl-3xl font-black text-[9px] uppercase tracking-widest border-l border-b border-blue-100 flex items-center gap-2">
-                <Sparkles className="h-3 w-3" /> Demo Mode
-              </div>
-
+              
               <div className="text-center mb-8">
                 <div className="flex justify-center mb-4">
                   <div className="w-14 h-14 rounded-2xl bg-slate-50 p-2 flex items-center justify-center border border-slate-100 overflow-hidden shadow-inner">
@@ -376,30 +375,34 @@ export default function LoginPage() {
                       ) : (
                         <>
                           {authMode === 'login' ? <ArrowRight className="h-5 w-5" /> : <UserPlus className="h-5 w-5" />}
-                          {authMode === 'login' ? t('login') : 'Register Demo User'}
+                          {authMode === 'login' ? t('login') : 'Register User'}
                         </>
                       )}
                     </Button>
 
-                    <div className="relative py-2">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t border-slate-100" />
-                      </div>
-                      <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-[0.2em]">
-                        <span className="bg-white px-4 text-slate-400">Secure Access</span>
-                      </div>
-                    </div>
+                    {isDemoEnabled && (
+                      <div className="space-y-4">
+                        <div className="relative py-2">
+                          <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t border-slate-100" />
+                          </div>
+                          <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-[0.2em]">
+                            <span className="bg-white px-4 text-slate-400">Sandbox Access</span>
+                          </div>
+                        </div>
 
-                    <Button 
-                      type="button"
-                      variant="outline" 
-                      className="w-full h-14 rounded-2xl gap-3 border-slate-200 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 font-bold transition-all text-slate-600 text-sm" 
-                      onClick={handleDemoLogin}
-                      disabled={isLoading}
-                    >
-                      {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShieldCheck className="h-5 w-5" />}
-                      Guest Administrator
-                    </Button>
+                        <Button 
+                          type="button"
+                          variant="outline" 
+                          className="w-full h-14 rounded-2xl gap-3 border-slate-200 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 font-bold transition-all text-slate-600 text-sm" 
+                          onClick={handleDemoLogin}
+                          disabled={isLoading}
+                        >
+                          {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShieldCheck className="h-5 w-5" />}
+                          Guest Administrator
+                        </Button>
+                      </div>
+                    )}
                   </form>
                 </Tabs>
               )}
