@@ -1,0 +1,447 @@
+"use client"
+
+import * as React from "react"
+import { useRouter } from "next/navigation"
+import { 
+  ShoppingCart, 
+  ArrowLeft, 
+  Save, 
+  Loader2, 
+  Scan, 
+  User, 
+  PackagePlus, 
+  ShoppingBag, 
+  X, 
+  Calculator,
+  ArrowRight
+} from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Card } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
+import { collection, doc, runTransaction, serverTimestamp, increment, where, limit } from "firebase/firestore"
+import { useTenant } from "@/context/tenant-context"
+import { useTranslation } from "@/hooks/use-translation"
+import { toast } from "@/hooks/use-toast"
+import { cn } from "@/lib/utils"
+
+interface InvoiceItem {
+  productId: string;
+  name: string;
+  qty: number;
+  unit: string;
+  price: number;
+  total: number;
+  serials: string[];
+  isSerialized: boolean;
+  isCustom?: boolean;
+}
+
+export default function NewInvoicePage() {
+  const router = useRouter();
+  const { companyId, branchId } = useTenant();
+  const db = useFirestore();
+  const { t } = useTranslation();
+
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [scannerInput, setScannerInput] = React.useState("");
+
+  // Form State
+  const [isManualCustomer, setIsManualCustomer] = React.useState(false);
+  const [manualCustomerName, setManualCustomerName] = React.useState("");
+  const [manualCustomerPhone, setManualCustomerPhone] = React.useState("");
+  const [selectedCustomerId, setSelectedCustomerId] = React.useState("");
+  const [invoiceDate, setInvoiceDate] = React.useState(new Date().toISOString().split('T')[0]);
+  const [lineItems, setLineItems] = React.useState<InvoiceItem[]>([]);
+  const [discount, setDiscount] = React.useState(0);
+  const [vatPercent, setVatPercent] = React.useState(15);
+  const [paidAmount, setPaidAmount] = React.useState(0);
+  const [paymentMethod, setPaymentMethod] = React.useState("cash");
+
+  // Queries
+  const customersQuery = useMemoFirebase(() => {
+    if (!db || !companyId || !branchId) return null;
+    return collection(db, "companies", companyId, "branches", branchId, "customers");
+  }, [db, companyId, branchId]);
+  const { data: customers } = useCollection(customersQuery);
+
+  const productsQuery = useMemoFirebase(() => {
+    if (!db || !companyId || !branchId) return null;
+    return collection(db, "companies", companyId, "branches", branchId, "products");
+  }, [db, companyId, branchId]);
+  const { data: products } = useCollection(productsQuery);
+
+  const serialsQuery = useMemoFirebase(() => {
+    if (!db || !companyId || !branchId) return null;
+    return query(
+      collection(db, "companies", companyId, "branches", branchId, "serial_numbers"), 
+      where("status", "==", "available"),
+      limit(200)
+    );
+  }, [db, companyId, branchId]);
+  const { data: availableSerials } = useCollection(serialsQuery);
+
+  // Calculations
+  const subtotal = React.useMemo(() => lineItems.reduce((sum, item) => sum + item.total, 0), [lineItems]);
+  const vatAmount = React.useMemo(() => (subtotal - discount) * (vatPercent / 100), [subtotal, discount, vatPercent]);
+  const totalAmount = React.useMemo(() => subtotal - discount + vatAmount, [subtotal, discount, vatAmount]);
+  const balanceDue = React.useMemo(() => totalAmount - paidAmount, [totalAmount, paidAmount]);
+
+  const handleAddProduct = React.useCallback((productId: string) => {
+    const product = products?.find(p => p.id === productId);
+    if (!product) return;
+
+    setLineItems(prev => {
+      const existingIdx = prev.findIndex(item => item.productId === productId);
+      if (existingIdx > -1 && !product.serialNumberTrackingRequired && !prev[existingIdx].isCustom) {
+        const updated = [...prev];
+        updated[existingIdx].qty += 1;
+        updated[existingIdx].total = updated[existingIdx].qty * updated[existingIdx].price;
+        return updated;
+      } else {
+        return [...prev, {
+          productId: product.id,
+          name: product.name,
+          qty: 1,
+          unit: product.unit || "Pcs",
+          price: product.unitPrice || 0,
+          total: product.unitPrice || 0,
+          isSerialized: product.serialNumberTrackingRequired || false,
+          serials: [],
+          isCustom: false
+        }];
+      }
+    });
+  }, [products]);
+
+  const handleScannerInput = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!scannerInput || isSubmitting) return;
+
+    const foundSerial = availableSerials?.find(s => s.serialNumber.toLowerCase() === scannerInput.toLowerCase());
+    if (foundSerial) {
+      const product = products?.find(p => p.id === foundSerial.productId);
+      if (product) {
+        setLineItems(prev => {
+          const existingIdx = prev.findIndex(item => item.productId === product.id);
+          if (existingIdx > -1) {
+            const updated = [...prev];
+            if (!updated[existingIdx].serials.includes(foundSerial.serialNumber)) {
+              updated[existingIdx].serials.push(foundSerial.serialNumber);
+              updated[existingIdx].qty = updated[existingIdx].serials.length;
+              updated[existingIdx].total = updated[existingIdx].qty * updated[existingIdx].price;
+              return updated;
+            }
+            return prev;
+          } else {
+            return [...prev, {
+              productId: product.id,
+              name: product.name,
+              qty: 1,
+              unit: product.unit || "Pcs",
+              price: product.unitPrice || 0,
+              total: product.unitPrice || 0,
+              isSerialized: true,
+              serials: [foundSerial.serialNumber],
+              isCustom: false
+            }];
+          }
+        });
+        setScannerInput("");
+        return;
+      }
+    }
+    setScannerInput("");
+  };
+
+  const handleUpdateItem = (idx: number, field: keyof InvoiceItem, val: any) => {
+    setLineItems(prev => prev.map((item, i) => {
+      if (i !== idx) return item;
+      const updated = { ...item, [field]: val };
+      if (field === 'qty') updated.qty = Math.max(1, Number(val) || 0);
+      if (field === 'price') updated.price = Math.max(0, Number(val) || 0);
+      if (field === 'qty' || field === 'price') updated.total = updated.qty * updated.price;
+      return updated;
+    }));
+  };
+
+  const handleSaveInvoice = async () => {
+    if (isSubmitting) return;
+    if (!isManualCustomer && !selectedCustomerId) {
+      toast({ variant: "destructive", title: t('error'), description: "Please select a customer." });
+      return;
+    }
+    if (lineItems.length === 0) {
+      toast({ variant: "destructive", title: t('error'), description: t('noItemsSelected') });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await runTransaction(db!, async (transaction) => {
+        const invoiceRef = doc(collection(db!, "companies", companyId!, "branches", branchId!, "sales_invoices"));
+        
+        let customerName = manualCustomerName;
+        let finalCustomerId = selectedCustomerId;
+
+        if (!isManualCustomer) {
+          const customer = customers?.find(c => c.id === selectedCustomerId);
+          customerName = customer ? `${customer.firstName} ${customer.lastName}` : "Client";
+        } else {
+          finalCustomerId = "manual";
+        }
+
+        const invoiceData = {
+          id: invoiceRef.id,
+          companyId,
+          branchId,
+          invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
+          customerId: finalCustomerId,
+          customerName,
+          invoiceDate,
+          items: lineItems,
+          subtotal,
+          discount,
+          vatPercent,
+          vatAmount,
+          totalAmount,
+          paidAmount,
+          balanceDue,
+          paymentMethod,
+          status: balanceDue <= 0 ? "paid" : paidAmount > 0 ? "partial" : "due",
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        };
+
+        transaction.set(invoiceRef, invoiceData);
+
+        for (const item of lineItems) {
+          if (!item.isCustom) {
+            const productRef = doc(db!, "companies", companyId!, "branches", branchId!, "products", item.productId);
+            transaction.update(productRef, { 
+              currentStock: increment(-item.qty),
+              updatedAt: serverTimestamp()
+            });
+
+            if (item.isSerialized) {
+              for (const sn of item.serials) {
+                const snRef = availableSerials?.find(s => s.serialNumber === sn);
+                if (snRef) {
+                  const docRef = doc(db!, "companies", companyId!, "branches", branchId!, "serial_numbers", snRef.id);
+                  transaction.update(docRef, { status: "sold", salesInvoiceId: invoiceRef.id });
+                }
+              }
+            }
+          }
+        }
+      });
+
+      toast({ title: t('success') });
+      router.push("/sales");
+    } catch (e: any) {
+      toast({ variant: "destructive", title: t('error'), description: e.message });
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full bg-slate-50 min-h-screen pb-20">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-30 bg-white border-b px-4 py-3 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-lg font-black font-headline uppercase tracking-tight text-blue-600">{t('newInvoice')}</h1>
+            <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">POS Terminal Mode</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" className="rounded-full text-[10px] font-black uppercase tracking-widest px-6" onClick={() => router.back()}>
+            {t('cancel')}
+          </Button>
+          <Button className="bg-blue-600 hover:bg-blue-700 rounded-full px-8 h-10 text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-100 gap-2" disabled={isSubmitting} onClick={handleSaveInvoice}>
+            {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />}
+            {t('save')}
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-6 p-4 md:p-6">
+        {/* Main POS Interface */}
+        <div className="flex-1 space-y-6">
+          <Card className="p-6 rounded-[2rem] border-none shadow-sm ring-1 ring-slate-100 space-y-6 bg-white">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4 border-slate-50">
+              <h3 className="text-[10px] font-black uppercase text-slate-900 flex items-center gap-2 tracking-widest">
+                <User className="h-4 w-4 text-blue-600" /> {t('customer')} Identification
+              </h3>
+              <div className="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-full scale-90">
+                <Label className="text-[9px] font-black uppercase text-muted-foreground cursor-pointer" htmlFor="manual-cust-entry">{t('individual')}</Label>
+                <Switch id="manual-cust-entry" checked={isManualCustomer} onCheckedChange={setIsManualCustomer} className="data-[state=checked]:bg-blue-600" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {isManualCustomer ? (
+                <>
+                  <div className="space-y-1.5 lg:col-span-2">
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Full Name</Label>
+                    <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerName} onChange={e => setManualCustomerName(e.target.value)} placeholder="e.g. John Doe" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Phone Number</Label>
+                    <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerPhone} onChange={e => setManualCustomerPhone(e.target.value)} placeholder="+880..." />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="space-y-1.5 lg:col-span-2">
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('customer')}</Label>
+                    <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                      <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 shadow-sm font-bold text-xs">
+                        <SelectValue placeholder={t('search')} />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[250px] rounded-xl">
+                        {customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-bold">{c.firstName} {c.lastName}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('date')}</Label>
+                    <Input type="date" className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-black" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} />
+                  </div>
+                </>
+              )}
+            </div>
+          </Card>
+
+          <Card className="p-6 rounded-[2rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Catalog Search</Label>
+                <div className="flex gap-2">
+                  <Select onValueChange={handleAddProduct}>
+                    <SelectTrigger className="h-12 flex-1 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 shadow-sm transition-all focus:ring-2 focus:ring-blue-500 font-bold text-xs">
+                      <SelectValue placeholder={t('addProduct')} />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px] rounded-xl">
+                      {products?.map(p => (
+                        <SelectItem key={p.id} value={p.id} className="text-xs font-bold">
+                          {p.name} <span className="text-[9px] opacity-60 ml-2 font-mono">(STOCK: {p.currentStock})</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl border-blue-200 text-blue-700 bg-blue-50/50" onClick={() => {}} title={t('addCustomItem')}>
+                    <PackagePlus className="h-5 w-5" />
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('scanPrompt')}</Label>
+                <form onSubmit={handleScannerInput} className="relative group">
+                  <Scan className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-600 animate-pulse" />
+                  <Input 
+                    placeholder="Scan Barcode / IMEI..."
+                    className="h-12 pl-12 rounded-2xl bg-slate-50/50 border-none ring-1 ring-slate-100 shadow-sm text-xs font-bold focus:ring-2 focus:ring-blue-600 transition-all"
+                    value={scannerInput}
+                    onChange={e => setScannerInput(e.target.value)}
+                  />
+                </form>
+              </div>
+            </div>
+
+            <div className="rounded-[1.5rem] overflow-hidden ring-1 ring-slate-100 border border-slate-50">
+              <Table>
+                <TableHeader className="bg-slate-50/50">
+                  <TableRow>
+                    <TableHead className="text-[10px] uppercase font-black py-4 pl-6">{t('itemDescription')}</TableHead>
+                    <TableHead className="text-[10px] uppercase font-black text-center w-32">{t('qty')}</TableHead>
+                    <TableHead className="text-[10px] uppercase font-black text-right w-32">{t('unitPrice')}</TableHead>
+                    <TableHead className="text-[10px] uppercase font-black text-right pr-6 w-32">{t('total')}</TableHead>
+                    <TableHead className="w-10"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {lineItems.length === 0 ? (
+                    <TableRow><TableCell colSpan={5} className="h-64 text-center opacity-20"><ShoppingBag className="h-12 w-12 mx-auto mb-4" /><p className="text-xs uppercase font-black tracking-widest">{t('noItemsSelected')}</p></TableCell></TableRow>
+                  ) : (
+                    lineItems.map((item, idx) => (
+                      <TableRow key={idx} className="group hover:bg-slate-50/50 transition-colors h-20">
+                        <TableCell className="pl-6">
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-[11px] md:text-sm font-black text-slate-900 uppercase tracking-tighter truncate">{item.name}</span>
+                            {item.isSerialized && (
+                              <div className="flex flex-wrap gap-1 mt-1.5">{item.serials.map((s, si) => <Badge key={si} variant="secondary" className="text-[7px] h-3.5 bg-blue-50 text-blue-700 border-none font-mono uppercase">{s}</Badge>)}</div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 justify-center">
+                            <Input type="number" className="h-9 text-center font-black text-sm rounded-xl w-16 bg-slate-50 border-none" value={item.qty} disabled={item.isSerialized} onChange={e => handleUpdateItem(idx, 'qty', e.target.value)} />
+                            <span className="text-[10px] font-black uppercase text-muted-foreground w-8 text-left">{item.unit || 'Pcs'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Input type="number" className="h-9 text-right font-black text-xs rounded-xl w-24 bg-slate-50 border-none ml-auto" value={item.price} onChange={e => handleUpdateItem(idx, 'price', e.target.value)} />
+                        </TableCell>
+                        <TableCell className="text-right pr-6"><span className="font-black text-xs md:text-sm text-blue-600">৳{item.total.toLocaleString()}</span></TableCell>
+                        <TableCell><Button variant="ghost" size="icon" className="h-9 w-9 text-red-500 hover:bg-red-50 rounded-full" onClick={() => setLineItems(lineItems.filter((_, i) => i !== idx))}><X className="h-4 w-4" /></Button></TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
+        </div>
+
+        {/* Sidebar Summary */}
+        <div className="w-full lg:w-[400px] space-y-6">
+          <Card className="p-8 rounded-[2.5rem] shadow-2xl space-y-6 text-center text-white bg-blue-600">
+            <p className="text-[9px] uppercase font-black opacity-60 tracking-[0.2em]">{t('netFinalAmount')}</p>
+            <h2 className="text-4xl font-headline font-black tracking-tighter">৳{totalAmount.toLocaleString()}</h2>
+            <div className="pt-6 space-y-2 border-t border-white/10 text-[10px] font-bold uppercase tracking-wider">
+              <div className="flex justify-between opacity-70"><span>{t('subtotal')}</span><span>৳{subtotal.toLocaleString()}</span></div>
+              <div className="flex justify-between text-red-200"><span>{t('discount')}</span><span>- ৳{discount.toLocaleString()}</span></div>
+              <div className="flex justify-between opacity-70"><span>{t('vat')} ({vatPercent}%)</span><span>+ ৳{vatAmount.toLocaleString()}</span></div>
+            </div>
+          </Card>
+
+          <Card className="p-6 rounded-[2rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">{t('discount')}</Label><Input type="number" className="h-11 rounded-2xl bg-slate-50 border-none font-bold text-xs" value={discount || ''} onChange={e => setDiscount(Number(e.target.value))} /></div>
+              <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">{t('vat')} %</Label><Input type="number" className="h-11 rounded-2xl bg-slate-50 border-none font-bold text-xs" value={vatPercent || ''} onChange={e => setVatPercent(Number(e.target.value))} /></div>
+            </div>
+
+            <div className="space-y-3 pt-4 border-t">
+              <Label className="text-[10px] font-black uppercase text-blue-600 tracking-widest">{t('paid')}</Label>
+              <Input type="number" placeholder="0.00" className="h-14 text-2xl font-black text-blue-600 rounded-2xl bg-blue-50/30 border-2 border-blue-50 text-center" value={paidAmount || ''} onChange={e => setPaidAmount(Number(e.target.value))} />
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-2xl border shadow-inner">
+               <div className="flex justify-between items-center mb-1">
+                 <span className="text-[10px] font-black uppercase text-muted-foreground">Remaining Due</span>
+                 <span className="text-sm font-black text-red-600">৳{balanceDue.toLocaleString()}</span>
+               </div>
+               <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                 <div className="h-full bg-blue-600 transition-all duration-500" style={{ width: `${Math.min(100, (paidAmount / totalAmount) * 100)}%` }} />
+               </div>
+            </div>
+
+            <Button className="w-full h-16 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-blue-100 transition-all active:scale-95 text-white bg-blue-600 hover:bg-blue-700" disabled={isSubmitting || lineItems.length === 0} onClick={handleSaveInvoice}>
+              {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <ArrowRight className="h-5 w-5" />}
+              {t('postTransaction')}
+            </Button>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}

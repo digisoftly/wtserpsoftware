@@ -13,84 +13,42 @@ import {
   Calendar, 
   ShoppingBag, 
   AlertCircle, 
-  X, 
-  CheckCircle2, 
-  Calculator, 
-  CreditCard,
-  Scan,
-  User,
-  PackagePlus,
   Download,
   Edit,
-  ArrowRight,
   Printer
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
+import { Card } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, query, orderBy, doc, runTransaction, serverTimestamp, increment, where, limit, deleteDoc } from "firebase/firestore"
+import { collection, query, orderBy, doc, limit, deleteDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { cn } from "@/lib/utils"
 import { toast } from "@/hooks/use-toast"
-import { deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { useTranslation } from "@/hooks/use-translation"
-import { DocumentTemplate } from "@/components/documents/document-template"
 import { useBulkSelection } from "@/hooks/use-bulk-selection"
 import { BulkActionToolbar } from "@/components/layout/bulk-action-toolbar"
 import { errorEmitter } from "@/firebase/error-emitter"
 import { FirestorePermissionError } from "@/firebase/errors"
-
-interface InvoiceItem {
-  productId: string;
-  name: string;
-  qty: number;
-  unit: string;
-  price: number;
-  total: number;
-  serials: string[];
-  isSerialized: boolean;
-  isCustom?: boolean;
-}
+import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 export default function SalesPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
   const { t } = useTranslation();
+  const router = useRouter();
   
-  const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
   const [selectedRecord, setSelectedRecord] = React.useState<any>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
   const deferredSearch = React.useDeferredValue(searchTerm);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-
-  // POS Scanner State
-  const [scannerInput, setScannerInput] = React.useState("");
-
-  // Form State
-  const [isManualCustomer, setIsManualCustomer] = React.useState(false);
-  const [manualCustomerName, setManualCustomerName] = React.useState("");
-  const [manualCustomerPhone, setManualCustomerPhone] = React.useState("");
-  const [selectedCustomerId, setSelectedCustomerId] = React.useState("");
-  const [invoiceDate, setInvoiceDate] = React.useState(new Date().toISOString().split('T')[0]);
-  const [lineItems, setLineItems] = React.useState<InvoiceItem[]>([]);
-  const [discount, setDiscount] = React.useState(0);
-  const [vatPercent, setVatPercent] = React.useState(15);
-  const [paidAmount, setPaidAmount] = React.useState(0);
-  const [paymentMethod, setPaymentMethod] = React.useState("cash");
 
   // Queries
   const invoicesQuery = useMemoFirebase(() => {
@@ -103,28 +61,6 @@ export default function SalesPage() {
   }, [db, companyId, branchId]);
   const { data: invoices, isLoading } = useCollection(invoicesQuery);
 
-  const customersQuery = useMemoFirebase(() => {
-    if (!db || !companyId || !branchId) return null;
-    return collection(db, "companies", companyId, "branches", branchId, "customers");
-  }, [db, companyId, branchId]);
-  const { data: customers } = useCollection(customersQuery);
-
-  const productsQuery = useMemoFirebase(() => {
-    if (!db || !companyId || !branchId) return null;
-    return collection(db, "companies", companyId, "branches", branchId, "products");
-  }, [db, companyId, branchId]);
-  const { data: products } = useCollection(productsQuery);
-
-  const serialsQuery = useMemoFirebase(() => {
-    if (!db || !companyId || !branchId) return null;
-    return query(
-      collection(db, "companies", companyId, "branches", branchId, "serial_numbers"), 
-      where("status", "==", "available"),
-      limit(200)
-    );
-  }, [db, companyId, branchId]);
-  const { data: availableSerials } = useCollection(serialsQuery);
-
   // Bulk Selection
   const { 
     selectedIds, 
@@ -135,12 +71,6 @@ export default function SalesPage() {
     clearSelection, 
     selectedCount 
   } = useBulkSelection(invoices);
-
-  // Calculations
-  const subtotal = React.useMemo(() => lineItems.reduce((sum, item) => sum + item.total, 0), [lineItems]);
-  const vatAmount = React.useMemo(() => (subtotal - discount) * (vatPercent / 100), [subtotal, discount, vatPercent]);
-  const totalAmount = React.useMemo(() => subtotal - discount + vatAmount, [subtotal, discount, vatAmount]);
-  const balanceDue = React.useMemo(() => totalAmount - paidAmount, [totalAmount, paidAmount]);
 
   const stats = React.useMemo(() => {
     if (!invoices) return { today: 0, monthly: 0, total: 0, due: 0 };
@@ -154,198 +84,6 @@ export default function SalesPage() {
       due: invoices.filter(i => i.status !== 'paid').reduce((s, i) => s + (i.balanceDue || 0), 0)
     };
   }, [invoices]);
-
-  const handleAddProduct = React.useCallback((productId: string) => {
-    const product = products?.find(p => p.id === productId);
-    if (!product) return;
-
-    setLineItems(prev => {
-      const existingIdx = prev.findIndex(item => item.productId === productId);
-      if (existingIdx > -1 && !product.serialNumberTrackingRequired && !prev[existingIdx].isCustom) {
-        const updated = [...prev];
-        updated[existingIdx].qty += 1;
-        updated[existingIdx].total = updated[existingIdx].qty * updated[existingIdx].price;
-        return updated;
-      } else {
-        return [...prev, {
-          productId: product.id,
-          name: product.name,
-          qty: 1,
-          unit: product.unit || "Pcs",
-          price: product.unitPrice || 0,
-          total: product.unitPrice || 0,
-          isSerialized: product.serialNumberTrackingRequired || false,
-          serials: [],
-          isCustom: false
-        }];
-      }
-    });
-  }, [products]);
-
-  const handleAddCustomItem = React.useCallback(() => {
-    setLineItems(prev => [...prev, {
-      productId: `custom-${Date.now()}`,
-      name: "",
-      qty: 1,
-      unit: "Pcs",
-      price: 0,
-      total: 0,
-      isSerialized: false,
-      serials: [],
-      isCustom: true
-    }]);
-  }, []);
-
-  const handleScannerInput = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!scannerInput || isSubmitting) return;
-
-    const foundSerial = availableSerials?.find(s => s.serialNumber.toLowerCase() === scannerInput.toLowerCase());
-    if (foundSerial) {
-      const product = products?.find(p => p.id === foundSerial.productId);
-      if (product) {
-        setLineItems(prev => {
-          const existingIdx = prev.findIndex(item => item.productId === product.id);
-          if (existingIdx > -1) {
-            const updated = [...prev];
-            if (!updated[existingIdx].serials.includes(foundSerial.serialNumber)) {
-              updated[existingIdx].serials.push(foundSerial.serialNumber);
-              updated[existingIdx].qty = updated[existingIdx].serials.length;
-              updated[existingIdx].total = updated[existingIdx].qty * updated[existingIdx].price;
-              return updated;
-            }
-            return prev;
-          } else {
-            return [...prev, {
-              productId: product.id,
-              name: product.name,
-              qty: 1,
-              unit: product.unit || "Pcs",
-              price: product.unitPrice || 0,
-              total: product.unitPrice || 0,
-              isSerialized: true,
-              serials: [foundSerial.serialNumber],
-              isCustom: false
-            }];
-          }
-        });
-        toast({ title: t('addItem'), description: `${foundSerial.serialNumber} added.` });
-        setScannerInput("");
-        return;
-      }
-    }
-
-    const foundProduct = products?.find(p => p.sku?.toLowerCase() === scannerInput.toLowerCase());
-    if (foundProduct) {
-      handleAddProduct(foundProduct.id);
-      setScannerInput("");
-      return;
-    }
-
-    toast({ variant: "destructive", title: t('error'), description: "Item or Serial not found." });
-    setScannerInput("");
-  };
-
-  const handleUpdateItem = (idx: number, field: keyof InvoiceItem, val: any) => {
-    setLineItems(prev => prev.map((item, i) => {
-      if (i !== idx) return item;
-      const updated = { ...item, [field]: val };
-      if (field === 'qty') updated.qty = Math.max(1, Number(val) || 0);
-      if (field === 'price') updated.price = Math.max(0, Number(val) || 0);
-      if (field === 'qty' || field === 'price') updated.total = updated.qty * updated.price;
-      return updated;
-    }));
-  };
-
-  const handleRemoveItem = React.useCallback((idx: number) => {
-    setLineItems(prev => prev.filter((_, i) => i !== idx));
-  }, []);
-
-  const handleSaveInvoice = async () => {
-    if (isSubmitting) return;
-    if (!isManualCustomer && !selectedCustomerId) {
-      toast({ variant: "destructive", title: t('error'), description: "Please select a customer." });
-      return;
-    }
-    if (lineItems.length === 0) {
-      toast({ variant: "destructive", title: t('error'), description: t('noItemsSelected') });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await runTransaction(db!, async (transaction) => {
-        const invoiceRef = isEditModalOpen 
-          ? doc(db!, "companies", companyId!, "branches", branchId!, "sales_invoices", selectedRecord.id)
-          : doc(collection(db!, "companies", companyId!, "branches", branchId!, "sales_invoices"));
-        
-        let customerName = manualCustomerName;
-        let finalCustomerId = selectedCustomerId;
-
-        if (!isManualCustomer) {
-          const customer = customers?.find(c => c.id === selectedCustomerId);
-          customerName = customer ? `${customer.firstName} ${customer.lastName}` : "Client";
-        } else {
-          finalCustomerId = "manual";
-        }
-
-        const invoiceData = {
-          id: invoiceRef.id,
-          companyId,
-          branchId,
-          invoiceNumber: isEditModalOpen ? selectedRecord.invoiceNumber : `INV-${Date.now().toString().slice(-6)}`,
-          customerId: finalCustomerId,
-          customerName,
-          invoiceDate,
-          items: lineItems,
-          subtotal,
-          discount,
-          vatPercent,
-          vatAmount,
-          totalAmount,
-          paidAmount,
-          balanceDue,
-          paymentMethod,
-          status: balanceDue <= 0 ? "paid" : paidAmount > 0 ? "partial" : "due",
-          createdAt: isEditModalOpen ? selectedRecord.createdAt : serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        };
-
-        transaction.set(invoiceRef, invoiceData, { merge: true });
-
-        if (!isEditModalOpen) {
-          for (const item of lineItems) {
-            if (!item.isCustom) {
-              const productRef = doc(db!, "companies", companyId!, "branches", branchId!, "products", item.productId);
-              transaction.update(productRef, { 
-                currentStock: increment(-item.qty),
-                updatedAt: serverTimestamp()
-              });
-
-              if (item.isSerialized) {
-                for (const sn of item.serials) {
-                  const snRef = availableSerials?.find(s => s.serialNumber === sn);
-                  if (snRef) {
-                    const docRef = doc(db!, "companies", companyId!, "branches", branchId!, "serial_numbers", snRef.id);
-                    transaction.update(docRef, { status: "sold", salesInvoiceId: invoiceRef.id });
-                  }
-                }
-              }
-            }
-          }
-        }
-      });
-
-      toast({ title: t('success'), description: t('successSub') });
-      setIsAddModalOpen(false);
-      setIsEditModalOpen(false);
-      resetForm();
-    } catch (e: any) {
-      toast({ variant: "destructive", title: t('error'), description: e.message });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleBulkAction = async (action: string) => {
     if (!db || !companyId || !branchId || selectedIds.length === 0) return;
@@ -379,30 +117,6 @@ export default function SalesPage() {
     }
   };
 
-  const resetForm = () => {
-    setSelectedCustomerId("");
-    setIsManualCustomer(false);
-    setManualCustomerName("");
-    setManualCustomerPhone("");
-    setLineItems([]);
-    setDiscount(0);
-    setPaidAmount(0);
-    setInvoiceDate(new Date().toISOString().split('T')[0]);
-  };
-
-  const openEdit = (inv: any) => {
-    setSelectedRecord(inv);
-    setIsManualCustomer(inv.customerId === 'manual');
-    setManualCustomerName(inv.customerId === 'manual' ? inv.customerName : "");
-    setSelectedCustomerId(inv.customerId === 'manual' ? "" : inv.customerId);
-    setLineItems(inv.items || []);
-    setDiscount(inv.discount || 0);
-    setVatPercent(inv.vatPercent || 15);
-    setPaidAmount(inv.paidAmount || 0);
-    setInvoiceDate(inv.invoiceDate || new Date().toISOString().split('T')[0]);
-    setIsEditModalOpen(true);
-  };
-
   const filteredInvoices = React.useMemo(() => {
     return invoices?.filter(inv => 
       inv.invoiceNumber?.toLowerCase().includes(deferredSearch.toLowerCase()) ||
@@ -417,8 +131,10 @@ export default function SalesPage() {
           <h1 className="text-xl md:text-2xl font-bold font-headline text-blue-600 uppercase tracking-tight">{t('sales')}</h1>
           <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{t('lastActiveSales')}</p>
         </div>
-        <Button className="rounded-full gap-2 h-9 md:h-10 px-6 md:px-8 bg-blue-600 hover:bg-blue-700 font-bold text-[10px] uppercase shadow-xl shadow-blue-100 transition-all active:scale-95 w-full md:w-auto" onClick={() => { resetForm(); setIsAddModalOpen(true); }}>
-          <Plus className="h-4 w-4" /> {t('newInvoice')}
+        <Button className="rounded-full gap-2 h-9 md:h-10 px-6 md:px-8 bg-blue-600 hover:bg-blue-700 font-bold text-[10px] uppercase shadow-xl shadow-blue-100 transition-all active:scale-95 w-full md:w-auto" asChild>
+          <Link href="/sales/new">
+            <Plus className="h-4 w-4" /> {t('newInvoice')}
+          </Link>
         </Button>
       </div>
 
@@ -477,8 +193,8 @@ export default function SalesPage() {
                     </TableCell>
                     <TableCell className="text-right pr-6 sticky right-0 bg-white/90 backdrop-blur-sm group-hover:bg-slate-50/90 transition-colors z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
                       <div className="flex justify-end items-center gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-blue-600" onClick={() => { setSelectedRecord(inv); setIsViewModalOpen(true); }}><Eye className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-amber-600" onClick={() => openEdit(inv)}><Edit className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-blue-600" onClick={() => router.push(`/sales/${inv.id}/view`)}><Eye className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-amber-600" onClick={() => router.push(`/sales/${inv.id}/edit`)}><Edit className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-red-600" onClick={() => { setSelectedRecord(inv); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
                       </div>
                     </TableCell>
@@ -490,191 +206,20 @@ export default function SalesPage() {
         </Card>
       )}
 
-      {/* POS INVOICE BUILDER */}
-      <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) resetForm(); setIsAddModalOpen(false); setIsEditModalOpen(false); }}>
-        <DialogContent className="max-w-[95vw] w-[1400px] p-0 overflow-hidden border-none shadow-2xl bg-slate-50 rounded-[2rem] md:rounded-[2.5rem] max-h-[96vh]">
-          <DialogHeader className={cn("p-5 text-white flex-row items-center justify-between space-y-0 shrink-0", isEditModalOpen ? "bg-indigo-600" : "bg-blue-600")}>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center shrink-0">
-                <ShoppingCart className="h-5 w-5" />
-              </div>
-              <div>
-                <DialogTitle className="text-lg md:text-xl font-bold font-headline uppercase tracking-tight">{isEditModalOpen ? t('edit') : t('newInvoice')}</DialogTitle>
-                <p className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em] leading-none mt-1 hidden md:block">Point of Sale Terminal</p>
-              </div>
-            </div>
-          </DialogHeader>
-
-          <div className="flex flex-col lg:flex-row h-[calc(96vh-80px)] overflow-hidden">
-            {/* Main POS Interface */}
-            <div className="flex-1 flex flex-col p-4 md:p-6 space-y-4 md:space-y-6 overflow-y-auto custom-scrollbar">
-              <div className="bg-white p-4 md:p-6 rounded-3xl ring-1 ring-slate-100 shadow-sm space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4 border-slate-50">
-                  <h3 className="text-[10px] font-black uppercase text-slate-900 flex items-center gap-2 tracking-widest">
-                    <User className="h-4 w-4 text-blue-600" /> {t('customer')} Identification
-                  </h3>
-                  <div className="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-full">
-                    <Label className="text-[9px] font-black uppercase text-muted-foreground cursor-pointer" htmlFor="manual-cust-entry">{t('individual')}</Label>
-                    <Switch id="manual-cust-entry" checked={isManualCustomer} onCheckedChange={setIsManualCustomer} className="data-[state=checked]:bg-blue-600 scale-75" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {isManualCustomer ? (
-                    <>
-                      <div className="space-y-1.5 lg:col-span-2">
-                        <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Full Name</Label>
-                        <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerName} onChange={e => setManualCustomerName(e.target.value)} placeholder="e.g. John Doe" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Phone Number</Label>
-                        <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerPhone} onChange={e => setManualCustomerPhone(e.target.value)} placeholder="+880..." />
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="space-y-1.5 lg:col-span-2">
-                        <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('customer')}</Label>
-                        <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                          <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 shadow-sm font-bold text-xs">
-                            <SelectValue placeholder={t('search')} />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-[250px] rounded-xl">
-                            {customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-bold">{c.firstName} {c.lastName}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('date')}</Label>
-                        <Input type="date" className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-black" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} />
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              <div className="bg-white p-4 rounded-3xl ring-1 ring-slate-100 shadow-sm border border-blue-50 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Catalog Search</Label>
-                    <div className="flex gap-2">
-                      <Select onValueChange={handleAddProduct}>
-                        <SelectTrigger className="h-12 flex-1 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 shadow-sm transition-all focus:ring-2 focus:ring-blue-500 font-bold text-xs">
-                          <SelectValue placeholder={t('addProduct')} />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-[300px] rounded-xl">
-                          {products?.map(p => (
-                            <SelectItem key={p.id} value={p.id} className="text-xs font-bold">
-                              {p.name} <span className="text-[9px] opacity-60 ml-2 font-mono">(STOCK: {p.currentStock} {p.unit || 'Pcs'})</span>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl border-blue-200 text-blue-700 bg-blue-50/50" onClick={handleAddCustomItem} title={t('addCustomItem')}>
-                        <PackagePlus className="h-5 w-5" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('scanPrompt')}</Label>
-                    <form onSubmit={handleScannerInput} className="relative group">
-                      <Scan className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-600 animate-pulse" />
-                      <Input 
-                        placeholder="Scan or type SKU..."
-                        className="h-12 pl-12 rounded-2xl bg-slate-50/50 border-none ring-1 ring-slate-100 shadow-sm text-xs font-bold focus:ring-2 focus:ring-blue-600 transition-all"
-                        value={scannerInput}
-                        onChange={e => setScannerInput(e.target.value)}
-                      />
-                    </form>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex-1 bg-white rounded-[2rem] shadow-sm ring-1 ring-slate-100 overflow-hidden flex flex-col border border-slate-50 min-h-[400px]">
-                <div className="overflow-x-auto flex-1 custom-scrollbar">
-                  <div className="min-w-[800px]">
-                    <Table>
-                      <TableHeader className="bg-slate-50/50 sticky top-0 z-10 backdrop-blur-md">
-                        <TableRow>
-                          <TableHead className="text-[10px] uppercase font-black py-4 pl-4 md:pl-8">{t('itemDescription')}</TableHead>
-                          <TableHead className="text-[10px] uppercase font-black text-center w-32 md:w-40">{t('qty')} / Unit</TableHead>
-                          <TableHead className="text-[10px] uppercase font-black text-right w-32 md:w-40">{t('unitPrice')}</TableHead>
-                          <TableHead className="text-[10px] uppercase font-black text-right w-32 md:w-40 pr-4 md:pr-8">{t('total')}</TableHead>
-                          <TableHead className="w-10"></TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {lineItems.length === 0 ? (
-                          <TableRow><TableCell colSpan={5} className="h-64 text-center opacity-20"><ShoppingBag className="h-12 w-12 mx-auto mb-4" /><p className="text-xs uppercase font-black tracking-widest">{t('noItemsSelected')}</p></TableCell></TableRow>
-                        ) : (
-                          lineItems.map((item, idx) => (
-                            <TableRow key={idx} className="group hover:bg-slate-50/50 transition-colors h-20">
-                              <TableCell className="pl-4 md:pl-8">
-                                <div className="flex flex-col min-w-0">
-                                  {item.isCustom ? (
-                                    <Input className="h-10 text-[11px] font-black uppercase border-none ring-1 ring-slate-100 bg-slate-50/30 w-full rounded-xl" value={item.name} onChange={e => handleUpdateItem(idx, 'name', e.target.value)} placeholder="Type product name..." />
-                                  ) : (
-                                    <span className="text-[11px] md:text-sm font-black text-slate-900 uppercase tracking-tighter truncate">{item.name}</span>
-                                  )}
-                                  {item.isSerialized && (
-                                    <div className="flex flex-wrap gap-1 mt-1.5">{item.serials.map((s, si) => <Badge key={si} variant="secondary" className="text-[7px] h-3.5 bg-blue-50 text-blue-700 border-none font-mono uppercase">{s}</Badge>)}</div>
-                                  )}
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <div className="flex items-center gap-2 justify-center">
-                                  <Input type="number" className="h-10 text-center font-black text-sm rounded-xl w-16 md:w-20 bg-slate-50 border-none" value={item.qty} disabled={item.isSerialized} onChange={e => handleUpdateItem(idx, 'qty', e.target.value)} />
-                                  <span className="text-[10px] font-black uppercase text-muted-foreground w-8 text-left">{item.unit || 'Pcs'}</span>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <Input type="number" className="h-10 text-right font-black text-xs rounded-xl w-24 md:w-32 bg-slate-50 border-none ml-auto" value={item.price} disabled={!item.isCustom} onChange={e => handleUpdateItem(idx, 'price', e.target.value)} />
-                              </TableCell>
-                              <TableCell className="text-right pr-4 md:pr-8"><span className="font-black text-xs md:text-sm text-blue-600">৳{item.total.toLocaleString()}</span></TableCell>
-                              <TableCell><Button variant="ghost" size="icon" className="h-9 w-9 text-red-500 hover:bg-red-50 rounded-full" onClick={() => handleRemoveItem(idx)}><X className="h-4 w-4" /></Button></TableCell>
-                            </TableRow>
-                          ))
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="w-full lg:w-[400px] bg-white border-l border-slate-100 p-6 md:p-8 space-y-6 flex flex-col shadow-2xl relative z-20 shrink-0 overflow-y-auto custom-scrollbar">
-              <div className="space-y-6">
-                <div className={cn("p-8 rounded-[2.5rem] shadow-2xl space-y-4 text-center text-white", isEditModalOpen ? "bg-indigo-600" : "bg-blue-600")}>
-                  <p className="text-[9px] uppercase font-black opacity-60 tracking-[0.2em]">{t('netFinalAmount')}</p>
-                  <h2 className="text-3xl md:text-4xl font-headline font-black tracking-tighter">৳{totalAmount.toLocaleString()}</h2>
-                  <div className="pt-6 space-y-2 border-t border-white/10 text-[10px] font-bold uppercase tracking-wider">
-                    <div className="flex justify-between opacity-70"><span>{t('subtotal')}</span><span>৳{subtotal.toLocaleString()}</span></div>
-                    <div className="flex justify-between text-red-200"><span>{t('discount')}</span><span>- ৳{discount.toLocaleString()}</span></div>
-                    <div className="flex justify-between opacity-70"><span>{t('vat')} ({vatPercent}%)</span><span>+ ৳{vatAmount.toLocaleString()}</span></div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">{t('discount')}</Label><Input type="number" className="h-11 rounded-2xl bg-slate-50 border-none font-bold text-xs" value={discount || ''} onChange={e => setDiscount(Number(e.target.value))} /></div>
-                  <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">{t('vat')} %</Label><Input type="number" className="h-11 rounded-2xl bg-slate-50 border-none font-bold text-xs" value={vatPercent || ''} onChange={e => setVatPercent(Number(e.target.value))} /></div>
-                </div>
-
-                <div className="space-y-3 pt-4 border-t">
-                  <Label className="text-[10px] font-black uppercase text-blue-600 tracking-widest">{t('paid')}</Label>
-                  <Input type="number" placeholder="0.00" className="h-14 text-2xl font-black text-blue-600 rounded-2xl bg-blue-50/30 border-2 border-blue-50 text-center" value={paidAmount || ''} onChange={e => setPaidAmount(Number(e.target.value))} />
-                </div>
-              </div>
-
-              <Button className={cn("w-full h-16 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl mt-auto transition-all active:scale-95 text-white", isEditModalOpen ? "bg-indigo-600 hover:bg-indigo-700" : "bg-blue-600 hover:bg-blue-700")} disabled={isSubmitting || lineItems.length === 0} onClick={handleSaveInvoice}>
-                {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <ArrowRight className="h-5 w-5" />}
-                {isEditModalOpen ? "Update Sale" : t('postTransaction')}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       <BulkActionToolbar selectedCount={selectedCount} onClear={clearSelection} onAction={handleBulkAction} isLoading={isSubmitting} />
+
+      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+        <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tight text-slate-900">{t('delete')}?</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs font-medium leading-relaxed">{t('errorSub')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-8 gap-3">
+            <AlertDialogCancel className="rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest">{t('cancel')}</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest" onClick={() => { if(selectedRecord) { deleteDoc(doc(db!, "companies", companyId!, "branches", branchId!, "sales_invoices", selectedRecord.id)); setIsDeleteAlertOpen(false); toast({ title: t('success') }); } }}>{t('delete')}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
