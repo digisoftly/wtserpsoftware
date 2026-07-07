@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -33,14 +32,10 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, query, orderBy, doc, runTransaction, serverTimestamp, increment, setDoc } from "firebase/firestore"
+import { collection, query, orderBy, doc, deleteDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { cn } from "@/lib/utils"
 import { toast } from "@/hooks/use-toast"
@@ -48,46 +43,19 @@ import { deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { useTranslation } from "@/hooks/use-translation"
 import { DocumentTemplate } from "@/components/documents/document-template"
-
-interface ChallanItem {
-  productId: string;
-  name: string;
-  sku: string;
-  quantity: number;
-  unit: string;
-  unitPrice: number;
-  total: number;
-  isCustom?: boolean;
-}
+import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 export default function ChallansPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
   const { t } = useTranslation();
+  const router = useRouter();
   
-  const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
   const [selectedRecord, setSelectedRecord] = React.useState<any>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-
-  // Form State
-  const [isManualCustomer, setIsManualCustomer] = React.useState(false);
-  const [selectedInvoiceId, setSelectedInvoiceId] = React.useState("");
-  const [selectedCustomerId, setSelectedCustomerId] = React.useState("");
-  const [manualCustomerName, setManualCustomerName] = React.useState("");
-  const [manualCustomerPhone, setManualCustomerPhone] = React.useState("");
-  const [manualCustomerAddress, setManualCustomerAddress] = React.useState("");
-  
-  const [dispatchDate, setDispatchDate] = React.useState(new Date().toISOString().split('T')[0]);
-  const [lineItems, setLineItems] = React.useState<ChallanItem[]>([]);
-  const [deliveryMethod, setDeliveryMethod] = React.useState("Company Vehicle");
-  const [vehicleNumber, setVehicleNumber] = React.useState("");
-  const [driverName, setDriverName] = React.useState("");
-  const [notes, setNotes] = React.useState("");
-  const [status, setStatus] = React.useState("pending");
 
   // Queries
   const challansQuery = useMemoFirebase(() => {
@@ -96,221 +64,15 @@ export default function ChallansPage() {
   }, [db, companyId, branchId]);
   const { data: challans, isLoading } = useCollection(challansQuery);
 
-  const invoicesQuery = useMemoFirebase(() => {
-    if (!db || !companyId || !branchId) return null;
-    return collection(db, "companies", companyId, "branches", branchId, "sales_invoices");
-  }, [db, companyId, branchId]);
-  const { data: invoices } = useCollection(invoicesQuery);
-
-  const customersQuery = useMemoFirebase(() => {
-    if (!db || !companyId || !branchId) return null;
-    return collection(db, "companies", companyId, "branches", branchId, "customers");
-  }, [db, companyId, branchId]);
-  const { data: customers } = useCollection(customersQuery);
-
-  const productsQuery = useMemoFirebase(() => {
-    if (!db || !companyId || !branchId) return null;
-    return collection(db, "companies", companyId, "branches", branchId, "products");
-  }, [db, companyId, branchId]);
-  const { data: products } = useCollection(productsQuery);
-
-  // Calculations
-  const totalAmount = lineItems.reduce((sum, item) => sum + item.total, 0);
-
   const stats = React.useMemo(() => ({
     total: challans?.length || 0,
     pending: challans?.filter(c => c.status === 'pending').length || 0,
     delivered: challans?.filter(c => c.status === 'delivered').length || 0,
   }), [challans]);
 
-  const addCatalogItem = (productId: string) => {
-    const product = products?.find(p => p.id === productId);
-    if (!product) return;
-
-    setLineItems(prev => {
-      const existing = prev.find(i => i.productId === productId);
-      if (existing && !existing.isCustom) {
-        return prev.map(i => 
-          i.productId === productId 
-            ? { ...i, quantity: i.quantity + 1, total: (i.quantity + 1) * i.unitPrice } 
-            : i
-        );
-      }
-      return [...prev, {
-        productId: product.id,
-        name: product.name,
-        sku: product.sku || "N/A",
-        quantity: 1,
-        unit: product.unit || "Pcs",
-        unitPrice: product.unitPrice || 0,
-        total: product.unitPrice || 0,
-        isCustom: false
-      }];
-    });
-  };
-
-  const addCustomItem = () => {
-    setLineItems(prev => [...prev, {
-      productId: `manual-${Date.now()}`,
-      name: "",
-      sku: "CUSTOM",
-      quantity: 1,
-      unit: "Pcs",
-      unitPrice: 0,
-      total: 0,
-      isCustom: true
-    }]);
-  };
-
-  const updateItem = (index: number, field: keyof ChallanItem, value: any) => {
-    setLineItems(prev => {
-      const updated = [...prev];
-      const current = { ...updated[index], [field]: value };
-      
-      if (field === 'quantity') {
-        current.quantity = Math.max(1, Number(value) || 0);
-      }
-      if (field === 'unitPrice') {
-        current.unitPrice = Math.max(0, Number(value) || 0);
-      }
-      
-      if (field === 'quantity' || field === 'unitPrice') {
-        current.total = current.quantity * current.unitPrice;
-      }
-      
-      updated[index] = current;
-      return updated;
-    });
-  };
-
-  const removeItem = (index: number) => {
-    setLineItems(lineItems.filter((_, i) => i !== index));
-  };
-
-  const handleSaveChallan = async () => {
-    if (!isManualCustomer && !selectedCustomerId) {
-      toast({ variant: "destructive", title: t('error'), description: "Please select a customer or provide manual details." });
-      return;
-    }
-    if (isManualCustomer && !manualCustomerName.trim()) {
-      toast({ variant: "destructive", title: t('error'), description: "Please enter customer name." });
-      return;
-    }
-    if (lineItems.length === 0) {
-      toast({ variant: "destructive", title: t('error'), description: t('noItemsSelected') });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await runTransaction(db!, async (transaction) => {
-        const challanRef = isEditModalOpen 
-          ? doc(db!, "companies", companyId!, "branches", branchId!, "delivery_challans", selectedRecord.id)
-          : doc(collection(db!, "companies", companyId!, "branches", branchId!, "delivery_challans"));
-        
-        let customerName = manualCustomerName;
-        let customerPhone = manualCustomerPhone;
-        let customerAddress = manualCustomerAddress;
-        let finalCustomerId = selectedCustomerId;
-
-        if (!isManualCustomer) {
-          const customer = customers?.find(c => c.id === selectedCustomerId);
-          customerName = customer ? `${customer.firstName} ${customer.lastName}` : "Client";
-          customerPhone = customer?.phoneNumber || "";
-          customerAddress = customer?.companyName || "---";
-        } else {
-          finalCustomerId = "manual";
-        }
-
-        const invoice = invoices?.find(i => i.id === selectedInvoiceId);
-
-        const challanData = {
-          id: challanRef.id,
-          companyId,
-          branchId,
-          challanNumber: isEditModalOpen ? selectedRecord.challanNumber : `CHL-${Date.now().toString().slice(-6)}`,
-          invoiceId: selectedInvoiceId || "manual",
-          invoiceNumber: invoice?.invoiceNumber || (selectedRecord?.invoiceNumber || "MANUAL"),
-          customerId: finalCustomerId,
-          customerName,
-          customerPhone,
-          customerAddress,
-          dispatchDate,
-          deliveryDate: "",
-          deliveryMethod,
-          vehicleNumber,
-          driverName,
-          notes,
-          items: lineItems,
-          totalAmount,
-          status: status,
-          createdAt: isEditModalOpen ? selectedRecord.createdAt : serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        };
-
-        transaction.set(challanRef, challanData, { merge: true });
-
-        if (!isEditModalOpen) {
-          for (const item of lineItems) {
-            if (!item.isCustom) {
-              const productRef = doc(db!, "companies", companyId!, "branches", branchId!, "products", item.productId);
-              transaction.update(productRef, { 
-                currentStock: increment(-item.quantity),
-                updatedAt: serverTimestamp()
-              });
-            }
-          }
-        }
-      });
-
-      toast({ title: t('success'), description: t('successSub') });
-      setIsAddModalOpen(false);
-      setIsEditModalOpen(false);
-      resetForm();
-    } catch (e: any) {
-      toast({ variant: "destructive", title: t('error'), description: e.message });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleShareWhatsApp = (challan: any) => {
     const text = `Hello ${challan.customerName}, your delivery challan ${challan.challanNumber} has been generated. Dispatch Date: ${challan.dispatchDate}. Status: ${challan.status.toUpperCase()}.`;
     window.open(`https://wa.me/${challan.customerPhone}?text=${encodeURIComponent(text)}`, '_blank');
-  };
-
-  const resetForm = () => {
-    setSelectedInvoiceId("none");
-    setSelectedCustomerId("");
-    setManualCustomerName("");
-    setManualCustomerPhone("");
-    setManualCustomerAddress("");
-    setIsManualCustomer(false);
-    setLineItems([]);
-    setDispatchDate(new Date().toISOString().split('T')[0]);
-    setDeliveryMethod("Company Vehicle");
-    setVehicleNumber("");
-    setDriverName("");
-    setNotes("");
-    setStatus("pending");
-    setSelectedRecord(null);
-  };
-
-  const openEdit = (c: any) => {
-    setSelectedRecord(c);
-    setIsManualCustomer(c.customerId === 'manual');
-    setSelectedCustomerId(c.customerId === 'manual' ? '' : c.customerId);
-    setManualCustomerName(c.customerId === 'manual' ? c.customerName : '');
-    setManualCustomerPhone(c.customerPhone || '');
-    setManualCustomerAddress(c.customerAddress || '');
-    setDispatchDate(c.dispatchDate);
-    setLineItems(c.items || []);
-    setDeliveryMethod(c.deliveryMethod || '');
-    setVehicleNumber(c.vehicleNumber || '');
-    setDriverName(c.driverName || '');
-    setNotes(c.notes || '');
-    setStatus(c.status || 'pending');
-    setIsEditModalOpen(true);
   };
 
   const filteredChallans = challans?.filter(c => 
@@ -325,8 +87,10 @@ export default function ChallansPage() {
           <h1 className="text-xl font-bold font-headline text-amber-600 uppercase tracking-tight">{t('dispatch')}</h1>
           <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{t('happeningToday')}</p>
         </div>
-        <Button className="rounded-full gap-2 h-10 px-8 bg-amber-600 hover:bg-amber-700 font-bold text-[10px] uppercase shadow-xl shadow-amber-100 transition-all active:scale-95 w-full md:w-auto" onClick={() => { resetForm(); setIsAddModalOpen(true); }}>
-          <Plus className="h-4 w-4" /> {t('addChallan')}
+        <Button className="rounded-full gap-2 h-10 px-8 bg-amber-600 hover:bg-amber-700 font-bold text-[10px] uppercase shadow-xl shadow-amber-100 transition-all active:scale-95 w-full md:w-auto" asChild>
+          <Link href="/challans/new">
+            <Plus className="h-4 w-4" /> {t('addChallan')}
+          </Link>
         </Button>
       </div>
 
@@ -384,7 +148,7 @@ export default function ChallansPage() {
                       <div className="flex justify-end items-center gap-1">
                         <div className="hidden md:flex items-center gap-1">
                           <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-blue-600 hover:bg-blue-50" onClick={() => { setSelectedRecord(c); setIsViewModalOpen(true); }} title={t('view')}><Eye className="h-3.5 w-3.5" /></Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-amber-600 hover:bg-amber-50" onClick={() => openEdit(c)} title={t('edit')}><Edit className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-amber-600 hover:bg-amber-50" onClick={() => router.push(`/challans/${c.id}/edit`)} title={t('edit')}><Edit className="h-3.5 w-3.5" /></Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-slate-600 hover:bg-slate-100" onClick={() => { setSelectedRecord(c); setIsViewModalOpen(true); }} title={t('print')}><Printer className="h-3.5 w-3.5" /></Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-red-600 hover:bg-red-50" onClick={() => { setSelectedRecord(c); setIsDeleteAlertOpen(true); }} title={t('delete')}><Trash2 className="h-3.5 w-3.5" /></Button>
                         </div>
@@ -394,7 +158,7 @@ export default function ChallansPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl">
                             <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedRecord(c); setIsViewModalOpen(true); }}><Eye className="mr-2 h-3.5 w-3.5" /> {t('view')}</DropdownMenuItem>
-                            <DropdownMenuItem className="text-xs font-bold" onClick={() => openEdit(c)}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
+                            <DropdownMenuItem className="text-xs font-bold" onClick={() => router.push(`/challans/${c.id}/edit`)}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
                             <DropdownMenuItem className="text-xs font-bold" onClick={() => handleShareWhatsApp(c)}><Share2 className="mr-2 h-3.5 w-3.5" /> {t('share')}</DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(c); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
@@ -409,289 +173,6 @@ export default function ChallansPage() {
           </div>
         </Card>
       )}
-
-      {/* NEW/EDIT CHALLAN MODAL */}
-      <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) resetForm(); setIsAddModalOpen(false); setIsEditModalOpen(false); }}>
-        <DialogContent className="max-w-[95vw] w-[1400px] p-0 overflow-hidden border-none shadow-2xl bg-slate-50 rounded-[2rem] md:rounded-[2.5rem] max-h-[96vh]">
-          <DialogHeader className={cn("p-5 text-white flex-row items-center justify-between space-y-0", isEditModalOpen ? "bg-blue-600" : "bg-amber-600")}>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center shrink-0">
-                <Truck className="h-5 w-5" />
-              </div>
-              <div>
-                <DialogTitle className="text-lg md:text-xl font-bold font-headline uppercase tracking-tight">{isEditModalOpen ? t('edit') : t('addChallan')}</DialogTitle>
-                <p className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em] leading-none mt-1 hidden md:block">Logistics & Dispatch Terminal</p>
-              </div>
-            </div>
-          </DialogHeader>
-
-          <div className="flex flex-col lg:flex-row h-full max-h-[calc(96vh-80px)] overflow-y-auto lg:overflow-hidden">
-            {/* Form Side */}
-            <div className="flex-1 flex flex-col p-4 md:p-6 space-y-4 md:space-y-6 lg:overflow-y-auto custom-scrollbar">
-              
-              {/* TOP GRID: LINKING & DATE */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded-2xl ring-1 ring-slate-100 shadow-sm">
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest flex items-center gap-1.5">
-                    <FileText className="h-3 w-3" /> {t('fromInvoice')} (Optional)
-                  </Label>
-                  <Select value={selectedInvoiceId} onValueChange={setSelectedInvoiceId} disabled={isEditModalOpen}>
-                    <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 transition-all focus:ring-2 focus:ring-amber-600 font-bold text-xs">
-                      <SelectValue placeholder="Link existing sales record..." />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl shadow-2xl max-h-[250px]">
-                      <SelectItem value="none" className="text-xs font-bold text-slate-400 italic">None (Standalone Dispatch)</SelectItem>
-                      {invoices?.map(i => <SelectItem key={i.id} value={i.id} className="text-xs font-bold">{i.invoiceNumber} - {i.customerName}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest flex items-center gap-1.5">
-                    <Clock className="h-3 w-3" /> {t('dispatchDate')}
-                  </Label>
-                  <Input type="date" className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-black" value={dispatchDate} onChange={e => setDispatchDate(e.target.value)} />
-                </div>
-              </div>
-
-              {/* CUSTOMER SECTION */}
-              <div className="bg-white p-4 md:p-6 rounded-2xl ring-1 ring-slate-100 shadow-sm space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4 border-slate-50">
-                  <h3 className="text-[10px] font-black uppercase text-slate-900 flex items-center gap-2 tracking-widest">
-                    <User className="h-4 w-4 text-amber-600" /> Customer Identification
-                  </h3>
-                  <div className="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-full">
-                    <Label className="text-[9px] font-black uppercase text-muted-foreground cursor-pointer" htmlFor="manual-entry">Manual Individual Entry</Label>
-                    <Switch id="manual-entry" checked={isManualCustomer} onCheckedChange={setIsManualCustomer} className="data-[state=checked]:bg-amber-600 scale-75" />
-                  </div>
-                </div>
-
-                {isManualCustomer ? (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in slide-in-from-top-1 duration-300">
-                    <div className="space-y-1.5">
-                      <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Full Name</Label>
-                      <Input className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerName} onChange={e => setManualCustomerName(e.target.value)} placeholder="e.g. John Doe" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Phone Number</Label>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                        <Input className="h-11 pl-9 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerPhone} onChange={e => setManualCustomerPhone(e.target.value)} placeholder="+880..." />
-                      </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Delivery Address</Label>
-                      <div className="relative">
-                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                        <Input className="h-11 pl-9 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" value={manualCustomerAddress} onChange={e => setManualCustomerAddress(e.target.value)} placeholder="Area, City..." />
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-300">
-                    <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t('customer')}</Label>
-                    <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                      <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 shadow-sm font-bold text-xs">
-                        <SelectValue placeholder="Search from database..." />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[250px] rounded-xl">
-                        {customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-bold">{c.firstName} {c.lastName} - {c.companyName || 'Personal'}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </div>
-
-              {/* PRODUCT PICKER */}
-              <div className="bg-white p-4 rounded-2xl ring-1 ring-slate-100 shadow-sm border border-amber-50">
-                <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-end">
-                  <div className="flex-1 space-y-1.5">
-                    <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Select Product to Add</Label>
-                    <Select onValueChange={(val) => { addCatalogItem(val); }}>
-                      <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 shadow-sm transition-all focus:ring-2 focus:ring-amber-500 font-bold text-xs">
-                        <SelectValue placeholder={t('addProduct')} />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[300px] rounded-xl">
-                        {products?.map(p => (
-                          <SelectItem key={p.id} value={p.id} className="text-xs font-bold">
-                            {p.name} <span className="text-[9px] opacity-60 ml-2 font-mono">(STOCK: {p.currentStock} {p.unit})</span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button variant="outline" className="h-12 rounded-xl gap-2 border-amber-200 text-amber-700 font-black text-[10px] uppercase bg-amber-50/50 transition-all hover:bg-amber-100 shadow-sm" onClick={addCustomItem}>
-                    <PackagePlus className="h-4 w-4" /> {t('addCustomItem')}
-                  </Button>
-                </div>
-              </div>
-
-              {/* PRODUCT WORKSHEET */}
-              <div className="flex-1 bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-sm ring-1 ring-slate-100 overflow-hidden flex flex-col border border-slate-50 min-h-[400px]">
-                <div className="p-4 border-b bg-slate-50/50 flex items-center justify-between">
-                  <h3 className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
-                    <Barcode className="h-3.5 w-3.5" /> {t('itemDescription')}
-                  </h3>
-                  <Badge variant="outline" className="text-[8px] h-5 font-black uppercase border-none bg-white">{lineItems.length} Items</Badge>
-                </div>
-                <div className="overflow-x-auto flex-1 custom-scrollbar">
-                  <div className="min-w-[800px]">
-                    <Table>
-                      <TableHeader className="bg-slate-50/50 sticky top-0 z-10 backdrop-blur-md">
-                        <TableRow>
-                          <TableHead className="text-[10px] uppercase font-black py-4 pl-4 md:pl-8">{t('itemDescription')}</TableHead>
-                          <TableHead className="text-[10px] uppercase font-black text-center w-40">{t('qty')} / Unit</TableHead>
-                          <TableHead className="text-[10px] uppercase font-black text-right w-32">{t('unitPrice')}</TableHead>
-                          <TableHead className="text-[10px] uppercase font-black text-right w-32 pr-4 md:pr-8">{t('total')}</TableHead>
-                          <TableHead className="w-10"></TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {lineItems.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={5} className="h-48 text-center">
-                              <div className="flex flex-col items-center opacity-20">
-                                <Box className="h-12 w-12 mb-4" />
-                                <p className="text-[10px] uppercase font-black tracking-[0.3em]">{t('noItemsSelected')}</p>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ) : (
-                          lineItems.map((item, idx) => (
-                            <TableRow key={idx} className="h-16 hover:bg-slate-50/50 transition-colors group">
-                              <TableCell className="pl-4 md:pl-8">
-                                {item.isCustom ? (
-                                  <div className="flex gap-2">
-                                    <Input 
-                                      className="h-10 text-[11px] font-black uppercase border-none ring-1 ring-slate-100 bg-slate-50/30 w-full" 
-                                      value={item.name} 
-                                      onChange={e => updateItem(idx, 'name', e.target.value)} 
-                                      placeholder="Product Name..."
-                                    />
-                                    <Input 
-                                      className="h-10 text-[10px] font-mono border-none ring-1 ring-slate-100 bg-slate-50/30 w-32" 
-                                      value={item.sku} 
-                                      onChange={e => updateItem(idx, 'sku', e.target.value)} 
-                                      placeholder="SKU..."
-                                    />
-                                  </div>
-                                ) : (
-                                  <div className="flex flex-col">
-                                    <span className="text-[11px] font-black text-slate-900 uppercase tracking-tighter">{item.name}</span>
-                                    <p className="text-[9px] font-mono text-muted-foreground">{item.sku}</p>
-                                  </div>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <div className="flex items-center gap-2 justify-center">
-                                  <Input 
-                                    type="number" 
-                                    className="h-10 w-20 text-center font-black text-sm bg-slate-100 border-none rounded-lg" 
-                                    value={item.quantity} 
-                                    onChange={e => updateItem(idx, 'quantity', e.target.value)}
-                                  />
-                                  <span className="text-[10px] font-black uppercase text-muted-foreground w-8 text-left">{item.unit || 'Pcs'}</span>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <Input 
-                                  type="number" 
-                                  className="h-10 w-28 ml-auto text-right font-bold text-sm bg-slate-100 border-none rounded-lg" 
-                                  value={item.unitPrice} 
-                                  onChange={e => updateItem(idx, 'unitPrice', e.target.value)}
-                                  disabled={!item.isCustom}
-                                />
-                              </TableCell>
-                              <TableCell className="text-right pr-4 md:pr-8 text-xs font-black text-amber-600">
-                                ৳{item.total.toLocaleString()}
-                              </TableCell>
-                              <TableCell>
-                                <Button variant="ghost" size="icon" className="h-9 w-9 text-red-500 rounded-full hover:bg-red-50" onClick={() => removeItem(idx)}>
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Sidebar Summary */}
-            <div className="w-full lg:w-[380px] bg-white border-t lg:border-t-0 lg:border-l border-slate-100 p-6 md:p-8 space-y-6 flex flex-col shadow-2xl relative z-20 shrink-0 lg:overflow-y-auto custom-scrollbar">
-              <div className="space-y-6">
-                <div className="bg-amber-600 text-white p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl shadow-amber-100 space-y-3 text-center relative overflow-hidden group">
-                  <Calculator className="absolute -bottom-6 -right-6 h-32 w-32 opacity-10 group-hover:scale-125 transition-transform duration-700" />
-                  <p className="text-[10px] uppercase font-black opacity-60 tracking-[0.2em] relative z-10">{t('grandTotal')}</p>
-                  <h2 className="text-3xl md:text-4xl font-headline font-black tracking-tighter relative z-10">৳{totalAmount.toLocaleString()}</h2>
-                </div>
-
-                <div className="space-y-4 bg-slate-50 p-6 rounded-[2rem] ring-1 ring-slate-100 border border-white">
-                  <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2 mb-2">
-                    <LayoutGrid className="h-3.5 w-3.5" /> Logistics Configuration
-                  </h4>
-                  <div className="space-y-4">
-                    <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase text-slate-500 tracking-widest">{t('deliveryMethod')}</Label>
-                      <Input className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs font-bold transition-all focus:ring-2 focus:ring-amber-500" value={deliveryMethod} onChange={e => setDeliveryMethod(e.target.value)} />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase text-slate-500 tracking-widest">{t('vehicleNumber')}</Label>
-                      <Input className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs font-bold transition-all focus:ring-2 focus:ring-amber-500" value={vehicleNumber} onChange={e => setVehicleNumber(e.target.value)} />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase text-slate-500 tracking-widest">{t('driverName')}</Label>
-                      <Input className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs font-bold transition-all focus:ring-2 focus:ring-amber-500" value={driverName} onChange={e => setDriverName(e.target.value)} />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase text-slate-500 tracking-widest">{t('status')}</Label>
-                      <Select value={status} onValueChange={setStatus}>
-                        <SelectTrigger className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 text-xs font-bold">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="processing">Processing</SelectItem>
-                          <SelectItem value="delivered">Delivered</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2 ml-1">
-                    <Barcode className="h-3 w-3" /> {t('notes')}
-                  </Label>
-                  <textarea 
-                    className="w-full min-h-[100px] rounded-2xl bg-slate-50 border-none p-4 text-xs font-medium focus:ring-2 focus:ring-amber-600 outline-none resize-none shadow-inner ring-1 ring-slate-100" 
-                    placeholder="Type special delivery instructions here..."
-                    value={notes}
-                    onChange={e => setNotes(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="mt-auto pt-6">
-                <Button 
-                  className="w-full h-16 bg-amber-600 hover:bg-amber-700 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-amber-100 transition-all active:scale-95 group overflow-hidden" 
-                  disabled={isSubmitting || lineItems.length === 0} 
-                  onClick={handleSaveChallan}
-                >
-                  <span className="relative z-10 flex items-center gap-3">
-                    {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <ArrowRight className="h-5 w-5" />}
-                    {isEditModalOpen ? "Update Transaction" : t('postTransaction')}
-                  </span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* VIEW CHALLAN DIALOG */}
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
@@ -731,7 +212,6 @@ export default function ChallansPage() {
         </DialogContent>
       </Dialog>
 
-      {/* DELETE ALERT */}
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl">
           <AlertDialogHeader>
