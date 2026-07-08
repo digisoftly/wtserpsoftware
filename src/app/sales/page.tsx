@@ -128,7 +128,7 @@ export default function SalesPage() {
     <div className="space-y-6 pb-10 w-full overflow-hidden">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold font-headline text-blue-600 uppercase tracking-tight">{t('sales')}</h1>
+          <h1 className="text-xl md:text-2xl font-black font-headline text-blue-600 uppercase tracking-tight">{t('sales')}</h1>
           <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{t('lastActiveSales')}</p>
         </div>
         <Button className="rounded-full gap-2 h-9 md:h-10 px-6 md:px-8 bg-blue-600 hover:bg-blue-700 font-bold text-[10px] uppercase shadow-xl shadow-blue-100 transition-all active:scale-95 w-full md:w-auto" asChild>
@@ -171,8 +171,8 @@ export default function SalesPage() {
                   <TableHead className="h-12 text-[10px] uppercase font-black">{t('invoiceNumber')}</TableHead>
                   <TableHead className="h-12 text-[10px] uppercase font-black">{t('customer')}</TableHead>
                   <TableHead className="h-12 text-[10px] uppercase font-black">{t('amount')}</TableHead>
-                  <TableHead className="h-12 text-[10px] uppercase font-black">{t('status')}</TableHead>
-                  <TableHead className="h-12 text-right pr-6 sticky right-0 bg-white/95 backdrop-blur-sm z-20 w-[150px]">{t('actions')}</TableHead>
+                  <TableHead className="h-12 text-[10px] uppercase font-black text-center">{t('status')}</TableHead>
+                  <TableHead className="h-12 text-right pr-6 sticky right-0 bg-white/95 backdrop-blur-sm z-20 w-[180px]">{t('actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -184,7 +184,7 @@ export default function SalesPage() {
                     <TableCell className="font-bold text-xs uppercase text-blue-600 truncate max-w-[120px]">{inv.invoiceNumber}</TableCell>
                     <TableCell className="text-xs font-bold text-slate-700 truncate max-w-[150px]">{inv.customerName}</TableCell>
                     <TableCell className="font-black text-xs">৳{inv.totalAmount?.toLocaleString()}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-center">
                       <Badge variant="outline" className={cn("text-[8px] h-5 uppercase border-none px-2 font-black", 
                         inv.status === 'paid' ? "bg-green-50 text-green-700" : 
                         inv.status === 'partial' ? "bg-blue-50 text-blue-700" : "bg-orange-50 text-orange-700")}>
@@ -193,9 +193,20 @@ export default function SalesPage() {
                     </TableCell>
                     <TableCell className="text-right pr-6 sticky right-0 bg-white/90 backdrop-blur-sm group-hover:bg-slate-50/90 transition-colors z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
                       <div className="flex justify-end items-center gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-blue-600" onClick={() => router.push(`/sales/${inv.id}/view`)}><Eye className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-amber-600" onClick={() => router.push(`/sales/${inv.id}/edit`)}><Edit className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-red-600" onClick={() => { setSelectedRecord(inv); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-blue-600 hover:bg-blue-50" onClick={() => router.push(`/sales/${inv.id}/view`)}><Eye className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-amber-600 hover:bg-amber-50" onClick={() => router.push(`/sales/${inv.id}/edit`)}><Edit className="h-4 w-4" /></Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-slate-100 text-slate-600 transition-colors"><MoreVertical className="h-4 w-4" /></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl">
+                            <DropdownMenuItem className="text-xs font-bold" onClick={() => router.push(`/sales/${inv.id}/view`)}><Eye className="mr-2 h-3.5 w-3.5" /> {t('view')}</DropdownMenuItem>
+                            <DropdownMenuItem className="text-xs font-bold" onClick={() => router.push(`/sales/${inv.id}/edit`)}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
+                            <DropdownMenuItem className="text-xs font-bold" onClick={() => router.push(`/sales/${inv.id}/view`)}><Printer className="mr-2 h-3.5 w-3.5" /> {t('print')}</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(inv); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </TableCell>
                   </TableRow>
