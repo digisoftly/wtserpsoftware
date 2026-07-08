@@ -14,6 +14,8 @@ import { useFirestore, useDoc, useMemoFirebase } from "@/firebase"
 import { doc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { DocumentTemplate } from "@/components/documents/document-template"
 import { useTranslation } from "@/hooks/use-translation"
 
