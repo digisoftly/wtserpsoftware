@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -20,7 +19,9 @@ import {
   Trash2,
   Wrench,
   Receipt,
-  Check
+  Check,
+  Eye,
+  Edit
 } from "lucide-react"
 import { useFirestore, useDoc, useMemoFirebase, useCollection } from "@/firebase"
 import { doc, collection, query, where, orderBy, deleteDoc, updateDoc, serverTimestamp } from "firebase/firestore"
@@ -120,7 +121,7 @@ export default function ContractDetailsPage() {
                 "text-[9px] h-5 uppercase px-2 font-black border-none",
                 contract.status === 'active' ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
               )}>
-                {t(`${contract.status}_status` as any)}
+                {contract.status?.toUpperCase()}
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground font-medium">{contract.serviceName}</p>
@@ -260,7 +261,7 @@ export default function ContractDetailsPage() {
                 </TableHeader>
                 <TableBody>
                   {invoices.map((inv) => (
-                    <TableRow key={inv.id} className="h-16 hover:bg-muted/10 transition-colors">
+                    <TableRow key={inv.id} className="h-16 hover:bg-muted/10 transition-colors group">
                       <TableCell className="pl-6 text-[10px] font-black uppercase text-slate-500">{inv.createdAt?.toDate ? new Date(inv.createdAt?.toDate()).toLocaleDateString() : '---'}</TableCell>
                       <TableCell className="font-black text-xs uppercase text-blue-600">{inv.billingMonth}</TableCell>
                       <TableCell className="text-right font-black text-xs text-slate-900">৳{Number(inv.amount || 0).toLocaleString()}</TableCell>
@@ -269,11 +270,17 @@ export default function ContractDetailsPage() {
                           "text-[8px] h-5 uppercase border-none px-2 font-black",
                           inv.status === 'paid' ? "bg-green-50 text-green-700" : "bg-orange-50 text-orange-700"
                         )}>
-                          {t(`${inv.status}_status` as any)}
+                          {inv.status?.toUpperCase()}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right pr-6">
                         <div className="flex justify-end gap-1">
+                          <Button 
+                            variant="ghost" size="icon" className="h-7 w-7 rounded-full text-blue-600"
+                            onClick={() => router.push(`/contracts/invoices/${inv.id}/view`)}
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
                           {inv.status !== 'paid' && (
                             <Button 
                               onClick={() => handlePayInvoice(inv.id)}
@@ -286,7 +293,9 @@ export default function ContractDetailsPage() {
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-slate-100 text-slate-600 transition-colors"><MoreVertical className="h-3.5 w-3.5" /></Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-xl">
+                            <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl">
+                              <DropdownMenuItem className="text-xs font-bold" onClick={() => router.push(`/contracts/invoices/${inv.id}/view`)}><Eye className="mr-2 h-3.5 w-3.5" /> {t('view')}</DropdownMenuItem>
+                              <DropdownMenuItem className="text-xs font-bold" onClick={() => router.push(`/contracts/invoices/${inv.id}/edit`)}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
                               <DropdownMenuItem className="text-xs font-bold" onClick={() => handlePayInvoice(inv.id)}><Receipt className="mr-2 h-3.5 w-3.5" /> Mark as Paid</DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem className="text-xs font-bold text-red-600"><Trash2 className="mr-2 h-3.5 w-3.5" /> Delete Record</DropdownMenuItem>

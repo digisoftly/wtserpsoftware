@@ -1,8 +1,7 @@
-
 "use client"
 
 import * as React from "react"
-import { Plus, Wrench, ShieldCheck, Loader2, MoreVertical, AlertCircle, TrendingUp, Eye, Trash2, Calendar, DollarSign, PlayCircle, Receipt, CheckCircle2, CreditCard, Sparkles, Check } from "lucide-react"
+import { Plus, Wrench, ShieldCheck, Loader2, MoreVertical, AlertCircle, TrendingUp, Eye, Trash2, Calendar, DollarSign, PlayCircle, Receipt, CheckCircle2, CreditCard, Sparkles, Check, Printer } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, doc, getDocs, where, writeBatch, serverTimestamp, updateDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
@@ -296,11 +295,17 @@ export default function ContractsPage() {
                             "text-[8px] h-5 uppercase border-none px-2 font-black",
                             inv.status === 'paid' ? "bg-green-50 text-green-700" : "bg-orange-50 text-orange-700"
                           )}>
-                            {t(`${inv.status}_status` as any)}
+                            {inv.status?.toUpperCase()}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right pr-6">
                            <div className="flex justify-end gap-1">
+                             <Button 
+                              variant="ghost" size="icon" className="h-8 w-8 rounded-full text-blue-600 hover:bg-blue-50"
+                              onClick={() => router.push(`/contracts/invoices/${inv.id}/view`)}
+                             >
+                               <Eye className="h-4 w-4" />
+                             </Button>
                              {inv.status !== 'paid' && (
                                <Button 
                                 onClick={() => handlePayInvoice(inv)}
@@ -313,8 +318,10 @@ export default function ContractsPage() {
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-slate-100 text-slate-600 transition-colors"><MoreVertical className="h-4 w-4" /></Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-xl">
-                                <DropdownMenuItem className="text-xs font-bold" onClick={() => handlePayInvoice(inv)}><CreditCard className="mr-2 h-3.5 w-3.5" /> Mark as Paid</DropdownMenuItem>
+                              <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl">
+                                <DropdownMenuItem className="text-xs font-bold" onClick={() => router.push(`/contracts/invoices/${inv.id}/view`)}><Eye className="mr-2 h-3.5 w-3.5" /> {t('view')}</DropdownMenuItem>
+                                <DropdownMenuItem className="text-xs font-bold" onClick={() => router.push(`/contracts/invoices/${inv.id}/edit`)}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
+                                <DropdownMenuItem className="text-xs font-bold" onClick={() => router.push(`/contracts/invoices/${inv.id}/view`)}><Printer className="mr-2 h-3.5 w-3.5" /> {t('print')}</DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(inv); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> Delete</DropdownMenuItem>
                               </DropdownMenuContent>
