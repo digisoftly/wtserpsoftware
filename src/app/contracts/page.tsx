@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Plus, Wrench, ShieldCheck, Loader2, MoreVertical, AlertCircle, TrendingUp, Eye, Trash2, Calendar, DollarSign, PlayCircle, Receipt, CheckCircle2, CreditCard, Sparkles, Check, Printer } from "lucide-react"
+import { Plus, Wrench, ShieldCheck, Loader2, MoreVertical, AlertCircle, TrendingUp, Eye, Trash2, Edit, Calendar, DollarSign, PlayCircle, Receipt, CheckCircle2, CreditCard, Sparkles, Check, Printer } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, doc, getDocs, where, writeBatch, serverTimestamp, updateDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
