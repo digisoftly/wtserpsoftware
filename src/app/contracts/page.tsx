@@ -1,9 +1,10 @@
+
 "use client"
 
 import * as React from "react"
-import { Plus, Wrench, ShieldCheck, Loader2, MoreVertical, AlertCircle, TrendingUp, Eye, Trash2, Calendar, DollarSign, PlayCircle, Receipt, CheckCircle2 } from "lucide-react"
+import { Plus, Wrench, ShieldCheck, Loader2, MoreVertical, AlertCircle, TrendingUp, Eye, Trash2, Calendar, DollarSign, PlayCircle, Receipt, CheckCircle2, CreditCard, Sparkles, Check } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, query, orderBy, doc, getDocs, where, writeBatch, serverTimestamp } from "firebase/firestore"
+import { collection, query, orderBy, doc, getDocs, where, writeBatch, serverTimestamp, updateDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { Card } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -31,6 +32,7 @@ export default function ContractsPage() {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
   const [selectedRecord, setSelectedRecord] = React.useState<any>(null);
   const [isRunningCycle, setIsRunningCycle] = React.useState(false);
+  const [needsCycleCheck, setNeedsCycleCheck] = React.useState(false);
 
   // Queries
   const contractsQuery = useMemoFirebase(() => {
@@ -45,11 +47,27 @@ export default function ContractsPage() {
   }, [db, companyId, branchId]);
   const { data: invoices, isLoading: isInvoicesLoading } = useCollection(invoicesQuery);
 
+  // Stats
   const stats = React.useMemo(() => ({
     active: contracts?.filter(c => c.status === 'active').length || 0,
     revenue: contracts?.filter(c => c.status === 'active').reduce((s, c) => s + (Number(c.monthlyAmount) || 0), 0) || 0,
     due: invoices?.filter(i => i.status !== 'paid').reduce((s, i) => s + (Number(i.amount) || 0), 0) || 0
   }), [contracts, invoices]);
+
+  // Check if current month cycle needs running
+  React.useEffect(() => {
+    if (!invoices || !contracts) return;
+    const currentMonth = format(new Date(), "MMMM yyyy");
+    const activeCount = contracts.filter(c => c.status === 'active').length;
+    if (activeCount === 0) return;
+
+    const thisMonthInvoices = invoices.filter(i => i.billingMonth === currentMonth).length;
+    if (thisMonthInvoices < activeCount) {
+      setNeedsCycleCheck(true);
+    } else {
+      setNeedsCycleCheck(false);
+    }
+  }, [invoices, contracts]);
 
   const handleDelete = () => {
     if (!selectedRecord || !db || !companyId || !branchId) return;
@@ -58,6 +76,21 @@ export default function ContractsPage() {
     deleteDocumentNonBlocking(docRef);
     toast({ title: t('success') });
     setIsDeleteAlertOpen(false);
+  };
+
+  const handlePayInvoice = async (invoice: any) => {
+    if (!db || !companyId || !branchId) return;
+    try {
+      const docRef = doc(db, "companies", companyId, "branches", branchId, "contract_invoices", invoice.id);
+      await updateDoc(docRef, {
+        status: "paid",
+        paidAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      toast({ title: t('success'), description: "Invoice marked as paid." });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: t('error'), description: err.message });
+    }
   };
 
   const handleRunBillingCycle = async () => {
@@ -72,7 +105,7 @@ export default function ContractsPage() {
       let count = 0;
 
       for (const contract of activeContracts) {
-        // Check if invoice for this month already exists
+        // Double check existence via a fresh query to be absolutely safe
         const existingCheck = query(
           collection(db, "companies", companyId, "branches", branchId, "contract_invoices"),
           where("contractId", "==", contract.id),
@@ -101,6 +134,7 @@ export default function ContractsPage() {
       if (count > 0) {
         await batch.commit();
         toast({ title: t('success'), description: `${count} invoices generated for ${currentMonth}.` });
+        setNeedsCycleCheck(false);
       } else {
         toast({ title: "Cycle Complete", description: `All invoices for ${currentMonth} are already generated.` });
       }
@@ -127,7 +161,7 @@ export default function ContractsPage() {
               disabled={isRunningCycle}
             >
               {isRunningCycle ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlayCircle className="h-4 w-4" />}
-              Run Monthly Cycle
+              {t('runMonthlyCycle')}
             </Button>
           )}
           <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2 rounded-full px-8 shadow-xl shadow-emerald-100 h-10 text-[10px] uppercase font-black transition-all active:scale-95" asChild>
@@ -143,6 +177,28 @@ export default function ContractsPage() {
         <KPICard title={t('monthlyRevenue')} value={`৳${stats.revenue.toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-600" />
         <KPICard title={t('dueAmount')} value={`৳${stats.due.toLocaleString()}`} icon={AlertCircle} colorClass="bg-red-600" />
       </div>
+
+      {needsCycleCheck && activeTab === 'contracts' && (
+        <div className="bg-blue-600 rounded-[1.5rem] p-4 text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl shadow-blue-100 animate-in slide-in-from-top-2">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-md">
+              <Sparkles className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-tight">{t('billingDue')}</p>
+              <p className="text-[10px] font-bold opacity-80 uppercase tracking-widest">{format(new Date(), "MMMM yyyy")} cycle is not fully generated.</p>
+            </div>
+          </div>
+          <Button 
+            onClick={handleRunBillingCycle} 
+            disabled={isRunningCycle}
+            className="bg-white text-blue-600 hover:bg-blue-50 rounded-full font-black text-[10px] uppercase h-9 px-6 shadow-lg"
+          >
+            {isRunningCycle ? <Loader2 className="h-3 w-3 animate-spin mr-2" /> : <PlayCircle className="h-3 w-3 mr-2" />}
+            {t('generateNow')}
+          </Button>
+        </div>
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="bg-white border p-1 rounded-xl shadow-sm mb-6 flex h-11 ring-1 ring-slate-100">
@@ -231,7 +287,7 @@ export default function ContractsPage() {
                   <TableBody>
                     {invoices.map((inv) => (
                       <TableRow key={inv.id} className="h-16 hover:bg-muted/5 transition-colors group">
-                        <TableCell className="pl-6 text-[10px] font-bold text-slate-500 uppercase">{new Date(inv.createdAt?.toDate()).toLocaleDateString()}</TableCell>
+                        <TableCell className="pl-6 text-[10px] font-bold text-slate-500 uppercase">{inv.createdAt?.toDate ? new Date(inv.createdAt?.toDate()).toLocaleDateString() : '---'}</TableCell>
                         <TableCell className="font-black text-xs uppercase text-blue-600">{inv.billingMonth}</TableCell>
                         <TableCell className="text-xs font-bold text-slate-700">{inv.customerName}</TableCell>
                         <TableCell className="text-right font-black text-xs">৳{inv.amount?.toLocaleString()}</TableCell>
@@ -244,15 +300,26 @@ export default function ContractsPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right pr-6">
-                           <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-slate-100 text-slate-600 transition-colors"><MoreVertical className="h-4 w-4" /></Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-xl">
-                              <DropdownMenuItem className="text-xs font-bold"><Receipt className="mr-2 h-3.5 w-3.5" /> Pay Now</DropdownMenuItem>
-                              <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(inv); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> Delete</DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                           <div className="flex justify-end gap-1">
+                             {inv.status !== 'paid' && (
+                               <Button 
+                                onClick={() => handlePayInvoice(inv)}
+                                className="h-7 px-3 rounded-full bg-green-600 hover:bg-green-700 text-white font-black text-[9px] uppercase gap-1.5 shadow-lg shadow-green-100"
+                               >
+                                 <Check className="h-3 w-3" /> {t('payNow')}
+                               </Button>
+                             )}
+                             <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-slate-100 text-slate-600 transition-colors"><MoreVertical className="h-4 w-4" /></Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-xl">
+                                <DropdownMenuItem className="text-xs font-bold" onClick={() => handlePayInvoice(inv)}><CreditCard className="mr-2 h-3.5 w-3.5" /> Mark as Paid</DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(inv); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> Delete</DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                           </div>
                         </TableCell>
                       </TableRow>
                     ))}

@@ -1,4 +1,5 @@
 
+
 export type Language = 'EN' | 'BN';
 
 export const translations = {
@@ -168,6 +169,10 @@ export const translations = {
     selectSerials: "Select Serials",
     receiveStock: "Receive Stock",
     initializeIntake: "Initialize Intake",
+    payNow: "Pay Now",
+    runMonthlyCycle: "Run Monthly Cycle",
+    generateNow: "Generate Now",
+    billingDue: "Monthly Billing Due",
 
     // Shortcuts
     invoiceShortcut: "Invoice",
@@ -608,10 +613,10 @@ export const translations = {
     selectSerials: "সিরিয়াল নির্বাচন করুন",
     receiveStock: "পণ্য গ্রহণ",
     initializeIntake: "ইনভেন্টরি শুরু করুন",
-
-    // Shortcuts
-    invoiceShortcut: "ইনভয়েস",
-    paymentShortcut: "পেমেন্ট",
+    payNow: "পরিশোধ করুন",
+    runMonthlyCycle: "মাসিক চক্র চালান",
+    generateNow: "তৈরি করুন",
+    billingDue: "মাসিক বিল বকেয়া",
 
     // Dashboard
     goodMorning: "শুভ সকাল",

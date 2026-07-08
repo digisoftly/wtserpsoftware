@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -17,10 +18,12 @@ import {
   MoreVertical,
   Printer,
   Trash2,
-  Wrench
+  Wrench,
+  Receipt,
+  Check
 } from "lucide-react"
 import { useFirestore, useDoc, useMemoFirebase, useCollection } from "@/firebase"
-import { doc, collection, query, where, orderBy, deleteDoc } from "firebase/firestore"
+import { doc, collection, query, where, orderBy, deleteDoc, updateDoc, serverTimestamp } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -31,7 +34,7 @@ import { KPICard } from "@/components/dashboard/kpi-card"
 import { useTranslation } from "@/hooks/use-translation"
 import { cn } from "@/lib/utils"
 import { toast } from "@/hooks/use-toast"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 
 export default function ContractDetailsPage() {
@@ -67,6 +70,21 @@ export default function ContractDetailsPage() {
       await deleteDoc(contractRef);
       toast({ title: t('success') });
       router.push("/contracts");
+    } catch (err: any) {
+      toast({ variant: "destructive", title: t('error'), description: err.message });
+    }
+  };
+
+  const handlePayInvoice = async (invoiceId: string) => {
+    if (!db || !companyId || !branchId) return;
+    try {
+      const docRef = doc(db, "companies", companyId, "branches", branchId, "contract_invoices", invoiceId);
+      await updateDoc(docRef, {
+        status: "paid",
+        paidAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      toast({ title: t('success'), description: "Invoice marked as paid." });
     } catch (err: any) {
       toast({ variant: "destructive", title: t('error'), description: err.message });
     }
@@ -243,7 +261,7 @@ export default function ContractDetailsPage() {
                 <TableBody>
                   {invoices.map((inv) => (
                     <TableRow key={inv.id} className="h-16 hover:bg-muted/10 transition-colors">
-                      <TableCell className="pl-6 text-[10px] font-black uppercase text-slate-500">{new Date(inv.createdAt?.toDate()).toLocaleDateString()}</TableCell>
+                      <TableCell className="pl-6 text-[10px] font-black uppercase text-slate-500">{inv.createdAt?.toDate ? new Date(inv.createdAt?.toDate()).toLocaleDateString() : '---'}</TableCell>
                       <TableCell className="font-black text-xs uppercase text-blue-600">{inv.billingMonth}</TableCell>
                       <TableCell className="text-right font-black text-xs text-slate-900">৳{Number(inv.amount || 0).toLocaleString()}</TableCell>
                       <TableCell className="text-center">
@@ -255,15 +273,26 @@ export default function ContractDetailsPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right pr-6">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-slate-100 text-slate-600 transition-colors"><MoreVertical className="h-3.5 w-3.5" /></Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-xl">
-                            <DropdownMenuItem className="text-xs font-bold"><Receipt className="mr-2 h-3.5 w-3.5" /> Pay Invoice</DropdownMenuItem>
-                            <DropdownMenuItem className="text-xs font-bold text-red-600"><Trash2 className="mr-2 h-3.5 w-3.5" /> Delete</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div className="flex justify-end gap-1">
+                          {inv.status !== 'paid' && (
+                            <Button 
+                              onClick={() => handlePayInvoice(inv.id)}
+                              className="h-7 px-3 rounded-full bg-green-600 hover:bg-green-700 text-white font-black text-[9px] uppercase gap-1.5 shadow-lg shadow-green-100"
+                            >
+                              <Check className="h-3 w-3" /> {t('payNow')}
+                            </Button>
+                          )}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-slate-100 text-slate-600 transition-colors"><MoreVertical className="h-3.5 w-3.5" /></Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-xl">
+                              <DropdownMenuItem className="text-xs font-bold" onClick={() => handlePayInvoice(inv.id)}><Receipt className="mr-2 h-3.5 w-3.5" /> Mark as Paid</DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="text-xs font-bold text-red-600"><Trash2 className="mr-2 h-3.5 w-3.5" /> Delete Record</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
