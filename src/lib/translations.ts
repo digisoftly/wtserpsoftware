@@ -1,5 +1,3 @@
-
-
 export type Language = 'EN' | 'BN';
 
 export const translations = {
@@ -173,6 +171,32 @@ export const translations = {
     runMonthlyCycle: "Run Monthly Cycle",
     generateNow: "Generate Now",
     billingDue: "Monthly Billing Due",
+
+    // Premium Sales Fields
+    taxInvoice: "Tax Invoice",
+    invoiceDate: "Invoice Date",
+    dueDate: "Due Date",
+    salesPerson: "Sales Person",
+    warranty: "Warranty",
+    transportCost: "Transport Cost",
+    installationCharge: "Installation Charge",
+    previousDue: "Previous Due",
+    roundOff: "Round Off",
+    outstandingBalance: "Outstanding Balance",
+    transactionId: "Transaction ID",
+    paymentDate: "Payment Date",
+    collectedBy: "Collected By",
+    projectInfo: "Project Information",
+    quotationRef: "Quotation Ref",
+    challanRef: "Challan Ref",
+    warrantyExpiry: "Warranty Expiry",
+    amcExpiry: "AMC Expiry",
+    customerNotes: "Customer Notes",
+    internalNotes: "Internal Notes",
+    preparedBy: "Prepared By",
+    checkedBy: "Checked By",
+    authorizedSign: "Authorized Signature",
+    customerSign: "Customer Signature",
 
     // Shortcuts
     invoiceShortcut: "Invoice",
@@ -563,6 +587,32 @@ export const translations = {
     workingList: "ওয়ার্কিং লিস্ট",
     isActive: "সক্রিয়",
     inactive: "নিষ্ক্রিয়",
+
+    // Premium Sales Fields
+    taxInvoice: "ট্যাক্স ইনভয়েস",
+    invoiceDate: "ইনভয়েস তারিখ",
+    dueDate: "পেমেন্ট তারিখ",
+    salesPerson: "বিক্রয় কর্মী",
+    warranty: "ওয়ারেন্টি",
+    transportCost: "পরিবহন খরচ",
+    installationCharge: "ইনস্টলেশন চার্জ",
+    previousDue: "পূর্বের বকেয়া",
+    roundOff: "রাউন্ড অফ",
+    outstandingBalance: "অবশিষ্ট বকেয়া",
+    transactionId: "ট্রানজেকশন আইডি",
+    paymentDate: "পেমেন্ট তারিখ",
+    collectedBy: "সংগ্রহকারী",
+    projectInfo: "প্রকল্পের তথ্য",
+    quotationRef: "কোটেশন রেফারেন্স",
+    challanRef: "চালান রেফারেন্স",
+    warrantyExpiry: "ওয়ারেন্টি মেয়াদ শেষ",
+    amcExpiry: "AMC মেয়াদ শেষ",
+    customerNotes: "গ্রাহকের নোট",
+    internalNotes: "অভ্যন্তরীণ নোট",
+    preparedBy: "প্রস্তুতকারী",
+    checkedBy: "যাচাইকারী",
+    authorizedSign: "কর্তৃপক্ষের স্বাক্ষর",
+    customerSign: "গ্রাহকের স্বাক্ষর",
 
     // Auth
     login: "সাইন ইন",
