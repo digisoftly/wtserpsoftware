@@ -25,7 +25,8 @@ import {
   MonitorPlay,
   RotateCcw,
   MessageSquareWarning,
-  AlertCircle
+  AlertCircle,
+  Layout
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -67,6 +68,14 @@ const DEFAULT_MENU_ORDER = [
   "ai", 
   "settings", 
   "users"
+];
+
+const DOCUMENT_LAYOUTS = [
+  { value: "erppro", name: "ERP Pro (High Density)" },
+  { value: "modern", name: "Modern (Bold Branding)" },
+  { value: "professional", name: "Professional (Standard)" },
+  { value: "minimal", name: "Minimalist (Clean)" },
+  { value: "thermal", name: "Thermal (80mm Receipt)" },
 ];
 
 export default function SettingsPage() {
@@ -128,10 +137,13 @@ export default function SettingsPage() {
       autoLogoutEnabled: formData.get("autoLogoutEnabled") === "on",
       sessionTimeout: Number(formData.get("sessionTimeout") || 60),
       demoModeEnabled: formData.get("demoModeEnabled") === "on",
+      defaultTemplate_invoice: formData.get("defaultTemplate_invoice"),
+      defaultTemplate_quotation: formData.get("defaultTemplate_quotation"),
+      defaultTemplate_po: formData.get("defaultTemplate_po"),
     };
 
     formData.forEach((value, key) => {
-      if (!["systemDefaultLanguage", "companyLogo", "autoLogoutEnabled", "sessionTimeout", "demoModeEnabled"].includes(key)) {
+      if (!["systemDefaultLanguage", "companyLogo", "autoLogoutEnabled", "sessionTimeout", "demoModeEnabled", "defaultTemplate_invoice", "defaultTemplate_quotation", "defaultTemplate_po"].includes(key)) {
         updates[key] = value;
       }
     });
@@ -149,7 +161,7 @@ export default function SettingsPage() {
   if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-blue-600" /></div>;
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-6 pb-10">
       <form onSubmit={handleSaveSettings}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
@@ -167,6 +179,9 @@ export default function SettingsPage() {
         <Tabs defaultValue="general" className="w-full">
           <TabsList className="bg-white border rounded-xl p-1 mb-6 shadow-sm flex overflow-x-auto h-auto no-scrollbar ring-1 ring-slate-100">
             <TabsTrigger value="general" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">{t('general')}</TabsTrigger>
+            <TabsTrigger value="documents" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">
+              <Layout className="h-3.5 w-3.5" /> Documents
+            </TabsTrigger>
             <TabsTrigger value="navigation" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">{t('navigation')}</TabsTrigger>
             <TabsTrigger value="messages" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">{t('messages')}</TabsTrigger>
             <TabsTrigger value="business" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">{t('businessRules')}</TabsTrigger>
@@ -215,6 +230,61 @@ export default function SettingsPage() {
                 </Button>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="documents" className="space-y-6">
+             <Card className="border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100">
+               <CardHeader>
+                 <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-900">Branded Templates</CardTitle>
+                 <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground mt-1">Select visual identities for your generated documents.</CardDescription>
+               </CardHeader>
+               <CardContent className="space-y-8 p-8 pt-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="space-y-3">
+                       <Label className="text-[10px] font-black uppercase text-blue-600 tracking-widest">Invoice Design</Label>
+                       <Select name="defaultTemplate_invoice" defaultValue={settings?.defaultTemplate_invoice || "erppro"}>
+                         <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-100"><SelectValue /></SelectTrigger>
+                         <SelectContent className="rounded-xl">
+                            {DOCUMENT_LAYOUTS.map(l => <SelectItem key={l.value} value={l.value} className="text-xs font-bold">{l.name}</SelectItem>)}
+                         </SelectContent>
+                       </Select>
+                       <p className="text-[9px] font-bold text-muted-foreground uppercase px-1">Applied to Sales Module</p>
+                    </div>
+
+                    <div className="space-y-3">
+                       <Label className="text-[10px] font-black uppercase text-blue-600 tracking-widest">Quotation Design</Label>
+                       <Select name="defaultTemplate_quotation" defaultValue={settings?.defaultTemplate_quotation || "erppro"}>
+                         <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-100"><SelectValue /></SelectTrigger>
+                         <SelectContent className="rounded-xl">
+                            {DOCUMENT_LAYOUTS.map(l => <SelectItem key={l.value} value={l.value} className="text-xs font-bold">{l.name}</SelectItem>)}
+                         </SelectContent>
+                       </Select>
+                       <p className="text-[9px] font-bold text-muted-foreground uppercase px-1">Applied to Proposal Builder</p>
+                    </div>
+
+                    <div className="space-y-3">
+                       <Label className="text-[10px] font-black uppercase text-blue-600 tracking-widest">Purchase Order Design</Label>
+                       <Select name="defaultTemplate_po" defaultValue={settings?.defaultTemplate_po || "erppro"}>
+                         <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-100"><SelectValue /></SelectTrigger>
+                         <SelectContent className="rounded-xl">
+                            {DOCUMENT_LAYOUTS.map(l => <SelectItem key={l.value} value={l.value} className="text-xs font-bold">{l.name}</SelectItem>)}
+                         </SelectContent>
+                       </Select>
+                       <p className="text-[9px] font-bold text-muted-foreground uppercase px-1">Applied to Procurement Module</p>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-blue-50/50 p-6 rounded-3xl border-2 border-dashed border-blue-100 flex items-center gap-4">
+                     <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-blue-600 shadow-sm shrink-0">
+                       <FileBarChart className="h-6 w-6" />
+                     </div>
+                     <div>
+                        <p className="text-xs font-black uppercase tracking-tight text-blue-900">High-Resolution Rendering</p>
+                        <p className="text-[10px] text-blue-700 font-bold uppercase mt-1 leading-relaxed">Templates are optimized for both digital viewing and A4 physical printing.</p>
+                     </div>
+                  </div>
+               </CardContent>
+             </Card>
           </TabsContent>
 
           <TabsContent value="navigation" className="space-y-6">
