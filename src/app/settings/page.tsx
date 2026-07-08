@@ -26,7 +26,11 @@ import {
   RotateCcw,
   MessageSquareWarning,
   AlertCircle,
-  Layout
+  Layout,
+  Palette,
+  Type,
+  Eye,
+  Maximize2
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -43,6 +47,8 @@ import { toast } from "@/hooks/use-toast"
 import { useTranslation } from "@/hooks/use-translation"
 import { cn } from "@/lib/utils"
 import { Textarea } from "@/components/ui/textarea"
+import { DocumentTemplate } from "@/components/documents/document-template"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 
 const DEFAULT_MENU_ORDER = [
   "dashboard", 
@@ -86,6 +92,12 @@ export default function SettingsPage() {
   const [logoPreview, setLogoPreview] = React.useState<string | null>(null);
   const [menuOrder, setMenuOrder] = React.useState<string[]>(DEFAULT_MENU_ORDER);
 
+  // Design Lab State for Preview
+  const [previewLayout, setPreviewLayout] = React.useState<any>("erppro");
+  const [docPrimaryColor, setDocPrimaryColor] = React.useState("#4F46E5");
+  const [docAccentColor, setDocAccentColor] = React.useState("#22C55E");
+  const [docFontSize, setDocFontSize] = React.useState("standard");
+
   const isSuperAdmin = userRole?.isSuperAdmin === true;
 
   const settingsRef = useMemoFirebase(() => {
@@ -102,6 +114,12 @@ export default function SettingsPage() {
     if (settings?.sidebarMenuOrder && Array.isArray(settings.sidebarMenuOrder)) {
       setMenuOrder(settings.sidebarMenuOrder);
     }
+    if (settings?.defaultTemplate_invoice) {
+      setPreviewLayout(settings.defaultTemplate_invoice);
+    }
+    if (settings?.docPrimaryColor) setDocPrimaryColor(settings.docPrimaryColor);
+    if (settings?.docAccentColor) setDocAccentColor(settings.docAccentColor);
+    if (settings?.docFontSize) setDocFontSize(settings.docFontSize);
   }, [settings]);
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -140,10 +158,13 @@ export default function SettingsPage() {
       defaultTemplate_invoice: formData.get("defaultTemplate_invoice"),
       defaultTemplate_quotation: formData.get("defaultTemplate_quotation"),
       defaultTemplate_po: formData.get("defaultTemplate_po"),
+      docPrimaryColor: docPrimaryColor,
+      docAccentColor: docAccentColor,
+      docFontSize: docFontSize,
     };
 
     formData.forEach((value, key) => {
-      if (!["systemDefaultLanguage", "companyLogo", "autoLogoutEnabled", "sessionTimeout", "demoModeEnabled", "defaultTemplate_invoice", "defaultTemplate_quotation", "defaultTemplate_po"].includes(key)) {
+      if (!["systemDefaultLanguage", "companyLogo", "autoLogoutEnabled", "sessionTimeout", "demoModeEnabled", "defaultTemplate_invoice", "defaultTemplate_quotation", "defaultTemplate_po", "docPrimaryColor", "docAccentColor", "docFontSize"].includes(key)) {
         updates[key] = value;
       }
     });
@@ -156,6 +177,25 @@ export default function SettingsPage() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const mockPreviewData = {
+    title: "SAMPLE INVOICE",
+    docNumber: "INV-PREVIEW-001",
+    date: new Date().toISOString(),
+    customerName: "Global Tech Solutions",
+    customerInfo: "123 Business Avenue\nSuite 500, Innovation City\ninfo@globaltech.com",
+    items: [
+      { name: "High Speed Network Switch", quantity: 2, unit: "Pcs", unitPrice: 450, total: 900, description: "Enterprise grade 48-port switch" },
+      { name: "CCTV Installation Service", quantity: 1, unit: "Site", unitPrice: 1200, total: 1200, description: "Full campus deployment" }
+    ],
+    subtotal: 2100,
+    taxAmount: 315,
+    taxRate: 15,
+    discount: 100,
+    grandTotal: 2315,
+    status: "paid",
+    notes: "This is a live preview of your customized document design and brand colors."
   };
 
   if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-blue-600" /></div>;
@@ -233,58 +273,161 @@ export default function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="documents" className="space-y-6">
-             <Card className="border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100">
-               <CardHeader>
-                 <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-900">Branded Templates</CardTitle>
-                 <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground mt-1">Select visual identities for your generated documents.</CardDescription>
-               </CardHeader>
-               <CardContent className="space-y-8 p-8 pt-0">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <div className="space-y-3">
-                       <Label className="text-[10px] font-black uppercase text-blue-600 tracking-widest">Invoice Design</Label>
-                       <Select name="defaultTemplate_invoice" defaultValue={settings?.defaultTemplate_invoice || "erppro"}>
-                         <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-100"><SelectValue /></SelectTrigger>
-                         <SelectContent className="rounded-xl">
-                            {DOCUMENT_LAYOUTS.map(l => <SelectItem key={l.value} value={l.value} className="text-xs font-bold">{l.name}</SelectItem>)}
-                         </SelectContent>
-                       </Select>
-                       <p className="text-[9px] font-bold text-muted-foreground uppercase px-1">Applied to Sales Module</p>
-                    </div>
+             <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                {/* Control Panel */}
+                <div className="xl:col-span-4 space-y-6">
+                  <Card className="border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100">
+                    <CardHeader>
+                      <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-900 flex items-center gap-2">
+                        <Palette className="h-4 w-4 text-blue-600" /> Design Lab
+                      </CardTitle>
+                      <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground mt-1">Configure your document identity.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6 p-6 pt-0">
+                      <div className="space-y-4">
+                        <div className="space-y-1.5">
+                          <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Base Layout</Label>
+                          <Select 
+                            name="defaultTemplate_invoice" 
+                            defaultValue={settings?.defaultTemplate_invoice || "erppro"}
+                            onValueChange={setPreviewLayout}
+                          >
+                            <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-100"><SelectValue /></SelectTrigger>
+                            <SelectContent className="rounded-xl">
+                                {DOCUMENT_LAYOUTS.map(l => <SelectItem key={l.value} value={l.value} className="text-xs font-bold">{l.name}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-                    <div className="space-y-3">
-                       <Label className="text-[10px] font-black uppercase text-blue-600 tracking-widest">Quotation Design</Label>
-                       <Select name="defaultTemplate_quotation" defaultValue={settings?.defaultTemplate_quotation || "erppro"}>
-                         <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-100"><SelectValue /></SelectTrigger>
-                         <SelectContent className="rounded-xl">
-                            {DOCUMENT_LAYOUTS.map(l => <SelectItem key={l.value} value={l.value} className="text-xs font-bold">{l.name}</SelectItem>)}
-                         </SelectContent>
-                       </Select>
-                       <p className="text-[9px] font-bold text-muted-foreground uppercase px-1">Applied to Proposal Builder</p>
-                    </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Primary Color</Label>
+                            <div className="flex gap-2">
+                              <Input 
+                                type="color" 
+                                className="w-10 h-10 p-0 rounded-lg border-none ring-1 ring-slate-200" 
+                                value={docPrimaryColor}
+                                onChange={e => setDocPrimaryColor(e.target.value)}
+                              />
+                              <Input 
+                                className="h-10 text-[10px] font-mono font-bold uppercase rounded-lg" 
+                                value={docPrimaryColor}
+                                onChange={e => setDocPrimaryColor(e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Accent Color</Label>
+                            <div className="flex gap-2">
+                              <Input 
+                                type="color" 
+                                className="w-10 h-10 p-0 rounded-lg border-none ring-1 ring-slate-200" 
+                                value={docAccentColor}
+                                onChange={e => setDocAccentColor(e.target.value)}
+                              />
+                              <Input 
+                                className="h-10 text-[10px] font-mono font-bold uppercase rounded-lg" 
+                                value={docAccentColor}
+                                onChange={e => setDocAccentColor(e.target.value)}
+                              />
+                            </div>
+                          </div>
+                        </div>
 
-                    <div className="space-y-3">
-                       <Label className="text-[10px] font-black uppercase text-blue-600 tracking-widest">Purchase Order Design</Label>
-                       <Select name="defaultTemplate_po" defaultValue={settings?.defaultTemplate_po || "erppro"}>
-                         <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-100"><SelectValue /></SelectTrigger>
-                         <SelectContent className="rounded-xl">
-                            {DOCUMENT_LAYOUTS.map(l => <SelectItem key={l.value} value={l.value} className="text-xs font-bold">{l.name}</SelectItem>)}
-                         </SelectContent>
-                       </Select>
-                       <p className="text-[9px] font-bold text-muted-foreground uppercase px-1">Applied to Procurement Module</p>
+                        <div className="space-y-1.5">
+                          <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Typography Scale</Label>
+                          <Select 
+                            name="docFontSize" 
+                            defaultValue={settings?.docFontSize || "standard"}
+                            onValueChange={setDocFontSize}
+                          >
+                            <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-100"><SelectValue /></SelectTrigger>
+                            <SelectContent className="rounded-xl">
+                               <SelectItem value="compact" className="text-xs font-bold">Compact (9px)</SelectItem>
+                               <SelectItem value="standard" className="text-xs font-bold">Standard (11px)</SelectItem>
+                               <SelectItem value="large" className="text-xs font-bold">Medium (13px)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="pt-6 border-t border-slate-100">
+                        <div className="p-4 bg-blue-50 rounded-2xl border-2 border-dashed border-blue-100 flex items-center gap-3">
+                           <ShieldCheck className="h-5 w-5 text-blue-600 shrink-0" />
+                           <p className="text-[9px] font-bold text-blue-700 uppercase leading-relaxed">
+                             Customizations are applied globally to Invoices, Quotations, and POs.
+                           </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-none shadow-sm rounded-[2rem] bg-slate-900 text-white p-6">
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mb-4">Module Defaults</h3>
+                    <div className="space-y-4">
+                       <div className="space-y-1.5">
+                         <Label className="text-[9px] font-black uppercase opacity-60">Default Quotation Layout</Label>
+                         <Select name="defaultTemplate_quotation" defaultValue={settings?.defaultTemplate_quotation || "erppro"}>
+                           <SelectTrigger className="h-9 rounded-lg bg-white/10 border-none ring-1 ring-white/20 text-xs"><SelectValue /></SelectTrigger>
+                           <SelectContent>{DOCUMENT_LAYOUTS.map(l => <SelectItem key={l.value} value={l.value}>{l.name}</SelectItem>)}</SelectContent>
+                         </Select>
+                       </div>
+                       <div className="space-y-1.5">
+                         <Label className="text-[9px] font-black uppercase opacity-60">Default Purchase Order Layout</Label>
+                         <Select name="defaultTemplate_po" defaultValue={settings?.defaultTemplate_po || "erppro"}>
+                           <SelectTrigger className="h-9 rounded-lg bg-white/10 border-none ring-1 ring-white/20 text-xs"><SelectValue /></SelectTrigger>
+                           <SelectContent>{DOCUMENT_LAYOUTS.map(l => <SelectItem key={l.value} value={l.value}>{l.name}</SelectItem>)}</SelectContent>
+                         </Select>
+                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="bg-blue-50/50 p-6 rounded-3xl border-2 border-dashed border-blue-100 flex items-center gap-4">
-                     <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-blue-600 shadow-sm shrink-0">
-                       <FileBarChart className="h-6 w-6" />
-                     </div>
-                     <div>
-                        <p className="text-xs font-black uppercase tracking-tight text-blue-900">High-Resolution Rendering</p>
-                        <p className="text-[10px] text-blue-700 font-bold uppercase mt-1 leading-relaxed">Templates are optimized for both digital viewing and A4 physical printing.</p>
-                     </div>
-                  </div>
-               </CardContent>
-             </Card>
+                  </Card>
+                </div>
+
+                {/* Live Preview Panel */}
+                <div className="xl:col-span-8">
+                  <Card className="border-none shadow-sm rounded-[2rem] bg-slate-200/50 ring-1 ring-slate-100 overflow-hidden sticky top-20">
+                    <CardHeader className="bg-white/80 backdrop-blur-md border-b flex flex-row items-center justify-between py-4 px-8">
+                      <div className="flex items-center gap-3">
+                         <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white shadow-lg animate-pulse">
+                           <MonitorPlay className="h-4 w-4" />
+                         </div>
+                         <div>
+                           <CardTitle className="text-[10px] font-black uppercase tracking-widest">Live Design Terminal</CardTitle>
+                           <p className="text-[8px] font-bold text-muted-foreground uppercase mt-0.5">Instant Document Visualization</p>
+                         </div>
+                      </div>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-slate-100"><Maximize2 className="h-3.5 w-3.5" /></Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-[21cm] w-[95vw] p-0 border-none bg-transparent shadow-none overflow-y-auto max-h-[95vh] rounded-none">
+                           <div className="bg-white shadow-2xl rounded-[2rem] overflow-hidden">
+                              <DocumentTemplate 
+                                {...mockPreviewData} 
+                                layoutOverride={previewLayout}
+                                customStyles={{ primaryColor: docPrimaryColor, accentColor: docAccentColor, fontSize: docFontSize }}
+                              />
+                           </div>
+                        </DialogContent>
+                      </Dialog>
+                    </CardHeader>
+                    <div className="p-4 md:p-8 flex justify-center bg-slate-100/30 overflow-hidden">
+                      <div className="w-full max-w-[800px] bg-white shadow-2xl rounded-2xl overflow-hidden scale-[0.8] origin-top md:scale-100 h-[600px] overflow-y-auto custom-scrollbar border border-slate-200">
+                        <DocumentTemplate 
+                          {...mockPreviewData} 
+                          layoutOverride={previewLayout}
+                          customStyles={{ primaryColor: docPrimaryColor, accentColor: docAccentColor, fontSize: docFontSize }}
+                        />
+                      </div>
+                    </div>
+                    <div className="bg-white/80 backdrop-blur-md p-4 border-t text-center">
+                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center justify-center gap-2">
+                         <Eye className="h-3 w-3" /> Previewing Active Configuration
+                       </p>
+                    </div>
+                  </Card>
+                </div>
+             </div>
           </TabsContent>
 
           <TabsContent value="navigation" className="space-y-6">
