@@ -43,6 +43,9 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = React.useState<Language>('BN');
   const [branchId, setBranchId] = React.useState<string | null>('dhaka-main');
   const [settings, setSettings] = React.useState<any>(null);
+  
+  // Guard to prevent multiple simultaneous seeding attempts
+  const seedingInProgress = React.useRef(false);
 
   const companyId = "warrior-demo-corp";
 
@@ -74,7 +77,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
             isSeeded = !!settingsData.isMasterDataSeeded;
           }
 
-          // 2. Fetch User Profile (Actual Firestore Connection)
+          // 2. Fetch User Profile
           const userRef = doc(db, "companies", companyId, "users", user.uid);
           const userSnap = await getDoc(userRef).catch(() => null);
           
@@ -87,11 +90,17 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
             activeBranchId = data?.branchId || "dhaka-main";
             setLanguage((data?.preferredLanguage || systemDefaultLang) as Language);
           } else {
-            // Check if this is the first user ever (Make them Super Admin)
-            const firstUserCheck = await getDoc(userRef).catch(() => null);
-            if (!firstUserCheck) {
-               roleId = "super-admin";
-            }
+            // New user detection: If no user doc exists, the first user becomes super-admin
+            roleId = "super-admin";
+            // Provision initial user doc if missing
+            await setDoc(userRef, {
+              id: user.uid,
+              email: user.email,
+              roleId: "super-admin",
+              branchId: "dhaka-main",
+              isActive: true,
+              createdAt: serverTimestamp()
+            }, { merge: true }).catch(console.error);
           }
 
           setBranchId(activeBranchId);
@@ -110,7 +119,6 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
               permissions: {} 
             });
           } else {
-            // Default restricted guest
             setUserRole({
               id: "guest-admin",
               name: "Guest Administrator",
@@ -118,10 +126,23 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
             });
           }
 
-          // 4. Seeding Logic
-          if (roleId === "super-admin" && !isSeeded) {
-            const { seedMasterData } = await import('@/lib/seed-data');
-            await seedMasterData(db, companyId);
+          // 4. Seeding Logic with Concurrency Guard
+          if (roleId === "super-admin" && !isSeeded && !seedingInProgress.current) {
+            seedingInProgress.current = true;
+            try {
+              const { seedMasterData } = await import('@/lib/seed-data');
+              await seedMasterData(db, companyId);
+              
+              // Refresh settings after seeding
+              const freshSettingsSnap = await getDoc(settingsRef);
+              if (freshSettingsSnap.exists()) {
+                setSettings(freshSettingsSnap.data());
+              }
+            } catch (seedErr) {
+              console.error("Seeding failed:", seedErr);
+            } finally {
+              seedingInProgress.current = false;
+            }
           }
 
         } catch (error) {

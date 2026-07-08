@@ -1,9 +1,10 @@
 
-import { Firestore, collection, doc, setDoc, writeBatch, serverTimestamp, getDocs, query, limit } from "firebase/firestore";
+import { Firestore, collection, doc, writeBatch, serverTimestamp } from "firebase/firestore";
 
 /**
  * Seeding Engine for WarriorERP Master Management.
  * Populates default records for 27+ modules to ensure immediate usability.
+ * Uses batch operations for efficiency and bandwidth control.
  */
 export async function seedMasterData(db: Firestore, companyId: string) {
   const configRef = doc(db, "companies", companyId, "system", "config");
@@ -94,12 +95,18 @@ export async function seedMasterData(db: Firestore, companyId: string) {
       });
     });
 
-    // Mark as seeded
-    batch.update(configRef, { isMasterDataSeeded: true, updatedAt: serverTimestamp() });
+    // CRITICAL FIX: Use set with merge: true for the config doc to ensure it exists
+    batch.set(configRef, { 
+      isMasterDataSeeded: true, 
+      updatedAt: serverTimestamp(),
+      companyName: "Warrior Tech System",
+      systemDefaultLanguage: "BN"
+    }, { merge: true });
 
     await batch.commit();
     console.log("Master data seeding completed successfully.");
   } catch (error) {
     console.error("Seeding error:", error);
+    throw error;
   }
 }
