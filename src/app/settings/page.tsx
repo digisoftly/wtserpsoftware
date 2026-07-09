@@ -422,6 +422,9 @@ export default function SettingsPage() {
                           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-slate-100"><Maximize2 className="h-3.5 w-3.5" /></Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-[21cm] w-[95vw] p-0 border-none bg-transparent shadow-none overflow-y-auto max-h-[95vh] rounded-none">
+                           <DialogHeader className="sr-only">
+                              <DialogTitle>Full Document Preview</DialogTitle>
+                           </DialogHeader>
                            <div className="bg-white shadow-2xl rounded-[2rem] overflow-hidden">
                               <DocumentTemplate 
                                 {...mockPreviewData} 
