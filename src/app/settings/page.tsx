@@ -77,6 +77,7 @@ const DEFAULT_MENU_ORDER = [
 ];
 
 const DOCUMENT_LAYOUTS = [
+  { value: "warrior", name: "Warrior (Official Premium)" },
   { value: "erppro", name: "ERP Pro (High Density)" },
   { value: "modern", name: "Modern (Bold Branding)" },
   { value: "professional", name: "Professional (Standard)" },
@@ -93,9 +94,9 @@ export default function SettingsPage() {
   const [menuOrder, setMenuOrder] = React.useState<string[]>(DEFAULT_MENU_ORDER);
 
   // Design Lab State for Preview
-  const [previewLayout, setPreviewLayout] = React.useState<any>("erppro");
-  const [docPrimaryColor, setDocPrimaryColor] = React.useState("#4F46E5");
-  const [docAccentColor, setDocAccentColor] = React.useState("#22C55E");
+  const [previewLayout, setPreviewLayout] = React.useState<any>("warrior");
+  const [docPrimaryColor, setDocPrimaryColor] = React.useState("#0056B3");
+  const [docAccentColor, setDocAccentColor] = React.useState("#F57C00");
   const [docFontSize, setDocFontSize] = React.useState("standard");
 
   const isSuperAdmin = userRole?.isSuperAdmin === true;
@@ -180,14 +181,34 @@ export default function SettingsPage() {
   };
 
   const mockPreviewData = {
-    title: "SAMPLE INVOICE",
-    docNumber: "INV-PREVIEW-001",
+    title: "SAMPLE QUOTATION",
+    docNumber: "WTS/INV-26-07-0045",
     date: new Date().toISOString(),
-    customerName: "Global Tech Solutions",
-    customerInfo: "123 Business Avenue\nSuite 500, Innovation City\ninfo@globaltech.com",
+    customerName: "Global Tech Solutions Ltd.",
+    customerInfo: "+880 1700-000000\n123 Business Avenue, Suite 500, Innovation City\ninfo@globaltech.com",
     items: [
-      { name: "High Speed Network Switch", quantity: 2, unit: "Pcs", unitPrice: 450, total: 900, description: "Enterprise grade 48-port switch" },
-      { name: "CCTV Installation Service", quantity: 1, unit: "Site", unitPrice: 1200, total: 1200, description: "Full campus deployment" }
+      { 
+        name: "Enterprise 4K Security System", 
+        quantity: 2, 
+        unit: "Pcs", 
+        unitPrice: 450, 
+        total: 900, 
+        brand: "Hikvision", 
+        model: "DS-2CD1023G0", 
+        warranty: "1 Year",
+        country: "China"
+      },
+      { 
+        name: "Fiber Optic Installation Service", 
+        quantity: 1, 
+        unit: "Site", 
+        unitPrice: 1200, 
+        total: 1200, 
+        brand: "WTS", 
+        model: "Service", 
+        warranty: "Service Agreement",
+        country: "Local"
+      }
     ],
     subtotal: 2100,
     taxAmount: 315,
@@ -195,7 +216,7 @@ export default function SettingsPage() {
     discount: 100,
     grandTotal: 2315,
     status: "paid",
-    notes: "This is a live preview of your customized document design and brand colors."
+    notes: "This is a live preview of the Warrior High-Fidelity corporate document layout."
   };
 
   if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-blue-600" /></div>;
@@ -289,7 +310,7 @@ export default function SettingsPage() {
                           <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Base Layout</Label>
                           <Select 
                             name="defaultTemplate_invoice" 
-                            defaultValue={settings?.defaultTemplate_invoice || "erppro"}
+                            defaultValue={settings?.defaultTemplate_invoice || "warrior"}
                             onValueChange={setPreviewLayout}
                           >
                             <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-100"><SelectValue /></SelectTrigger>
@@ -367,14 +388,14 @@ export default function SettingsPage() {
                     <div className="space-y-4">
                        <div className="space-y-1.5">
                          <Label className="text-[9px] font-black uppercase opacity-60">Default Quotation Layout</Label>
-                         <Select name="defaultTemplate_quotation" defaultValue={settings?.defaultTemplate_quotation || "erppro"}>
+                         <Select name="defaultTemplate_quotation" defaultValue={settings?.defaultTemplate_quotation || "warrior"}>
                            <SelectTrigger className="h-9 rounded-lg bg-white/10 border-none ring-1 ring-white/20 text-xs"><SelectValue /></SelectTrigger>
                            <SelectContent>{DOCUMENT_LAYOUTS.map(l => <SelectItem key={l.value} value={l.value}>{l.name}</SelectItem>)}</SelectContent>
                          </Select>
                        </div>
                        <div className="space-y-1.5">
                          <Label className="text-[9px] font-black uppercase opacity-60">Default Purchase Order Layout</Label>
-                         <Select name="defaultTemplate_po" defaultValue={settings?.defaultTemplate_po || "erppro"}>
+                         <Select name="defaultTemplate_po" defaultValue={settings?.defaultTemplate_po || "warrior"}>
                            <SelectTrigger className="h-9 rounded-lg bg-white/10 border-none ring-1 ring-white/20 text-xs"><SelectValue /></SelectTrigger>
                            <SelectContent>{DOCUMENT_LAYOUTS.map(l => <SelectItem key={l.value} value={l.value}>{l.name}</SelectItem>)}</SelectContent>
                          </Select>

@@ -8,6 +8,7 @@ import { MinimalLayout } from "./layouts/minimal-layout"
 import { ModernLayout } from "./layouts/modern-layout"
 import { ThermalLayout } from "./layouts/thermal-layout"
 import { ERPProLayout } from "./layouts/erp-pro-layout"
+import { WarriorLayout } from "./layouts/warrior-layout"
 
 export interface DocumentItem {
   name: string;
@@ -20,7 +21,7 @@ export interface DocumentItem {
   discount?: number;
 }
 
-export type DocumentLayoutType = 'professional' | 'minimal' | 'modern' | 'thermal' | 'erppro';
+export type DocumentLayoutType = 'professional' | 'minimal' | 'modern' | 'thermal' | 'erppro' | 'warrior';
 
 export interface DocumentTemplateProps {
   title: string;
@@ -49,16 +50,18 @@ export function DocumentTemplate(props: DocumentTemplateProps) {
   const { get_setting } = useSettings();
   
   // Determine layout: Override > Default per type > Fallback
-  const defaultLayout = get_setting(`defaultTemplate_${props.type || 'invoice'}`, 'erppro') as DocumentLayoutType;
+  const defaultLayout = get_setting(`defaultTemplate_${props.type || 'invoice'}`, 'warrior') as DocumentLayoutType;
   const layout = props.layoutOverride || defaultLayout;
 
   // Custom styling variables
-  const primaryColor = props.customStyles?.primaryColor || get_setting('docPrimaryColor', '#4F46E5');
-  const accentColor = props.customStyles?.accentColor || get_setting('docAccentColor', '#22C55E');
+  const primaryColor = props.customStyles?.primaryColor || get_setting('docPrimaryColor', '#0056B3');
+  const accentColor = props.customStyles?.accentColor || get_setting('docAccentColor', '#F57C00');
   const fontSize = props.customStyles?.fontSize || get_setting('docFontSize', 'standard');
 
   const renderLayout = () => {
     switch (layout) {
+      case 'warrior':
+        return <WarriorLayout {...props} />;
       case 'minimal':
         return <MinimalLayout {...props} />;
       case 'modern':
