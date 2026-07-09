@@ -26,22 +26,22 @@ export function WarriorLayout({
     const name = settings?.companyName || "Warrior Tech System";
     if (name.toLowerCase() === "warrior tech system") {
       return (
-        <h1 className="text-[42px] font-black tracking-tighter flex items-center justify-center leading-none">
+        <h1 className="text-[40px] font-black tracking-tighter flex items-center justify-center leading-none">
           <span className="text-[#00D4AA]">WARRIOR</span>
           <span className="text-[#0056B3] ml-2">TECH</span>
           <span className="text-[#F57C00] ml-2">SYSTEM</span>
         </h1>
       );
     }
-    return <h1 className="text-[42px] font-black tracking-tighter text-[#0056B3]">{name}</h1>;
+    return <h1 className="text-[40px] font-black tracking-tighter text-[#0056B3]">{name}</h1>;
   };
 
   return (
-    <div className="flex flex-col min-h-full bg-white text-[#222222] font-sans p-0 print:p-0 select-none">
+    <div className="flex flex-col min-h-full bg-white text-[#222222] font-sans p-0 select-none">
       {/* HEADER SECTION - EXACT REPLICA */}
       <div className="relative text-center space-y-1 mb-2 px-4">
         <div className="flex items-center justify-center gap-6 mb-1">
-          {/* Admin Logo */}
+          {/* Admin Uploaded Logo */}
           {settings?.companyLogo && (
             <div className="w-16 h-16 shrink-0">
               <img src={settings.companyLogo} alt="Logo" className="w-full h-full object-contain" />
@@ -70,7 +70,7 @@ export function WarriorLayout({
           <span className="text-[#0056B3]">📍</span> {settings?.address || "GP.Ja-66/2, Gojnabi Rd, Wireless Gate, Mohakhali, Gulshan, Dhaka-1212."}
         </p>
         
-        {/* Dashed Red Line */}
+        {/* Dashed Red Line - Exact Style */}
         <div className="border-t border-red-500/40 border-dashed w-full pt-1 mt-3" />
       </div>
 
@@ -97,12 +97,12 @@ export function WarriorLayout({
             <span className="font-bold uppercase">Invoice No</span> <span>:</span> <span className="font-black text-blue-800">{docNumber}</span>
             <span className="font-bold uppercase">Invoice Date</span> <span>:</span> <span>{new Date(date).toLocaleDateString('en-GB')}</span>
             <span className="font-bold uppercase">Payment Methods</span> <span>:</span> <span>Cash / Digital</span>
-            <span className="font-bold uppercase">Status</span> <span>:</span> <span className={cn("font-black", status === 'paid' ? 'text-green-700' : 'text-red-600')}>{status || 'Paid'}</span>
+            <span className="font-bold uppercase">Status</span> <span>:</span> <span className={cn("font-black", status === 'paid' ? 'text-green-700' : 'text-red-600')}>{status?.toUpperCase() || 'PAID'}</span>
           </div>
         </div>
       </div>
 
-      {/* IMPLEMENTATION BANNERS */}
+      {/* IMPLEMENTATION BANNERS - EXACT COLORS */}
       <div className="px-4">
         <div className="bg-[#FDEBD0] border border-black p-2 text-center">
           <h3 className="text-[18px] font-black text-[#0056B3] uppercase underline underline-offset-4 tracking-tight">
@@ -116,24 +116,24 @@ export function WarriorLayout({
         </div>
       </div>
 
-      {/* MAIN DATA TABLE */}
+      {/* MAIN DATA TABLE - EXACT STRUCTURE */}
       <div className="px-4 flex-1">
         <table className="w-full border-collapse border border-black table-fixed">
           <thead>
             <tr className="bg-[#F57C00] text-white">
-              <th className="border border-black w-14 py-2 text-[10px] font-black uppercase">Sl. No</th>
+              <th className="border border-black w-12 py-2 text-[10px] font-black uppercase">Sl. No</th>
               <th className="border border-black px-4 py-2 text-left text-[10px] font-black uppercase">Product Name and Description</th>
-              <th className="border border-black w-24 py-2 text-center text-[10px] font-black uppercase">Qty (Unit)</th>
-              <th className="border border-black w-28 py-2 text-right text-[10px] font-black uppercase px-2 text-nowrap">Unite Price</th>
-              <th className="border border-black w-24 py-2 text-center text-[10px] font-black uppercase">Discount</th>
-              <th className="border border-black w-32 py-2 text-right text-[10px] font-black uppercase pr-4">Amount</th>
+              <th className="border border-black w-20 py-2 text-center text-[10px] font-black uppercase">Qty (Unit)</th>
+              <th className="border border-black w-24 py-2 text-right text-[10px] font-black uppercase px-2">Unite Price</th>
+              <th className="border border-black w-20 py-2 text-center text-[10px] font-black uppercase">Discount</th>
+              <th className="border border-black w-28 py-2 text-right text-[10px] font-black uppercase pr-4">Amount</th>
             </tr>
           </thead>
           <tbody>
             {items.map((item, idx) => (
-              <tr key={idx} className="border-b border-black align-top min-h-[80px]">
-                <td className="border-x border-black p-3 text-center text-[11px] font-bold">{(idx + 1).toString().padStart(2, '0')}</td>
-                <td className="border-x border-black p-3">
+              <tr key={idx} className="border-b border-black align-top">
+                <td className="border-x border-black p-2 text-center text-[11px] font-bold">{(idx + 1).toString().padStart(2, '0')}</td>
+                <td className="border-x border-black p-2">
                   <div className="text-[10px] space-y-0.5 leading-normal">
                     <p><span className="font-bold">Product Name:</span> {item.name}</p>
                     <p><span className="font-bold">Brand:</span> {item.description?.includes('Brand') ? item.description.split('Brand:')[1].split('|')[0].trim() : 'Warrior'}</p>
@@ -142,41 +142,41 @@ export function WarriorLayout({
                     <p><span className="font-bold">Warranty:</span> 12 Months</p>
                   </div>
                 </td>
-                <td className="border-x border-black p-3 text-center text-[11px] font-bold">{item.quantity} ({item.unit || 'Pcs'})</td>
-                <td className="border-x border-black p-3 text-right text-[11px] font-bold px-2">{item.unitPrice.toLocaleString()}</td>
-                <td className="border-x border-black p-3 text-center text-[11px] font-bold">{item.discount || ''}</td>
-                <td className="border-x border-black p-3 text-right text-[11px] font-black pr-4">{item.total.toLocaleString()}</td>
+                <td className="border-x border-black p-2 text-center text-[11px] font-bold">{item.quantity} ({item.unit || 'Pcs'})</td>
+                <td className="border-x border-black p-2 text-right text-[11px] font-bold px-2">{item.unitPrice.toLocaleString()}</td>
+                <td className="border-x border-black p-2 text-center text-[11px] font-bold">{item.discount || ''}</td>
+                <td className="border-x border-black p-2 text-right text-[11px] font-black pr-4">{item.total.toLocaleString()}</td>
               </tr>
             ))}
             
-            {/* INTEGRATED SUMMARY FOOTER */}
+            {/* INTEGRATED SUMMARY FOOTER - EXACT REPLICA */}
             <tr className="border-t border-black">
                <td colSpan={3} rowSpan={6} className="p-4 align-top border border-black relative">
                   <p className="text-[11px] font-black uppercase underline decoration-1 underline-offset-2">In Word Amount:</p>
                   <p className="text-[10px] font-bold italic text-slate-500 mt-3 capitalize">--- Only</p>
                </td>
-               <td colSpan={2} className="bg-[#FFC107] border border-black p-1.5 text-right text-[10px] font-black uppercase px-2">Sub Total (BDT)</td>
-               <td className="border border-black p-1.5 text-right text-[11px] font-black pr-4">{subtotal.toLocaleString()}</td>
+               <td colSpan={2} className="bg-[#FFC107] border border-black p-1 text-right text-[10px] font-black uppercase px-2">Sub Total (BDT)</td>
+               <td className="border border-black p-1 text-right text-[11px] font-black pr-4">{subtotal.toLocaleString()}</td>
             </tr>
             <tr>
-               <td colSpan={2} className="bg-[#D6EAF8] border border-black p-1.5 text-right text-[10px] font-black uppercase px-2">Discount (BDT)</td>
-               <td className="border border-black p-1.5 text-right text-[11px] font-bold pr-4">{(discount || 0).toLocaleString()}</td>
+               <td colSpan={2} className="bg-[#D6EAF8] border border-black p-1 text-right text-[10px] font-black uppercase px-2">Discount (BDT)</td>
+               <td className="border border-black p-1 text-right text-[11px] font-bold pr-4">{(discount || 0).toLocaleString()}</td>
             </tr>
             <tr>
-               <td colSpan={2} className="bg-[#D6EAF8] border border-black p-1.5 text-right text-[10px] font-black uppercase px-2">VAT</td>
-               <td className="border border-black p-1.5 text-right text-[11px] font-bold pr-4">{(taxAmount || 0).toLocaleString()}</td>
+               <td colSpan={2} className="bg-[#D6EAF8] border border-black p-1 text-right text-[10px] font-black uppercase px-2">VAT</td>
+               <td className="border border-black p-1 text-right text-[11px] font-bold pr-4">{(taxAmount || 0).toLocaleString()}</td>
             </tr>
             <tr>
-               <td colSpan={2} className="bg-[#AED6F1] border border-black p-1.5 text-right text-[10px] font-black uppercase px-2">Grand Total</td>
-               <td className="border border-black p-1.5 text-right text-[14px] font-black pr-4 text-[#0056B3]">{grandTotal.toLocaleString()}</td>
+               <td colSpan={2} className="bg-[#AED6F1] border border-black p-1 text-right text-[10px] font-black uppercase px-2">Grand Total</td>
+               <td className="border border-black p-1 text-right text-[14px] font-black pr-4 text-[#0056B3]">{grandTotal.toLocaleString()}</td>
             </tr>
             <tr>
-               <td colSpan={2} className="bg-[#D5F5E3] border border-black p-1.5 text-right text-[10px] font-black uppercase px-2">Paid</td>
-               <td className="border border-black p-1.5 text-right text-[11px] font-black pr-4 text-[#155724]">{grandTotal.toLocaleString()}</td>
+               <td colSpan={2} className="bg-[#D5F5E3] border border-black p-1 text-right text-[10px] font-black uppercase px-2">Paid</td>
+               <td className="border border-black p-1 text-right text-[11px] font-black pr-4 text-[#155724]">{grandTotal.toLocaleString()}</td>
             </tr>
             <tr>
-               <td colSpan={2} className="bg-[#D5F5E3] border border-black p-1.5 text-right text-[10px] font-black uppercase px-2">Due</td>
-               <td className="border border-black p-1.5 text-right text-[11px] font-black pr-4 text-[#721C24]">0.00</td>
+               <td colSpan={2} className="bg-[#D5F5E3] border border-black p-1 text-right text-[10px] font-black uppercase px-2">Due</td>
+               <td className="border border-black p-1 text-right text-[11px] font-black pr-4 text-[#721C24]">0.00</td>
             </tr>
             <tr className="bg-[#FEF9E7]">
                <td colSpan={6} className="border border-black p-1 text-center text-[10px] font-bold italic">
@@ -214,7 +214,6 @@ export function WarriorLayout({
             <p className="text-[10px] font-black uppercase tracking-tighter">Checked By</p>
           </div>
           <div className="space-y-2 relative group">
-            {/* Signature Seal Replica */}
             <div className="absolute -top-14 left-1/2 -translate-x-1/2 opacity-30 pointer-events-none flex flex-col items-center">
               <div className="w-16 h-16 rounded-full border-2 border-slate-500 flex items-center justify-center text-[8px] font-black rotate-[15deg] uppercase text-center leading-none">
                 Proprietor<br/>WTS
@@ -227,7 +226,7 @@ export function WarriorLayout({
         </div>
       </div>
 
-      {/* CORPORATE FOOTER */}
+      {/* CORPORATE FOOTER - EXACT SERVICE LIST */}
       <div className="mt-auto pt-6 pb-6 text-center space-y-2 border-t border-[#00D4AA] border-dotted mx-4">
         <p className="text-[10px] font-black text-slate-400 flex items-center justify-center gap-2">
           ❤ Thank You for Your Business ❤
@@ -249,7 +248,7 @@ export function WarriorLayout({
         @media print {
           @page {
             size: A4;
-            margin: 10mm;
+            margin: 5mm;
           }
           .document-container {
             padding: 0 !important;
