@@ -2,31 +2,28 @@ import React from 'react';
 
 export function InvoiceInformation() {
   return (
-    <section style={{ border: '1px solid #000', padding: '8px', minHeight: '90px' }}>
-      <h3 style={{ margin: '0 0 5px 0', fontSize: '11px', fontWeight: 'bold', borderBottom: '1px solid #000', textTransform: 'uppercase' }}>
-        Invoice Information
-      </h3>
-      <table style={{ width: '100%', fontSize: '10px', borderCollapse: 'collapse' }}>
+    <section style={{ padding: '0 10px' }}>
+      <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse', lineHeight: '1.6', marginTop: '20px' }}>
         <tbody>
           <tr>
-            <td style={{ width: '80px', fontWeight: 'bold' }}>INVOICE NO</td>
+            <td style={{ width: '100px', fontWeight: 'bold', textTransform: 'uppercase' }}>Invoice No</td>
             <td style={{ width: '10px' }}>:</td>
-            <td>[INV-000000]</td>
+            <td style={{ fontWeight: '900', color: '#0056B3' }}>WTS/INV-2026-0001</td>
           </tr>
           <tr>
-            <td style={{ fontWeight: 'bold' }}>DATE</td>
+            <td style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>Invoice Date</td>
             <td>:</td>
-            <td>[INVOICE DATE]</td>
+            <td>{new Date().toLocaleDateString('en-GB')}</td>
           </tr>
           <tr>
-            <td style={{ fontWeight: 'bold' }}>DUE DATE</td>
+            <td style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>Payment Methods</td>
             <td>:</td>
-            <td>[DUE DATE]</td>
+            <td>Cash / Digital</td>
           </tr>
           <tr>
-            <td style={{ fontWeight: 'bold' }}>STATUS</td>
+            <td style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>Status</td>
             <td>:</td>
-            <td>[PAID / DUE]</td>
+            <td style={{ fontWeight: '900', color: '#008000' }}>PAID</td>
           </tr>
         </tbody>
       </table>

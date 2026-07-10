@@ -10,8 +10,8 @@ import { SignatureSection } from '@/components/invoice/SignatureSection';
 import { InvoiceFooter } from '@/components/invoice/InvoiceFooter';
 
 /**
- * Main Invoice Page - Pixel-Perfect A4 Layout
- * Optimized for standard ERP printing.
+ * Main Invoice Page - Pixel-Perfect Official Replica
+ * Strictly follows the traditional Warrior Tech System corporate layout.
  */
 export default function InvoicePage() {
   return (
@@ -19,28 +19,28 @@ export default function InvoicePage() {
       width: '210mm', 
       minHeight: '297mm', 
       margin: '0 auto', 
-      padding: '10mm 15mm', 
+      padding: '10mm 5mm', 
       boxSizing: 'border-box',
       backgroundColor: '#ffffff',
-      color: '#000000',
-      fontFamily: '"Times New Roman", Times, serif',
+      color: '#222222',
+      fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
       fontSize: '11px',
-      lineHeight: '1.2'
+      lineHeight: '1.2',
+      display: 'flex',
+      flexDirection: 'column'
     }}>
       <InvoiceHeader />
       
-      <div style={{ textAlign: 'center', margin: '15px 0' }}>
-        <DocumentTitle />
-      </div>
+      <DocumentTitle />
 
-      {/* Information Section: Synchronized horizontal alignment */}
+      {/* Information Section: Two-column grid */}
       <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '15px' }}>
         <tbody>
           <tr>
-            <td style={{ width: '50%', verticalAlign: 'top', paddingRight: '5px' }}>
+            <td style={{ width: '55%', verticalAlign: 'top' }}>
               <CustomerInformation />
             </td>
-            <td style={{ width: '50%', verticalAlign: 'top', paddingLeft: '5px' }}>
+            <td style={{ width: '45%', verticalAlign: 'top' }}>
               <InvoiceInformation />
             </td>
           </tr>
@@ -49,17 +49,15 @@ export default function InvoicePage() {
 
       <ProductTable />
 
-      <div style={{ width: '100%', marginTop: '10px' }}>
-        <RemarksSection />
-      </div>
-
-      <div style={{ width: '100%', marginTop: '10px' }}>
+      <div style={{ width: '100%', padding: '0 5px' }}>
         <ProjectInformation />
       </div>
 
-      <div style={{ width: '100%', marginTop: '120px' }}>
-        <SignatureSection />
+      <div style={{ width: '100%', padding: '0 5px', marginTop: '10px' }}>
+        <RemarksSection />
       </div>
+
+      <SignatureSection />
 
       <InvoiceFooter />
     </div>
