@@ -1,10 +1,13 @@
 import React from 'react';
 
+/**
+ * Locked Block: 105mm Width x 28mm Height
+ */
 export function CustomerInformation() {
   return (
-    <div style={{ width: '90mm' }}>
+    <div style={{ width: '105mm', height: '28mm' }}>
       <h3 style={{ 
-        margin: '0 0 3mm 0', 
+        margin: '0 0 2mm 0', 
         fontSize: '12px', 
         fontWeight: '900', 
         borderBottom: '0.3mm solid #000', 
@@ -14,10 +17,10 @@ export function CustomerInformation() {
       }}>
         Customer Info
       </h3>
-      <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse' }}>
+      <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
         <tbody>
           <tr>
-            <td style={{ width: '20mm', fontWeight: 'bold', padding: '0.5mm 0' }}>Name</td>
+            <td style={{ width: '22mm', fontWeight: 'bold', padding: '0.5mm 0' }}>Name</td>
             <td style={{ width: '4mm', textAlign: 'center' }}>:</td>
             <td style={{ fontWeight: '900', textTransform: 'uppercase' }}>GLOBAL ENTERPRISE LTD.</td>
           </tr>

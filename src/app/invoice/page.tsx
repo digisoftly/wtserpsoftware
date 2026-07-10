@@ -10,8 +10,9 @@ import { SignatureSection } from '@/components/invoice/SignatureSection';
 import { InvoiceFooter } from '@/components/invoice/InvoiceFooter';
 
 /**
- * WarriorERP - Pixel-Perfect A4 Replica
- * Dimensions: 210mm x 297mm (Fixed)
+ * WarriorERP - Permanently Locked A4 Print Specification
+ * Page Size: 210mm x 297mm
+ * Margins: 10mm Left/Right
  */
 export default function InvoicePage() {
   return (
@@ -25,23 +26,24 @@ export default function InvoicePage() {
       color: '#222222',
       fontFamily: '"Times New Roman", Times, serif',
       position: 'relative',
-      overflow: 'hidden'
-    }}>
-      <div style={{ padding: '8mm 10mm' }}>
+      overflow: 'hidden',
+      border: 'none'
+    }} className="no-scrollbar">
+      <div style={{ padding: '0 10mm' }}>
         <InvoiceHeader />
         
-        <div style={{ marginTop: '5mm' }}>
+        <div style={{ marginTop: '7mm' }}>
           <DocumentTitle />
         </div>
 
-        {/* Info Section Table */}
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '5mm', marginBottom: '5mm' }}>
+        {/* Info Section Table - Fixed Border-to-Border Height 28mm */}
+        <table style={{ width: '190mm', height: '28mm', borderCollapse: 'collapse', marginTop: '5mm', marginBottom: '5mm', tableLayout: 'fixed' }}>
           <tbody>
             <tr>
-              <td style={{ width: '105mm', verticalAlign: 'top', paddingLeft: '5mm' }}>
+              <td style={{ width: '105mm', verticalAlign: 'top', padding: '0' }}>
                 <CustomerInformation />
               </td>
-              <td style={{ width: '85mm', verticalAlign: 'top', paddingRight: '5mm' }}>
+              <td style={{ width: '85mm', verticalAlign: 'top', padding: '0' }}>
                 <InvoiceInformation />
               </td>
             </tr>
@@ -50,7 +52,7 @@ export default function InvoicePage() {
 
         <ProductTable />
 
-        <div style={{ marginTop: '8mm' }}>
+        <div style={{ marginTop: '5mm' }}>
           <ProjectInformation />
         </div>
 
@@ -61,7 +63,7 @@ export default function InvoicePage() {
         <SignatureSection />
       </div>
 
-      <div style={{ position: 'absolute', bottom: '8mm', width: '210mm' }}>
+      <div style={{ position: 'absolute', bottom: '0', width: '210mm' }}>
         <InvoiceFooter />
       </div>
     </div>

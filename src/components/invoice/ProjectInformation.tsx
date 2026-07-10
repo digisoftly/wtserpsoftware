@@ -1,9 +1,12 @@
 import React from 'react';
 
+/**
+ * Locked Block Height: 30mm
+ */
 export function ProjectInformation() {
   return (
-    <div style={{ width: '190mm', border: '0.3mm solid #000', padding: '3mm 5mm', backgroundColor: '#fff', margin: '0 auto' }}>
-      <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse', lineHeight: '1.5' }}>
+    <div style={{ width: '190mm', height: '30mm', border: '0.3mm solid #000', padding: '3mm 5mm', boxSizing: 'border-box', backgroundColor: '#fff' }}>
+      <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse', lineHeight: '1.5', tableLayout: 'fixed' }}>
         <tbody>
           <tr>
             <td style={{ width: '40mm', fontWeight: 'bold' }}>Project Name</td>
@@ -24,11 +27,6 @@ export function ProjectInformation() {
             <td style={{ fontWeight: 'bold' }}>Service Warranty</td>
             <td style={{ textAlign: 'center' }}>:</td>
             <td style={{ fontWeight: 'bold', color: '#0056B3' }}>24 Months Comprehensive</td>
-          </tr>
-          <tr>
-            <td style={{ fontWeight: 'bold' }}>Project Manager</td>
-            <td style={{ textAlign: 'center' }}>:</td>
-            <td>Admin - Warrior Systems</td>
           </tr>
         </tbody>
       </table>

@@ -1,9 +1,12 @@
 import React from 'react';
 
+/**
+ * Locked Block: 85mm Width x 28mm Height
+ */
 export function InvoiceInformation() {
   return (
-    <div style={{ width: '80mm' }}>
-      <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse', marginTop: '7mm' }}>
+    <div style={{ width: '85mm', height: '28mm', paddingLeft: '5mm' }}>
+      <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse', marginTop: '6mm', tableLayout: 'fixed' }}>
         <tbody>
           <tr>
             <td style={{ width: '35mm', fontWeight: 'bold', textTransform: 'uppercase', padding: '0.5mm 0' }}>Invoice No</td>
