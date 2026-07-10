@@ -2,15 +2,14 @@ import React from 'react';
 
 export function InvoiceHeader() {
   return (
-    <header>
-      <div>[Logo Placeholder]</div>
-      <div>
-        <div>Company Name</div>
-        <div>Tagline</div>
-        <div>Service Lines</div>
-        <div>Contact Details</div>
-        <div>Address</div>
+    <header style={{ height: '100px', width: '100%', borderBottom: '1px solid #eee' }}>
+      <div style={{ float: 'left' }}>
+        [COMPANY LOGO PLACEHOLDER]
       </div>
+      <div style={{ float: 'right', textAlign: 'right' }}>
+        [COMPANY CONTACT DETAILS]
+      </div>
+      <div style={{ clear: 'both' }}></div>
     </header>
   );
 }

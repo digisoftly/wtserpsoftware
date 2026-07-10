@@ -2,8 +2,8 @@ import React from 'react';
 
 export function DocumentTitle() {
   return (
-    <div>
-      <h1>DOCUMENT TITLE</h1>
-    </div>
+    <h1 style={{ margin: 0, textTransform: 'uppercase' }}>
+      INVOICE / QUOTATION
+    </h1>
   );
 }

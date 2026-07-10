@@ -4,34 +4,52 @@ import { DocumentTitle } from '@/components/invoice/DocumentTitle';
 import { CustomerInformation } from '@/components/invoice/CustomerInformation';
 import { InvoiceInformation } from '@/components/invoice/InvoiceInformation';
 import { ProductTable } from '@/components/invoice/ProductTable';
-import { PaymentSummary } from '@/components/invoice/PaymentSummary';
-import { PaymentInformation } from '@/components/invoice/PaymentInformation';
 import { RemarksSection } from '@/components/invoice/RemarksSection';
 import { ProjectInformation } from '@/components/invoice/ProjectInformation';
 import { SignatureSection } from '@/components/invoice/SignatureSection';
 import { InvoiceFooter } from '@/components/invoice/InvoiceFooter';
 
+/**
+ * Main Invoice Page - A4 Layout Assembly
+ * Rules: Traditional ERP layout, Table-based, No Dashboard UI.
+ */
 export default function InvoicePage() {
   return (
-    <div className="p-10 mx-auto" style={{ width: '210mm', minHeight: '297mm' }}>
+    <div style={{ width: '210mm', minHeight: '297mm', margin: '0 auto', padding: '10mm', boxSizing: 'border-box' }}>
       <InvoiceHeader />
-      <DocumentTitle />
       
-      <div className="flex gap-10">
-        <CustomerInformation />
-        <InvoiceInformation />
+      <div style={{ textAlign: 'center', margin: '20px 0' }}>
+        <DocumentTitle />
       </div>
 
+      {/* Information Section using table for side-by-side alignment */}
+      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px' }}>
+        <tbody>
+          <tr>
+            <td style={{ width: '50%', verticalAlign: 'top', paddingRight: '10px' }}>
+              <CustomerInformation />
+            </td>
+            <td style={{ width: '50%', verticalAlign: 'top', paddingLeft: '10px' }}>
+              <InvoiceInformation />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
       <ProductTable />
-      <PaymentSummary />
-      
-      <div className="flex gap-10">
-        <PaymentInformation />
+
+      <div style={{ width: '100%', marginTop: '20px' }}>
         <RemarksSection />
       </div>
 
-      <ProjectInformation />
-      <SignatureSection />
+      <div style={{ width: '100%', marginTop: '20px' }}>
+        <ProjectInformation />
+      </div>
+
+      <div style={{ width: '100%', marginTop: '60px' }}>
+        <SignatureSection />
+      </div>
+
       <InvoiceFooter />
     </div>
   );
