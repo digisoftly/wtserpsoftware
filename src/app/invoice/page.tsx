@@ -10,56 +10,60 @@ import { SignatureSection } from '@/components/invoice/SignatureSection';
 import { InvoiceFooter } from '@/components/invoice/InvoiceFooter';
 
 /**
- * Main Invoice Page - Pixel-Perfect Official Replica
- * Strictly follows the traditional Warrior Tech System corporate layout.
+ * WarriorERP - Pixel-Perfect A4 Replica
+ * Dimensions: 210mm x 297mm (Fixed)
  */
 export default function InvoicePage() {
   return (
     <div style={{ 
       width: '210mm', 
-      minHeight: '297mm', 
+      height: '297mm', 
       margin: '0 auto', 
-      padding: '10mm 5mm', 
+      padding: '0', 
       boxSizing: 'border-box',
       backgroundColor: '#ffffff',
       color: '#222222',
-      fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
-      fontSize: '11px',
-      lineHeight: '1.2',
-      display: 'flex',
-      flexDirection: 'column'
+      fontFamily: '"Times New Roman", Times, serif',
+      position: 'relative',
+      overflow: 'hidden'
     }}>
-      <InvoiceHeader />
-      
-      <DocumentTitle />
+      <div style={{ padding: '8mm 10mm' }}>
+        <InvoiceHeader />
+        
+        <div style={{ marginTop: '5mm' }}>
+          <DocumentTitle />
+        </div>
 
-      {/* Information Section: Two-column grid */}
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '15px' }}>
-        <tbody>
-          <tr>
-            <td style={{ width: '55%', verticalAlign: 'top' }}>
-              <CustomerInformation />
-            </td>
-            <td style={{ width: '45%', verticalAlign: 'top' }}>
-              <InvoiceInformation />
-            </td>
-          </tr>
-        </tbody>
-      </table>
+        {/* Info Section Table */}
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '5mm', marginBottom: '5mm' }}>
+          <tbody>
+            <tr>
+              <td style={{ width: '105mm', verticalAlign: 'top', paddingLeft: '5mm' }}>
+                <CustomerInformation />
+              </td>
+              <td style={{ width: '85mm', verticalAlign: 'top', paddingRight: '5mm' }}>
+                <InvoiceInformation />
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
-      <ProductTable />
+        <ProductTable />
 
-      <div style={{ width: '100%', padding: '0 5px' }}>
-        <ProjectInformation />
+        <div style={{ marginTop: '8mm' }}>
+          <ProjectInformation />
+        </div>
+
+        <div style={{ marginTop: '5mm' }}>
+          <RemarksSection />
+        </div>
+
+        <SignatureSection />
       </div>
 
-      <div style={{ width: '100%', padding: '0 5px', marginTop: '10px' }}>
-        <RemarksSection />
+      <div style={{ position: 'absolute', bottom: '8mm', width: '210mm' }}>
+        <InvoiceFooter />
       </div>
-
-      <SignatureSection />
-
-      <InvoiceFooter />
     </div>
   );
 }

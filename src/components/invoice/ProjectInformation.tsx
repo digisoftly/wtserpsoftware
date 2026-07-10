@@ -2,36 +2,36 @@ import React from 'react';
 
 export function ProjectInformation() {
   return (
-    <section style={{ border: '1px solid #000', padding: '12px', marginTop: '15px', backgroundColor: '#fff' }}>
-      <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse', lineHeight: '1.4' }}>
+    <div style={{ width: '190mm', border: '0.3mm solid #000', padding: '3mm 5mm', backgroundColor: '#fff', margin: '0 auto' }}>
+      <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse', lineHeight: '1.5' }}>
         <tbody>
           <tr>
-            <td style={{ width: '180px', fontWeight: 'bold' }}>Project Name</td>
-            <td style={{ width: '20px' }}>:</td>
-            <td style={{ fontWeight: 'bold', color: '#333' }}>Corporate Security System Installation</td>
+            <td style={{ width: '40mm', fontWeight: 'bold' }}>Project Name</td>
+            <td style={{ width: '5mm', textAlign: 'center' }}>:</td>
+            <td style={{ fontWeight: 'bold', color: '#333' }}>Corporate HQ Security Expansion Phase 2</td>
           </tr>
           <tr>
             <td style={{ fontWeight: 'bold' }}>Quotation Reference</td>
-            <td>:</td>
-            <td>WTS/QT/2026-104</td>
+            <td style={{ textAlign: 'center' }}>:</td>
+            <td>WTS/QT/2026/S-1042</td>
           </tr>
           <tr>
             <td style={{ fontWeight: 'bold' }}>Delivery Challan</td>
-            <td>:</td>
-            <td>---</td>
+            <td style={{ textAlign: 'center' }}>:</td>
+            <td>CHL-2026-088</td>
           </tr>
           <tr>
             <td style={{ fontWeight: 'bold' }}>Service Warranty</td>
-            <td>:</td>
-            <td style={{ fontWeight: 'bold', color: '#0056B3' }}>12 Months</td>
+            <td style={{ textAlign: 'center' }}>:</td>
+            <td style={{ fontWeight: 'bold', color: '#0056B3' }}>24 Months Comprehensive</td>
           </tr>
           <tr>
             <td style={{ fontWeight: 'bold' }}>Project Manager</td>
-            <td>:</td>
-            <td>System Administrator</td>
+            <td style={{ textAlign: 'center' }}>:</td>
+            <td>Admin - Warrior Systems</td>
           </tr>
         </tbody>
       </table>
-    </section>
+    </div>
   );
 }
