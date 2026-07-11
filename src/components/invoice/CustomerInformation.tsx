@@ -5,39 +5,40 @@ import React from 'react';
  */
 export function CustomerInformation() {
   return (
-    <div style={{ width: '105mm', height: '28mm' }}>
+    <div style={{ width: '105mm', height: '28mm', boxSizing: 'border-box' }}>
       <h3 style={{ 
-        margin: '0 0 2mm 0', 
-        fontSize: '12px', 
+        margin: '0 0 3mm 0', 
+        fontSize: '13px', 
         fontWeight: '900', 
-        borderBottom: '0.3mm solid #000', 
+        borderBottom: '0.4mm solid #000', 
         width: 'fit-content', 
-        paddingRight: '15mm', 
-        textTransform: 'uppercase' 
+        paddingRight: '10mm', 
+        textTransform: 'uppercase',
+        fontFamily: 'inherit'
       }}>
         Customer Info
       </h3>
-      <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+      <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
         <tbody>
           <tr>
-            <td style={{ width: '22mm', fontWeight: 'bold', padding: '0.5mm 0' }}>Name</td>
-            <td style={{ width: '4mm', textAlign: 'center' }}>:</td>
+            <td style={{ width: '20mm', fontWeight: 'bold', padding: '0.5mm 0' }}>Name</td>
+            <td style={{ width: '5mm', textAlign: 'center' }}>:</td>
             <td style={{ fontWeight: '900', textTransform: 'uppercase' }}>GLOBAL ENTERPRISE LTD.</td>
           </tr>
           <tr>
             <td style={{ fontWeight: 'bold', padding: '0.5mm 0' }}>Address</td>
             <td style={{ textAlign: 'center' }}>:</td>
-            <td>Plot-14, Sector-07, Uttara, Dhaka-1230.</td>
+            <td style={{ color: '#444' }}>Plot-14, Sector-07, Uttara, Dhaka-1230.</td>
           </tr>
           <tr>
             <td style={{ fontWeight: 'bold', padding: '0.5mm 0' }}>Location</td>
             <td style={{ textAlign: 'center' }}>:</td>
-            <td>Dhaka</td>
+            <td style={{ color: '#444' }}>Dhaka</td>
           </tr>
           <tr>
             <td style={{ fontWeight: 'bold', padding: '0.5mm 0' }}>Mobile No</td>
             <td style={{ textAlign: 'center' }}>:</td>
-            <td style={{ fontWeight: 'bold' }}>+880 1234-567890</td>
+            <td style={{ fontWeight: 'bold', color: '#444' }}>+880 1234-567890</td>
           </tr>
         </tbody>
       </table>
