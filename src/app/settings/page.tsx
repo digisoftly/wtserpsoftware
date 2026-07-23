@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -30,7 +31,9 @@ import {
   Palette,
   Type,
   Eye,
-  Maximize2
+  Maximize2,
+  FileText,
+  Table as TableIcon
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -243,6 +246,9 @@ export default function SettingsPage() {
             <TabsTrigger value="documents" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">
               <Layout className="h-3.5 w-3.5" /> Documents
             </TabsTrigger>
+            <TabsTrigger value="doc_content" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">
+              <Type className="h-3.5 w-3.5" /> Content
+            </TabsTrigger>
             <TabsTrigger value="navigation" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">{t('navigation')}</TabsTrigger>
             <TabsTrigger value="messages" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">{t('messages')}</TabsTrigger>
             <TabsTrigger value="business" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">{t('businessRules')}</TabsTrigger>
@@ -273,6 +279,7 @@ export default function SettingsPage() {
                     <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('phone')}</Label><Input name="phone" defaultValue={settings?.phone} className="h-11 rounded-xl" /></div>
                   </div>
                   <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('address')}</Label><Input name="address" defaultValue={settings?.address} className="h-11 rounded-xl" /></div>
+                  <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Slogan (Header Line 2)</Label><Input name="companySlogan" defaultValue={settings?.companySlogan} className="h-11 rounded-xl" /></div>
                 </CardContent>
               </Card>
               <Card className="border-none shadow-sm rounded-[2rem] flex flex-col items-center justify-center p-8 text-center bg-slate-50/50 ring-1 ring-slate-100">
@@ -291,6 +298,98 @@ export default function SettingsPage() {
                 </Button>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="doc_content" className="space-y-6">
+            <Card className="border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 overflow-hidden">
+               <CardHeader className="bg-slate-50/50 p-8 border-b">
+                 <div className="flex items-center gap-3">
+                   <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                     <Type className="h-5 w-5" />
+                   </div>
+                   <div>
+                     <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-900">Document Text Management</CardTitle>
+                     <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1">Manage all labels, headlines and static text for A4 printouts.</p>
+                   </div>
+                 </div>
+               </CardHeader>
+               <CardContent className="p-8 space-y-10">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    {/* Headlines */}
+                    <div className="space-y-6">
+                       <h3 className="text-xs font-black uppercase tracking-widest text-indigo-600 border-b pb-2 flex items-center gap-2">
+                         <FileText className="h-4 w-4" /> Banners & Headlines
+                       </h3>
+                       <div className="space-y-4">
+                          <div className="space-y-1.5">
+                             <Label className="text-[9px] font-black uppercase text-slate-400">Main Table Headline (Peach Banner)</Label>
+                             <Input name="docMainHeadline" defaultValue={settings?.docMainHeadline || "IMPLEMENTATION AND COST SUMMARY"} className="h-10 text-xs font-bold" />
+                          </div>
+                          <div className="space-y-1.5">
+                             <Label className="text-[9px] font-black uppercase text-slate-400">Sub Headline (Green Banner)</Label>
+                             <Input name="docSubHeadline" defaultValue={settings?.docSubHeadline || "BUDGETED PROPOSAL ON NETWORK SOLUTION AND CCTV."} className="h-10 text-xs font-bold" />
+                          </div>
+                          <div className="space-y-1.5">
+                             <Label className="text-[9px] font-black uppercase text-slate-400">In Word Label</Label>
+                             <Input name="docInWordLabel" defaultValue={settings?.docInWordLabel || "In Word Amount:"} className="h-10 text-xs font-bold" />
+                          </div>
+                       </div>
+                    </div>
+
+                    {/* Table Columns */}
+                    <div className="space-y-6">
+                       <h3 className="text-xs font-black uppercase tracking-widest text-indigo-600 border-b pb-2 flex items-center gap-2">
+                         <TableIcon className="h-4 w-4" /> Table Column Labels
+                       </h3>
+                       <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                             <Label className="text-[9px] font-black uppercase text-slate-400">Column 1 (SL)</Label>
+                             <Input name="tableCol_sl" defaultValue={settings?.tableCol_sl || "Sl. No"} className="h-10 text-xs font-bold" />
+                          </div>
+                          <div className="space-y-1.5">
+                             <Label className="text-[9px] font-black uppercase text-slate-400">Column 2 (Description)</Label>
+                             <Input name="tableCol_desc" defaultValue={settings?.tableCol_desc || "Product Name and Description"} className="h-10 text-xs font-bold" />
+                          </div>
+                          <div className="space-y-1.5">
+                             <Label className="text-[9px] font-black uppercase text-slate-400">Column 3 (Qty)</Label>
+                             <Input name="tableCol_qty" defaultValue={settings?.tableCol_qty || "Qty (Unit)"} className="h-10 text-xs font-bold" />
+                          </div>
+                          <div className="space-y-1.5">
+                             <Label className="text-[9px] font-black uppercase text-slate-400">Column 4 (Price)</Label>
+                             <Input name="tableCol_price" defaultValue={settings?.tableCol_price || "Unit Price"} className="h-10 text-xs font-bold" />
+                          </div>
+                       </div>
+                    </div>
+
+                    {/* Footer Content */}
+                    <div className="md:col-span-2 space-y-6">
+                       <h3 className="text-xs font-black uppercase tracking-widest text-indigo-600 border-b pb-2">Footer & Service Categories</h3>
+                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                          <div className="space-y-1.5 lg:col-span-4">
+                             <Label className="text-[9px] font-black uppercase text-slate-400">Thank You Message (With Hearts)</Label>
+                             <Input name="footerHeartMsg" defaultValue={settings?.footerHeartMsg || "Thank You For Your Business"} className="h-10 text-xs font-bold text-center" />
+                          </div>
+                          <div className="space-y-1.5">
+                             <Label className="text-[9px] font-black uppercase text-slate-400">Service 1</Label>
+                             <Input name="footerService1" defaultValue={settings?.footerService1 || "Security System"} className="h-10 text-xs font-bold" />
+                          </div>
+                          <div className="space-y-1.5">
+                             <Label className="text-[9px] font-black uppercase text-slate-400">Service 2</Label>
+                             <Input name="footerService2" defaultValue={settings?.footerService2 || "Communication System"} className="h-10 text-xs font-bold" />
+                          </div>
+                          <div className="space-y-1.5">
+                             <Label className="text-[9px] font-black uppercase text-slate-400">Service 3</Label>
+                             <Input name="footerService3" defaultValue={settings?.footerService3 || "Fire Safety"} className="h-10 text-xs font-bold" />
+                          </div>
+                          <div className="space-y-1.5">
+                             <Label className="text-[9px] font-black uppercase text-slate-400">Service 4</Label>
+                             <Input name="footerService4" defaultValue={settings?.footerService4 || "Network & IT Solutions"} className="h-10 text-xs font-bold" />
+                          </div>
+                       </div>
+                    </div>
+                  </div>
+               </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="documents" className="space-y-6">

@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -9,6 +10,7 @@ import { DocumentTemplateProps } from "../document-template"
  * Warrior Official Premium Layout
  * A pixel-perfect digital replica of the official Warrior Tech System A4 document.
  * Optimized for professional A4 portrait printing and PDF export.
+ * Dynamically managed by Admin settings.
  */
 export function WarriorLayout({
   title,
@@ -26,8 +28,26 @@ export function WarriorLayout({
 }: DocumentTemplateProps) {
   const { settings } = useSettings();
 
+  // Dynamic Content Fetching
+  const docMainHeadline = settings?.docMainHeadline || "IMPLEMENTATION AND COST SUMMARY";
+  const docSubHeadline = settings?.docSubHeadline || "BUDGETED PROPOSAL ON NETWORK SOLUTION AND CCTV.";
+  const docInWordLabel = settings?.docInWordLabel || "In Word Amount:";
+  
+  const tableCol_sl = settings?.tableCol_sl || "Sl. No";
+  const tableCol_desc = settings?.tableCol_desc || "Product Name and Description";
+  const tableCol_qty = settings?.tableCol_qty || "Qty (Unit)";
+  const tableCol_price = settings?.tableCol_price || "Unit Price";
+  const tableCol_disc = settings?.tableCol_disc || "Discount";
+  const tableCol_amount = settings?.tableCol_amount || "Amount";
+
+  const footerHeartMsg = settings?.footerHeartMsg || "Thank You For Your Business";
+  const footerService1 = settings?.footerService1 || "Security System";
+  const footerService2 = settings?.footerService2 || "Communication System";
+  const footerService3 = settings?.footerService3 || "Fire Safety";
+  const footerService4 = settings?.footerService4 || "Network & IT Solutions";
+
   return (
-    <div className="flex flex-col min-h-full bg-white text-[#222222] font-sans p-0 select-none border-none leading-tight">
+    <div className="flex flex-col min-h-full bg-white text-[#222222] font-sans p-0 select-none border-none leading-tight document-body">
       {/* 1. CORPORATE BRAND HEADER */}
       <div className="flex items-start justify-between px-6 pt-2 mb-2">
         <div className="flex items-center gap-6">
@@ -95,12 +115,12 @@ export function WarriorLayout({
       <div className="px-6 space-y-[1px]">
         <div className="bg-[#FDEBD0] border border-black p-1.5 text-center">
           <h3 className="text-[15px] font-black text-[#0056B3] uppercase underline underline-offset-4 tracking-tight">
-            IMPLEMENTATION AND COST SUMMARY
+            {docMainHeadline}
           </h3>
         </div>
         <div className="bg-[#D5F5E3] border-x border-b border-black p-1.5 text-center">
           <p className="text-[11px] font-black uppercase tracking-[0.05em] text-[#155724]">
-            BUDGETED PROPOSAL ON NETWORK SOLUTION AND CCTV.
+            {docSubHeadline}
           </p>
         </div>
       </div>
@@ -110,12 +130,12 @@ export function WarriorLayout({
         <table className="w-full border-collapse border border-black table-fixed">
           <thead>
             <tr className="bg-[#F57C00] text-white">
-              <th className="border border-black w-[45px] py-2 text-[10px] font-black uppercase">Sl. No</th>
-              <th className="border border-black px-4 py-2 text-left text-[10px] font-black uppercase">Product Name and Description</th>
-              <th className="border border-black w-[80px] py-2 text-center text-[10px] font-black uppercase">Qty (Unit)</th>
-              <th className="border border-black w-[100px] py-2 text-right text-[10px] font-black uppercase px-3">Unit Price</th>
-              <th className="border border-black w-[80px] py-2 text-center text-[10px] font-black uppercase">Discount</th>
-              <th className="border border-black w-[120px] py-2 text-right text-[10px] font-black uppercase pr-4">Amount</th>
+              <th className="border border-black w-[45px] py-2 text-[10px] font-black uppercase">{tableCol_sl}</th>
+              <th className="border border-black px-4 py-2 text-left text-[10px] font-black uppercase">{tableCol_desc}</th>
+              <th className="border border-black w-[80px] py-2 text-center text-[10px] font-black uppercase">{tableCol_qty}</th>
+              <th className="border border-black w-[100px] py-2 text-right text-[10px] font-black uppercase px-3">{tableCol_price}</th>
+              <th className="border border-black w-[80px] py-2 text-center text-[10px] font-black uppercase">{tableCol_disc}</th>
+              <th className="border border-black w-[120px] py-2 text-right text-[10px] font-black uppercase pr-4">{tableCol_amount}</th>
             </tr>
           </thead>
           <tbody>
@@ -125,10 +145,10 @@ export function WarriorLayout({
                 <td className="border-x border-black p-2">
                   <div className="text-[11px] space-y-0.5 leading-normal">
                     <p><span className="font-bold">Product Name:</span> <span className="font-black uppercase">{item.name}</span></p>
-                    <p><span className="font-bold">Brand:</span> {item.description?.includes('Brand') ? item.description.split('Brand:')[1].split('|')[0].trim() : 'Warrior'}</p>
-                    <p><span className="font-bold">Model:</span> {item.description?.includes('Model') ? item.description.split('Model:')[1].trim() : 'As Need'}</p>
-                    <p><span className="font-bold">Country of Origin:</span> China/Vietnam/Taiwan</p>
-                    <p><span className="font-bold">Warranty:</span> 12 Months</p>
+                    <p><span className="font-bold">Brand:</span> {item.brand || (item.description?.includes('Brand') ? item.description.split('Brand:')[1].split('|')[0].trim() : 'Warrior')}</p>
+                    <p><span className="font-bold">Model:</span> {item.model || (item.description?.includes('Model') ? item.description.split('Model:')[1].trim() : 'As Need')}</p>
+                    <p><span className="font-bold">Country of Origin:</span> {item.country || 'China/Vietnam/Taiwan'}</p>
+                    <p><span className="font-bold">Warranty:</span> {item.warranty || '12 Months'}</p>
                   </div>
                 </td>
                 <td className="border-x border-black p-2 text-center text-[11px] font-bold">{item.quantity} ({item.unit || 'Pcs'})</td>
@@ -141,7 +161,7 @@ export function WarriorLayout({
             {/* 7. INTEGRATED CALCULATION FOOTER */}
             <tr className="border-t border-black">
                <td colSpan={3} rowSpan={6} className="p-4 align-top border border-black relative bg-white">
-                  <p className="text-[12px] font-black uppercase underline underline-offset-2">In Word Amount:</p>
+                  <p className="text-[12px] font-black uppercase underline underline-offset-2">{docInWordLabel}</p>
                   <p className="text-[11px] font-bold italic text-slate-500 mt-4 capitalize">Only --- BDT</p>
                </td>
                <td colSpan={2} className="bg-[#FFC107] border border-black p-1.5 text-right text-[10px] font-black uppercase px-3">Sub Total (BDT)</td>
@@ -218,7 +238,7 @@ export function WarriorLayout({
       {/* 10. CORPORATE SERVICE FOOTER */}
       <div className="mt-auto pt-4 pb-8 text-center space-y-2 border-t border-[#00D4AA] border-dotted mx-10">
         <p className="text-[11px] font-black text-slate-400 flex items-center justify-center gap-2">
-          ❤ Thank You for Your Business ❤
+          <span className="text-[#FF0000]">❤</span> {footerHeartMsg} <span className="text-[#FF0000]">❤</span>
         </p>
         <h4 className="text-[20px] font-black text-slate-900 uppercase tracking-tight leading-none">Warrior Tech System</h4>
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.4em] mb-4">
@@ -226,12 +246,22 @@ export function WarriorLayout({
         </p>
         
         <div className="flex justify-center items-center gap-6 text-[9px] font-black text-[#0056B3] uppercase tracking-widest pt-2">
-           <span className="flex items-center gap-1.5"><span className="text-[#F57C00] text-[14px]">•</span> Security System</span>
-           <span className="flex items-center gap-1.5"><span className="text-[#F57C00] text-[14px]">•</span> Communication System</span>
-           <span className="flex items-center gap-1.5"><span className="text-[#F57C00] text-[14px]">•</span> Fire Safety</span>
-           <span className="flex items-center gap-1.5"><span className="text-[#F57C00] text-[14px]">•</span> Network & IT Solutions</span>
+           <span className="flex items-center gap-1.5"><span className="text-[#F57C00] text-[14px]">•</span> {footerService1}</span>
+           <span className="flex items-center gap-1.5"><span className="text-[#F57C00] text-[14px]">•</span> {footerService2}</span>
+           <span className="flex items-center gap-1.5"><span className="text-[#F57C00] text-[14px]">•</span> {footerService3}</span>
+           <span className="flex items-center gap-1.5"><span className="text-[#F57C00] text-[14px]">•</span> {footerService4}</span>
         </div>
       </div>
+
+      <style jsx global>{`
+        @media print {
+          body { background: white !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          .no-print { display: none !important; }
+          .document-container { padding: 0 !important; margin: 0 !important; width: 210mm !important; min-height: 297mm !important; }
+          @page { size: A4; margin: 0; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+      `}</style>
     </div>
   );
 }

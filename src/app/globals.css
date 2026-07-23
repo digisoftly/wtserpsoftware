@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -79,6 +80,8 @@
 @media print {
   body {
     background: white !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
   .no-print {
     display: none !important;
@@ -88,6 +91,11 @@
   }
   @page {
     size: A4;
-    margin: 10mm;
+    margin: 0;
+  }
+  /* Force table backgrounds in print */
+  tr, td, th {
+     -webkit-print-color-adjust: exact !important;
+     print-color-adjust: exact !important;
   }
 }
