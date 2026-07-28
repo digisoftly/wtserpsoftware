@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -26,7 +27,7 @@ import { FirestorePermissionError } from "@/firebase/errors"
 export default function MasterUnitsPage() {
   const { companyId } = useTenant();
   const db = useFirestore();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [selectedRecord, setSelectedRecord] = React.useState<any>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -43,7 +44,6 @@ export default function MasterUnitsPage() {
   const { 
     selectedIds, 
     isAllSelected, 
-    isSomeSelected, 
     toggleSelect, 
     toggleSelectAll, 
     clearSelection, 
@@ -53,11 +53,28 @@ export default function MasterUnitsPage() {
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!db || !companyId) return;
-    setIsSubmitting(true);
+
     const formData = new FormData(e.currentTarget);
+    const name = (formData.get("name") as string).trim();
     
+    // Duplicate Check
+    const exists = units?.some(u => 
+      u.name?.toLowerCase() === name.toLowerCase() && 
+      u.id !== selectedRecord?.id
+    );
+
+    if (exists) {
+      toast({ 
+        variant: "destructive", 
+        title: language === 'BN' ? "এই নামে ইতিমধ্যে তথ্য রয়েছে" : "Name already exists",
+        description: name
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
     const unitData = {
-      name: formData.get("name") as string,
+      name: name,
       shortName: formData.get("shortName") as string,
       isDefault: formData.get("isDefault") === "on",
       updatedAt: serverTimestamp(),
@@ -65,7 +82,7 @@ export default function MasterUnitsPage() {
 
     try {
       const docRef = selectedRecord ? doc(db, "companies", companyId, "master_units", selectedRecord.id) : doc(collection(db, "companies", companyId, "master_units"));
-      await setDoc(docRef, { ...unitData, createdAt: selectedRecord?.createdAt || serverTimestamp() }, { merge: true });
+      await setDoc(docRef, { ...unitData, createdAt: selectedRecord?.createdAt || serverTimestamp(), id: docRef.id }, { merge: true });
       toast({ title: t('success') });
       setIsModalOpen(false);
       setSelectedRecord(null);
@@ -82,32 +99,23 @@ export default function MasterUnitsPage() {
     if (action === 'delete') {
       if (confirm(`Delete ${selectedIds.length} items?`)) {
         setIsSubmitting(true);
-        
-        const promises = selectedIds.map(id => {
-          return deleteDoc(doc(db, "companies", companyId, "master_units", id));
-        });
-
-        const results = await Promise.allSettled(promises);
-        const succeeded = results.filter(r => r.status === 'fulfilled').length;
-        const failed = results.filter(r => r.status === 'rejected').length;
-
-        if (failed > 0) {
-          toast({ 
-            variant: "destructive", 
-            title: "Partial Success", 
-            description: `${succeeded} deleted, ${failed} failed.` 
+        try {
+          const batch = writeBatch(db);
+          selectedIds.forEach(id => {
+            batch.delete(doc(db, "companies", companyId, "master_units", id));
           });
-          
+          await batch.commit();
+          toast({ title: t('success'), description: `${selectedIds.length} items removed.` });
+          clearSelection();
+        } catch (e) {
           errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: `companies/${companyId}/master_units/...`,
             operation: 'delete'
           }));
-        } else {
-          toast({ title: t('success'), description: `${succeeded} items removed.` });
+          toast({ variant: "destructive", title: t('error') });
+        } finally {
+          setIsSubmitting(false);
         }
-        
-        clearSelection();
-        setIsSubmitting(false);
       }
     }
   };

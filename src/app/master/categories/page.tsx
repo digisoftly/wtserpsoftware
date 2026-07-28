@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -26,7 +27,7 @@ import { FirestorePermissionError } from "@/firebase/errors"
 export default function MasterCategoriesPage() {
   const { companyId } = useTenant();
   const db = useFirestore();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [selectedRecord, setSelectedRecord] = React.useState<any>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -43,7 +44,6 @@ export default function MasterCategoriesPage() {
   const { 
     selectedIds, 
     isAllSelected, 
-    isSomeSelected, 
     toggleSelect, 
     toggleSelectAll, 
     clearSelection, 
@@ -53,11 +53,28 @@ export default function MasterCategoriesPage() {
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!db || !companyId) return;
-    setIsSubmitting(true);
+
     const formData = new FormData(e.currentTarget);
-    
+    const name = (formData.get("name") as string).trim();
+
+    // Duplicate Check
+    const exists = categories?.some(c => 
+      c.name?.toLowerCase() === name.toLowerCase() && 
+      c.id !== selectedRecord?.id
+    );
+
+    if (exists) {
+      toast({ 
+        variant: "destructive", 
+        title: language === 'BN' ? "এই নামে ইতিমধ্যে তথ্য রয়েছে" : "Name already exists",
+        description: name
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
     const categoryData = {
-      name: formData.get("name") as string,
+      name: name,
       parentId: formData.get("parentId") as string || "none",
       description: formData.get("description") as string || "",
       updatedAt: serverTimestamp(),
@@ -65,7 +82,7 @@ export default function MasterCategoriesPage() {
 
     try {
       const docRef = selectedRecord ? doc(db, "companies", companyId, "master_categories", selectedRecord.id) : doc(collection(db, "companies", companyId, "master_categories"));
-      await setDoc(docRef, { ...categoryData, createdAt: selectedRecord?.createdAt || serverTimestamp() }, { merge: true });
+      await setDoc(docRef, { ...categoryData, createdAt: selectedRecord?.createdAt || serverTimestamp(), id: docRef.id }, { merge: true });
       toast({ title: t('success') });
       setIsModalOpen(false);
       setSelectedRecord(null);

@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -25,7 +26,7 @@ import { FirestorePermissionError } from "@/firebase/errors"
 export default function MasterBrandsPage() {
   const { companyId } = useTenant();
   const db = useFirestore();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [selectedRecord, setSelectedRecord] = React.useState<any>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -42,7 +43,6 @@ export default function MasterBrandsPage() {
   const { 
     selectedIds, 
     isAllSelected, 
-    isSomeSelected, 
     toggleSelect, 
     toggleSelectAll, 
     clearSelection, 
@@ -52,18 +52,35 @@ export default function MasterBrandsPage() {
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!db || !companyId) return;
-    setIsSubmitting(true);
+
     const formData = new FormData(e.currentTarget);
-    
+    const name = (formData.get("name") as string).trim();
+
+    // Duplicate Check
+    const exists = brands?.some(b => 
+      b.name?.toLowerCase() === name.toLowerCase() && 
+      b.id !== selectedRecord?.id
+    );
+
+    if (exists) {
+      toast({ 
+        variant: "destructive", 
+        title: language === 'BN' ? "এই নামে ইতিমধ্যে তথ্য রয়েছে" : "Name already exists",
+        description: name
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
     const brandData = {
-      name: formData.get("name") as string,
+      name: name,
       description: formData.get("description") as string || "",
       updatedAt: serverTimestamp(),
     };
 
     try {
       const docRef = selectedRecord ? doc(db, "companies", companyId, "master_brands", selectedRecord.id) : doc(collection(db, "companies", companyId, "master_brands"));
-      await setDoc(docRef, { ...brandData, createdAt: selectedRecord?.createdAt || serverTimestamp() }, { merge: true });
+      await setDoc(docRef, { ...brandData, createdAt: selectedRecord?.createdAt || serverTimestamp(), id: docRef.id }, { merge: true });
       toast({ title: t('success') });
       setIsModalOpen(false);
       setSelectedRecord(null);

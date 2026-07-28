@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -26,7 +27,7 @@ import { FirestorePermissionError } from "@/firebase/errors"
 export default function GenericMasterPage() {
   const { companyId } = useTenant();
   const db = useFirestore();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   
   // Detect current master type from path
   const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
@@ -53,7 +54,6 @@ export default function GenericMasterPage() {
   const { 
     selectedIds, 
     isAllSelected, 
-    isSomeSelected, 
     toggleSelect, 
     toggleSelectAll, 
     clearSelection, 
@@ -63,12 +63,29 @@ export default function GenericMasterPage() {
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!db || !companyId) return;
-    setIsSubmitting(true);
+
     const formData = new FormData(e.currentTarget);
-    
+    const name = (formData.get("name") as string).trim();
+
+    // Duplicate Check
+    const exists = records?.some(r => 
+      r.name?.toLowerCase() === name.toLowerCase() && 
+      r.id !== selectedRecord?.id
+    );
+
+    if (exists) {
+      toast({ 
+        variant: "destructive", 
+        title: language === 'BN' ? "এই নামে ইতিমধ্যে তথ্য রয়েছে" : "Name already exists",
+        description: name
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
     const data = {
       type: masterType,
-      name: formData.get("name") as string,
+      name: name,
       description: formData.get("description") as string || "",
       isActive: formData.get("isActive") === "on",
       updatedAt: serverTimestamp(),
@@ -76,7 +93,7 @@ export default function GenericMasterPage() {
 
     try {
       const docRef = selectedRecord ? doc(db, "companies", companyId, collectionName, selectedRecord.id) : doc(collection(db, "companies", companyId, collectionName));
-      await setDoc(docRef, { ...data, createdAt: selectedRecord?.createdAt || serverTimestamp() }, { merge: true });
+      await setDoc(docRef, { ...data, createdAt: selectedRecord?.createdAt || serverTimestamp(), id: docRef.id }, { merge: true });
       toast({ title: t('success') });
       setIsModalOpen(false);
       setSelectedRecord(null);
