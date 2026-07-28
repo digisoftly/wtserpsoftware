@@ -91,6 +91,21 @@ export default function NewInvoicePage() {
       unit: product.unit || "Pcs",
       price: product.unitPrice || 0,
       total: product.unitPrice || 0,
+      isCustom: false
+    };
+    setLineItems([...lineItems, newItem]);
+  };
+
+  const handleAddManualItem = () => {
+    const newItem: InvoiceItem = {
+      id: Math.random().toString(36).substr(2, 9),
+      productId: "custom",
+      name: "",
+      qty: 1,
+      unit: "Pcs",
+      price: 0,
+      total: 0,
+      isCustom: true
     };
     setLineItems([...lineItems, newItem]);
   };
@@ -108,6 +123,10 @@ export default function NewInvoicePage() {
 
   const handleSaveInvoice = async () => {
     if (isSubmitting) return;
+    if (isManualCustomer && !manualCustomer.name.trim()) {
+      toast({ variant: "destructive", title: "Missing Name", description: "Please enter customer name." });
+      return;
+    }
     if (!isManualCustomer && !selectedCustomerId) {
       toast({ variant: "destructive", title: "Missing Identity", description: "Please select a client or enter manual details." });
       return;
@@ -122,7 +141,20 @@ export default function NewInvoicePage() {
       await runTransaction(db!, async (transaction) => {
         const invoiceRef = doc(collection(db!, "companies", companyId!, "branches", branchId!, "sales_invoices"));
         
-        let customerName = isManualCustomer ? manualCustomer.name : (customers?.find(c => c.id === selectedCustomerId)?.firstName + " " + customers?.find(c => c.id === selectedCustomerId)?.lastName);
+        let customerName = "";
+        let customerPhone = "";
+        let customerAddress = "";
+
+        if (isManualCustomer) {
+          customerName = manualCustomer.name;
+          customerPhone = manualCustomer.phone;
+          customerAddress = manualCustomer.address;
+        } else {
+          const customer = customers?.find(c => c.id === selectedCustomerId);
+          customerName = customer ? `${customer.firstName} ${customer.lastName}` : "Client";
+          customerPhone = customer?.phoneNumber || "";
+          customerAddress = customer?.companyName || "";
+        }
 
         transaction.set(invoiceRef, {
           id: invoiceRef.id,
@@ -131,6 +163,8 @@ export default function NewInvoicePage() {
           invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
           customerId: isManualCustomer ? "manual" : selectedCustomerId,
           customerName,
+          customerPhone,
+          customerAddress,
           invoiceDate,
           items: lineItems,
           subtotal,
@@ -145,8 +179,10 @@ export default function NewInvoicePage() {
         });
 
         for (const item of lineItems) {
-          const productRef = doc(db!, "companies", companyId!, "branches", branchId!, "products", item.productId);
-          transaction.update(productRef, { currentStock: increment(-item.qty), updatedAt: serverTimestamp() });
+          if (!item.isCustom) {
+            const productRef = doc(db!, "companies", companyId!, "branches", branchId!, "products", item.productId);
+            transaction.update(productRef, { currentStock: increment(-item.qty), updatedAt: serverTimestamp() });
+          }
         }
       });
 
@@ -202,9 +238,9 @@ export default function NewInvoicePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {isManualCustomer ? (
                   <>
-                    <div className="space-y-1.5"><Label className="text-xs font-bold text-slate-600">Full Name</Label><Input className="h-10 text-sm font-medium" value={manualCustomer.name} onChange={e => setManualCustomer({...manualCustomer, name: e.target.value})} /></div>
-                    <div className="space-y-1.5"><Label className="text-xs font-bold text-slate-600">Mobile #</Label><Input className="h-10 text-sm font-medium" value={manualCustomer.phone} onChange={e => setManualCustomer({...manualCustomer, phone: e.target.value})} /></div>
-                    <div className="md:col-span-2 space-y-1.5"><Label className="text-xs font-bold text-slate-600">Address</Label><Input className="h-10 text-sm font-medium" value={manualCustomer.address} onChange={e => setManualCustomer({...manualCustomer, address: e.target.value})} /></div>
+                    <div className="space-y-1.5"><Label className="text-xs font-bold text-slate-600">Full Name</Label><Input className="h-10 text-sm font-medium" value={manualCustomer.name} onChange={e => setManualCustomer({...manualCustomer, name: e.target.value})} placeholder="e.g. John Doe" /></div>
+                    <div className="space-y-1.5"><Label className="text-xs font-bold text-slate-600">Mobile #</Label><Input className="h-10 text-sm font-medium" value={manualCustomer.phone} onChange={e => setManualCustomer({...manualCustomer, phone: e.target.value})} placeholder="+880..." /></div>
+                    <div className="md:col-span-2 space-y-1.5"><Label className="text-xs font-bold text-slate-600">Address</Label><Input className="h-10 text-sm font-medium" value={manualCustomer.address} onChange={e => setManualCustomer({...manualCustomer, address: e.target.value})} placeholder="Full physical address" /></div>
                   </>
                 ) : (
                   <>
@@ -234,7 +270,7 @@ export default function NewInvoicePage() {
                     {products?.map(p => <SelectItem key={p.id} value={p.id} className="text-sm font-medium">{p.name} <span className="opacity-50 ml-2">(S: {p.currentStock})</span></SelectItem>)}
                   </SelectContent>
                 </Select>
-                <Button variant="outline" size="sm" className="h-9 rounded-md gap-2 text-xs font-bold border-slate-200">
+                <Button variant="outline" size="sm" className="h-9 rounded-md gap-2 text-xs font-bold border-slate-200" onClick={handleAddManualItem}>
                   <PackagePlus className="h-3.5 w-3.5" /> Manual Line
                 </Button>
               </div>
@@ -256,7 +292,18 @@ export default function NewInvoicePage() {
                   ) : (
                     lineItems.map((item) => (
                       <TableRow key={item.id} className="hover:bg-slate-50/30 transition-colors">
-                        <TableCell className="pl-8 text-xs font-bold uppercase text-slate-700">{item.name}</TableCell>
+                        <TableCell className="pl-8 text-xs font-bold uppercase text-slate-700">
+                          {item.isCustom ? (
+                            <Input 
+                              className="h-8 text-xs font-bold uppercase border-none bg-slate-50" 
+                              value={item.name} 
+                              onChange={e => handleUpdateItem(item.id, 'name', e.target.value)} 
+                              placeholder="Custom item name..."
+                            />
+                          ) : (
+                            item.name
+                          )}
+                        </TableCell>
                         <TableCell><Input type="number" className="h-8 text-center text-xs font-bold rounded w-16 bg-slate-100/50 border-none mx-auto" value={item.qty} onChange={e => handleUpdateItem(item.id, 'qty', e.target.value)} /></TableCell>
                         <TableCell className="text-right"><Input type="number" className="h-8 text-right text-xs font-bold rounded w-24 bg-slate-100/50 border-none ml-auto" value={item.price} onChange={e => handleUpdateItem(item.id, 'price', e.target.value)} /></TableCell>
                         <TableCell className="text-right pr-10 font-bold text-xs">৳{item.total.toLocaleString()}</TableCell>
