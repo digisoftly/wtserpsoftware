@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Search, ChevronDown, Building, Loader2, User, LogOut, Languages } from "lucide-react"
+import { Search, ChevronDown, Building, Loader2, User, LogOut, Languages, Bell } from "lucide-react"
 
 import {
   DropdownMenu,
@@ -25,7 +25,7 @@ export function AppHeader() {
   const { user } = useUser()
   const auth = useAuth()
   const db = useFirestore()
-  const { companyId, branchId, setBranchId, language, setLanguage, userRole } = useTenant()
+  const { companyId, branchId, setBranchId, language, setLanguage, userRole, settings } = useTenant()
   const router = useRouter()
   const { t } = useTranslation()
 
@@ -43,30 +43,36 @@ export function AppHeader() {
   const activeBranch = branches?.find(b => b.id === branchId) || { name: 'Main' };
 
   return (
-    <header className="h-14 border-b bg-white flex items-center justify-between px-4 sticky top-0 z-40">
+    <header className="h-[60px] border-b bg-white flex items-center justify-between px-6 sticky top-0 z-40 shadow-sm">
       <div className="flex items-center gap-4 flex-1">
-        <SidebarTrigger />
-        <div className="hidden md:flex items-center gap-2 px-3 h-8 bg-muted/50 rounded-full w-full max-w-xs border border-transparent focus-within:border-blue-500/50 transition-all">
-          <Search className="h-3.5 w-3.5 text-muted-foreground" />
-          <input placeholder={t('search')} className="bg-transparent border-none outline-none text-xs w-full" />
+        <SidebarTrigger className="h-9 w-9 text-slate-500" />
+        <div className="hidden md:flex items-center gap-2 px-3 h-9 bg-slate-50 rounded-md w-full max-w-sm border border-slate-200 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20 transition-all">
+          <Search className="h-4 w-4 text-slate-400" />
+          <input 
+            placeholder={t('search')} 
+            className="bg-transparent border-none outline-none text-sm w-full placeholder:text-slate-400" 
+          />
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {userRole?.isSuperAdmin && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 gap-2 rounded-full px-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:bg-blue-50 hover:text-blue-600">
-                <Building className="h-3.5 w-3.5" /> {activeBranch.name} <ChevronDown className="h-3 w-3" />
+              <Button variant="ghost" size="sm" className="h-9 gap-2 rounded-md px-3 text-xs font-semibold text-slate-600 hover:bg-slate-50">
+                <Building className="h-4 w-4" /> 
+                <span className="hidden sm:inline">{activeBranch.name}</span>
+                <ChevronDown className="h-3 w-3 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent align="end" className="w-56 mt-2">
+              <DropdownMenuLabel className="text-[10px] uppercase font-bold text-slate-400 px-3 py-2">Select Branch</DropdownMenuLabel>
               {branchesLoading ? (
-                <div className="p-4 text-center"><Loader2 className="animate-spin h-4 w-4 mx-auto" /></div>
+                <div className="p-4 text-center"><Loader2 className="animate-spin h-4 w-4 mx-auto text-slate-400" /></div>
               ) : (
                 branches?.map(b => (
-                  <DropdownMenuItem key={b.id} onClick={() => setBranchId(b.id)} className="text-xs font-medium">
-                    {b.name}
+                  <DropdownMenuItem key={b.id} onClick={() => setBranchId(b.id)} className="cursor-pointer">
+                    <span className={branchId === b.id ? "font-bold text-primary" : ""}>{b.name}</span>
                   </DropdownMenuItem>
                 ))
               )}
@@ -76,31 +82,46 @@ export function AppHeader() {
 
         <Button 
           variant="ghost" 
-          size="sm" 
-          className="h-8 gap-2 rounded-full px-4 text-[10px] font-bold uppercase transition-all hover:bg-slate-100 text-slate-600" 
+          size="icon" 
+          className="h-9 w-9 text-slate-500 hover:bg-slate-50"
           onClick={() => setLanguage(language === 'EN' ? 'BN' : 'EN')}
+          title={language === 'EN' ? 'বাংলা' : 'English'}
         >
-          <Languages className="h-3.5 w-3.5 text-blue-600" />
-          {language === 'EN' ? 'বাংলা' : 'English'}
+          <Languages className="h-4 w-4" />
         </Button>
+
+        <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-500 hover:bg-slate-50">
+          <Bell className="h-4 w-4" />
+        </Button>
+
+        <div className="w-px h-6 bg-slate-200 mx-2" />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="p-0 h-8 hover:bg-transparent flex items-center outline-none">
-              <Avatar className="h-7 w-7 border shadow-sm">
+            <Button variant="ghost" className="p-0 h-9 hover:bg-transparent flex items-center gap-2 pr-2 outline-none group">
+              <Avatar className="h-8 w-8 border border-slate-200">
                 <AvatarImage src={`https://picsum.photos/seed/${user?.uid}/100/100`} />
-                <AvatarFallback className="text-[10px] font-bold">AD</AvatarFallback>
+                <AvatarFallback className="text-[10px] font-bold bg-primary text-white">AD</AvatarFallback>
               </Avatar>
+              <div className="hidden lg:flex flex-col items-start leading-none">
+                <span className="text-xs font-bold text-slate-700">{settings?.companyName || "Warrior ERP"}</span>
+                <span className="text-[10px] text-slate-400 mt-1 uppercase font-semibold tracking-tighter">{userRole?.name}</span>
+              </div>
+              <ChevronDown className="h-3 w-3 text-slate-400 group-hover:text-primary transition-colors" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48 mt-2">
-            <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{t('identity')}</DropdownMenuLabel>
+          <DropdownMenuContent align="end" className="w-56 mt-2 shadow-xl border-slate-100">
+            <DropdownMenuLabel className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 py-2">{t('identity')}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push('/profile')} className="text-xs font-medium cursor-pointer">
-              <User className="mr-2 h-3.5 w-3.5" /> {t('profile')}
+            <DropdownMenuItem onClick={() => router.push('/profile')} className="py-2 cursor-pointer">
+              <User className="mr-2 h-4 w-4 text-slate-400" /> {t('profile')}
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-xs font-medium text-red-500 cursor-pointer" onClick={handleLogout}>
-              <LogOut className="mr-2 h-3.5 w-3.5" /> Sign out
+            <DropdownMenuItem onClick={() => router.push('/settings')} className="py-2 cursor-pointer">
+              <Building className="mr-2 h-4 w-4 text-slate-400" /> Organization
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="py-2 text-red-600 focus:text-red-700 focus:bg-red-50 cursor-pointer" onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" /> Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -7,7 +7,7 @@ interface KPICardProps {
   title: string
   value: string | number
   icon?: LucideIcon
-  colorClass: string
+  colorClass?: string
   subtext?: string
   trend?: {
     value: number
@@ -15,37 +15,34 @@ interface KPICardProps {
   }
 }
 
-/**
- * Optimized KPICard using React.memo to prevent unnecessary re-renders
- * during frequent dashboard data updates.
- */
 export const KPICard = React.memo(function KPICard({ title, value, icon: Icon, colorClass, subtext, trend }: KPICardProps) {
   return (
-    <Card className="overflow-hidden border-none shadow-sm hover:shadow-md transition-all group rounded-xl bg-white">
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between">
+    <Card className="overflow-hidden border border-slate-200 shadow-sm bg-white rounded-md">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between">
           <div className="space-y-1">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{title}</p>
-            <h3 className="text-2xl font-bold font-headline tracking-tight text-slate-900">{value}</h3>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{title}</p>
+            <div className="flex items-baseline gap-2">
+              <h3 className="text-xl font-bold text-slate-900 tracking-tight">{value}</h3>
+              {trend && (
+                <span className={cn(
+                  "text-[10px] font-bold px-1.5 py-0.5 rounded",
+                  trend.isPositive ? "text-green-700 bg-green-50" : "text-red-700 bg-red-50"
+                )}>
+                  {trend.isPositive ? "+" : "-"}{trend.value}%
+                </span>
+              )}
+            </div>
             {subtext && (
-              <p className="text-[10px] font-medium text-muted-foreground/80">{subtext}</p>
-            )}
-            {trend && (
-              <p className={cn(
-                "text-[10px] font-bold mt-1 flex items-center gap-1",
-                trend.isPositive ? "text-green-600" : "text-red-600"
-              )}>
-                {trend.isPositive ? "+" : "-"}{trend.value}%
-              </p>
+              <p className="text-[10px] font-medium text-slate-400 mt-1">{subtext}</p>
             )}
           </div>
           {Icon && (
             <div className={cn(
-              "p-2.5 rounded-xl transition-all duration-300 group-hover:scale-110",
-              colorClass,
-              "text-white shadow-lg"
+              "p-1.5 rounded bg-slate-50 border border-slate-100",
+              colorClass ? colorClass.replace('bg-', 'text-') : "text-slate-400"
             )}>
-              <Icon className="h-5 w-5" />
+              <Icon className="h-4 w-4" />
             </div>
           )}
         </div>
