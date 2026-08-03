@@ -36,7 +36,7 @@ export function getSdks(firebaseApp: FirebaseApp) {
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),
-    // Global safeguard: ignoreUndefinedProperties prevents "Unsupported field value: undefined" errors
+    // CRITICAL: ignoreUndefinedProperties prevents "Unsupported field value: undefined" crashes
     firestore: initializeFirestore(firebaseApp, {
       ignoreUndefinedProperties: true
     })

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Plus, Wrench, ShieldCheck, Loader2, MoreVertical, AlertCircle, TrendingUp, Eye, Trash2, Edit, Calendar, DollarSign, PlayCircle, Receipt, CheckCircle2, CreditCard, Sparkles, Check, Printer } from "lucide-react"
+import { Plus, ShieldCheck, Loader2, MoreVertical, AlertCircle, TrendingUp, Eye, Trash2, Edit, PlayCircle, Receipt, CheckCircle2, Sparkles, Check, Calculator, Calendar } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, doc, getDocs, where, writeBatch, serverTimestamp, updateDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
@@ -17,9 +17,13 @@ import { useRouter } from "next/navigation"
 import { toast } from "@/hooks/use-toast"
 import { deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { format } from "date-fns"
+import { runBillingCycle } from "@/lib/billing-service"
 
 export default function ContractsPage() {
   const { companyId, branchId } = useTenant();
@@ -29,9 +33,13 @@ export default function ContractsPage() {
   
   const [activeTab, setActiveTab] = React.useState("contracts");
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
+  const [isManualGenOpen, setIsManualGenOpen] = React.useState(false);
   const [selectedRecord, setSelectedRecord] = React.useState<any>(null);
   const [isRunningCycle, setIsRunningCycle] = React.useState(false);
-  const [needsCycleCheck, setNeedsCycleCheck] = React.useState(false);
+
+  // Manual Gen State
+  const [genMonth, setGenMonth] = React.useState(String(new Date().getMonth() + 1));
+  const [genYear, setGenYear] = React.useState(String(new Date().getFullYear()));
 
   // Queries
   const contractsQuery = useMemoFirebase(() => {
@@ -53,20 +61,21 @@ export default function ContractsPage() {
     due: invoices?.filter(i => i.status !== 'paid').reduce((s, i) => s + (Number(i.amount) || 0), 0) || 0
   }), [contracts, invoices]);
 
-  // Check if current month cycle needs running
-  React.useEffect(() => {
-    if (!invoices || !contracts) return;
-    const currentMonth = format(new Date(), "MMMM yyyy");
-    const activeCount = contracts.filter(c => c.status === 'active').length;
-    if (activeCount === 0) return;
-
-    const thisMonthInvoices = invoices.filter(i => i.billingMonth === currentMonth).length;
-    if (thisMonthInvoices < activeCount) {
-      setNeedsCycleCheck(true);
-    } else {
-      setNeedsCycleCheck(false);
+  const handleRunManualCycle = async () => {
+    if (!db || !companyId || !branchId) return;
+    setIsRunningCycle(true);
+    try {
+      const result = await runBillingCycle(db, companyId, branchId, Number(genYear), Number(genMonth));
+      if (result.success) {
+        toast({ title: "Cycle Complete", description: result.message });
+        setIsManualGenOpen(false);
+      }
+    } catch (err: any) {
+      toast({ variant: "destructive", title: t('error'), description: err.message });
+    } finally {
+      setIsRunningCycle(false);
     }
-  }, [invoices, contracts]);
+  };
 
   const handleDelete = () => {
     if (!selectedRecord || !db || !companyId || !branchId) return;
@@ -92,60 +101,6 @@ export default function ContractsPage() {
     }
   };
 
-  const handleRunBillingCycle = async () => {
-    if (!db || !companyId || !branchId || !contracts) return;
-    
-    setIsRunningCycle(true);
-    const currentMonth = format(new Date(), "MMMM yyyy");
-    
-    try {
-      const activeContracts = contracts.filter(c => c.status === 'active');
-      const batch = writeBatch(db);
-      let count = 0;
-
-      for (const contract of activeContracts) {
-        // Double check existence via a fresh query to be absolutely safe
-        const existingCheck = query(
-          collection(db, "companies", companyId, "branches", branchId, "contract_invoices"),
-          where("contractId", "==", contract.id),
-          where("billingMonth", "==", currentMonth)
-        );
-        const snap = await getDocs(existingCheck);
-        
-        if (snap.empty) {
-          const invRef = doc(collection(db, "companies", companyId, "branches", branchId, "contract_invoices"));
-          
-          // Added safe fallbacks for all fields to prevent "undefined" errors
-          batch.set(invRef, {
-            id: invRef.id,
-            contractId: contract.id || "",
-            contractNumber: contract.contractNumber || "N/A",
-            customerName: contract.customerName || "Walking Client",
-            serviceName: contract.serviceName || "Service Subscription",
-            billingMonth: currentMonth,
-            amount: Number(contract.monthlyAmount) || 0,
-            status: "due",
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          });
-          count++;
-        }
-      }
-
-      if (count > 0) {
-        await batch.commit();
-        toast({ title: t('success'), description: `${count} invoices generated for ${currentMonth}.` });
-        setNeedsCycleCheck(false);
-      } else {
-        toast({ title: "Cycle Complete", description: `All invoices for ${currentMonth} are already generated.` });
-      }
-    } catch (err: any) {
-      toast({ variant: "destructive", title: t('error'), description: err.message });
-    } finally {
-      setIsRunningCycle(false);
-    }
-  };
-
   return (
     <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -154,17 +109,14 @@ export default function ContractsPage() {
           <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{t('happeningToday')}</p>
         </div>
         <div className="flex gap-2">
-          {activeTab === 'billing' && (
-            <Button 
-              variant="outline" 
-              className="rounded-full gap-2 px-6 h-10 text-[10px] uppercase font-black border-none ring-1 ring-emerald-100 bg-white hover:bg-emerald-50 text-emerald-700 shadow-sm transition-all"
-              onClick={handleRunBillingCycle}
-              disabled={isRunningCycle}
-            >
-              {isRunningCycle ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlayCircle className="h-4 w-4" />}
-              {t('runMonthlyCycle')}
-            </Button>
-          )}
+          <Button 
+            variant="outline" 
+            className="rounded-full gap-2 px-6 h-10 text-[10px] uppercase font-black border-none ring-1 ring-emerald-100 bg-white hover:bg-emerald-50 text-emerald-700 shadow-sm transition-all"
+            onClick={() => setIsManualGenOpen(true)}
+          >
+            <Calculator className="h-4 w-4" />
+            {t('runMonthlyCycle')}
+          </Button>
           <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2 rounded-full px-8 shadow-xl shadow-emerald-100 h-10 text-[10px] uppercase font-black transition-all active:scale-95" asChild>
             <Link href="/contracts/new">
               <Plus className="h-4 w-4" /> {t('addContract')}
@@ -178,28 +130,6 @@ export default function ContractsPage() {
         <KPICard title={t('monthlyRevenue')} value={`৳${stats.revenue.toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-600" />
         <KPICard title={t('dueAmount')} value={`৳${stats.due.toLocaleString()}`} icon={AlertCircle} colorClass="bg-red-600" />
       </div>
-
-      {needsCycleCheck && activeTab === 'contracts' && (
-        <div className="bg-blue-600 rounded-[1.5rem] p-4 text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl shadow-blue-100 animate-in slide-in-from-top-2">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-md">
-              <Sparkles className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <p className="text-xs font-black uppercase tracking-tight">{t('billingDue')}</p>
-              <p className="text-[10px] font-bold opacity-80 uppercase tracking-widest">{format(new Date(), "MMMM yyyy")} cycle is not fully generated.</p>
-            </div>
-          </div>
-          <Button 
-            onClick={handleRunBillingCycle} 
-            disabled={isRunningCycle}
-            className="bg-white text-blue-600 hover:bg-blue-50 rounded-full font-black text-[10px] uppercase h-9 px-6 shadow-lg"
-          >
-            {isRunningCycle ? <Loader2 className="h-3 w-3 animate-spin mr-2" /> : <PlayCircle className="h-3 w-3 mr-2" />}
-            {t('generateNow')}
-          </Button>
-        </div>
-      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="bg-white border p-1 rounded-xl shadow-sm mb-6 flex h-11 ring-1 ring-slate-100">
@@ -262,7 +192,7 @@ export default function ContractsPage() {
             </Card>
           ) : (
             <div className="p-24 bg-white rounded-[3rem] border border-dashed text-center flex flex-col items-center ring-1 ring-slate-100">
-              <Wrench className="h-12 w-12 text-emerald-200 mb-6" />
+              <ShieldCheck className="h-12 w-12 text-emerald-200 mb-6" />
               <p className="text-[10px] uppercase font-black text-muted-foreground tracking-[0.3em]">{t('allHealthy')}</p>
             </div>
           )}
@@ -343,15 +273,71 @@ export default function ContractsPage() {
               <Button 
                 variant="outline" 
                 className="mt-6 rounded-full text-[10px] font-black uppercase tracking-widest px-8"
-                onClick={handleRunBillingCycle}
-                disabled={isRunningCycle}
+                onClick={() => setIsManualGenOpen(true)}
               >
-                {isRunningCycle ? "Processing..." : "Run Monthly Billing Cycle"}
+                Run Monthly Billing Cycle
               </Button>
             </div>
           )}
         </TabsContent>
       </Tabs>
+
+      {/* MANUAL BILL GENERATOR MODAL */}
+      <Dialog open={isManualGenOpen} onOpenChange={setIsManualGenOpen}>
+        <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-[2rem] bg-slate-50">
+          <DialogHeader className="p-6 bg-emerald-600 text-white flex-row items-center gap-4 space-y-0">
+             <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center shrink-0">
+                <Calculator className="h-6 w-6" />
+             </div>
+             <div>
+               <DialogTitle className="text-lg font-black uppercase tracking-tight">Billing Terminal</DialogTitle>
+               <p className="text-[9px] font-black uppercase opacity-60 tracking-widest mt-0.5">SLA Invoice Provisioning</p>
+             </div>
+          </DialogHeader>
+          <div className="p-8 space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-black uppercase text-slate-400">Target Month</Label>
+                <Select value={genMonth} onValueChange={setGenMonth}>
+                  <SelectTrigger className="h-12 rounded-xl bg-white border-none ring-1 ring-slate-200 font-bold"><SelectValue /></SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map((m, i) => (
+                      <SelectItem key={m} value={String(i + 1)} className="text-xs font-bold">{m}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-black uppercase text-slate-400">Target Year</Label>
+                <Select value={genYear} onValueChange={setGenYear}>
+                  <SelectTrigger className="h-12 rounded-xl bg-white border-none ring-1 ring-slate-200 font-bold"><SelectValue /></SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    {["2024", "2025", "2026", "2027"].map(y => (
+                      <SelectItem key={y} value={y} className="text-xs font-bold">{y}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-3xl ring-1 ring-slate-100 flex gap-4">
+               <AlertCircle className="h-5 w-5 text-amber-500 shrink-0" />
+               <p className="text-[10px] font-bold text-slate-500 leading-relaxed uppercase">
+                 This process will skip existing invoices and only generate new bills for active SLA contracts.
+               </p>
+            </div>
+
+            <Button 
+              className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-emerald-100 transition-all active:scale-95 gap-2"
+              onClick={handleRunManualCycle}
+              disabled={isRunningCycle}
+            >
+              {isRunningCycle ? <Loader2 className="animate-spin h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
+              Generate Bills Now
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl">
