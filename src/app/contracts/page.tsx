@@ -114,14 +114,16 @@ export default function ContractsPage() {
         
         if (snap.empty) {
           const invRef = doc(collection(db, "companies", companyId, "branches", branchId, "contract_invoices"));
+          
+          // Added safe fallbacks for all fields to prevent "undefined" errors
           batch.set(invRef, {
             id: invRef.id,
-            contractId: contract.id,
-            contractNumber: contract.contractNumber,
-            customerName: contract.customerName,
-            serviceName: contract.serviceName,
+            contractId: contract.id || "",
+            contractNumber: contract.contractNumber || "N/A",
+            customerName: contract.customerName || "Walking Client",
+            serviceName: contract.serviceName || "Service Subscription",
             billingMonth: currentMonth,
-            amount: contract.monthlyAmount,
+            amount: Number(contract.monthlyAmount) || 0,
             status: "due",
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
@@ -279,8 +281,8 @@ export default function ContractsPage() {
                       <TableHead className="h-12 text-[10px] uppercase font-black">Billing Month</TableHead>
                       <TableHead className="h-12 text-[10px] uppercase font-black">{t('customer')}</TableHead>
                       <TableHead className="h-12 text-[10px] uppercase font-black text-right">{t('amount')}</TableHead>
-                      <TableHead className="h-12 text-[10px] uppercase font-black text-center">{t('status')}</TableHead>
-                      <TableHead className="h-12 text-right pr-6"></TableHead>
+                      <TableHead className="text-[10px] uppercase font-black text-center">{t('status')}</TableHead>
+                      <TableHead className="text-right h-12 pr-6"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
