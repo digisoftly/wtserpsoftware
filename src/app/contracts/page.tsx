@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Plus, ShieldCheck, Loader2, MoreVertical, AlertCircle, TrendingUp, Eye, Trash2, Edit, Receipt, Check, Calculator, PlayCircle, Printer } from "lucide-react"
+import { Plus, ShieldCheck, Loader2, MoreVertical, AlertCircle, TrendingUp, Eye, Trash2, Edit, Receipt, Check, Calculator, PlayCircle, Printer, Download } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, doc, serverTimestamp, updateDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
@@ -163,6 +163,7 @@ export default function ContractsPage() {
                                 <DropdownMenuItem className="text-xs font-bold" onClick={() => router.push(`/contracts/${c.id}`)}>
                                   <Eye className="mr-2 h-3.5 w-3.5" /> {t('details')}
                                 </DropdownMenuItem>
+                                <DropdownMenuSeparator />
                                 <DropdownMenuItem className="text-red-600 text-xs font-bold" onClick={() => { setSelectedRecord(c); setIsDeleteAlertOpen(true); }}>
                                   <Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}
                                 </DropdownMenuItem>
@@ -279,6 +280,7 @@ export default function ContractsPage() {
                               <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl">
                                 <DropdownMenuItem className="text-xs font-bold" onClick={() => router.push(`/contracts/invoices/${inv.id}/view`)}><Eye className="mr-2 h-3.5 w-3.5" /> {t('view')}</DropdownMenuItem>
                                 <DropdownMenuItem className="text-xs font-bold" onClick={() => router.push(`/contracts/invoices/${inv.id}/edit`)}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
+                                <DropdownMenuItem className="text-xs font-bold" onClick={() => router.push(`/contracts/invoices/${inv.id}/view?print=true`)}><Printer className="mr-2 h-3.5 w-3.5" /> {t('print')}</DropdownMenuItem>
                                 <DropdownMenuItem className="text-xs font-bold" onClick={() => handlePayInvoice(inv)}><Check className="mr-2 h-3.5 w-3.5" /> Mark Paid</DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem className="text-red-600 text-xs font-bold" onClick={() => { setSelectedRecord(inv); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> Delete</DropdownMenuItem>

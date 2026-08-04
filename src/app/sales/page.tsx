@@ -62,12 +62,32 @@ export default function SalesPage() {
     }
   };
 
+  const handleExportCSV = () => {
+    if (!filteredInvoices || filteredInvoices.length === 0) return;
+    const headers = ["Invoice #", "Customer", "Amount", "Date", "Status"];
+    const rows = filteredInvoices.map(inv => [
+      inv.invoiceNumber,
+      inv.customerName,
+      inv.totalAmount,
+      inv.invoiceDate,
+      inv.status
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].map(e => e.join(",")).join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `sales_report_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 className="text-xl font-bold text-slate-900">{t('sales')}</h1>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="h-9 rounded-lg gap-2 text-[11px] font-black uppercase tracking-widest border-slate-200" onClick={() => {}}>
+          <Button variant="outline" size="sm" className="h-9 rounded-lg gap-2 text-[11px] font-black uppercase tracking-widest border-slate-200" onClick={handleExportCSV}>
             <Download className="h-4 w-4" /> {t('export')}
           </Button>
           <Button size="sm" className="h-9 rounded-lg gap-2 px-6 font-black text-[11px] uppercase tracking-widest bg-primary" asChild>
@@ -79,10 +99,10 @@ export default function SalesPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        <KPICard title={t('todaySales')} value="৳0" icon={TrendingUp} colorClass="bg-blue-600" />
-        <KPICard title={t('thisMonth')} value="৳0" icon={Calendar} colorClass="bg-green-600" />
+        <KPICard title={t('todaySales')} value={`৳${invoices?.filter(i => i.invoiceDate === new Date().toISOString().split('T')[0]).reduce((s, i) => s + (i.totalAmount || 0), 0).toLocaleString()}`} icon={TrendingUp} colorClass="bg-blue-600" />
         <KPICard title={t('totalOrders')} value={invoices?.length || 0} icon={ShoppingCart} colorClass="bg-indigo-600" />
-        <KPICard title={t('pendingInvoices')} value="৳0" icon={AlertCircle} colorClass="bg-orange-600" />
+        <KPICard title={t('pendingInvoices')} value={`৳${invoices?.filter(i => i.status !== 'paid').reduce((s, i) => s + (i.balanceDue || 0), 0).toLocaleString()}`} icon={AlertCircle} colorClass="bg-orange-600" />
+        <KPICard title={t('activeCustomers')} value={new Set(invoices?.map(i => i.customerId)).size} icon={Calendar} colorClass="bg-green-600" />
       </div>
 
       <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex flex-col sm:flex-row gap-3 items-center justify-between ring-1 ring-slate-100">
@@ -146,7 +166,7 @@ export default function SalesPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48 rounded-2xl shadow-2xl p-2 border-slate-100">
                             <DropdownMenuItem onClick={() => router.push(`/sales/${inv.id}/edit`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
-                            <DropdownMenuItem className="rounded-xl h-10 text-xs font-bold py-1.5"><Printer className="mr-2 h-4 w-4" /> Print</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => router.push(`/sales/${inv.id}/view?print=true`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><Printer className="mr-2 h-4 w-4" /> Print</DropdownMenuItem>
                             <DropdownMenuSeparator className="my-1 bg-slate-50" />
                             <DropdownMenuItem onClick={() => { setSelectedRecord(inv); setIsDeleteAlertOpen(true); }} className="rounded-xl h-10 text-red-600 text-xs font-bold py-1.5 focus:bg-red-50 focus:text-red-700"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
                           </DropdownMenuContent>

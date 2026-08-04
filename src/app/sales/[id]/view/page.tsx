@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { 
   ArrowLeft, 
   Download, 
@@ -10,7 +10,6 @@ import {
   AlertCircle,
   Share2,
   MessageSquare,
-  Mail,
   Copy,
   Receipt,
   CheckCircle2,
@@ -30,6 +29,7 @@ import { toast } from "@/hooks/use-toast"
 export default function ViewInvoicePage() {
   const { id } = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
   const { t } = useTranslation();
@@ -40,6 +40,16 @@ export default function ViewInvoicePage() {
   }, [db, companyId, branchId, id]);
 
   const { data: invoice, isLoading } = useDoc(invoiceRef);
+
+  // Auto-print effect
+  React.useEffect(() => {
+    if (!isLoading && invoice && searchParams.get('print') === 'true') {
+      const timer = setTimeout(() => {
+        window.print();
+      }, 800); // Give layout time to settle
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, invoice, searchParams]);
 
   const handleShareWhatsApp = () => {
     if (!invoice) return;
@@ -119,7 +129,6 @@ export default function ViewInvoicePage() {
       </div>
 
       <div className="max-w-[1200px] mx-auto w-full p-4 md:p-10">
-        {/* Document Container: A4 Optimization */}
         <div className="bg-white shadow-2xl rounded-2xl overflow-hidden border border-slate-100 ring-1 ring-slate-100/50 animate-in fade-in slide-in-from-bottom-4 duration-700 origin-top">
           <DocumentTemplate
             title={t('taxInvoice')}
@@ -144,11 +153,10 @@ export default function ViewInvoicePage() {
             status={invoice.status}
             notes={invoice.notes}
             type="invoice"
-            layoutOverride="erppro"
+            layoutOverride="warrior"
           />
         </div>
 
-        {/* Floating Quick Action Footer - HIDDEN DURING PRINT */}
         <div className="mt-8 flex flex-col md:flex-row justify-center items-center gap-4 no-print pb-20">
            <div className="flex items-center gap-6 bg-slate-900 text-white px-8 py-3 rounded-full shadow-2xl ring-1 ring-white/10">
               <div className="flex items-center gap-3 border-r border-white/20 pr-6">
@@ -165,31 +173,6 @@ export default function ViewInvoicePage() {
            </div>
         </div>
       </div>
-
-      <style jsx global>{`
-        @media print {
-          body {
-            background: white !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-          .document-container {
-            box-shadow: none !important;
-            border: none !important;
-            border-radius: 0 !important;
-            width: 210mm !important;
-            min-height: 297mm !important;
-            padding: 0 !important;
-          }
-          @page {
-            size: A4;
-            margin: 0;
-          }
-        }
-      `}</style>
     </div>
   );
 }

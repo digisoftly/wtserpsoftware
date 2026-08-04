@@ -151,7 +151,7 @@ export default function QuotationsPage() {
                             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-blue-50 text-blue-600"><MoreVertical className="h-4 w-4" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl">
-                            <DropdownMenuItem className="text-xs font-bold" onClick={() => {}}><Printer className="mr-2 h-3.5 w-3.5" /> {t('print')}</DropdownMenuItem>
+                            <DropdownMenuItem className="text-xs font-bold" onClick={() => router.push(`/quotations/${q.id}/view?print=true`)}><Printer className="mr-2 h-3.5 w-3.5" /> {t('print')}</DropdownMenuItem>
                             <DropdownMenuItem className="text-xs font-bold" onClick={() => handleShareWhatsApp(q)}><MessageSquare className="mr-2 h-3.5 w-3.5" /> WhatsApp</DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(q); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
