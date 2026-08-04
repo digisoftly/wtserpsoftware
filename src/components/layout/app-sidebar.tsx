@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -25,9 +24,7 @@ import {
   Building2, 
   Database,
   ClipboardList,
-  ChevronRight,
-  ShieldCheck,
-  Tags
+  ChevronRight
 } from "lucide-react"
 
 import { 
@@ -38,8 +35,7 @@ import {
   SidebarMenu, 
   SidebarMenuButton, 
   SidebarMenuItem, 
-  SidebarGroup, 
-  SidebarGroupLabel,
+  SidebarGroup,
   useSidebar 
 } from "@/components/ui/sidebar"
 import {
@@ -110,24 +106,21 @@ export function AppSidebar() {
   const isMasterActive = pathname.startsWith('/master')
 
   return (
-    <Sidebar collapsible="icon" className="border-r shadow-none bg-[#111827]">
-      <SidebarHeader className="h-[60px] flex items-center px-4 border-b border-white/5">
+    <Sidebar collapsible="icon" className="border-r border-white/5 bg-[#111827]">
+      <SidebarHeader className="h-[58px] flex items-center px-4 border-b border-white/5">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-sm shadow-md shrink-0">
+          <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center text-white font-bold text-sm shadow-md shrink-0">
             {settings?.companyLogo ? <img src={settings.companyLogo} className="w-full h-full object-contain" /> : "W"}
           </div>
           {state === "expanded" && (
-            <div className="flex flex-col leading-none">
-              <span className="font-bold text-white text-[13px] tracking-tight">Warrior ERP</span>
-              <span className="text-[10px] text-slate-500 font-bold uppercase mt-1">Enterprise</span>
-            </div>
+            <span className="font-bold text-white text-[13px] tracking-tight truncate">Warrior ERP</span>
           )}
         </div>
       </SidebarHeader>
       
-      <SidebarContent className="py-4 custom-scrollbar">
-        <SidebarGroup>
-          <SidebarMenu className="gap-0.5">
+      <SidebarContent className="py-2 custom-scrollbar">
+        <SidebarGroup className="p-0">
+          <SidebarMenu className="gap-0.5 px-2">
             {MAIN_MODULES.filter(m => can(m.key, 'view')).map((item) => (
               <SidebarMenuItem key={item.key}>
                 <SidebarMenuButton 
@@ -135,19 +128,18 @@ export function AppSidebar() {
                   isActive={pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))} 
                   tooltip={t(item.name as any)} 
                   className={cn(
-                    "h-9 px-4 transition-all hover:bg-white/5",
-                    (pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))) ? "bg-primary text-white hover:bg-primary shadow-sm" : "text-slate-400"
+                    "h-8 px-2.5 transition-all hover:bg-white/5",
+                    (pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))) ? "bg-primary text-white hover:bg-primary" : "text-slate-400"
                   )}
                 >
                   <Link href={item.path} className="flex items-center gap-3">
-                    <item.icon className={cn("h-[16px] w-[18px] shrink-0", (pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))) ? "text-white" : item.color)} />
-                    <span className="text-[13px] font-medium">{t(item.name as any)}</span>
+                    <item.icon className={cn("h-4 w-4 shrink-0", (pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))) ? "text-white" : item.color)} />
+                    <span className="text-[12px] font-medium">{t(item.name as any)}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
 
-            {/* MASTER MANAGEMENT COLLAPSIBLE */}
             {can('masterManagement', 'view') && (
               <Collapsible defaultOpen={isMasterActive} className="group/collapsible">
                 <SidebarMenuItem>
@@ -156,29 +148,29 @@ export function AppSidebar() {
                       isActive={isMasterActive}
                       tooltip={t('masterManagement')}
                       className={cn(
-                        "h-9 px-4 transition-all hover:bg-white/5",
+                        "h-8 px-2.5 transition-all hover:bg-white/5",
                         isMasterActive ? "bg-primary/10 text-primary" : "text-slate-400"
                       )}
                     >
-                      <Database className={cn("h-[16px] w-[18px] shrink-0", isMasterActive ? "text-primary" : "text-orange-500")} />
-                      <span className="text-[13px] font-medium">{t('masterManagement')}</span>
-                      <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                      <Database className={cn("h-4 w-4 shrink-0", isMasterActive ? "text-primary" : "text-orange-500")} />
+                      <span className="text-[12px] font-medium">{t('masterManagement')}</span>
+                      <ChevronRight className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <SidebarMenu className="mt-1 ml-4 border-l border-white/5 gap-0.5">
+                    <SidebarMenu className="mt-0.5 ml-3 border-l border-white/5 gap-0.5">
                       {MASTER_DATA_ITEMS.map((sub) => (
                         <SidebarMenuItem key={sub.path}>
                           <SidebarMenuButton 
                             asChild 
                             isActive={pathname === sub.path}
                             className={cn(
-                              "h-8 px-4 text-slate-400 hover:text-white hover:bg-white/5",
-                              pathname === sub.path && "text-white bg-white/10 font-bold"
+                              "h-7 px-4 text-slate-400 hover:text-white hover:bg-white/5",
+                              pathname === sub.path && "text-white bg-white/5 font-bold"
                             )}
                           >
                             <Link href={sub.path}>
-                              <span className="text-[12px]">{t(sub.name as any)}</span>
+                              <span className="text-[11px]">{t(sub.name as any)}</span>
                             </Link>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
@@ -196,13 +188,13 @@ export function AppSidebar() {
                   isActive={pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))} 
                   tooltip={t(item.name as any)} 
                   className={cn(
-                    "h-9 px-4 transition-all hover:bg-white/5",
-                    (pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))) ? "bg-primary text-white hover:bg-primary shadow-sm" : "text-slate-400"
+                    "h-8 px-2.5 transition-all hover:bg-white/5",
+                    (pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))) ? "bg-primary text-white hover:bg-primary" : "text-slate-400"
                   )}
                 >
                   <Link href={item.path} className="flex items-center gap-3">
-                    <item.icon className={cn("h-[16px] w-[18px] shrink-0", (pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))) ? "text-white" : item.color)} />
-                    <span className="text-[13px] font-medium">{t(item.name as any)}</span>
+                    <item.icon className={cn("h-4 w-4 shrink-0", (pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))) ? "text-white" : item.color)} />
+                    <span className="text-[12px] font-medium">{t(item.name as any)}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -212,19 +204,19 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-white/5 p-2">
-        <SidebarMenu>
+        <SidebarMenu className="px-2">
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip={t('settings')} isActive={pathname.startsWith('/settings')} className="text-slate-400 hover:bg-white/5 h-9 px-4">
+            <SidebarMenuButton asChild tooltip={t('settings')} isActive={pathname.startsWith('/settings')} className="text-slate-400 hover:bg-white/5 h-8 px-2.5">
               <Link href="/settings" className="flex items-center gap-3">
-                <Settings className="h-[18px] w-[18px] text-slate-400" />
-                <span className="text-[13px] font-medium">{t('settings')}</span>
+                <Settings className="h-4 w-4 text-slate-400" />
+                <span className="text-[12px] font-medium">{t('settings')}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout} className="text-slate-400 hover:text-red-400 hover:bg-red-500/10 h-9 px-4">
-              <LogOut className="h-[18px] w-[18px] text-red-500" />
-              <span className="text-[13px] font-medium">Logout</span>
+            <SidebarMenuButton onClick={handleLogout} className="text-slate-400 hover:text-red-400 hover:bg-red-500/10 h-8 px-2.5">
+              <LogOut className="h-4 w-4 text-red-500" />
+              <span className="text-[12px] font-medium">Logout</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

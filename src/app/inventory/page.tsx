@@ -63,15 +63,12 @@ export default function InventoryPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">{t('inventory')}</h1>
-          <nav className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Assets / Item Directory</nav>
-        </div>
+        <h1 className="text-xl font-bold text-slate-900 tracking-tight">{t('inventory')}</h1>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="rounded-md gap-2 h-9 text-xs font-bold px-4" asChild>
+          <Button variant="outline" size="sm" className="h-8 rounded-md gap-2 text-xs font-bold border-slate-200" asChild>
             <Link href="/inventory/bulk-add">Import CSV</Link>
           </Button>
-          <Button size="sm" className="rounded-md gap-2 h-9 text-xs font-bold px-4 shadow-lg shadow-primary/10" asChild>
+          <Button size="sm" className="h-8 rounded-md gap-2 px-4 font-bold text-xs" asChild>
             <Link href="/inventory/new">
               <Plus className="h-3.5 w-3.5" /> {t('addProduct')}
             </Link>
@@ -85,30 +82,28 @@ export default function InventoryPage() {
         <KPICard title={t('stockValue')} value={`৳0`} icon={DollarSign} colorClass="text-green-600" />
       </div>
 
-      <div className="bg-white p-4 rounded-md border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between">
+      <div className="bg-white p-3 rounded-md border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between">
         <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
           <input 
-            placeholder="Filter catalog by name or SKU..." 
-            className="pl-9 h-9 w-full rounded-md bg-slate-50/50 border border-slate-200 text-xs font-medium focus:ring-1 focus:ring-primary outline-none" 
+            placeholder="Filter catalog..." 
+            className="pl-9 h-8 w-full rounded-md bg-slate-50/50 border border-slate-200 text-xs font-medium focus:ring-1 focus:ring-primary outline-none" 
             value={searchTerm} 
             onChange={e => setSearchTerm(e.target.value)} 
           />
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="h-9 px-3 gap-2 text-xs font-bold text-slate-500">
-            <Filter className="h-3.5 w-3.5" /> Advance
-          </Button>
-        </div>
+        <Button variant="ghost" size="sm" className="h-8 px-3 gap-2 text-[11px] font-bold text-slate-500">
+          <Filter className="h-3.5 w-3.5" /> Filter
+        </Button>
       </div>
 
       <Card className="border border-slate-200 shadow-sm rounded-md overflow-hidden bg-white">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader className="bg-slate-50 border-b border-slate-200 sticky top-0 z-20">
-              <TableRow>
+              <TableRow className="hover:bg-transparent">
                 <TableHead className="w-10 pl-6 h-10">
-                  <Checkbox checked={isAllSelected} onCheckedChange={toggleSelectAll} className="h-4 w-4" />
+                  <Checkbox checked={isAllSelected} onCheckedChange={toggleSelectAll} className="h-3.5 w-3.5" />
                 </TableHead>
                 <TableHead className="text-[10px] uppercase font-bold text-slate-500 h-10">Product / SKU</TableHead>
                 <TableHead className="text-[10px] uppercase font-bold text-slate-500 h-10 text-center">In Stock</TableHead>
@@ -118,14 +113,14 @@ export default function InventoryPage() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={5} className="h-40 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto text-slate-300" /></TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="h-40 text-center"><Loader2 className="h-5 w-5 animate-spin mx-auto text-slate-200" /></TableCell></TableRow>
               ) : filtered?.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="h-40 text-center text-slate-400 text-xs font-medium italic">No items found in directory</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="h-40 text-center text-slate-300 text-xs font-medium italic">No items found</TableCell></TableRow>
               ) : (
                 filtered?.map((p) => (
-                  <TableRow key={p.id} className={cn("hover:bg-slate-50/50 transition-colors group", selectedIds.includes(p.id) && "bg-blue-50/30")}>
+                  <TableRow key={p.id} className={cn("hover:bg-slate-50/50 transition-colors group border-slate-50", selectedIds.includes(p.id) && "bg-blue-50/30")}>
                     <TableCell className="pl-6 py-3">
-                      <Checkbox checked={selectedIds.includes(p.id)} onCheckedChange={() => toggleSelect(p.id)} className="h-4 w-4" />
+                      <Checkbox checked={selectedIds.includes(p.id)} onCheckedChange={() => toggleSelect(p.id)} className="h-3.5 w-3.5" />
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col">
@@ -135,7 +130,7 @@ export default function InventoryPage() {
                     </TableCell>
                     <TableCell className="text-center">
                       <span className={cn(
-                        "text-[10px] font-bold h-6 px-2.5 inline-flex items-center justify-center rounded uppercase",
+                        "text-[10px] font-bold h-5 px-2 inline-flex items-center justify-center rounded uppercase",
                         (p.currentStock || 0) <= 5 ? "bg-red-50 text-red-700" : "bg-blue-50 text-blue-700"
                       )}>
                         {p.currentStock || 0} {p.unit || 'Units'}
