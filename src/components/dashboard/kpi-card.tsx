@@ -6,45 +6,43 @@ import { cn } from "@/lib/utils"
 interface KPICardProps {
   title: string
   value: string | number
-  icon?: LucideIcon
-  colorClass?: string
-  subtext?: string
+  icon: LucideIcon
+  colorClass: string // Expected format: bg-blue-600 or hex
   trend?: {
     value: number
     isPositive: boolean
   }
 }
 
-export const KPICard = React.memo(function KPICard({ title, value, icon: Icon, colorClass, subtext, trend }: KPICardProps) {
+/**
+ * Premium KPI Card with colorful background and icon.
+ * Background is a light 10% opacity version of the primary color.
+ */
+export const KPICard = React.memo(function KPICard({ title, value, icon: Icon, colorClass, trend }: KPICardProps) {
+  // Extract color name to generate bg-opacity
+  const baseColor = colorClass.replace('bg-', '');
+  
   return (
-    <Card className="overflow-hidden border border-slate-200 shadow-sm bg-white rounded-md">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <div className="space-y-0.5">
-            <p className="text-[10px] font-bold uppercase tracking-tight text-slate-400">{title}</p>
+    <Card className={cn("overflow-hidden border-none shadow-sm rounded-xl transition-all", `bg-${baseColor}/10`)}>
+      <CardContent className="p-5">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <p className={cn("text-[10px] font-black uppercase tracking-widest", `text-${baseColor}`)}>{title}</p>
             <div className="flex items-baseline gap-2">
-              <h3 className="text-xl font-bold text-slate-900 tracking-tight">{value}</h3>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tighter">{value}</h3>
               {trend && (
                 <span className={cn(
-                  "text-[9px] font-bold px-1 py-0.5 rounded",
-                  trend.isPositive ? "text-green-600 bg-green-50" : "text-red-600 bg-red-50"
+                  "text-[10px] font-black px-1.5 py-0.5 rounded-full",
+                  trend.isPositive ? "text-green-700 bg-green-100" : "text-red-700 bg-red-100"
                 )}>
                   {trend.isPositive ? "+" : "-"}{trend.value}%
                 </span>
               )}
             </div>
-            {subtext && (
-              <p className="text-[10px] font-medium text-slate-400 mt-1">{subtext}</p>
-            )}
           </div>
-          {Icon && (
-            <div className={cn(
-              "opacity-40",
-              colorClass ? colorClass.replace('bg-', 'text-') : "text-slate-400"
-            )}>
-              <Icon className="h-4 w-4" />
-            </div>
-          )}
+          <div className={cn("p-3 rounded-2xl shadow-sm", colorClass, "text-white")}>
+            <Icon className="h-5 w-5" />
+          </div>
         </div>
       </CardContent>
     </Card>
