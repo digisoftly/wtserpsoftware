@@ -87,16 +87,23 @@ export function ServiceBillLayout({
         </div>
       </div>
 
-      {/* 4. SERVICE MATRIX TABLE */}
+      {/* 4. SERVICE MATRIX TABLE - ENTERPRISE GRID */}
       <div className="flex-1">
         <table className="w-full border-collapse border border-gray-200">
+          <colgroup>
+            <col style={{ width: '6%' }} />
+            <col style={{ width: '22%' }} />
+            <col style={{ width: '46%' }} />
+            <col style={{ width: '13%' }} />
+            <col style={{ width: '13%' }} />
+          </colgroup>
           <thead>
             <tr className="bg-[#F3F4F6] border-b border-gray-200">
-              <th className="w-[50px] border-r border-gray-200 py-3 text-[10px] font-bold uppercase text-slate-600 text-center">SL</th>
+              <th className="border-r border-gray-200 py-3 text-[10px] font-bold uppercase text-slate-600 text-center">SL</th>
               <th className="border-r border-gray-200 px-4 text-left text-[10px] font-bold uppercase text-slate-600">Service Name</th>
               <th className="border-r border-gray-200 px-4 text-left text-[10px] font-bold uppercase text-slate-600">Site / Location</th>
-              <th className="w-[140px] border-r border-gray-200 px-4 text-right text-[10px] font-bold uppercase text-slate-600">Charge ({currencySymbol})</th>
-              <th className="w-[140px] px-4 text-right text-[10px] font-bold uppercase text-slate-600">Amount ({currencySymbol})</th>
+              <th className="border-r border-gray-200 px-4 text-right text-[10px] font-bold uppercase text-slate-600">Monthly Charge (BDT)</th>
+              <th className="px-4 text-right text-[10px] font-bold uppercase text-slate-600">Amount (BDT)</th>
             </tr>
           </thead>
           <tbody>
@@ -105,10 +112,10 @@ export function ServiceBillLayout({
                 <td className="border-r border-gray-200 text-center text-[11px] font-medium text-slate-500">
                   {(idx + 1).toString().padStart(2, '0')}
                 </td>
-                <td className="border-r border-gray-200 px-4 text-[11px] font-bold text-slate-800">
+                <td className="border-r border-gray-200 px-4 text-[11px] font-bold text-slate-800 text-left">
                   {item.name}
                 </td>
-                <td className="border-r border-gray-200 px-4 text-[11px] text-slate-600 font-medium">
+                <td className="border-r border-gray-200 px-4 text-[11px] text-slate-600 font-medium text-left">
                   {item.description || '---'}
                 </td>
                 <td className="border-r border-gray-200 px-4 text-right text-[11px] font-bold text-slate-700 tabular-nums">
@@ -121,10 +128,10 @@ export function ServiceBillLayout({
             ))}
             
             {/* 5. GRAND TOTAL ROW */}
-            <tr className="bg-[#F3F4F6] font-black h-[42px] border-t-2 border-gray-300">
+            <tr className="bg-[#F3F4F6] font-black h-[44px] border-t-2 border-gray-300">
               <td className="border-r border-gray-200"></td>
               <td className="border-r border-gray-200"></td>
-              <td className="border-r border-gray-200 px-4 text-[11px] text-right uppercase tracking-wider">
+              <td className="border-r border-gray-200 px-4 text-[11px] text-left uppercase tracking-wider font-black">
                 Grand Total (BDT)
               </td>
               <td className="border-r border-gray-200"></td>
