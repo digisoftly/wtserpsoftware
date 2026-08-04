@@ -9,6 +9,7 @@ import { ModernLayout } from "./layouts/modern-layout"
 import { ThermalLayout } from "./layouts/thermal-layout"
 import { ERPProLayout } from "./layouts/erp-pro-layout"
 import { WarriorLayout } from "./layouts/warrior-layout"
+import { ServiceBillLayout } from "./layouts/service-bill-layout"
 
 export interface DocumentItem {
   name: string;
@@ -21,7 +22,7 @@ export interface DocumentItem {
   discount?: number;
 }
 
-export type DocumentLayoutType = 'professional' | 'minimal' | 'modern' | 'thermal' | 'erppro' | 'warrior';
+export type DocumentLayoutType = 'professional' | 'minimal' | 'modern' | 'thermal' | 'erppro' | 'warrior' | 'service-bill';
 
 export interface DocumentTemplateProps {
   title: string;
@@ -60,6 +61,8 @@ export function DocumentTemplate(props: DocumentTemplateProps) {
 
   const renderLayout = () => {
     switch (layout) {
+      case 'service-bill':
+        return <ServiceBillLayout {...props} />;
       case 'warrior':
         return <WarriorLayout {...props} />;
       case 'minimal':

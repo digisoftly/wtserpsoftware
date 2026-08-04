@@ -81,7 +81,7 @@ export default function ViewContractInvoicePage() {
 
       <div className="bg-white shadow-2xl rounded-none md:rounded-[2.5rem] overflow-hidden border border-slate-100 ring-1 ring-slate-100/50">
         <DocumentTemplate
-          title="Service Contract Invoice"
+          title="MONTHLY SERVICE CHARGE BILL"
           docNumber={`SLA-${invoice.id.slice(-6).toUpperCase()}`}
           date={invoice.createdAt?.toDate?.()?.toISOString() || new Date().toISOString()}
           customerName={invoice.customerName}
@@ -98,6 +98,7 @@ export default function ViewContractInvoicePage() {
           grandTotal={invoice.amount}
           status={invoice.status}
           type="invoice"
+          layoutOverride="service-bill"
         />
       </div>
 
