@@ -4,24 +4,19 @@ import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Wallet, Landmark, TrendingDown, TrendingUp, Loader2, ArrowUpRight, ArrowDownLeft, Plus, MoreVertical } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, query, orderBy, serverTimestamp } from "firebase/firestore"
+import { collection, query, orderBy } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { Card } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { useTranslation } from "@/hooks/use-translation"
+import Link from "next/link"
 
 export default function AccountsPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
   const { t } = useTranslation();
-  const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
 
   const txQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
@@ -39,33 +34,14 @@ export default function AccountsPage() {
     return { balance: income - expense, income, expense };
   }, [transactions]);
 
-  const handleAddTransaction = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    if (!db || !companyId || !branchId) return;
-
-    const txData = {
-      companyId,
-      branchId,
-      description: formData.get("description") as string,
-      amount: Number(formData.get("amount")),
-      transactionType: formData.get("type") as string,
-      transactionDate: new Date().toISOString(),
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-
-    const colRef = collection(db, "companies", companyId, "branches", branchId, "transactions");
-    addDocumentNonBlocking(colRef, txData);
-    setIsAddModalOpen(false);
-  };
-
   return (
     <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <h1 className="text-xl font-bold font-headline text-blue-600">{t('accounts')}</h1>
-        <Button className="bg-blue-600 hover:bg-blue-700 rounded-full gap-2 shadow-lg h-9 px-6 text-[10px] uppercase font-bold" onClick={() => setIsAddModalOpen(true)}>
-          <Plus className="h-4 w-4" /> {t('addJournal')}
+        <Button className="bg-blue-600 hover:bg-blue-700 rounded-full gap-2 shadow-lg h-9 px-6 text-[10px] uppercase font-bold" asChild>
+          <Link href="/accounts/new">
+            <Plus className="h-4 w-4" /> {t('addJournal')}
+          </Link>
         </Button>
       </div>
 
@@ -115,29 +91,6 @@ export default function AccountsPage() {
           <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">{t('noSales')}</p>
         </div>
       )}
-
-      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-[2rem]">
-          <DialogHeader className="bg-blue-600 p-6 text-white flex-row items-center gap-3">
-            <Plus className="h-6 w-6" />
-            <DialogTitle className="text-xl font-bold font-headline uppercase">{t('addJournal')}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleAddTransaction} className="p-6 space-y-4 bg-slate-50">
-            <div className="space-y-1"><Label className="text-[10px] font-bold uppercase text-muted-foreground">{t('label')}</Label><Input name="description" required className="h-11 rounded-xl border-none ring-1 ring-slate-200 text-xs" /></div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1"><Label className="text-[10px] font-bold uppercase text-muted-foreground">{t('amount')}</Label><Input name="amount" type="number" step="0.01" required className="h-11 rounded-xl border-none ring-1 ring-slate-200 text-xs font-bold" /></div>
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold uppercase text-muted-foreground">{t('type')}</Label>
-                <Select name="type" defaultValue="expense">
-                  <SelectTrigger className="h-11 rounded-xl bg-white border-none ring-1 ring-slate-200 shadow-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="income" className="text-xs font-bold">{t('income')} (+)</SelectItem><SelectItem value="expense" className="text-xs font-bold">{t('expense')} (-)</SelectItem></SelectContent>
-                </Select>
-              </div>
-            </div>
-            <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 h-12 rounded-2xl text-[10px] font-black uppercase mt-4 shadow-xl shadow-blue-100 active:scale-95 transition-all">{t('save')}</Button>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

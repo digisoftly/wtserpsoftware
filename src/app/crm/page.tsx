@@ -12,6 +12,7 @@ import { useTenant } from "@/context/tenant-context"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { useTranslation } from "@/hooks/use-translation"
+import Link from "next/link"
 
 export default function CRMPage() {
   const { companyId, branchId } = useTenant();
@@ -37,8 +38,10 @@ export default function CRMPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold font-headline text-rose-500">{t('crm')}</h1>
-        <Button className="rounded-full gap-2 h-9 px-6 bg-rose-500 hover:bg-rose-600 font-bold text-[10px] uppercase shadow-lg shadow-rose-100">
-          <Plus className="h-4 w-4" /> {t('addLead')}
+        <Button className="rounded-full gap-2 h-9 px-6 bg-rose-500 hover:bg-rose-600 font-bold text-[10px] uppercase shadow-lg shadow-rose-100" asChild>
+          <Link href="/crm/new">
+            <Plus className="h-4 w-4" /> {t('addLead')}
+          </Link>
         </Button>
       </div>
 

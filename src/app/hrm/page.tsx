@@ -2,28 +2,25 @@
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { UserRoundCog, UserPlus, Search, MoreVertical, Loader2, Users, Edit, Trash2, UserCheck, UserX } from "lucide-react"
+import { UserPlus, Search, MoreVertical, Loader2, Users, Edit, Trash2, UserCheck, UserX } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, serverTimestamp, query, orderBy, doc } from "firebase/firestore"
+import { collection, query, orderBy, doc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
-import { addDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates"
+import { deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { toast } from "@/hooks/use-toast"
 import { useTranslation } from "@/hooks/use-translation"
+import Link from "next/link"
 
 export default function HRMPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
   const { t } = useTranslation();
-  const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
   const [selectedRecord, setSelectedRecord] = React.useState<any>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -44,27 +41,6 @@ export default function HRMPage() {
     absent: 0 
   }), [employees]);
 
-  const handleAddEmployee = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    if (!db || !companyId || !branchId) return;
-
-    const employeeData = {
-      companyId,
-      branchId,
-      firstName: formData.get("firstName") as string,
-      lastName: formData.get("lastName") as string,
-      jobTitle: formData.get("jobTitle") as string,
-      employmentStatus: "active",
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-
-    addDocumentNonBlocking(collection(db, "companies", companyId, "branches", branchId, "employees"), employeeData);
-    setIsAddModalOpen(false);
-    toast({ title: t('success') });
-  };
-
   const handleDeleteEmployee = () => {
     if (!selectedRecord || !db) return;
     const docRef = doc(db, "companies", companyId!, "branches", branchId!, "employees", selectedRecord.id);
@@ -81,8 +57,10 @@ export default function HRMPage() {
     <div className="space-y-6 pb-10">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold font-headline text-purple-600">{t('hrm')}</h1>
-        <Button className="bg-purple-600 hover:bg-purple-700 gap-2 rounded-full h-9 px-6 text-[10px] uppercase font-bold shadow-lg" onClick={() => setIsAddModalOpen(true)}>
-          <UserPlus className="h-4 w-4" /> {t('addStaff')}
+        <Button className="bg-purple-600 hover:bg-purple-700 gap-2 rounded-full h-9 px-6 text-[10px] uppercase font-bold shadow-lg" asChild>
+          <Link href="/hrm/new">
+            <UserPlus className="h-4 w-4" /> {t('addStaff')}
+          </Link>
         </Button>
       </div>
 
@@ -102,7 +80,7 @@ export default function HRMPage() {
       {isLoading ? (
         <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-purple-600" /></div>
       ) : (
-        <Card className="border-none shadow-sm rounded-xl overflow-hidden">
+        <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white ring-1 ring-slate-100">
           <Table>
             <TableHeader className="bg-muted/20">
               <TableRow>
@@ -120,16 +98,16 @@ export default function HRMPage() {
                   </TableCell>
                   <TableCell>
                     <div className="text-xs font-bold">{emp.jobTitle}</div>
-                    <div className="text-[9px] uppercase text-muted-foreground">{emp.department}</div>
+                    <div className="text-[9px] uppercase font-black text-muted-foreground">{emp.department}</div>
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-purple-50 text-purple-600"><MoreVertical className="h-3.5 w-3.5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-purple-50 text-purple-600 transition-colors"><MoreVertical className="h-3.5 w-3.5" /></Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-32">
-                        <DropdownMenuItem className="text-xs" onClick={() => { setSelectedRecord(emp); setIsEditModalOpen(true); }}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600 text-xs" onClick={() => { setSelectedRecord(emp); setIsDeleteAlertOpen(true); }}>
+                        <DropdownMenuItem className="text-xs font-bold" asChild><Link href={`/hrm/${emp.id}/edit`}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</Link></DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-600 text-xs font-bold" onClick={() => { setSelectedRecord(emp); setIsDeleteAlertOpen(true); }}>
                           <Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -142,23 +120,9 @@ export default function HRMPage() {
         </Card>
       )}
 
-      <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) { setIsAddModalOpen(false); setIsEditModalOpen(false); setSelectedRecord(null); } }}>
-        <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl">
-          <DialogHeader className="bg-purple-600 p-6 text-white flex-row items-center gap-3">
-            <UserRoundCog className="h-6 w-6" />
-            <DialogTitle className="text-xl font-bold font-headline uppercase">{isEditModalOpen ? t('edit') : t('addStaff')}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleAddEmployee} className="p-6 space-y-4 bg-slate-50">
-             <div className="space-y-1"><Label className="text-[10px] font-bold uppercase">First Name</Label><Input name="firstName" required className="h-10 text-xs" /></div>
-             <div className="space-y-1"><Label className="text-[10px] font-bold uppercase">Position</Label><Input name="jobTitle" required className="h-10 text-xs" /></div>
-             <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 h-12 rounded-2xl text-[10px] font-black uppercase tracking-widest">{t('save')}</Button>
-          </form>
-        </DialogContent>
-      </Dialog>
-
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle className="font-headline">{t('delete')}?</AlertDialogTitle><AlertDialogDescription className="text-xs">Record will be permanently archived.</AlertDialogDescription></AlertDialogHeader>
+        <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl">
+          <AlertDialogHeader><AlertDialogTitle className="font-headline uppercase">{t('delete')}?</AlertDialogTitle><AlertDialogDescription className="text-xs">Record will be permanently archived.</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel className="rounded-full text-[10px] uppercase font-bold h-9">{t('cancel')}</AlertDialogCancel><AlertDialogAction className="bg-red-600 rounded-full text-[10px] uppercase font-bold h-9" onClick={handleDeleteEmployee}>{t('delete')}</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
