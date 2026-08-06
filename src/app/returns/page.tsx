@@ -2,7 +2,6 @@
 "use client"
 
 import * as React from "react"
-import { Button } from "@/components/ui/button"
 import { 
   RotateCcw, 
   Plus, 
@@ -22,16 +21,19 @@ import {
   Edit,
   Trash2,
   Download,
-  Printer
+  Printer,
+  ArrowLeft,
+  Save,
+  FileText
 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, query, orderBy, serverTimestamp, doc, runTransaction, increment, setDoc } from "firebase/firestore"
+import { collection, query, orderBy, serverTimestamp, doc, runTransaction, increment } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -53,14 +55,15 @@ interface ReturnLineItem {
   total: number;
 }
 
+type ViewState = 'list' | 'form' | 'view';
+
 export default function ReturnsPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
   const { t } = useTranslation();
   
-  const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
+  const [view, setView] = React.useState<ViewState>('list');
+  const [formMode, setFormMode] = React.useState<'add' | 'edit'>('add');
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
   const [selectedRecord, setSelectedRecord] = React.useState<any>(null);
   const [activeTab, setActiveTab] = React.useState("sales");
@@ -107,7 +110,7 @@ export default function ReturnsPage() {
 
   // Handle selection of Invoice/PO to populate items
   React.useEffect(() => {
-    if (!selectedParentId || isEditModalOpen) return;
+    if (!selectedParentId || formMode === 'edit') return;
 
     if (activeTab === "sales") {
       const inv = invoices?.find(i => i.id === selectedParentId);
@@ -134,7 +137,7 @@ export default function ReturnsPage() {
         })));
       }
     }
-  }, [selectedParentId, activeTab, invoices, purchaseOrders, isEditModalOpen]);
+  }, [selectedParentId, activeTab, invoices, purchaseOrders, formMode]);
 
   const handleUpdateQty = (idx: number, qty: number) => {
     const updated = [...lineItems];
@@ -150,7 +153,7 @@ export default function ReturnsPage() {
     try {
       await runTransaction(db!, async (transaction) => {
         const returnCol = activeTab === "sales" ? "sales_returns" : "purchase_returns";
-        const returnRef = isEditModalOpen 
+        const returnRef = formMode === 'edit' 
           ? doc(db!, "companies", companyId!, "branches", branchId!, returnCol, selectedRecord.id)
           : doc(collection(db!, "companies", companyId!, "branches", branchId!, returnCol));
         
@@ -165,15 +168,15 @@ export default function ReturnsPage() {
           items: lineItems,
           totalAmount: totalReturnAmount,
           reason,
-          returnDate: isEditModalOpen ? selectedRecord.returnDate : new Date().toISOString(),
+          returnDate: formMode === 'edit' ? selectedRecord.returnDate : new Date().toISOString(),
           status: "completed",
-          createdAt: isEditModalOpen ? selectedRecord.createdAt : serverTimestamp(),
+          createdAt: formMode === 'edit' ? selectedRecord.createdAt : serverTimestamp(),
           updatedAt: serverTimestamp(),
         };
 
         transaction.set(returnRef, returnData, { merge: true });
 
-        if (!isEditModalOpen) {
+        if (formMode === 'add') {
           const stockAdjustment = activeTab === "sales" ? 1 : -1;
           for (const item of lineItems) {
             const productRef = doc(db!, "companies", companyId!, "branches", branchId!, "products", item.productId);
@@ -185,10 +188,9 @@ export default function ReturnsPage() {
         }
       });
 
-      toast({ title: t('success'), description: t('successSub') });
-      setIsAddModalOpen(false);
-      setIsEditModalOpen(false);
+      toast({ title: t('success') });
       resetForm();
+      setView('list');
     } catch (e: any) {
       toast({ variant: "destructive", title: t('error'), description: e.message });
     } finally {
@@ -201,6 +203,13 @@ export default function ReturnsPage() {
     setReason("");
     setLineItems([]);
     setSelectedRecord(null);
+    setFormMode('add');
+  };
+
+  const openAdd = () => {
+    resetForm();
+    setFormMode('add');
+    setView('form');
   };
 
   const openEdit = (r: any) => {
@@ -208,7 +217,13 @@ export default function ReturnsPage() {
     setSelectedParentId(r.parentId);
     setReason(r.reason || "");
     setLineItems(r.items || []);
-    setIsEditModalOpen(true);
+    setFormMode('edit');
+    setView('form');
+  };
+
+  const openView = (r: any) => {
+    setSelectedRecord(r);
+    setView('view');
   };
 
   const handleDelete = () => {
@@ -220,6 +235,182 @@ export default function ReturnsPage() {
     setIsDeleteAlertOpen(false);
   };
 
+  if (view === 'view' && selectedRecord) {
+    return (
+      <div className="space-y-6 pb-20">
+        <div className="flex items-center justify-between no-print">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => setView('list')} className="rounded-full">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-xl font-bold font-headline uppercase tracking-tight text-red-600">{selectedRecord.parentNumber}</h1>
+          </div>
+          <div className="flex items-center gap-3">
+             <Button variant="outline" className="rounded-full h-10 px-6 font-black text-[10px] uppercase gap-2 border-none ring-1 ring-slate-200 bg-white shadow-sm" onClick={() => window.print()}>
+               <Printer className="h-4 w-4" /> {t('print')}
+             </Button>
+             <Button className="bg-red-600 hover:bg-red-700 text-white rounded-full h-10 px-8 font-black text-[10px] uppercase gap-2 shadow-xl shadow-red-100" onClick={() => window.print()}>
+               <Download className="h-4 w-4" /> Download PDF
+             </Button>
+          </div>
+        </div>
+
+        <div className="bg-white shadow-2xl rounded-3xl overflow-hidden border border-slate-100 ring-1 ring-slate-100/50">
+          <DocumentTemplate
+            title={activeTab === 'sales' ? 'Sales Return' : 'Purchase Return'}
+            type="agreement"
+            docNumber={selectedRecord.parentNumber}
+            date={selectedRecord.returnDate}
+            customerName={selectedRecord.parentNumber}
+            items={selectedRecord.items.map((i: any) => ({
+              name: i.name,
+              quantity: i.qty,
+              unit: i.unit,
+              unitPrice: i.price,
+              total: i.total
+            }))}
+            subtotal={selectedRecord.totalAmount}
+            grandTotal={selectedRecord.totalAmount}
+            status={selectedRecord.status}
+            notes={selectedRecord.reason}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (view === 'form') {
+    return (
+      <div className="flex flex-col h-full bg-slate-50 min-h-screen pb-20">
+        <div className="sticky top-0 z-30 bg-white border-b px-4 py-3 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => setView('list')} className="rounded-full">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-lg font-black font-headline uppercase tracking-tight text-red-600">
+              {formMode === 'edit' ? t('edit') : t('addReturn')}
+            </h1>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" className="rounded-full text-[10px] font-black uppercase tracking-widest px-6" onClick={() => setView('list')}>
+              {t('cancel')}
+            </Button>
+            <Button 
+              className={cn("rounded-full px-8 h-10 text-[10px] font-black uppercase tracking-[0.2em] shadow-xl gap-2", activeTab === "sales" ? "bg-red-600 hover:bg-red-700 shadow-red-100" : "bg-blue-600 hover:bg-blue-700 shadow-blue-100")} 
+              disabled={isSubmitting || !selectedParentId || lineItems.length === 0} 
+              onClick={handleProcessReturn}
+            >
+              {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />}
+              {t('save')}
+            </Button>
+          </div>
+        </div>
+
+        <div className="max-w-[1200px] mx-auto w-full p-4 md:p-8 flex flex-col lg:flex-row gap-8">
+          <div className="flex-1 space-y-6">
+            <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">
+                    {activeTab === "sales" ? t('invoiceNumber') : t('poNumber')}
+                  </Label>
+                  <Select value={selectedParentId} onValueChange={setSelectedParentId} disabled={formMode === 'edit'}>
+                    <SelectTrigger className="h-12 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold text-xs">
+                      <SelectValue placeholder={t('search')} />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px] rounded-xl shadow-2xl">
+                      {activeTab === "sales" 
+                        ? invoices?.map(inv => <SelectItem key={inv.id} value={inv.id} className="text-xs font-bold">{inv.invoiceNumber} - {inv.customerName}</SelectItem>)
+                        : purchaseOrders?.map(po => <SelectItem key={po.id} value={po.id} className="text-xs font-bold">{po.orderNumber} - {po.supplierName}</SelectItem>)
+                      }
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('reason')}</Label>
+                  <Input 
+                    className="h-12 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 text-xs font-bold" 
+                    value={reason} 
+                    onChange={e => setReason(e.target.value)} 
+                    placeholder="e.g. Damaged Goods"
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-[2rem] border shadow-sm overflow-hidden flex flex-col min-h-[300px]">
+                <Table>
+                  <TableHeader className="bg-slate-50">
+                    <TableRow>
+                      <TableHead className="text-[10px] font-black uppercase text-slate-400 pl-8 h-12">{t('itemDescription')}</TableHead>
+                      <TableHead className="text-[10px] font-black uppercase text-slate-400 text-center w-32">{t('qty')}</TableHead>
+                      <TableHead className="text-[10px] font-black uppercase text-slate-400 text-right pr-8 w-40">{t('total')}</TableHead>
+                      <TableHead className="w-12"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {lineItems.length === 0 ? (
+                      <TableRow><TableCell colSpan={4} className="h-64 text-center opacity-30 italic text-xs uppercase font-bold tracking-widest">Select a document to load items</TableCell></TableRow>
+                    ) : (
+                      lineItems.map((item, idx) => (
+                        <TableRow key={idx} className="h-16 group hover:bg-slate-50/20">
+                          <TableCell className="pl-8">
+                            <span className="font-black text-xs uppercase tracking-tight text-slate-900">{item.name}</span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-center gap-2">
+                              <Input type="number" className="h-9 text-center font-black text-xs rounded-xl w-16 bg-slate-50 border-none" value={item.qty} onChange={e => handleUpdateQty(idx, Number(e.target.value))} />
+                              <span className="text-[9px] font-black uppercase text-slate-400">{item.unit}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right pr-8">
+                            <span className="font-black text-xs text-red-600">৳{item.total.toLocaleString()}</span>
+                          </TableCell>
+                          <TableCell className="pr-4">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 rounded-full hover:bg-red-50" onClick={() => setLineItems(lineItems.filter((_, i) => i !== idx))}><X className="h-4 w-4" /></Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </Card>
+          </div>
+
+          <div className="w-full lg:w-[350px] space-y-6">
+             <Card className={cn("p-8 rounded-[2.5rem] shadow-2xl space-y-4 text-center text-white", activeTab === "sales" ? "bg-red-600" : "bg-blue-600")}>
+                <p className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em]">Net Return Value</p>
+                <h2 className="text-4xl font-headline font-black tracking-tighter">৳{totalReturnAmount.toLocaleString()}</h2>
+             </Card>
+
+             <Card className="p-6 rounded-[2rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-6">
+                <div className="p-5 bg-slate-50 rounded-3xl space-y-3">
+                   <div className="flex items-center gap-3">
+                     <Calculator className="h-4 w-4 text-slate-400" />
+                     <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Return Summary</p>
+                   </div>
+                   <div className="pt-3 border-t border-slate-200">
+                      <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-500">
+                        <span>Items Count</span>
+                        <span>{lineItems.length}</span>
+                      </div>
+                   </div>
+                </div>
+                <Button 
+                  className={cn("w-full h-16 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95 text-white", activeTab === "sales" ? "bg-red-600 hover:bg-red-700" : "bg-blue-600 hover:bg-blue-700")} 
+                  disabled={isSubmitting || !selectedParentId || lineItems.length === 0} 
+                  onClick={handleProcessReturn}
+                >
+                  {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <ArrowRight className="h-5 w-5" />}
+                  {formMode === 'edit' ? "Update Record" : "Synchronize Return"}
+                </Button>
+             </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -229,7 +420,7 @@ export default function ReturnsPage() {
         </div>
         <Button 
           className="bg-red-600 hover:bg-red-700 gap-2 rounded-full shadow-xl shadow-red-100 h-10 px-8 text-[10px] uppercase font-black transition-all active:scale-95 w-full md:w-auto" 
-          onClick={() => { resetForm(); setIsAddModalOpen(true); }}
+          onClick={openAdd}
         >
           <Plus className="h-4 w-4" />
           {t('addReturn')}
@@ -241,7 +432,7 @@ export default function ReturnsPage() {
         <KPICard title={t('purchaseReturn')} value={`৳${stats.purchaseAmount.toLocaleString()}`} icon={ArrowUpCircle} colorClass="bg-blue-600" />
       </div>
 
-      <Tabs defaultValue="sales" onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="bg-white border p-1 rounded-xl shadow-sm mb-6 flex h-11 ring-1 ring-slate-100">
           <TabsTrigger value="sales" className="rounded-lg gap-2 flex-1 text-[10px] uppercase font-black h-9 data-[state=active]:bg-red-50 data-[state=active]:text-red-600">
             <ShoppingCart className="h-3.5 w-3.5" /> {t('sales')}
@@ -255,45 +446,31 @@ export default function ReturnsPage() {
           {isSalesLoading ? (
             <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-red-600" /></div>
           ) : salesReturns && salesReturns.length > 0 ? (
-            <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-white ring-1 ring-slate-100">
+            <Card className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white ring-1 ring-slate-100">
               <div className="overflow-x-auto custom-scrollbar">
                 <Table>
-                  <TableHeader className="bg-muted/10">
+                  <TableHeader className="bg-slate-50/50">
                     <TableRow>
-                      <TableHead className="h-12 text-[10px] uppercase font-black pl-6">{t('date')}</TableHead>
+                      <TableHead className="h-12 text-[10px] uppercase font-black pl-8">{t('date')}</TableHead>
                       <TableHead className="h-12 text-[10px] uppercase font-black">{t('invoiceNumber')}</TableHead>
                       <TableHead className="h-12 text-[10px] uppercase font-black">{t('reason')}</TableHead>
                       <TableHead className="h-12 text-[10px] uppercase font-black text-right">{t('amount')}</TableHead>
-                      <TableHead className="h-12 text-right pr-6 sticky right-0 bg-white/95 backdrop-blur-sm z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">{t('actions')}</TableHead>
+                      <TableHead className="h-12 text-right pr-8 sticky right-0 bg-white/95 backdrop-blur-sm z-20 w-[120px]">{t('actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {salesReturns.map((r) => (
-                      <TableRow key={r.id} className="h-14 hover:bg-muted/5 transition-colors group">
-                        <TableCell className="pl-6 text-[10px] font-bold uppercase text-slate-500">{new Date(r.returnDate).toLocaleDateString()}</TableCell>
-                        <TableCell className="font-black text-xs text-red-600">{r.parentNumber}</TableCell>
+                      <TableRow key={r.id} className="h-16 hover:bg-muted/5 transition-colors group">
+                        <TableCell className="pl-8 text-[10px] font-bold uppercase text-slate-500">{new Date(r.returnDate).toLocaleDateString()}</TableCell>
+                        <TableCell className="font-black text-xs text-red-600 uppercase tracking-tighter">{r.parentNumber}</TableCell>
                         <TableCell className="text-xs font-bold text-slate-600">{r.reason || "---"}</TableCell>
                         <TableCell className="text-right font-black text-xs text-slate-900">৳{r.totalAmount?.toLocaleString()}</TableCell>
-                        <TableCell className="text-right pr-6 sticky right-0 bg-white/90 backdrop-blur-sm group-hover:bg-slate-50/90 transition-colors z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
-                          <div className="flex justify-end items-center gap-1">
-                            <div className="hidden md:flex items-center gap-1">
-                              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-blue-600 hover:bg-blue-50" onClick={() => { setSelectedRecord(r); setIsViewModalOpen(true); }} title={t('view')}><Eye className="h-3.5 w-3.5" /></Button>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-amber-600 hover:bg-amber-50" onClick={() => openEdit(r)} title={t('edit')}><Edit className="h-3.5 w-3.5" /></Button>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-slate-600 hover:bg-slate-100" onClick={() => { setSelectedRecord(r); setIsViewModalOpen(true); }} title={t('print')}><Printer className="h-3.5 w-3.5" /></Button>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-red-600 hover:bg-red-50" onClick={() => { setSelectedRecord(r); setIsDeleteAlertOpen(true); }} title={t('delete')}><Trash2 className="h-3.5 w-3.5" /></Button>
-                            </div>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden rounded-full hover:bg-red-50 text-red-600 transition-colors"><MoreVertical className="h-4 w-4" /></Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-xl">
-                                <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedRecord(r); setIsViewModalOpen(true); }}><Eye className="mr-2 h-3.5 w-3.5" /> {t('view')}</DropdownMenuItem>
-                                <DropdownMenuItem className="text-xs font-bold" onClick={() => openEdit(r)}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(r); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
+                        <TableCell className="text-right pr-8 sticky right-0 bg-white/90 backdrop-blur-sm group-hover:bg-slate-50/90 transition-colors z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                           <div className="flex justify-end gap-1">
+                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-blue-600" onClick={() => openView(r)}><Eye className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-amber-600" onClick={() => openEdit(r)}><Edit className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-red-600" onClick={() => { setSelectedRecord(r); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
+                           </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -313,45 +490,31 @@ export default function ReturnsPage() {
           {isPurchaseLoading ? (
             <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
           ) : purchaseReturns && purchaseReturns.length > 0 ? (
-            <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-white ring-1 ring-slate-100">
+            <Card className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white ring-1 ring-slate-100">
               <div className="overflow-x-auto custom-scrollbar">
                 <Table>
-                  <TableHeader className="bg-muted/10">
+                  <TableHeader className="bg-slate-50/50">
                     <TableRow>
-                      <TableHead className="h-12 text-[10px] uppercase font-black pl-6">{t('date')}</TableHead>
+                      <TableHead className="h-12 text-[10px] uppercase font-black pl-8">{t('date')}</TableHead>
                       <TableHead className="h-12 text-[10px] uppercase font-black">{t('poNumber')}</TableHead>
                       <TableHead className="h-12 text-[10px] uppercase font-black">{t('reason')}</TableHead>
                       <TableHead className="h-12 text-[10px] uppercase font-black text-right">{t('amount')}</TableHead>
-                      <TableHead className="h-12 text-right pr-6 sticky right-0 bg-white/95 backdrop-blur-sm z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">{t('actions')}</TableHead>
+                      <TableHead className="h-12 text-right pr-8 sticky right-0 bg-white/95 backdrop-blur-sm z-20 w-[120px]">{t('actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {purchaseReturns.map((r) => (
-                      <TableRow key={r.id} className="h-14 hover:bg-muted/5 transition-colors group">
-                        <TableCell className="pl-6 text-[10px] font-bold uppercase text-slate-500">{new Date(r.returnDate).toLocaleDateString()}</TableCell>
-                        <TableCell className="font-black text-xs text-blue-600">{r.parentNumber}</TableCell>
+                      <TableRow key={r.id} className="h-16 hover:bg-muted/5 transition-colors group">
+                        <TableCell className="pl-8 text-[10px] font-bold uppercase text-slate-500">{new Date(r.returnDate).toLocaleDateString()}</TableCell>
+                        <TableCell className="font-black text-xs text-blue-600 uppercase tracking-tighter">{r.parentNumber}</TableCell>
                         <TableCell className="text-xs font-bold text-slate-600">{r.reason || "---"}</TableCell>
                         <TableCell className="text-right font-black text-xs text-slate-900">৳{r.totalAmount?.toLocaleString()}</TableCell>
-                        <TableCell className="text-right pr-6 sticky right-0 bg-white/90 backdrop-blur-sm group-hover:bg-slate-50/90 transition-colors z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
-                          <div className="flex justify-end items-center gap-1">
-                            <div className="hidden md:flex items-center gap-1">
-                              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-blue-600 hover:bg-blue-50" onClick={() => { setSelectedRecord(r); setIsViewModalOpen(true); }} title={t('view')}><Eye className="h-3.5 w-3.5" /></Button>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-amber-600 hover:bg-amber-50" onClick={() => openEdit(r)} title={t('edit')}><Edit className="h-3.5 w-3.5" /></Button>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-slate-600 hover:bg-slate-100" onClick={() => { setSelectedRecord(r); setIsViewModalOpen(true); }} title={t('print')}><Printer className="h-3.5 w-3.5" /></Button>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-red-600 hover:bg-red-50" onClick={() => { setSelectedRecord(r); setIsDeleteAlertOpen(true); }} title={t('delete')}><Trash2 className="h-3.5 w-3.5" /></Button>
-                            </div>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden rounded-full hover:bg-blue-50 text-blue-600 transition-colors"><MoreVertical className="h-4 w-4" /></Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-xl">
-                                <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedRecord(r); setIsViewModalOpen(true); }}><Eye className="mr-2 h-3.5 w-3.5" /> {t('view')}</DropdownMenuItem>
-                                <DropdownMenuItem className="text-xs font-bold" onClick={() => openEdit(r)}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(r); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
+                        <TableCell className="text-right pr-8 sticky right-0 bg-white/90 backdrop-blur-sm group-hover:bg-slate-50/90 transition-colors z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                           <div className="flex justify-end gap-1">
+                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-blue-600" onClick={() => openView(r)}><Eye className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-amber-600" onClick={() => openEdit(r)}><Edit className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-red-600" onClick={() => { setSelectedRecord(r); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
+                           </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -368,186 +531,10 @@ export default function ReturnsPage() {
         </TabsContent>
       </Tabs>
 
-      {/* ADD/EDIT RETURN MODAL */}
-      <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) resetForm(); setIsAddModalOpen(false); setIsEditModalOpen(false); }}>
-        <DialogContent className="max-w-[1200px] w-[95vw] p-0 overflow-hidden border-none shadow-2xl bg-slate-50 rounded-[2rem] md:rounded-[2.5rem]">
-          <DialogHeader className={cn("p-5 text-white flex-row items-center justify-between space-y-0", activeTab === "sales" ? "bg-red-600" : "bg-blue-600")}>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center shrink-0">
-                <RotateCcw className="h-5 w-5" />
-              </div>
-              <div>
-                <DialogTitle className="text-lg md:text-xl font-bold font-headline uppercase tracking-tight">{isEditModalOpen ? t('edit') : t('addReturn')}</DialogTitle>
-                <p className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em] leading-none mt-1">
-                  {activeTab === "sales" ? "Sales / Customer Return" : "Purchase / Supplier Return"}
-                </p>
-              </div>
-            </div>
-          </DialogHeader>
-
-          <div className="flex flex-col lg:flex-row h-[75vh] overflow-hidden">
-            {/* Form Side */}
-            <div className="flex-1 flex flex-col p-6 space-y-6 overflow-hidden">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">
-                    {activeTab === "sales" ? t('invoiceNumber') : t('poNumber')}
-                  </Label>
-                  <Select value={selectedParentId} onValueChange={setSelectedParentId} disabled={isEditModalOpen}>
-                    <SelectTrigger className="h-12 rounded-2xl bg-white border-none ring-1 ring-slate-200 shadow-sm transition-all focus:ring-2">
-                      <SelectValue placeholder={t('search')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {activeTab === "sales" 
-                        ? invoices?.map(inv => <SelectItem key={inv.id} value={inv.id} className="text-xs font-bold">{inv.invoiceNumber} - {inv.customerName}</SelectItem>)
-                        : purchaseOrders?.map(po => <SelectItem key={po.id} value={po.id} className="text-xs font-bold">{po.orderNumber} - {po.supplierName}</SelectItem>)
-                      }
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('reason')}</Label>
-                  <Input 
-                    className="h-12 rounded-2xl bg-white border-none ring-1 ring-slate-200 text-xs font-bold" 
-                    value={reason} 
-                    onChange={e => setReason(e.target.value)} 
-                    placeholder="e.g. Damaged Goods"
-                  />
-                </div>
-              </div>
-
-              {/* Items Table */}
-              <div className="flex-1 bg-white rounded-[2rem] shadow-sm ring-1 ring-slate-100 overflow-hidden flex flex-col">
-                <div className="overflow-auto flex-1 custom-scrollbar">
-                  <Table>
-                    <TableHeader className="bg-slate-50 sticky top-0 z-10">
-                      <TableRow>
-                        <TableHead className="text-[10px] uppercase font-black py-4 pl-8">{t('itemDescription')}</TableHead>
-                        <TableHead className="text-[10px] uppercase font-black text-center w-40">{t('qty')} / Unit</TableHead>
-                        <TableHead className="text-[10px] uppercase font-black text-right w-40">{t('price')}</TableHead>
-                        <TableHead className="text-[10px] uppercase font-black text-right w-40 pr-8">{t('total')}</TableHead>
-                        <TableHead className="w-10"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {lineItems.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={5} className="h-64 text-center">
-                            <div className="flex flex-col items-center opacity-20">
-                              <Undo2 className="h-12 w-12 mb-4" />
-                              <p className="text-[10px] uppercase font-black tracking-[0.3em]">{t('noItemsSelected')}</p>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        lineItems.map((item, idx) => (
-                          <TableRow key={idx} className="h-16 hover:bg-slate-50/50 transition-colors">
-                            <TableCell className="pl-8">
-                              <span className="text-xs font-black text-slate-900 uppercase tracking-tighter">{item.name}</span>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2 justify-center">
-                                <Input 
-                                  type="number" 
-                                  className="h-9 text-center font-black text-xs rounded-xl w-16 md:w-20 bg-slate-50 border-none" 
-                                  value={item.qty} 
-                                  onChange={e => handleUpdateQty(idx, Number(e.target.value))} 
-                                />
-                                <span className="text-[10px] font-black uppercase text-muted-foreground w-8 text-left">{item.unit || 'Pcs'}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-right text-xs font-bold text-slate-500">৳{item.price.toLocaleString()}</TableCell>
-                            <TableCell className="text-right pr-8 text-xs font-black text-red-600">৳{item.total.toLocaleString()}</TableCell>
-                            <TableCell>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 rounded-full hover:bg-red-50" onClick={() => setLineItems(lineItems.filter((_, i) => i !== idx))}>
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            </div>
-
-            {/* Sidebar Summary */}
-            <div className="w-full lg:w-[350px] bg-white border-l border-slate-100 p-8 space-y-8 flex flex-col shadow-2xl relative z-20 shrink-0">
-              <div className="space-y-6">
-                <div className={cn("p-8 rounded-[2.5rem] shadow-2xl space-y-4 text-center text-white", activeTab === "sales" ? "bg-red-600 shadow-red-100" : "bg-blue-600 shadow-blue-100")}>
-                  <p className="text-[10px] uppercase font-black opacity-60 tracking-[0.2em]">{t('grandTotal')}</p>
-                  <h2 className="text-4xl font-headline font-black tracking-tighter">৳{totalReturnAmount.toLocaleString()}</h2>
-                </div>
-
-                <div className="p-5 bg-slate-50 rounded-3xl space-y-3">
-                  <div className="flex items-center gap-3">
-                    <Calculator className="h-4 w-4 text-slate-400" />
-                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Return Summary</p>
-                  </div>
-                  <div className="pt-3 border-t border-slate-200">
-                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-500">
-                      <span>Total Items</span>
-                      <span>{lineItems.length}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-auto">
-                <Button 
-                  className={cn("w-full h-14 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 text-white", activeTab === "sales" ? "bg-red-600 hover:bg-red-700" : "bg-blue-600 hover:bg-blue-700")} 
-                  disabled={isSubmitting || lineItems.length === 0 || !selectedParentId} 
-                  onClick={handleProcessReturn}
-                >
-                  {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <ArrowRight className="h-5 w-5" />}
-                  {isEditModalOpen ? "Update Record" : t('save')}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* VIEW DIALOG */}
-      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
-        <DialogContent className="max-w-[21cm] w-[95vw] p-0 border-none bg-transparent shadow-none overflow-y-auto max-h-[95vh]">
-          <DialogHeader className="sr-only"><DialogTitle>Return View</DialogTitle></DialogHeader>
-          <div className="flex justify-end gap-3 mb-4 no-print fixed top-4 right-4 z-[100]">
-            <Button onClick={() => window.print()} className="bg-white text-red-600 hover:bg-red-50 shadow-2xl rounded-full font-black text-[10px] uppercase h-10 px-6 gap-2 border-none ring-1 ring-red-100">
-              <Download className="h-4 w-4" /> Download PDF
-            </Button>
-          </div>
-          {selectedRecord && (
-            <div className="bg-white shadow-2xl rounded-none md:rounded-[2rem] overflow-hidden">
-              <DocumentTemplate
-                title={activeTab === 'sales' ? 'Sales Return' : 'Purchase Return'}
-                type="agreement"
-                docNumber={selectedRecord.parentNumber}
-                date={selectedRecord.returnDate}
-                customerName={selectedRecord.parentNumber}
-                items={selectedRecord.items.map((i: any) => ({
-                  name: i.name,
-                  quantity: i.qty,
-                  unit: i.unit,
-                  unitPrice: i.price,
-                  total: i.total
-                }))}
-                subtotal={selectedRecord.totalAmount}
-                grandTotal={selectedRecord.totalAmount}
-                status={selectedRecord.status}
-                notes={selectedRecord.reason}
-              />
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* DELETE ALERT */}
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-        <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl">
+        <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl max-w-sm">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tight text-slate-900">{t('delete')}?</AlertDialogTitle>
+            <AlertDialogTitle className="text-xl font-black uppercase text-slate-900 tracking-tight">{t('delete')}?</AlertDialogTitle>
             <AlertDialogDescription className="text-xs font-medium leading-relaxed">{t('errorSub')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-8 gap-3">
