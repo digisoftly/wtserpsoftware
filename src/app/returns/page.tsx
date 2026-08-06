@@ -7,7 +7,6 @@ import {
   Plus, 
   Search, 
   Loader2, 
-  MoreVertical, 
   Undo2,
   ShoppingCart,
   Package,
@@ -24,7 +23,10 @@ import {
   Printer,
   ArrowLeft,
   Save,
-  FileText
+  FileText,
+  PlusCircle,
+  History,
+  MoreVertical
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -108,36 +110,32 @@ export default function ReturnsPage() {
     purchaseAmount: purchaseReturns?.reduce((s, r) => s + (r.totalAmount || 0), 0) || 0,
   }), [salesReturns, purchaseReturns]);
 
-  // Handle selection of Invoice/PO to populate items
-  React.useEffect(() => {
-    if (!selectedParentId || formMode === 'edit') return;
-
+  // Available items from selected source document
+  const availableSourceItems = React.useMemo(() => {
+    if (!selectedParentId) return [];
     if (activeTab === "sales") {
-      const inv = invoices?.find(i => i.id === selectedParentId);
-      if (inv?.items) {
-        setLineItems(inv.items.map((item: any) => ({
-          productId: item.productId,
-          name: item.name,
-          qty: 1, 
-          unit: item.unit || "Pcs",
-          price: item.price || item.unitPrice || 0,
-          total: item.price || item.unitPrice || 0
-        })));
-      }
+      return invoices?.find(i => i.id === selectedParentId)?.items || [];
     } else {
-      const po = purchaseOrders?.find(p => p.id === selectedParentId);
-      if (po?.items) {
-        setLineItems(po.items.map((item: any) => ({
-          productId: item.productId,
-          name: item.name,
-          qty: 1,
-          unit: item.unit || "Pcs",
-          price: item.unitCost || 0,
-          total: item.unitCost || 0
-        })));
-      }
+      return purchaseOrders?.find(p => p.id === selectedParentId)?.items || [];
     }
-  }, [selectedParentId, activeTab, invoices, purchaseOrders, formMode]);
+  }, [selectedParentId, activeTab, invoices, purchaseOrders]);
+
+  const handleAddItemToReturn = (sourceItem: any) => {
+    const exists = lineItems.find(i => i.productId === sourceItem.productId);
+    if (exists) {
+      toast({ title: "Item Already Added", description: "You can adjust quantity in the table below." });
+      return;
+    }
+
+    setLineItems([...lineItems, {
+      productId: sourceItem.productId,
+      name: sourceItem.name,
+      qty: 1,
+      unit: sourceItem.unit || "Pcs",
+      price: sourceItem.price || sourceItem.unitPrice || 0,
+      total: sourceItem.price || sourceItem.unitPrice || 0
+    }]);
+  };
 
   const handleUpdateQty = (idx: number, qty: number) => {
     const updated = [...lineItems];
@@ -306,7 +304,7 @@ export default function ReturnsPage() {
           </div>
         </div>
 
-        <div className="max-w-[1200px] mx-auto w-full p-4 md:p-8 flex flex-col lg:flex-row gap-8">
+        <div className="max-w-[1400px] mx-auto w-full p-4 md:p-8 flex flex-col xl:flex-row gap-8">
           <div className="flex-1 space-y-6">
             <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -314,7 +312,7 @@ export default function ReturnsPage() {
                   <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">
                     {activeTab === "sales" ? t('invoiceNumber') : t('poNumber')}
                   </Label>
-                  <Select value={selectedParentId} onValueChange={setSelectedParentId} disabled={formMode === 'edit'}>
+                  <Select value={selectedParentId} onValueChange={(val) => { setSelectedParentId(val); setLineItems([]); }} disabled={formMode === 'edit'}>
                     <SelectTrigger className="h-12 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold text-xs">
                       <SelectValue placeholder={t('search')} />
                     </SelectTrigger>
@@ -337,6 +335,30 @@ export default function ReturnsPage() {
                 </div>
               </div>
 
+              {selectedParentId && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                   <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Available Items from Source</h3>
+                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {availableSourceItems.map((item: any, i: number) => (
+                        <div key={i} className="p-4 bg-slate-50 rounded-2xl ring-1 ring-slate-100 flex justify-between items-center group hover:bg-white hover:ring-red-200 transition-all">
+                           <div className="flex flex-col">
+                              <span className="text-[11px] font-black uppercase truncate max-w-[120px]">{item.name}</span>
+                              <span className="text-[9px] font-bold text-slate-400">Qty in Doc: {item.qty || item.quantity}</span>
+                           </div>
+                           <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 rounded-full text-red-600 hover:bg-red-50"
+                            onClick={() => handleAddItemToReturn(item)}
+                           >
+                             <PlusCircle className="h-4 w-4" />
+                           </Button>
+                        </div>
+                      ))}
+                   </div>
+                </div>
+              )}
+
               <div className="rounded-[2rem] border shadow-sm overflow-hidden flex flex-col min-h-[300px]">
                 <Table>
                   <TableHeader className="bg-slate-50">
@@ -349,7 +371,7 @@ export default function ReturnsPage() {
                   </TableHeader>
                   <TableBody>
                     {lineItems.length === 0 ? (
-                      <TableRow><TableCell colSpan={4} className="h-64 text-center opacity-30 italic text-xs uppercase font-bold tracking-widest">Select a document to load items</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={4} className="h-64 text-center opacity-30 italic text-xs uppercase font-bold tracking-widest">Add items from the section above to initiate return</TableCell></TableRow>
                     ) : (
                       lineItems.map((item, idx) => (
                         <TableRow key={idx} className="h-16 group hover:bg-slate-50/20">
@@ -377,7 +399,7 @@ export default function ReturnsPage() {
             </Card>
           </div>
 
-          <div className="w-full lg:w-[350px] space-y-6">
+          <div className="w-full xl:w-[350px] space-y-6">
              <Card className={cn("p-8 rounded-[2.5rem] shadow-2xl space-y-4 text-center text-white", activeTab === "sales" ? "bg-red-600" : "bg-blue-600")}>
                 <p className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em]">Net Return Value</p>
                 <h2 className="text-4xl font-headline font-black tracking-tighter">৳{totalReturnAmount.toLocaleString()}</h2>
@@ -524,7 +546,7 @@ export default function ReturnsPage() {
             </Card>
           ) : (
             <div className="p-24 bg-white rounded-[3rem] border border-dashed text-center flex flex-col items-center ring-1 ring-slate-100">
-              <RotateCcw className="h-12 w-12 text-blue-200 mb-6" />
+              <RotateCcw className="h-12 w-12 text-red-200 mb-6" />
               <p className="text-[10px] uppercase font-black text-muted-foreground tracking-[0.3em]">{t('noReturns')}</p>
             </div>
           )}
