@@ -173,6 +173,10 @@ export const translations = {
     runMonthlyCycle: "Run Monthly Cycle",
     generateNow: "Generate Now",
     billingDue: "Monthly Billing Due",
+    collectPayment: "Collect Payment",
+    addPayment: "Add Payment",
+    paymentHistory: "Payment History",
+    allPayments: "All Payments",
 
     // Premium Sales Fields
     taxInvoice: "Tax Invoice",
@@ -670,6 +674,10 @@ export const translations = {
     runMonthlyCycle: "মাসিক চক্র চালান",
     generateNow: "তৈরি করুন",
     billingDue: "মাসিক বিল বকেয়া",
+    collectPayment: "পেমেন্ট সংগ্রহ",
+    addPayment: "পেমেন্ট যোগ করুন",
+    paymentHistory: "পেমেন্ট ইতিহাস",
+    allPayments: "সব পেমেন্ট",
 
     // Dashboard
     goodMorning: "শুভ সকাল",
@@ -724,7 +732,7 @@ export const translations = {
     dueContracts: "বকেয়া চুক্তি",
     totalSerials: "মোট সিরিয়াল",
     underService: "সার্ভিসিংয়ে আছে",
-    forecastSales: "বিক্রয় পূর্বাভাস",
+    forecastSales: "বাজার পূর্বাভাস",
     trendIndicator: "ট্রেন্ড নির্দেশক",
     annualRevenue: "বার্ষিক আয়",
     avgOrderValue: "গড় অর্ডার মূল্য",
@@ -805,7 +813,7 @@ export const translations = {
 
     // Support
     subject: "বিষয়",
-    priority: "অগ্রাধিকার",
+    priority: "অ্যাগ্রাধিকার",
     high: "উচ্চ",
     medium: "মাঝারি",
     low: "নিম্ন",
