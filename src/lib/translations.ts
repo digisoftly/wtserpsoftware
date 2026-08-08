@@ -1,3 +1,4 @@
+
 export type Language = 'EN' | 'BN';
 
 export const translations = {
@@ -6,6 +7,7 @@ export const translations = {
     dashboard: "Dashboard",
     crm: "CRM",
     sales: "Sales",
+    payment: "Payment",
     quotations: "Quotations",
     purchases: "Purchases",
     inventory: "Inventory",
@@ -455,6 +457,7 @@ export const translations = {
     dashboard: "ড্যাশবোর্ড",
     crm: "সিআরএম",
     sales: "বিক্রয়",
+    payment: "পেমেন্ট",
     quotations: "কোটেশন",
     purchases: "ক্রয়",
     inventory: "ইনভেন্টরি",

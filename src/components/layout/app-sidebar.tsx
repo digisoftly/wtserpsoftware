@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -24,7 +25,8 @@ import {
   Building2, 
   Database,
   ClipboardList,
-  ChevronRight
+  ChevronRight,
+  CreditCard
 } from "lucide-react"
 
 import { 
@@ -55,6 +57,7 @@ import { cn } from "@/lib/utils"
 const MAIN_MODULES = [
   { name: "dashboard", key: "dashboard", icon: LayoutDashboard, path: "/", color: "text-blue-500" },
   { name: "sales", key: "sales", icon: ShoppingCart, path: "/sales", color: "text-green-500" },
+  { name: "payment", key: "payments", icon: CreditCard, path: "/payments", color: "text-emerald-500" },
   { name: "quotations", key: "quotations", icon: FileText, path: "/quotations", color: "text-amber-500" },
   { name: "dispatch", key: "dispatch", icon: Truck, path: "/challans", color: "text-cyan-500" },
   { name: "purchases", key: "purchases", icon: Package, path: "/purchases", color: "text-emerald-500" },
