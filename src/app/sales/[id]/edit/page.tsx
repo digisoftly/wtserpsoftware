@@ -81,7 +81,14 @@ export default function EditInvoicePage() {
       });
       setSelectedCustomerId(invoice.customerId !== "manual" ? invoice.customerId : "");
       setInvoiceDate(invoice.invoiceDate);
-      setLineItems(invoice.items || []);
+      
+      // FIX: Ensure every item has a unique key/id even if missing in database
+      const itemsWithIds = (invoice.items || []).map((item: any, idx: number) => ({
+        ...item,
+        id: item.id || `item-${idx}-${item.productId}`
+      }));
+      setLineItems(itemsWithIds);
+      
       setDiscount(invoice.discount || 0);
       setVatPercent(invoice.vatPercent || 15);
       setPaidAmount(invoice.paidAmount || 0);
@@ -320,7 +327,7 @@ export default function EditInvoicePage() {
                           <span className="text-[11px] md:text-sm font-black text-slate-900 uppercase tracking-tighter truncate">{item.name}</span>
                         )}
                         {item.isSerialized && (
-                          <div className="flex flex-wrap gap-1 mt-1.5">{item.serials.map((s, si) => <Badge key={si} variant="secondary" className="text-[7px] h-3.5 bg-blue-50 text-blue-700 border-none font-mono uppercase">{s}</Badge>)}</div>
+                          <div className="flex flex-wrap gap-1 mt-1.5">{(item.serials || []).map((s, si) => <Badge key={si} variant="secondary" className="text-[7px] h-3.5 bg-blue-50 text-blue-700 border-none font-mono uppercase">{s}</Badge>)}</div>
                         )}
                       </TableCell>
                       <TableCell>

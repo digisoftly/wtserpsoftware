@@ -70,7 +70,14 @@ export default function EditQuotationPage() {
   React.useEffect(() => {
     if (quote) {
       setSelectedCustomerId(quote.customerId);
-      setLineItems(quote.items || []);
+      
+      // FIX: Ensure every item has a unique key/id even if missing in database
+      const itemsWithIds = (quote.items || []).map((item: any, idx: number) => ({
+        ...item,
+        id: item.id || `quote-item-${idx}-${item.productId}`
+      }));
+      setLineItems(itemsWithIds);
+      
       setGlobalDiscount(quote.discount || 0);
       setNotes(quote.notes || "");
       setStatus(quote.status || "draft");
