@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -20,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import { useFirestore, useDoc, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, doc, updateDoc, serverTimestamp, increment } from "firebase/firestore"
+import { collection, doc, updateDoc, serverTimestamp, increment, query, orderBy } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { useTranslation } from "@/hooks/use-translation"
 import { toast } from "@/hooks/use-toast"
@@ -84,7 +85,8 @@ export default function EditInvoicePage() {
       
       const itemsWithIds = (invoice.items || []).map((item: any, idx: number) => ({
         ...item,
-        id: item.id || `item-${idx}-${item.productId}`
+        id: item.id || `item-${idx}-${item.productId}`,
+        unit: item.unit || "Pcs"
       }));
       setLineItems(itemsWithIds);
     }
@@ -102,6 +104,12 @@ export default function EditInvoicePage() {
     return collection(db, "companies", companyId, "branches", branchId, "products");
   }, [db, companyId, branchId]);
   const { data: products } = useCollection(productsQuery);
+
+  const unitsQuery = useMemoFirebase(() => {
+    if (!db || !companyId) return null;
+    return query(collection(db, "companies", companyId, "master_units"), orderBy("name"));
+  }, [db, companyId]);
+  const { data: masterUnits } = useCollection(unitsQuery);
 
   // Calculations
   const subtotal = React.useMemo(() => lineItems.reduce((sum, item) => sum + (item.qty * item.price), 0), [lineItems]);
@@ -206,7 +214,6 @@ export default function EditInvoicePage() {
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-6 pb-20">
-      {/* HEADER */}
       <div className="flex items-center justify-between border-b pb-4 bg-white sticky top-0 z-50 px-2">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full">
@@ -226,7 +233,6 @@ export default function EditInvoicePage() {
         </div>
       </div>
 
-      {/* INFO GRID */}
       <Card className="border-none shadow-sm ring-1 ring-slate-200">
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -266,7 +272,6 @@ export default function EditInvoicePage() {
         </CardContent>
       </Card>
 
-      {/* ITEMS TABLE */}
       <Card className="border-none shadow-sm ring-1 ring-slate-200 overflow-hidden">
         <div className="p-4 bg-slate-50/50 border-b flex items-center justify-between">
           <h3 className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('itemDescription')}</h3>
@@ -312,11 +317,21 @@ export default function EditInvoicePage() {
                   <TableCell>
                     <textarea className="w-full text-[10px] font-medium bg-transparent border-none resize-none h-8 focus:ring-0 outline-none" value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} placeholder="Model/Serial/Details..." />
                   </TableCell>
-                  <TableCell className="text-center text-[10px] font-bold uppercase text-slate-500">{item.unit}</TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2 justify-center">
-                      <Input type="number" className="h-8 w-16 text-center text-xs font-bold bg-slate-50 border-none" value={item.qty} onChange={e => updateItem(item.id, 'qty', e.target.value)} />
-                      <span className="text-[9px] font-black uppercase text-slate-400">{item.unit}</span>
+                    <Select value={item.unit} onValueChange={(val) => updateItem(item.id, 'unit', val)}>
+                      <SelectTrigger className="h-8 border-none bg-slate-50 text-[10px] font-bold uppercase w-20 mx-auto">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {masterUnits?.map(u => <SelectItem key={u.id} value={u.shortName} className="text-xs font-bold">{u.shortName}</SelectItem>)}
+                        {!masterUnits?.length && <SelectItem value="Pcs">Pcs</SelectItem>}
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1 justify-center">
+                      <Input type="number" className="h-8 w-14 text-center text-xs font-bold bg-slate-50 border-none" value={item.qty} onChange={e => updateItem(item.id, 'qty', e.target.value)} />
+                      <span className="text-[9px] font-black text-slate-400 uppercase">{item.unit}</span>
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
@@ -326,11 +341,9 @@ export default function EditInvoicePage() {
                   <TableCell><Input type="number" className="h-8 w-14 text-center text-xs font-bold bg-slate-50 border-none mx-auto" value={item.tax} onChange={e => updateItem(item.id, 'tax', e.target.value)} /></TableCell>
                   <TableCell className="text-right pr-10 font-black text-xs text-slate-900">৳{item.total.toLocaleString()}</TableCell>
                   <TableCell className="text-right pr-4">
-                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:text-red-600 rounded-full" onClick={() => setLineItems(lineItems.filter(i => i.id !== item.id))}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:text-red-600 rounded-full" onClick={() => setLineItems(lineItems.filter(i => i.id !== item.id))}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

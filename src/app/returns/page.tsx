@@ -102,6 +102,12 @@ export default function ReturnsPage() {
   }, [db, companyId, branchId]);
   const { data: purchaseOrders } = useCollection(poQuery);
 
+  const unitsQuery = useMemoFirebase(() => {
+    if (!db || !companyId) return null;
+    return query(collection(db, "companies", companyId, "master_units"), orderBy("name"));
+  }, [db, companyId]);
+  const { data: masterUnits } = useCollection(unitsQuery);
+
   // Totals
   const totalReturnAmount = React.useMemo(() => lineItems.reduce((sum, item) => sum + item.total, 0), [lineItems]);
 
@@ -137,10 +143,12 @@ export default function ReturnsPage() {
     }]);
   };
 
-  const handleUpdateQty = (idx: number, qty: number) => {
+  const handleUpdateItem = (idx: number, field: keyof ReturnLineItem, val: any) => {
     const updated = [...lineItems];
-    updated[idx].qty = Math.max(1, qty);
-    updated[idx].total = updated[idx].qty * updated[idx].price;
+    (updated[idx] as any)[field] = val;
+    if (field === 'qty' || field === 'price') {
+      updated[idx].total = Number(updated[idx].qty || 0) * Number(updated[idx].price || 0);
+    }
     setLineItems(updated);
   };
 
@@ -306,7 +314,7 @@ export default function ReturnsPage() {
 
         <div className="max-w-[1400px] mx-auto w-full p-4 md:p-8 flex flex-col xl:flex-row gap-8">
           <div className="flex-1 space-y-6">
-            <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-8">
+            <Card className="p-8 rounded-[2rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">
@@ -364,6 +372,7 @@ export default function ReturnsPage() {
                   <TableHeader className="bg-slate-50">
                     <TableRow>
                       <TableHead className="text-[10px] font-black uppercase text-slate-400 pl-8 h-12">{t('itemDescription')}</TableHead>
+                      <TableHead className="text-[10px] font-black uppercase text-slate-400 text-center w-32">Unit</TableHead>
                       <TableHead className="text-[10px] font-black uppercase text-slate-400 text-center w-32">{t('qty')}</TableHead>
                       <TableHead className="text-[10px] font-black uppercase text-slate-400 text-right pr-8 w-40">{t('total')}</TableHead>
                       <TableHead className="w-12"></TableHead>
@@ -371,7 +380,7 @@ export default function ReturnsPage() {
                   </TableHeader>
                   <TableBody>
                     {lineItems.length === 0 ? (
-                      <TableRow><TableCell colSpan={4} className="h-64 text-center opacity-30 italic text-xs uppercase font-bold tracking-widest">Add items from the section above to initiate return</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={5} className="h-64 text-center opacity-30 italic text-xs uppercase font-bold tracking-widest">Add items from the section above to initiate return</TableCell></TableRow>
                     ) : (
                       lineItems.map((item, idx) => (
                         <TableRow key={idx} className="h-16 group hover:bg-slate-50/20">
@@ -379,8 +388,19 @@ export default function ReturnsPage() {
                             <span className="font-black text-xs uppercase tracking-tight text-slate-900">{item.name}</span>
                           </TableCell>
                           <TableCell>
+                            <Select value={item.unit} onValueChange={(val) => handleUpdateItem(idx, 'unit', val)}>
+                              <SelectTrigger className="h-8 border-none bg-slate-50 text-[10px] font-bold uppercase w-20 mx-auto">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {masterUnits?.map(u => <SelectItem key={u.id} value={u.shortName} className="text-xs font-bold">{u.shortName}</SelectItem>)}
+                                {!masterUnits?.length && <SelectItem value="Pcs">Pcs</SelectItem>}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
                             <div className="flex items-center justify-center gap-2">
-                              <Input type="number" className="h-9 text-center font-black text-xs rounded-xl w-16 bg-slate-50 border-none" value={item.qty} onChange={e => handleUpdateQty(idx, Number(e.target.value))} />
+                              <Input type="number" className="h-9 text-center font-black text-xs rounded-xl w-16 bg-slate-50 border-none" value={item.qty} onChange={e => handleUpdateItem(idx, 'qty', Number(e.target.value))} />
                               <span className="text-[9px] font-black uppercase text-slate-400">{item.unit}</span>
                             </div>
                           </TableCell>

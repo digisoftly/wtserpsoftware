@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -21,7 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, doc, runTransaction, serverTimestamp, increment } from "firebase/firestore"
+import { collection, doc, runTransaction, serverTimestamp, increment, query, orderBy } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { useTranslation } from "@/hooks/use-translation"
 import { toast } from "@/hooks/use-toast"
@@ -72,6 +73,12 @@ export default function NewInvoicePage() {
     return collection(db, "companies", companyId, "branches", branchId, "products");
   }, [db, companyId, branchId]);
   const { data: products } = useCollection(productsQuery);
+
+  const unitsQuery = useMemoFirebase(() => {
+    if (!db || !companyId) return null;
+    return query(collection(db, "companies", companyId, "master_units"), orderBy("name"));
+  }, [db, companyId]);
+  const { data: masterUnits } = useCollection(unitsQuery);
 
   // Calculations
   const subtotal = React.useMemo(() => lineItems.reduce((sum, item) => sum + (item.qty * item.price), 0), [lineItems]);
@@ -188,7 +195,6 @@ export default function NewInvoicePage() {
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-6 pb-20">
-      {/* HEADER */}
       <div className="flex items-center justify-between border-b pb-4 bg-white sticky top-0 z-50 px-2">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full">
@@ -196,7 +202,6 @@ export default function NewInvoicePage() {
           </Button>
           <div>
             <h1 className="text-lg font-bold text-slate-900 tracking-tight">{t('newInvoice')}</h1>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">WTS/INV-NEW</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -208,7 +213,6 @@ export default function NewInvoicePage() {
         </div>
       </div>
 
-      {/* INFO GRID */}
       <Card className="border-none shadow-sm ring-1 ring-slate-200">
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -248,7 +252,6 @@ export default function NewInvoicePage() {
         </CardContent>
       </Card>
 
-      {/* ITEMS TABLE */}
       <Card className="border-none shadow-sm ring-1 ring-slate-200 overflow-hidden">
         <div className="p-4 bg-slate-50/50 border-b flex items-center justify-between">
           <h3 className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('itemDescription')}</h3>
@@ -294,11 +297,21 @@ export default function NewInvoicePage() {
                   <TableCell>
                     <textarea className="w-full text-[10px] font-medium bg-transparent border-none resize-none h-8 focus:ring-0 outline-none" value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} placeholder="Model/Serial/Details..." />
                   </TableCell>
-                  <TableCell className="text-center text-[10px] font-bold uppercase text-slate-500">{item.unit}</TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2 justify-center">
-                      <Input type="number" className="h-8 w-16 text-center text-xs font-bold bg-slate-50 border-none" value={item.qty} onChange={e => updateItem(item.id, 'qty', e.target.value)} />
-                      <span className="text-[9px] font-black uppercase text-slate-400">{item.unit}</span>
+                    <Select value={item.unit} onValueChange={(val) => updateItem(item.id, 'unit', val)}>
+                      <SelectTrigger className="h-8 border-none bg-slate-50 text-[10px] font-bold uppercase w-20 mx-auto">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {masterUnits?.map(u => <SelectItem key={u.id} value={u.shortName} className="text-xs font-bold">{u.shortName}</SelectItem>)}
+                        {!masterUnits?.length && <SelectItem value="Pcs">Pcs</SelectItem>}
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1 justify-center">
+                      <Input type="number" className="h-8 w-14 text-center text-xs font-bold bg-slate-50 border-none" value={item.qty} onChange={e => updateItem(item.id, 'qty', e.target.value)} />
+                      <span className="text-[9px] font-black text-slate-400 uppercase">{item.unit}</span>
                     </div>
                   </TableCell>
                   <TableCell className="text-right">

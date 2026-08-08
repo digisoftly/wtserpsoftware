@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -20,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, doc, runTransaction, serverTimestamp, increment } from "firebase/firestore"
+import { collection, doc, runTransaction, serverTimestamp, increment, query, orderBy } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { useTranslation } from "@/hooks/use-translation"
 import { toast } from "@/hooks/use-toast"
@@ -72,6 +73,12 @@ export default function NewChallanPage() {
     return collection(db, "companies", companyId, "branches", branchId, "sales_invoices");
   }, [db, companyId, branchId]);
   const { data: invoices } = useCollection(invoicesQuery);
+
+  const unitsQuery = useMemoFirebase(() => {
+    if (!db || !companyId) return null;
+    return query(collection(db, "companies", companyId, "master_units"), orderBy("name"));
+  }, [db, companyId]);
+  const { data: masterUnits } = useCollection(unitsQuery);
 
   const handleAddProduct = (productId: string) => {
     const product = products?.find(p => p.id === productId);
@@ -171,7 +178,6 @@ export default function NewChallanPage() {
           </Button>
           <div>
             <h1 className="text-lg font-bold text-slate-900 tracking-tight">{t('addChallan')}</h1>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">WTS/CHL-NEW</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -251,7 +257,7 @@ export default function NewChallanPage() {
                 <TableHead className="min-w-[200px] text-[10px] font-black uppercase tracking-tighter">Description</TableHead>
                 <TableHead className="w-24 text-[10px] font-black uppercase tracking-tighter text-center">Unit</TableHead>
                 <TableHead className="w-32 text-[10px] font-black uppercase tracking-tighter text-center">Quantity</TableHead>
-                <TableHead className="w-32 text-[10px] font-black uppercase tracking-tighter text-right pr-10">Total Weight/Vol</TableHead>
+                <TableHead className="w-32 text-[10px] font-black uppercase tracking-tighter text-right pr-10">Total Load</TableHead>
                 <TableHead className="w-20 text-right pr-4"></TableHead>
               </TableRow>
             </TableHeader>
@@ -269,11 +275,21 @@ export default function NewChallanPage() {
                   <TableCell>
                     <textarea className="w-full text-[10px] font-medium bg-transparent border-none resize-none h-8 focus:ring-0 outline-none" value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} placeholder="Dispatch instructions..." />
                   </TableCell>
-                  <TableCell className="text-center text-[10px] font-bold uppercase text-slate-500">{item.unit}</TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2 justify-center">
+                    <Select value={item.unit} onValueChange={(val) => updateItem(item.id, 'unit', val)}>
+                      <SelectTrigger className="h-8 border-none bg-slate-50 text-[10px] font-bold uppercase w-20 mx-auto">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {masterUnits?.map(u => <SelectItem key={u.id} value={u.shortName} className="text-xs font-bold">{u.shortName}</SelectItem>)}
+                        {!masterUnits?.length && <SelectItem value="Pcs">Pcs</SelectItem>}
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1 justify-center">
                       <Input type="number" className="h-8 w-16 text-center text-xs font-bold bg-slate-50 border-none" value={item.qty} onChange={e => updateItem(item.id, 'qty', e.target.value)} />
-                      <span className="text-[9px] font-black uppercase text-slate-400">{item.unit}</span>
+                      <span className="text-[9px] font-black text-slate-400 uppercase">{item.unit}</span>
                     </div>
                   </TableCell>
                   <TableCell className="text-right pr-10">

@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -18,11 +19,11 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useFirestore, useDoc, useCollection, useMemoFirebase } from "@/firebase"
-import { doc, updateDoc, serverTimestamp, collection } from "firebase/firestore"
+import { doc, updateDoc, serverTimestamp, collection, query, orderBy } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { useTranslation } from "@/hooks/use-translation"
 import { toast } from "@/hooks/use-toast"
@@ -71,10 +72,10 @@ export default function EditQuotationPage() {
     if (quote) {
       setSelectedCustomerId(quote.customerId);
       
-      // FIX: Ensure every item has a unique key/id even if missing in database
       const itemsWithIds = (quote.items || []).map((item: any, idx: number) => ({
         ...item,
-        id: item.id || `quote-item-${idx}-${item.productId}`
+        id: item.id || `quote-item-${idx}-${item.productId}`,
+        unit: item.unit || "Pcs"
       }));
       setLineItems(itemsWithIds);
       
@@ -97,6 +98,12 @@ export default function EditQuotationPage() {
     return collection(db, "companies", companyId, "branches", branchId, "products");
   }, [db, companyId, branchId]);
   const { data: products } = useCollection(productsQuery);
+
+  const unitsQuery = useMemoFirebase(() => {
+    if (!db || !companyId) return null;
+    return query(collection(db, "companies", companyId, "master_units"), orderBy("name"));
+  }, [db, companyId]);
+  const { data: masterUnits } = useCollection(unitsQuery);
 
   // Calculations
   const calculations = React.useMemo(() => {
@@ -170,7 +177,7 @@ export default function EditQuotationPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-lg font-black font-headline uppercase tracking-tight text-blue-600">{t('edit')} Proposal</h1>
+            <h1 className="text-lg font-bold text-blue-600 uppercase tracking-tight">{t('edit')} Proposal</h1>
             <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">{quote?.quotationNumber}</p>
           </div>
         </div>
@@ -226,6 +233,7 @@ export default function EditQuotationPage() {
                 <TableHeader className="bg-slate-50/30">
                   <TableRow>
                     <TableHead className="text-[10px] uppercase font-black py-4 pl-8">Item Description</TableHead>
+                    <TableHead className="text-[10px] uppercase font-black text-center w-24">Unit</TableHead>
                     <TableHead className="text-[10px] uppercase font-black text-center w-28">Qty</TableHead>
                     <TableHead className="text-[10px] uppercase font-black text-right w-32">Price</TableHead>
                     <TableHead className="text-[10px] uppercase font-black text-right pr-8 w-32">Total</TableHead>
@@ -241,8 +249,22 @@ export default function EditQuotationPage() {
                           <textarea className="w-full text-[9px] font-bold bg-transparent border-none resize-none h-8 text-muted-foreground outline-none" value={item.description} onChange={e => handleUpdateLineItem(item.id, 'description', e.target.value)} />
                         </div>
                       </TableCell>
+                      <TableCell>
+                        <Select value={item.unit} onValueChange={(val) => handleUpdateLineItem(item.id, 'unit', val)}>
+                          <SelectTrigger className="h-8 border-none bg-slate-50 text-[10px] font-bold uppercase w-16 mx-auto">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {masterUnits?.map(u => <SelectItem key={u.id} value={u.shortName} className="text-xs font-bold">{u.shortName}</SelectItem>)}
+                            {!masterUnits?.length && <SelectItem value="Pcs">Pcs</SelectItem>}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
                       <TableCell className="text-center">
-                         <Input type="number" className="h-9 text-center font-black text-xs rounded-lg w-16 bg-slate-50 border-none mx-auto" value={item.quantity} onChange={e => handleUpdateLineItem(item.id, 'quantity', Number(e.target.value))} />
+                         <div className="flex items-center justify-center gap-1">
+                            <Input type="number" className="h-9 text-center font-black text-xs rounded-lg w-16 bg-slate-50 border-none" value={item.quantity} onChange={e => handleUpdateLineItem(item.id, 'quantity', Number(e.target.value))} />
+                            <span className="text-[9px] font-black text-slate-400 uppercase">{item.unit}</span>
+                         </div>
                       </TableCell>
                       <TableCell className="text-right">
                          <Input type="number" className="h-9 text-right font-black text-xs rounded-lg w-24 bg-slate-50 border-none ml-auto" value={item.unitPrice} onChange={e => handleUpdateLineItem(item.id, 'unitPrice', Number(e.target.value))} />
