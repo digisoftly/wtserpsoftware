@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
   trailingSlash: true,
   images: {
     // Disable built-in image optimization for static/generic hosting compatibility
+    // Many cPanel environments lack the necessary libraries for sharp/image-optimization
     unoptimized: true,
     remotePatterns: [
       {

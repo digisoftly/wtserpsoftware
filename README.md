@@ -1,50 +1,49 @@
 
-# WarriorERP - Production Deployment Guide
+# WarriorERP - Production Deployment Guide (cPanel/VPS)
 
-WarriorERP is optimized for high-performance deployment on **cPanel**, **VPS**, or **Dedicated Node.js** servers using Next.js Standalone mode.
+এই প্রজেক্টটি **Next.js Standalone Mode** ব্যবহার করার জন্য কনফিগার করা হয়েছে, যা সি-প্যানেলে হোস্ট করার জন্য সবচেয়ে কার্যকর পদ্ধতি।
 
-## 🚀 How to Deploy to cPanel
+## 🚀 সি-প্যানেলে লাইভ করার ধাপসমূহ:
 
-### 1. Build the Application
-On your local machine, run the following command to generate the optimized production build:
+### ১. লোকাল পিসিতে বিল্ড তৈরি করুন
+প্রথমে আপনার কম্পিউটারে টার্মিনাল ওপেন করে নিচের কমান্ডটি দিন:
 ```bash
 npm run build
 ```
+বিল্ড শেষ হলে আপনার প্রজেক্টে একটি নতুন ফোল্ডার তৈরি হবে: `.next/standalone`
 
-### 2. Prepare the Deployment Package
-Next.js generates an optimized server in the `.next/standalone` directory. To ensure all assets load correctly:
-1.  Go to the `.next/standalone` folder.
-2.  Copy the `public` folder from your root directory into `.next/standalone/`.
-3.  Copy the `.next/static` folder from your root directory into `.next/standalone/.next/`.
-4.  Create a ZIP file containing the **contents** of the `.next/standalone` folder.
+### ২. ফাইল প্রস্তুত করা (খুবই গুরুত্বপূর্ণ)
+সি-প্যানেলে আপলোড করার জন্য একটি নতুন জিপ (ZIP) ফাইল তৈরি করুন যার ভেতর নিচের ফাইল/ফোল্ডারগুলো থাকবে:
 
-### 3. Upload to cPanel
-1.  Log in to your cPanel.
-2.  Open **File Manager** and upload the ZIP file to your domain's root directory (e.g., `public_html` or a subfolder).
-3.  Extract the ZIP file.
+1.  `.next/standalone` ফোল্ডারের ভেতরের **সবগুলো** ফাইল এবং ফোল্ডার।
+2.  প্রজেক্টের রুট ডিরেক্টরি থেকে `public` ফোল্ডারটি।
+3.  প্রজেক্টের রুট ডিরেক্টরি থেকে `.next/static` ফোল্ডারটি (এটি সার্ভারের `.next/` ফোল্ডারের ভেতর রাখতে হবে)।
+4.  রুট ডিরেক্টরি থেকে `server.js` ফাইলটি।
 
-### 4. Setup Node.js App in cPanel
-1.  Open **Setup Node.js App** in cPanel.
-2.  Click **Create Application**.
-3.  **Node.js version**: Select 18.x or 20.x (Latest recommended).
-4.  **Application mode**: Production.
-5.  **Application root**: The folder where you extracted the files (e.g., `public_html`).
-6.  **Application URL**: Your domain or subdomain.
-7.  **Application startup file**: `server.js`.
-8.  Click **Create**.
+**ফোল্ডার স্ট্রাকচার সার্ভারে এমন দেখাবে:**
+```text
+/ (root)
+├── .next/
+│   └── static/    <-- (আপনার রুট .next/static থেকে কপি করা)
+├── public/        <-- (আপনার রুট public থেকে কপি করা)
+├── node_modules/
+├── server.js      <-- (মেইন এন্ট্রি পয়েন্ট)
+├── package.json
+└── .env           <-- (প্রয়োজনীয় এনভায়রনমেন্ট ভেরিয়েবল)
+```
 
-### 5. Install Dependencies
-1.  In the Node.js App interface, scroll down to the "Configuration files" section.
-2.  Click **Run JS Build** if available, or simply click **npm install** (this will install the minimal production dependencies listed in your standalone package).
+### ৩. সি-প্যানেল সেটআপ (Node.js App)
+1.  সি-প্যানেলে লগইন করে **"Setup Node.js App"** এ যান।
+2.  **Create Application** এ ক্লিক করুন।
+3.  **Node.js version**: ১৮ বা ২০ সিলেক্ট করুন।
+4.  **Application mode**: Production।
+5.  **Application root**: যেখানে আপনি ফাইলগুলো আপলোড করেছেন।
+6.  **Application URL**: আপনার ডোমেইন নাম।
+7.  **Application startup file**: `server.js` লিখুন।
+8.  **Create** বাটনে ক্লিক করুন।
 
-### 6. Environment Variables
-Ensure you add any necessary environment variables (like `GEMINI_API_KEY` for AI features) in the **Setup Node.js App** interface under the "Environment variables" section.
+### ৪. এনভায়রনমেন্ট ভেরিয়েবল
+যদি আপনার কোনো সিক্রেট কি (যেমন: `GEMINI_API_KEY`) থাকে, তবে সেগুলো সি-প্যানেলের ওই Node.js App ইন্টারফেসের **"Environment variables"** সেকশনে যুক্ত করে দিন।
 
 ---
-
-## 🛠 Features
-- **Standalone Build**: Only 10% the size of a standard build.
-- **Fast Startup**: Optimized for Phusion Passenger (cPanel's Node handler).
-- **Static Asset Routing**: Pre-configured to serve images and CSS efficiently.
-
 **Warrior Tech System © 2024**
