@@ -216,7 +216,7 @@ export default function EditInvoicePage() {
       <div className="flex items-center justify-between border-b pb-4 bg-white sticky top-0 z-50 px-2">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full">
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
             <h1 className="text-lg font-bold text-slate-900 tracking-tight">{t('edit')} Invoice</h1>

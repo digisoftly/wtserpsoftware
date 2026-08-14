@@ -164,7 +164,7 @@ export default function NewProductPage() {
                     <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Select Category" /></SelectTrigger>
                     <SelectContent className="rounded-xl">
                       {masterCats?.map((c, idx) => (
-                        <SelectItem key={`cat-item-${c.id}-${idx}`} value={c.id} className="text-xs uppercase">{c.name}</SelectItem>
+                        <SelectItem key={`cat-${c.id}-${idx}`} value={c.id} className="text-xs uppercase">{c.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -175,7 +175,7 @@ export default function NewProductPage() {
                     <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Select Brand" /></SelectTrigger>
                     <SelectContent className="rounded-xl">
                       {masterBrands?.map((b, idx) => (
-                        <SelectItem key={`brand-item-${b.id}-${idx}`} value={b.id} className="text-xs uppercase">{b.name}</SelectItem>
+                        <SelectItem key={`brand-${b.id}-${idx}`} value={b.id} className="text-xs uppercase">{b.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -186,7 +186,7 @@ export default function NewProductPage() {
                     <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Select Model" /></SelectTrigger>
                     <SelectContent className="rounded-xl">
                       {masterModels?.map((m, idx) => (
-                        <SelectItem key={`model-item-${m.id}-${idx}`} value={m.name} className="text-xs uppercase">{m.name}</SelectItem>
+                        <SelectItem key={`model-${m.id}-${idx}`} value={m.name} className="text-xs uppercase">{m.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -217,7 +217,7 @@ export default function NewProductPage() {
                     <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-xl">
                       {warrantyTypes?.map((w, idx) => (
-                        <SelectItem key={`warranty-item-${w.id}-${idx}`} value={w.name} className="text-xs font-bold uppercase">{w.name}</SelectItem>
+                        <SelectItem key={`warranty-${w.id}-${idx}`} value={w.name} className="text-xs font-bold uppercase">{w.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

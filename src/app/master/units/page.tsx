@@ -113,8 +113,8 @@ export default function MasterUnitsPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow><TableCell colSpan={3} className="h-40 text-center"><Loader2 className="animate-spin h-6 w-6 mx-auto text-blue-600" /></TableCell></TableRow>
-              ) : filtered?.map((u) => (
-                <TableRow key={u.id} className="h-12 hover:bg-muted/5 group">
+              ) : filtered?.map((u, idx) => (
+                <TableRow key={`${u.id}-${idx}`} className="h-12 hover:bg-muted/5 group">
                   <TableCell className="pl-6 font-bold text-xs uppercase">{u.name} {u.isDefault && <Badge className="ml-2 h-3.5 text-[7px] bg-green-50 text-green-700 border-none">Default</Badge>}</TableCell>
                   <TableCell className="text-xs font-mono text-blue-600 font-black">{u.shortName}</TableCell>
                   <TableCell className="text-right pr-6">
