@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -163,8 +162,10 @@ export default function NewProductPage() {
                   <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('category')}</Label>
                   <Select name="categoryId">
                     <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Select Category" /></SelectTrigger>
-                    <SelectContent>
-                      {masterCats?.map((c, idx) => <SelectItem key={`cat-${c.id}-${idx}`} value={c.id} className="text-xs uppercase">{c.name}</SelectItem>)}
+                    <SelectContent className="rounded-xl">
+                      {masterCats?.map((c, idx) => (
+                        <SelectItem key={`cat-item-${c.id}-${idx}`} value={c.id} className="text-xs uppercase">{c.name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -172,8 +173,10 @@ export default function NewProductPage() {
                   <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('brand')}</Label>
                   <Select name="brandId" onValueChange={setSelectedBrandId}>
                     <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Select Brand" /></SelectTrigger>
-                    <SelectContent>
-                      {masterBrands?.map((b, idx) => <SelectItem key={`brand-${b.id}-${idx}`} value={b.id} className="text-xs uppercase">{b.name}</SelectItem>)}
+                    <SelectContent className="rounded-xl">
+                      {masterBrands?.map((b, idx) => (
+                        <SelectItem key={`brand-item-${b.id}-${idx}`} value={b.id} className="text-xs uppercase">{b.name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -181,8 +184,10 @@ export default function NewProductPage() {
                   <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('model')}</Label>
                   <Select name="modelId">
                     <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Select Model" /></SelectTrigger>
-                    <SelectContent>
-                      {masterModels?.map((m, idx) => <SelectItem key={`model-${m.id}-${idx}`} value={m.name} className="text-xs uppercase">{m.name}</SelectItem>)}
+                    <SelectContent className="rounded-xl">
+                      {masterModels?.map((m, idx) => (
+                        <SelectItem key={`model-item-${m.id}-${idx}`} value={m.name} className="text-xs uppercase">{m.name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -210,8 +215,10 @@ export default function NewProductPage() {
                   </Label>
                   <Select name="warranty" defaultValue="1 Year">
                     <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {warrantyTypes?.map((w, idx) => <SelectItem key={`warranty-${w.id}-${idx}`} value={w.name} className="text-xs font-bold uppercase">{w.name}</SelectItem>)}
+                    <SelectContent className="rounded-xl">
+                      {warrantyTypes?.map((w, idx) => (
+                        <SelectItem key={`warranty-item-${w.id}-${idx}`} value={w.name} className="text-xs font-bold uppercase">{w.name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -42,8 +41,6 @@ interface BulkItem {
   warranty: string
   location: string
 }
-
-const UNITS = ["Pcs", "Kg", "Gram", "Liter", "ML", "Meter (Mtr)", "Rft", "Feet", "Box", "Pack", "Carton", "Set", "Pair", "Roll", "Piece", "Unit", "Bundle", "Dozen"];
 
 export default function BulkInventoryPage() {
   const router = useRouter()
@@ -287,8 +284,10 @@ export default function BulkInventoryPage() {
                   <SelectTrigger className="w-[200px] h-9 border-none font-bold text-orange-700">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    {branches?.map((b, idx) => <SelectItem key={`branch-${b.id}-${idx}`} value={b.id}>{b.name}</SelectItem>)}
+                  <SelectContent className="rounded-xl shadow-2xl">
+                    {branches?.map((b, idx) => (
+                      <SelectItem key={`branch-opt-${b.id}-${idx}`} value={b.id}>{b.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -334,8 +333,10 @@ export default function BulkInventoryPage() {
                          <SelectTrigger className="h-9 border-transparent bg-transparent text-[10px] font-bold uppercase">
                            <SelectValue />
                          </SelectTrigger>
-                         <SelectContent>
-                           {warrantyTypes?.map((w, idx) => <SelectItem key={`warranty-${w.id}-${idx}`} value={w.name}>{w.name}</SelectItem>)}
+                         <SelectContent className="rounded-xl shadow-2xl">
+                           {warrantyTypes?.map((w, idx) => (
+                             <SelectItem key={`bulk-warranty-${w.id}-${idx}`} value={w.name}>{w.name}</SelectItem>
+                           ))}
                          </SelectContent>
                        </Select>
                     </TableCell>
