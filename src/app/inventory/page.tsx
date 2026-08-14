@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -91,7 +92,7 @@ export default function InventoryPage() {
                 <TableHead className="w-10 pl-6 h-10">
                   <Checkbox checked={isAllSelected} onCheckedChange={toggleSelectAll} className="h-4 w-4" />
                 </TableHead>
-                <TableHead className="text-[10px] uppercase font-black text-slate-500 h-10">Product / SKU</TableHead>
+                <TableHead className="text-[10px] uppercase font-black text-slate-500 h-10">Product / {t('sku')}</TableHead>
                 <TableHead className="text-[10px] uppercase font-black text-slate-500 h-10 text-center">In Stock</TableHead>
                 <TableHead className="text-[10px] uppercase font-black text-slate-500 h-10 text-right">Standard Price</TableHead>
                 <TableHead className="text-[10px] uppercase font-black text-slate-500 text-right pr-6 sticky right-0 bg-slate-50 h-10 w-24">Action</TableHead>

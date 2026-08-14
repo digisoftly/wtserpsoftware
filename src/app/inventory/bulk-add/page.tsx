@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -106,7 +107,7 @@ export default function BulkInventoryPage() {
         const importedItems: BulkItem[] = results.data.map((row: any) => ({
           id: Math.random().toString(36).substr(2, 9),
           name: row.name || row.Name || "",
-          sku: row.sku || row.SKU || "",
+          sku: row.model || row.sku || row.Model || row.SKU || "",
           unit: row.unit || row.Unit || "Pcs",
           costPrice: Number(row.costPrice || row.Cost || 0),
           unitPrice: Number(row.unitPrice || row.Price || 0),
@@ -124,7 +125,7 @@ export default function BulkInventoryPage() {
   }
 
   const downloadTemplate = () => {
-    const csvContent = "name,sku,unit,costPrice,unitPrice,quantity,isSerialized,serials\nSample Product,SKU-001,Pcs,100,150,1,false,\nSerial Product,SKU-002,Box,500,750,2,true,\"SN123,SN124\""
+    const csvContent = "name,model,unit,costPrice,unitPrice,quantity,isSerialized,serials\nSample Product,MOD-001,Pcs,100,150,1,false,\nSerial Product,MOD-002,Box,500,750,2,true,\"SN123,SN124\""
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement("a")
     const url = URL.createObjectURL(blob)
@@ -285,7 +286,7 @@ export default function BulkInventoryPage() {
               <TableHeader className="bg-muted/30">
                 <TableRow>
                   <TableHead className="w-[250px]">Product Name</TableHead>
-                  <TableHead className="w-[150px]">SKU / ID</TableHead>
+                  <TableHead className="w-[150px]">Model</TableHead>
                   <TableHead className="w-[120px]">Unit</TableHead>
                   <TableHead className="w-[120px]">Cost (৳)</TableHead>
                   <TableHead className="w-[120px]">Sale (৳)</TableHead>
@@ -308,7 +309,7 @@ export default function BulkInventoryPage() {
                     </TableCell>
                     <TableCell>
                       <Input 
-                        placeholder="CAM-001" 
+                        placeholder="MOD-001" 
                         value={item.sku} 
                         onChange={(e) => handleUpdateItem(item.id, 'sku', e.target.value)}
                         className="h-9 border-transparent focus:border-orange-200 bg-transparent font-mono text-xs uppercase"

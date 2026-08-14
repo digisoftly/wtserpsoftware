@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -31,6 +32,7 @@ export default function NewProductPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isSerialTracking, setIsSerialTracking] = React.useState(false);
   const [rawSerials, setRawSerials] = React.useState("");
+  const [selectedBrandId, setSelectedBrandId] = React.useState<string | null>(null);
 
   // Master Data Queries
   const catsQuery = useMemoFirebase(() => {
@@ -45,6 +47,15 @@ export default function NewProductPage() {
   }, [db, companyId]);
   const { data: masterBrands } = useCollection(brandsQuery);
 
+  const modelsQuery = useMemoFirebase(() => {
+    if (!db || !companyId) return null;
+    if (selectedBrandId) {
+      return query(collection(db, "companies", companyId, "master_models"), where("brandId", "==", selectedBrandId), orderBy("name"));
+    }
+    return query(collection(db, "companies", companyId, "master_models"), orderBy("name"));
+  }, [db, companyId, selectedBrandId]);
+  const { data: masterModels } = useCollection(modelsQuery);
+
   const handleSaveProduct = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!db || !companyId || !branchId || isSubmitting) return;
@@ -56,7 +67,7 @@ export default function NewProductPage() {
       companyId,
       branchId,
       name: formData.get("name") as string,
-      sku: (formData.get("sku") as string) || "",
+      sku: (formData.get("modelId") as string) || "", // We still use 'sku' field in DB to store Model Name/ID for compatibility
       brandId: formData.get("brandId") as string,
       categoryId: formData.get("categoryId") as string,
       unitId: "piece",
@@ -136,11 +147,6 @@ export default function NewProductPage() {
                 <Input name="name" required className="h-12 rounded-xl" placeholder="Product Full Name" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('sku')}</Label>
-                <Input name="sku" className="h-12 rounded-xl uppercase font-mono" placeholder="SKU-CODE" />
-              </div>
-              
-              <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('category')}</Label>
                 <Select name="categoryId">
                   <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Select Category" /></SelectTrigger>
@@ -149,9 +155,18 @@ export default function NewProductPage() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('brand')}</Label>
-                <Select name="brandId">
+                <Select name="brandId" onValueChange={setSelectedBrandId}>
                   <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Select Brand" /></SelectTrigger>
                   <SelectContent>{masterBrands?.map(b => <SelectItem key={b.id} value={b.id} className="text-xs uppercase">{b.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('model')}</Label>
+                <Select name="modelId">
+                  <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Select Model" /></SelectTrigger>
+                  <SelectContent>
+                    {masterModels?.map(m => <SelectItem key={m.id} value={m.name} className="text-xs uppercase">{m.name}</SelectItem>)}
+                  </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
