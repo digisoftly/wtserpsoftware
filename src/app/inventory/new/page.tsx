@@ -56,7 +56,7 @@ export default function NewProductPage() {
       companyId,
       branchId,
       name: formData.get("name") as string,
-      sku: formData.get("sku") as string,
+      sku: (formData.get("sku") as string) || "",
       brandId: formData.get("brandId") as string,
       categoryId: formData.get("categoryId") as string,
       unitId: "piece",
@@ -136,8 +136,8 @@ export default function NewProductPage() {
                 <Input name="name" required className="h-12 rounded-xl" placeholder="Product Full Name" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('sku')} *</Label>
-                <Input name="sku" required className="h-12 rounded-xl uppercase font-mono" placeholder="SKU-CODE" />
+                <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('sku')}</Label>
+                <Input name="sku" className="h-12 rounded-xl uppercase font-mono" placeholder="SKU-CODE" />
               </div>
               
               <div className="space-y-1.5">

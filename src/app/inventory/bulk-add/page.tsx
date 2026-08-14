@@ -137,9 +137,9 @@ export default function BulkInventoryPage() {
   }
 
   const handleSaveAll = async () => {
-    const validItems = items.filter(i => i.name && i.sku)
+    const validItems = items.filter(i => i.name.trim() !== "")
     if (validItems.length === 0) {
-      toast({ variant: "destructive", title: "No Valid Data", description: "Please enter product name and SKU." })
+      toast({ variant: "destructive", title: "No Valid Data", description: "Please enter at least one product name." })
       return
     }
 
@@ -173,7 +173,7 @@ export default function BulkInventoryPage() {
             companyId,
             branchId: targetBranchId,
             name: item.name,
-            sku: item.sku,
+            sku: item.sku || "",
             unit: item.unit || "Pcs",
             unitPrice: item.unitPrice,
             costPrice: item.costPrice,
@@ -409,7 +409,8 @@ export default function BulkInventoryPage() {
               {items.filter(i => i.isSerialized).length} Unique SKU(s)
             </div>
           </CardContent>
-        </div>
+        </Card>
+      </div>
 
       <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-2xl border-2 border-dashed border-blue-200">
         <AlertCircle className="h-6 w-6 text-blue-600" />
