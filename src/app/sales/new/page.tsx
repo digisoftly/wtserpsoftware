@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -221,7 +220,7 @@ export default function NewInvoicePage() {
               <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
                 <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select Client" /></SelectTrigger>
                 <SelectContent className="max-h-[300px]">
-                  {customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-medium">{c.firstName} {c.lastName}</SelectItem>)}
+                  {customers?.map((c, idx) => <SelectItem key={`cust-new-${c.id}-${idx}`} value={c.id} className="text-xs font-medium">{c.firstName} {c.lastName}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -259,7 +258,7 @@ export default function NewInvoicePage() {
             <Select onValueChange={handleAddProduct}>
               <SelectTrigger className="h-8 w-64 text-[10px] bg-white border-slate-200 font-bold uppercase"><SelectValue placeholder="Add From Catalog" /></SelectTrigger>
               <SelectContent className="max-h-[300px]">
-                {products?.map(p => <SelectItem key={p.id} value={p.id} className="text-xs">{p.name} (Stock: {p.currentStock})</SelectItem>)}
+                {products?.map((p, idx) => <SelectItem key={`prod-new-${p.id}-${idx}`} value={p.id} className="text-xs">{p.name} (Stock: {p.currentStock})</SelectItem>)}
               </SelectContent>
             </Select>
             <Button variant="outline" size="sm" className="h-8 rounded-md gap-2 text-[10px] font-bold uppercase" onClick={addManualRow}>
@@ -303,7 +302,7 @@ export default function NewInvoicePage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {masterUnits?.map(u => <SelectItem key={u.id} value={u.shortName} className="text-xs font-bold">{u.shortName}</SelectItem>)}
+                        {masterUnits?.map((u, uidx) => <SelectItem key={`unit-new-${u.id}-${uidx}`} value={u.shortName} className="text-xs font-bold">{u.shortName}</SelectItem>)}
                         {!masterUnits?.length && <SelectItem value="Pcs">Pcs</SelectItem>}
                       </SelectContent>
                     </Select>
