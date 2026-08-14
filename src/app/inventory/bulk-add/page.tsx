@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, doc, runTransaction, serverTimestamp, orderBy, query } from "firebase/firestore"
+import { collection, doc, runTransaction, serverTimestamp, orderBy, query, where } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { toast } from "@/hooks/use-toast"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -39,6 +39,8 @@ interface BulkItem {
   quantity: number
   serials: string
   isSerialized: boolean
+  warranty: string
+  location: string
 }
 
 const UNITS = ["Pcs", "Kg", "Gram", "Liter", "ML", "Meter (Mtr)", "Rft", "Feet", "Box", "Pack", "Carton", "Set", "Pair", "Roll", "Piece", "Unit", "Bundle", "Dozen"];
@@ -51,12 +53,18 @@ export default function BulkInventoryPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [targetBranchId, setTargetBranchId] = React.useState(branchId || "")
 
-  // Fetch branches for distribution
+  // Fetch Master Data
   const branchesQuery = useMemoFirebase(() => {
     if (!db || !companyId) return null
     return query(collection(db, "companies", companyId, "branches"), orderBy("name"))
   }, [db, companyId])
   const { data: branches } = useCollection(branchesQuery)
+
+  const warrantyQuery = useMemoFirebase(() => {
+    if (!db || !companyId) return null;
+    return query(collection(db, "companies", companyId, "master_data"), where("type", "==", "warrantyTypes"));
+  }, [db, companyId]);
+  const { data: warrantyTypes } = useCollection(warrantyQuery);
 
   function createEmptyItem(): BulkItem {
     return {
@@ -68,7 +76,9 @@ export default function BulkInventoryPage() {
       unitPrice: 0,
       quantity: 1,
       serials: "",
-      isSerialized: false
+      isSerialized: false,
+      warranty: "1 Year",
+      location: ""
     }
   }
 
@@ -85,7 +95,6 @@ export default function BulkInventoryPage() {
       if (item.id !== id) return item
       const updated = { ...item, [field]: value }
       
-      // Auto-calculate quantity for serialized items based on serial string
       if (field === 'serials' || field === 'isSerialized') {
         const serialList = updated.serials.split(',').map(s => s.trim()).filter(s => s !== "")
         if (updated.isSerialized && serialList.length > 0) {
@@ -113,7 +122,9 @@ export default function BulkInventoryPage() {
           unitPrice: Number(row.unitPrice || row.Price || 0),
           quantity: Number(row.quantity || row.Qty || 1),
           serials: row.serials || row.Serials || "",
-          isSerialized: !!(row.serials || row.isSerialized === 'true')
+          isSerialized: !!(row.serials || row.isSerialized === 'true'),
+          warranty: row.warranty || row.Warranty || "1 Year",
+          location: row.location || row.Location || ""
         }))
         setItems([...items.filter(i => i.name !== ""), ...importedItems])
         toast({ title: "Import Successful", description: `${importedItems.length} rows detected.` })
@@ -125,7 +136,7 @@ export default function BulkInventoryPage() {
   }
 
   const downloadTemplate = () => {
-    const csvContent = "name,model,unit,costPrice,unitPrice,quantity,isSerialized,serials\nSample Product,MOD-001,Pcs,100,150,1,false,\nSerial Product,MOD-002,Box,500,750,2,true,\"SN123,SN124\""
+    const csvContent = "name,model,unit,costPrice,unitPrice,quantity,isSerialized,serials,warranty,location\nSample Product,MOD-001,Pcs,100,150,1,false,,1 Year,Shelf A1\nSerial Product,MOD-002,Box,500,750,2,true,\"SN123,SN124\",2 Years,Rack 5"
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement("a")
     const url = URL.createObjectURL(blob)
@@ -180,6 +191,8 @@ export default function BulkInventoryPage() {
             costPrice: item.costPrice,
             currentStock: item.quantity,
             minStockLevel: 5,
+            warranty: item.warranty,
+            location: item.location,
             serialNumberTrackingRequired: item.isSerialized,
             isActive: true,
             createdAt: serverTimestamp(),
@@ -199,6 +212,8 @@ export default function BulkInventoryPage() {
                 productId: productRef.id,
                 serialNumber: sn,
                 status: "available",
+                warranty: item.warranty,
+                location: item.location,
                 purchaseOrderId: poRef.id,
                 createdAt: serverTimestamp()
               })
@@ -227,7 +242,7 @@ export default function BulkInventoryPage() {
             <h1 className="text-2xl md:text-3xl font-bold font-headline text-orange-600 flex items-center gap-2">
               <Boxes className="h-8 w-8" /> Bulk Inventory Intake
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">Add hundreds of items in seconds via Grid or CSV</p>
+            <p className="text-sm text-muted-foreground mt-1">Add hundreds of items with Warranty and Location tracking</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -263,7 +278,7 @@ export default function BulkInventoryPage() {
               <CardTitle className="text-lg font-headline flex items-center gap-2">
                 <FileSpreadsheet className="h-5 w-5 text-orange-600" /> Intake Worksheet
               </CardTitle>
-              <CardDescription>Fill the grid below or upload a spreadsheet to begin.</CardDescription>
+              <CardDescription>Fill the grid below including Warranty and Location.</CardDescription>
             </div>
             {userRole?.isSuperAdmin && (
               <div className="flex items-center gap-3 bg-white p-2 rounded-xl border shadow-sm px-4">
@@ -285,14 +300,13 @@ export default function BulkInventoryPage() {
             <Table>
               <TableHeader className="bg-muted/30">
                 <TableRow>
-                  <TableHead className="w-[250px]">Product Name</TableHead>
-                  <TableHead className="w-[150px]">Model</TableHead>
-                  <TableHead className="w-[120px]">Unit</TableHead>
+                  <TableHead className="w-[200px]">Product Name</TableHead>
+                  <TableHead className="w-[120px]">Model</TableHead>
+                  <TableHead className="w-[120px]">Warranty</TableHead>
+                  <TableHead className="w-[150px]">Store Loc</TableHead>
+                  <TableHead className="w-[100px]">Qty</TableHead>
                   <TableHead className="w-[120px]">Cost (৳)</TableHead>
                   <TableHead className="w-[120px]">Sale (৳)</TableHead>
-                  <TableHead className="w-[100px]">Qty</TableHead>
-                  <TableHead className="w-[100px]">Serial?</TableHead>
-                  <TableHead>Serials (Comma Separated)</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -301,7 +315,7 @@ export default function BulkInventoryPage() {
                   <TableRow key={item.id} className="hover:bg-muted/10">
                     <TableCell>
                       <Input 
-                        placeholder="e.g. Sony 4K Camera" 
+                        placeholder="Product Name" 
                         value={item.name} 
                         onChange={(e) => handleUpdateItem(item.id, 'name', e.target.value)}
                         className="h-9 border-transparent focus:border-orange-200 bg-transparent text-sm"
@@ -309,21 +323,38 @@ export default function BulkInventoryPage() {
                     </TableCell>
                     <TableCell>
                       <Input 
-                        placeholder="MOD-001" 
+                        placeholder="Model" 
                         value={item.sku} 
                         onChange={(e) => handleUpdateItem(item.id, 'sku', e.target.value)}
                         className="h-9 border-transparent focus:border-orange-200 bg-transparent font-mono text-xs uppercase"
                       />
                     </TableCell>
                     <TableCell>
-                      <Select value={item.unit} onValueChange={(val) => handleUpdateItem(item.id, 'unit', val)}>
-                        <SelectTrigger className="h-9 border-transparent bg-transparent text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                       <Select value={item.warranty} onValueChange={(val) => handleUpdateItem(item.id, 'warranty', val)}>
+                         <SelectTrigger className="h-9 border-transparent bg-transparent text-[10px] font-bold uppercase">
+                           <SelectValue />
+                         </SelectTrigger>
+                         <SelectContent>
+                           {warrantyTypes?.map(w => <SelectItem key={w.id} value={w.name}>{w.name}</SelectItem>)}
+                         </SelectContent>
+                       </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Input 
+                        placeholder="Location" 
+                        value={item.location} 
+                        onChange={(e) => handleUpdateItem(item.id, 'location', e.target.value)}
+                        className="h-9 border-transparent focus:border-orange-200 bg-transparent text-[10px] uppercase font-bold"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input 
+                        type="number" 
+                        disabled={item.isSerialized}
+                        value={item.quantity} 
+                        onChange={(e) => handleUpdateItem(item.id, 'quantity', Number(e.target.value))}
+                        className="h-9 border-transparent focus:border-orange-200 bg-transparent text-sm text-center"
+                      />
                     </TableCell>
                     <TableCell>
                       <Input 
@@ -339,32 +370,6 @@ export default function BulkInventoryPage() {
                         value={item.unitPrice} 
                         onChange={(e) => handleUpdateItem(item.id, 'unitPrice', Number(e.target.value))}
                         className="h-9 border-transparent focus:border-orange-200 bg-transparent text-sm font-bold"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input 
-                        type="number" 
-                        disabled={item.isSerialized}
-                        value={item.quantity} 
-                        onChange={(e) => handleUpdateItem(item.id, 'quantity', Number(e.target.value))}
-                        className="h-9 border-transparent focus:border-orange-200 bg-transparent text-sm text-center"
-                      />
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <input 
-                        type="checkbox" 
-                        checked={item.isSerialized} 
-                        onChange={(e) => handleUpdateItem(item.id, 'isSerialized', e.target.checked)}
-                        className="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-600"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input 
-                        placeholder="S123, S124..." 
-                        disabled={!item.isSerialized}
-                        value={item.serials} 
-                        onChange={(e) => handleUpdateItem(item.id, 'serials', e.target.value)}
-                        className="h-9 border-transparent focus:border-orange-200 bg-transparent text-[10px] font-mono"
                       />
                     </TableCell>
                     <TableCell>
@@ -389,37 +394,6 @@ export default function BulkInventoryPage() {
           </div>
         </CardContent>
       </Card>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-none shadow-sm bg-orange-50/50">
-          <CardHeader className="pb-2"><CardTitle className="text-xs font-bold uppercase text-orange-600 tracking-widest">Row Count</CardTitle></CardHeader>
-          <CardContent><div className="text-2xl font-bold font-headline">{items.filter(i => i.name).length} Items Detected</div></CardContent>
-        </Card>
-        <Card className="border-none shadow-sm bg-blue-50/50">
-          <CardHeader className="pb-2"><CardTitle className="text-xs font-bold uppercase text-blue-600 tracking-widest">Total Valuation</CardTitle></CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">
-              ৳{items.reduce((s, i) => s + (i.costPrice * i.quantity), 0).toLocaleString()}
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-none shadow-sm bg-purple-50/50">
-          <CardHeader className="pb-2"><CardTitle className="text-xs font-bold uppercase text-purple-600 tracking-widest">Serial Inventory</CardTitle></CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">
-              {items.filter(i => i.isSerialized).length} Unique SKU(s)
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-2xl border-2 border-dashed border-blue-200">
-        <AlertCircle className="h-6 w-6 text-blue-600" />
-        <div>
-          <p className="text-sm font-bold text-blue-900">Validation System Active</p>
-          <p className="text-[10px] text-blue-700">The system will automatically deduplicate SKUs and verify serial availability during the intake process.</p>
-        </div>
-      </div>
     </div>
   )
 }

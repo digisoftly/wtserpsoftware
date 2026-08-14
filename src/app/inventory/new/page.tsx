@@ -8,7 +8,9 @@ import {
   ArrowLeft, 
   Save, 
   Loader2, 
-  Plus
+  Plus,
+  ShieldCheck,
+  MapPin
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -56,6 +58,12 @@ export default function NewProductPage() {
   }, [db, companyId, selectedBrandId]);
   const { data: masterModels } = useCollection(modelsQuery);
 
+  const warrantyQuery = useMemoFirebase(() => {
+    if (!db || !companyId) return null;
+    return query(collection(db, "companies", companyId, "master_data"), where("type", "==", "warrantyTypes"));
+  }, [db, companyId]);
+  const { data: warrantyTypes } = useCollection(warrantyQuery);
+
   const handleSaveProduct = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!db || !companyId || !branchId || isSubmitting) return;
@@ -67,7 +75,7 @@ export default function NewProductPage() {
       companyId,
       branchId,
       name: formData.get("name") as string,
-      sku: (formData.get("modelId") as string) || "", // We still use 'sku' field in DB to store Model Name/ID for compatibility
+      sku: (formData.get("modelId") as string) || "",
       brandId: formData.get("brandId") as string,
       categoryId: formData.get("categoryId") as string,
       unitId: "piece",
@@ -75,6 +83,8 @@ export default function NewProductPage() {
       costPrice: Number(formData.get("costPrice")),
       currentStock: Number(formData.get("currentStock")),
       minStockLevel: Number(formData.get("minStockLevel") || 5),
+      warranty: formData.get("warranty") as string || "No Warranty",
+      location: formData.get("location") as string || "",
       description: formData.get("description") as string || "",
       serialNumberTrackingRequired: isSerialTracking,
       isActive: true,
@@ -99,6 +109,8 @@ export default function NewProductPage() {
             productId: productRef.id,
             serialNumber: sn,
             status: "available",
+            warranty: productData.warranty,
+            location: productData.location,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           });
@@ -185,6 +197,25 @@ export default function NewProductPage() {
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground">Min Limit</Label>
                 <Input name="minStockLevel" type="number" defaultValue={5} className="h-12 rounded-xl" />
+              </div>
+
+              {/* NEW FIELDS: WARRANTY & LOCATION */}
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1">
+                  <ShieldCheck className="h-3 w-3" /> {t('warranty')}
+                </Label>
+                <Select name="warranty" defaultValue="1 Year">
+                  <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {warrantyTypes?.map(w => <SelectItem key={w.id} value={w.name} className="text-xs font-bold uppercase">{w.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5 lg:col-span-2">
+                <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1">
+                  <MapPin className="h-3 w-3" /> {t('storageLocation')}
+                </Label>
+                <Input name="location" className="h-12 rounded-xl" placeholder="e.g. Shelf A1, Rack 2" />
               </div>
             </div>
 

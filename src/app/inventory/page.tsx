@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Search, Plus, Loader2, Edit, Trash2, Boxes, AlertCircle, DollarSign, Filter, Eye } from "lucide-react"
+import { Search, Plus, Loader2, Edit, Trash2, Boxes, AlertCircle, DollarSign, Filter, Eye, ShieldCheck, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -43,7 +43,8 @@ export default function InventoryPage() {
   const filtered = React.useMemo(() => {
     return products?.filter(p => 
       p.name?.toLowerCase().includes(deferredSearch.toLowerCase()) || 
-      p.sku?.toLowerCase().includes(deferredSearch.toLowerCase())
+      p.sku?.toLowerCase().includes(deferredSearch.toLowerCase()) ||
+      p.location?.toLowerCase().includes(deferredSearch.toLowerCase())
     );
   }, [products, deferredSearch]);
 
@@ -73,7 +74,7 @@ export default function InventoryPage() {
         <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
           <input 
-            placeholder="Search catalog..." 
+            placeholder="Search catalog or location..." 
             className="pl-10 h-10 w-full rounded-lg bg-slate-50/50 border-none text-xs font-bold focus:ring-1 focus:ring-primary outline-none transition-all" 
             value={searchTerm} 
             onChange={e => setSearchTerm(e.target.value)} 
@@ -94,15 +95,16 @@ export default function InventoryPage() {
                 </TableHead>
                 <TableHead className="text-[10px] uppercase font-black text-slate-500 h-10">Product / {t('sku')}</TableHead>
                 <TableHead className="text-[10px] uppercase font-black text-slate-500 h-10 text-center">In Stock</TableHead>
-                <TableHead className="text-[10px] uppercase font-black text-slate-500 h-10 text-right">Standard Price</TableHead>
+                <TableHead className="text-[10px] uppercase font-black text-slate-500 h-10">Warranty & Location</TableHead>
+                <TableHead className="text-[10px] uppercase font-black text-slate-500 h-10 text-right">Price</TableHead>
                 <TableHead className="text-[10px] uppercase font-black text-slate-500 text-right pr-6 sticky right-0 bg-slate-50 h-10 w-24">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={5} className="h-40 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto text-slate-200" /></TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="h-40 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto text-slate-200" /></TableCell></TableRow>
               ) : filtered?.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="h-40 text-center text-slate-300 text-[10px] font-black uppercase tracking-[0.2em] italic">No items found</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="h-40 text-center text-slate-300 text-[10px] font-black uppercase tracking-[0.2em] italic">No items found</TableCell></TableRow>
               ) : (
                 filtered?.map((p) => (
                   <TableRow key={p.id} className={cn("h-14 hover:bg-slate-50/50 transition-colors group border-slate-50", selectedIds.includes(p.id) && "bg-blue-50/30")}>
@@ -118,10 +120,20 @@ export default function InventoryPage() {
                     <TableCell className="text-center">
                       <span className={cn(
                         "text-[9px] font-black h-5 px-2 inline-flex items-center justify-center rounded uppercase",
-                        (p.currentStock || 0) <= 5 ? "bg-red-50 text-red-700" : "bg-blue-50 text-blue-700"
+                        (p.currentStock || 0) <= (p.minStockLevel || 5) ? "bg-red-50 text-red-700" : "bg-blue-50 text-blue-700"
                       )}>
                         {p.currentStock || 0} {p.unit || 'Units'}
                       </span>
+                    </TableCell>
+                    <TableCell>
+                       <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500 uppercase">
+                             <ShieldCheck className="h-3 w-3 text-emerald-500" /> {p.warranty || 'No Warranty'}
+                          </div>
+                          <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase">
+                             <MapPin className="h-3 w-3 text-blue-400" /> {p.location || '---'}
+                          </div>
+                       </div>
                     </TableCell>
                     <TableCell className="text-right text-xs font-black text-slate-700">৳{p.unitPrice?.toLocaleString() || 0}</TableCell>
                     <TableCell className="text-right pr-6 sticky right-0 bg-white group-hover:bg-slate-50/90 transition-colors shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">

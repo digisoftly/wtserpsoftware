@@ -309,6 +309,8 @@ export const translations = {
     serialRequired: "Serial Tracking Required?",
     allBrands: "All Brands",
     allCategories: "All Categories",
+    location: "Location",
+    storageLocation: "Storage Location",
 
     // Module Specific: Finance
     label: "Label",
@@ -605,7 +607,7 @@ export const translations = {
     installationCharge: "ইনস্টলেশন চার্জ",
     previousDue: "পূর্বের বকেয়া",
     roundOff: "রাউন্ড অফ",
-    outstandingBalance: "অবশিষ্ট বকেয়া",
+    outstandingBalance: "outstanding balance",
     transactionId: "ট্রানজেকশন আইডি",
     paymentDate: "পেমেন্ট তারিখ",
     collectedBy: "সংগ্রহকারী",
@@ -759,6 +761,8 @@ export const translations = {
     serialRequired: "সিরিয়াল ট্র্যাকিং প্রয়োজন?",
     allBrands: "সব ব্র্যান্ড",
     allCategories: "সব ক্যাটাগরি",
+    location: "অবস্থান",
+    storageLocation: "গুদামের অবস্থান",
 
     // Module Specific: Finance
     label: "বিবরণ",
