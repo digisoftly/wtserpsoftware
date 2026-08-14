@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -153,93 +153,98 @@ export default function NewProductPage() {
       <div className="max-w-5xl mx-auto w-full p-4 md:p-10">
         <form id="product-form" onSubmit={handleSaveProduct} className="space-y-8">
           <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('itemDescription')} *</Label>
-                <Input name="name" required className="h-12 rounded-xl" placeholder="Product Full Name" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('category')}</Label>
-                <Select name="categoryId">
-                  <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Select Category" /></SelectTrigger>
-                  <SelectContent>{masterCats?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs uppercase">{c.name}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('brand')}</Label>
-                <Select name="brandId" onValueChange={setSelectedBrandId}>
-                  <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Select Brand" /></SelectTrigger>
-                  <SelectContent>{masterBrands?.map(b => <SelectItem key={b.id} value={b.id} className="text-xs uppercase">{b.name}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('model')}</Label>
-                <Select name="modelId">
-                  <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Select Model" /></SelectTrigger>
-                  <SelectContent>
-                    {masterModels?.map(m => <SelectItem key={m.id} value={m.name} className="text-xs uppercase">{m.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('price')} (৳)</Label>
-                <Input name="unitPrice" type="number" required className="h-12 rounded-xl text-blue-600 font-bold" />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('costPrice')} (৳)</Label>
-                <Input name="costPrice" type="number" required className="h-12 rounded-xl" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('stock')}</Label>
-                <Input name="currentStock" type="number" required className="h-12 rounded-xl" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground">Min Limit</Label>
-                <Input name="minStockLevel" type="number" defaultValue={5} className="h-12 rounded-xl" />
-              </div>
-
-              {/* NEW FIELDS: WARRANTY & LOCATION */}
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1">
-                  <ShieldCheck className="h-3 w-3" /> {t('warranty')}
-                </Label>
-                <Select name="warranty" defaultValue="1 Year">
-                  <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {warrantyTypes?.map(w => <SelectItem key={w.id} value={w.name} className="text-xs font-bold uppercase">{w.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5 lg:col-span-2">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1">
-                  <MapPin className="h-3 w-3" /> {t('storageLocation')}
-                </Label>
-                <Input name="location" className="h-12 rounded-xl" placeholder="e.g. Shelf A1, Rack 2" />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('details')}</Label>
-              <Textarea name="description" className="min-h-[120px] rounded-2xl" placeholder="Full technical specifications..." />
-            </div>
-
-            <div className="space-y-4 pt-6 border-t">
-              <div className="flex items-center justify-between bg-slate-50 p-6 rounded-3xl ring-1 ring-slate-100">
-                 <div className="space-y-1">
-                   <Label className="text-sm font-black uppercase text-slate-900">{t('serialRequired')}</Label>
-                   <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Enable individual tracking for IMEI/SN</p>
-                 </div>
-                 <Switch checked={isSerialTracking} onCheckedChange={setIsSerialTracking} className="data-[state=checked]:bg-blue-600" />
-              </div>
-              {isSerialTracking && (
-                <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                  <Label className="text-[10px] font-black uppercase text-slate-400">Bulk Serial Entry</Label>
-                  <Textarea value={rawSerials} onChange={e => setRawSerials(e.target.value)} placeholder="SN123, SN124, SN125..." className="min-h-[120px] rounded-2xl font-mono text-xs uppercase" />
-                  <p className="text-[9px] font-bold text-blue-600 uppercase">Registered serials will automatically set the stock quantity.</p>
+            <CardContent className="p-0 space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('itemDescription')} *</Label>
+                  <Input name="name" required className="h-12 rounded-xl" placeholder="Product Full Name" />
                 </div>
-              )}
-            </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('category')}</Label>
+                  <Select name="categoryId">
+                    <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Select Category" /></SelectTrigger>
+                    <SelectContent>
+                      {masterCats?.map((c, idx) => <SelectItem key={`${c.id}-${idx}`} value={c.id} className="text-xs uppercase">{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('brand')}</Label>
+                  <Select name="brandId" onValueChange={setSelectedBrandId}>
+                    <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Select Brand" /></SelectTrigger>
+                    <SelectContent>
+                      {masterBrands?.map((b, idx) => <SelectItem key={`${b.id}-${idx}`} value={b.id} className="text-xs uppercase">{b.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('model')}</Label>
+                  <Select name="modelId">
+                    <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Select Model" /></SelectTrigger>
+                    <SelectContent>
+                      {masterModels?.map((m, idx) => <SelectItem key={`${m.id}-${idx}`} value={m.name} className="text-xs uppercase">{m.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('price')} (৳)</Label>
+                  <Input name="unitPrice" type="number" required className="h-12 rounded-xl text-blue-600 font-bold" />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('costPrice')} (৳)</Label>
+                  <Input name="costPrice" type="number" required className="h-12 rounded-xl" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('stock')}</Label>
+                  <Input name="currentStock" type="number" required className="h-12 rounded-xl" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground">Min Limit</Label>
+                  <Input name="minStockLevel" type="number" defaultValue={5} className="h-12 rounded-xl" />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1">
+                    <ShieldCheck className="h-3 w-3" /> {t('warranty')}
+                  </Label>
+                  <Select name="warranty" defaultValue="1 Year">
+                    <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {warrantyTypes?.map((w, idx) => <SelectItem key={`${w.id}-${idx}`} value={w.name} className="text-xs font-bold uppercase">{w.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5 lg:col-span-2">
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1">
+                    <MapPin className="h-3 w-3" /> {t('storageLocation')}
+                  </Label>
+                  <Input name="location" className="h-12 rounded-xl" placeholder="e.g. Shelf A1, Rack 2" />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('details')}</Label>
+                <Textarea name="description" className="min-h-[120px] rounded-2xl" placeholder="Full technical specifications..." />
+              </div>
+
+              <div className="space-y-4 pt-6 border-t">
+                <div className="flex items-center justify-between bg-slate-50 p-6 rounded-3xl ring-1 ring-slate-100">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-black uppercase text-slate-900">{t('serialRequired')}</Label>
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Enable individual tracking for IMEI/SN</p>
+                  </div>
+                  <Switch checked={isSerialTracking} onCheckedChange={setIsSerialTracking} className="data-[state=checked]:bg-blue-600" />
+                </div>
+                {isSerialTracking && (
+                  <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                    <Label className="text-[10px] font-black uppercase text-slate-400">Bulk Serial Entry</Label>
+                    <Textarea value={rawSerials} onChange={e => setRawSerials(e.target.value)} placeholder="SN123, SN124, SN125..." className="min-h-[120px] rounded-2xl font-mono text-xs uppercase" />
+                    <p className="text-[9px] font-bold text-blue-600 uppercase">Registered serials will automatically set the stock quantity.</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
           </Card>
         </form>
       </div>
