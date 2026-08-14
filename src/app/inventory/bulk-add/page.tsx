@@ -288,7 +288,7 @@ export default function BulkInventoryPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {branches?.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+                    {branches?.map((b, idx) => <SelectItem key={`branch-${b.id}-${idx}`} value={b.id}>{b.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -335,7 +335,7 @@ export default function BulkInventoryPage() {
                            <SelectValue />
                          </SelectTrigger>
                          <SelectContent>
-                           {warrantyTypes?.map(w => <SelectItem key={w.id} value={w.name}>{w.name}</SelectItem>)}
+                           {warrantyTypes?.map((w, idx) => <SelectItem key={`warranty-${w.id}-${idx}`} value={w.name}>{w.name}</SelectItem>)}
                          </SelectContent>
                        </Select>
                     </TableCell>

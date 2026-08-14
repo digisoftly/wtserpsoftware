@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -107,7 +108,7 @@ export default function MasterUnitsPage() {
               <TableRow>
                 <TableHead className="h-10 text-[10px] uppercase font-black pl-6">{t('label')}</TableHead>
                 <TableHead className="h-10 text-[10px] uppercase font-black">{t('shortName')}</TableHead>
-                <TableHead className="h-10 text-right pr-6"></TableHead>
+                <TableHead className="text-right h-10 pr-6"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
