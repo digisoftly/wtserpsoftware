@@ -73,9 +73,14 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         if (snap.exists()) {
           const userData = snap.data();
           
-          // CRITICAL: Block unauthorized status immediately
-          if (userData.status !== 'active') {
-            toast({ variant: "destructive", title: "Access Restricted", description: "Your terminal has been suspended." });
+          // FIX: Only block if status is EXPLICITLY suspended or inactive.
+          // This prevents lockouts during the transient bootstrap phase.
+          if (userData.status === 'suspended' || userData.status === 'inactive') {
+            toast({ 
+              variant: "destructive", 
+              title: "Access Restricted", 
+              description: "Your terminal has been suspended. Please contact administration." 
+            });
             signOut(auth);
             return;
           }
