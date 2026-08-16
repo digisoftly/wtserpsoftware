@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -9,7 +10,8 @@ import {
   Loader2, 
   Plus,
   ShieldCheck,
-  MapPin
+  MapPin,
+  Layers
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -35,12 +37,17 @@ export default function NewProductPage() {
   const [rawSerials, setRawSerials] = React.useState("");
   const [selectedBrandId, setSelectedBrandId] = React.useState<string | null>(null);
 
+  // Hierarchical Category State
+  const [catLevel1, setCatLevel1] = React.useState<string>("");
+  const [catLevel2, setCatLevel2] = React.useState<string>("");
+  const [catLevel3, setCatLevel3] = React.useState<string>("");
+
   // Master Data Queries
-  const catsQuery = useMemoFirebase(() => {
+  const categoriesQuery = useMemoFirebase(() => {
     if (!db || !companyId) return null;
     return query(collection(db, "companies", companyId, "master_categories"), orderBy("name"));
   }, [db, companyId]);
-  const { data: masterCats } = useCollection(catsQuery);
+  const { data: allCategories } = useCollection(categoriesQuery);
 
   const brandsQuery = useMemoFirebase(() => {
     if (!db || !companyId) return null;
@@ -54,7 +61,12 @@ export default function NewProductPage() {
   }, [db, companyId]);
   const { data: warrantyTypes } = useCollection(warrantyQuery);
 
-  // Filter unique warranty types by name to prevent Radix value collisions
+  // Computed Hierarchical Lists
+  const level1List = React.useMemo(() => allCategories?.filter(c => c.parentId === 'none') || [], [allCategories]);
+  const level2List = React.useMemo(() => allCategories?.filter(c => c.parentId === catLevel1) || [], [allCategories, catLevel1]);
+  const level3List = React.useMemo(() => allCategories?.filter(c => c.parentId === catLevel2) || [], [allCategories, catLevel2]);
+
+  // Filter unique warranty types
   const uniqueWarrantyTypes = React.useMemo(() => {
     if (!warrantyTypes) return [];
     const seen = new Set();
@@ -69,6 +81,14 @@ export default function NewProductPage() {
     e.preventDefault();
     if (!db || !companyId || !branchId || isSubmitting) return;
 
+    // The actual category assigned is the deepest one selected
+    const finalCategoryId = catLevel3 || catLevel2 || catLevel1;
+
+    if (!finalCategoryId) {
+      toast({ variant: "destructive", title: t('error'), description: "Please select a category." });
+      return;
+    }
+
     setIsSubmitting(true);
     const formData = new FormData(e.currentTarget);
     
@@ -78,7 +98,7 @@ export default function NewProductPage() {
       name: formData.get("name") as string,
       sku: (formData.get("modelId") as string) || "",
       brandId: formData.get("brandId") as string,
-      categoryId: formData.get("categoryId") as string,
+      categoryId: finalCategoryId,
       unitId: "piece",
       unitPrice: Number(formData.get("unitPrice")),
       costPrice: Number(formData.get("costPrice")),
@@ -137,7 +157,7 @@ export default function NewProductPage() {
           </Button>
           <div>
             <h1 className="text-lg font-black font-headline uppercase tracking-tight text-blue-600">{t('addProduct')}</h1>
-            <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Catalog Definition</p>
+            <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Catalog Definition Terminal</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -151,66 +171,107 @@ export default function NewProductPage() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto w-full p-4 md:p-10">
+      <div className="max-w-6xl mx-auto w-full p-4 md:p-10">
         <form id="product-form" onSubmit={handleSaveProduct} className="space-y-8">
           <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-8">
-            <CardContent className="p-0 space-y-8">
+            <CardContent className="p-0 space-y-10">
+              {/* PRIMARY IDENTITY */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('itemDescription')} *</Label>
-                  <Input name="name" required className="h-12 rounded-xl" placeholder="Product Full Name" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('category')}</Label>
-                  <Select name="categoryId">
-                    <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Select Category" /></SelectTrigger>
-                    <SelectContent className="rounded-xl">
-                      {masterCats?.map((c, idx) => (
-                        <SelectItem key={`cat-${c.id}-${idx}`} value={c.id} className="text-xs uppercase">{c.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input name="name" required className="h-12 rounded-xl" placeholder="e.g. Sony 4K IP Camera Pro" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('brand')}</Label>
-                  <Select name="brandId" onValueChange={setSelectedBrandId}>
+                  <Select name="brandId" onValueChange={setSelectedBrandId} required>
                     <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Select Brand" /></SelectTrigger>
-                    <SelectContent className="rounded-xl">
+                    <SelectContent className="rounded-xl shadow-2xl">
                       {masterBrands?.map((b, idx) => (
-                        <SelectItem key={`brand-${b.id}-${idx}`} value={b.id} className="text-xs uppercase">{b.name}</SelectItem>
+                        <SelectItem key={`brand-${b.id}-${idx}`} value={b.id} className="text-xs uppercase font-bold">{b.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              {/* THREE-LEVEL HIERARCHICAL CATEGORY SELECTION */}
+              <div className="space-y-4 p-6 bg-slate-50/50 rounded-3xl ring-1 ring-slate-100">
+                <div className="flex items-center gap-2 mb-2">
+                   <Layers className="h-4 w-4 text-blue-600" />
+                   <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-900">Hierarchical Classification</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">{t('categories')}</Label>
+                    <Select value={catLevel1} onValueChange={(val) => { setCatLevel1(val); setCatLevel2(""); setCatLevel3(""); }}>
+                      <SelectTrigger className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200">
+                        <SelectValue placeholder="Root Category" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl shadow-2xl">
+                        {level1List.map((c, i) => <SelectItem key={`${c.id}-${i}`} value={c.id} className="text-xs font-bold uppercase">{c.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {level2List.length > 0 && (
+                    <div className="space-y-1.5 animate-in fade-in zoom-in-95 duration-200">
+                      <Label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">{t('subCategory')}</Label>
+                      <Select value={catLevel2} onValueChange={(val) => { setCatLevel2(val); setCatLevel3(""); }}>
+                        <SelectTrigger className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200">
+                          <SelectValue placeholder="Sub Category" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl shadow-2xl">
+                          {level2List.map((c, i) => <SelectItem key={`${c.id}-${i}`} value={c.id} className="text-xs font-bold uppercase">{c.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {level3List.length > 0 && catLevel2 && (
+                    <div className="space-y-1.5 animate-in fade-in zoom-in-95 duration-200">
+                      <Label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">{t('subChildCategory')}</Label>
+                      <Select value={catLevel3} onValueChange={setCatLevel3}>
+                        <SelectTrigger className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200">
+                          <SelectValue placeholder="Child Category" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl shadow-2xl">
+                          {level3List.map((c, i) => <SelectItem key={`${c.id}-${i}`} value={c.id} className="text-xs font-bold uppercase">{c.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* TECHNICAL & FINANCIAL */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('model')}</Label>
-                  <Input name="modelId" className="h-12 rounded-xl font-mono uppercase" placeholder="e.g. DS-2CD1023G0" />
+                  <Input name="modelId" className="h-12 rounded-xl font-mono uppercase" placeholder="e.g. SNC-VB770" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('price')} (৳)</Label>
-                  <Input name="unitPrice" type="number" required className="h-12 rounded-xl text-blue-600 font-bold" />
+                  <Input name="unitPrice" type="number" required className="h-12 rounded-xl text-blue-600 font-black text-lg" />
                 </div>
-
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('costPrice')} (৳)</Label>
                   <Input name="costPrice" type="number" required className="h-12 rounded-xl" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('stock')}</Label>
-                  <Input name="currentStock" type="number" required className="h-12 rounded-xl" />
+                  <Input name="currentStock" type="number" required className="h-12 rounded-xl font-bold" />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground">Min Limit</Label>
-                  <Input name="minStockLevel" type="number" defaultValue={5} className="h-12 rounded-xl" />
-                </div>
+              </div>
 
+              {/* LOGISTICS & WARRANTY */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1">
-                    <ShieldCheck className="h-3 w-3" /> {t('warranty')}
+                    <ShieldCheck className="h-3 w-3 text-emerald-500" /> {t('warranty')}
                   </Label>
                   <Select name="warranty" defaultValue="1 Year">
                     <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue /></SelectTrigger>
-                    <SelectContent className="rounded-xl">
+                    <SelectContent className="rounded-xl shadow-2xl">
                       {uniqueWarrantyTypes?.map((w, idx) => (
                         <SelectItem key={`warranty-${w.id || idx}-${idx}`} value={w.name} className="text-xs font-bold uppercase">{w.name}</SelectItem>
                       ))}
@@ -219,18 +280,19 @@ export default function NewProductPage() {
                 </div>
                 <div className="space-y-1.5 lg:col-span-2">
                   <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1">
-                    <MapPin className="h-3 w-3" /> {t('storageLocation')}
+                    <MapPin className="h-3 w-3 text-blue-500" /> {t('storageLocation')}
                   </Label>
-                  <Input name="location" className="h-12 rounded-xl" placeholder="e.g. Shelf A1, Rack 2" />
+                  <Input name="location" className="h-12 rounded-xl" placeholder="e.g. Shelf A-04, Rack 2" />
                 </div>
               </div>
 
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('details')}</Label>
-                <Textarea name="description" className="min-h-[120px] rounded-2xl" placeholder="Full technical specifications..." />
+                <Textarea name="description" className="min-h-[100px] rounded-2xl border-slate-200" placeholder="Technical specifications..." />
               </div>
 
-              <div className="space-y-4 pt-6 border-t">
+              {/* SERIAL TRACKING */}
+              <div className="space-y-4 pt-6 border-t border-slate-100">
                 <div className="flex items-center justify-between bg-slate-50 p-6 rounded-3xl ring-1 ring-slate-100">
                   <div className="space-y-1">
                     <Label className="text-sm font-black uppercase text-slate-900">{t('serialRequired')}</Label>
@@ -239,10 +301,9 @@ export default function NewProductPage() {
                   <Switch checked={isSerialTracking} onCheckedChange={setIsSerialTracking} className="data-[state=checked]:bg-blue-600" />
                 </div>
                 {isSerialTracking && (
-                  <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                  <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
                     <Label className="text-[10px] font-black uppercase text-slate-400">Bulk Serial Entry</Label>
                     <Textarea value={rawSerials} onChange={e => setRawSerials(e.target.value)} placeholder="SN123, SN124, SN125..." className="min-h-[120px] rounded-2xl font-mono text-xs uppercase" />
-                    <p className="text-[9px] font-bold text-blue-600 uppercase">Registered serials will automatically set the stock quantity.</p>
                   </div>
                 )}
               </div>

@@ -70,6 +70,8 @@ export const translations = {
     // Master Management Expanded
     units: "Units",
     categories: "Categories",
+    subCategory: "Sub Category",
+    subChildCategory: "Sub-Child Category",
     brands: "Brands",
     models: "Models",
     productTypes: "Product Types",
@@ -526,6 +528,8 @@ export const translations = {
     // Master Management Expanded
     units: "ইউনিট",
     categories: "ক্যাটাগরি",
+    subCategory: "সাব ক্যাটাগরি",
+    subChildCategory: "সাব-চাইল্ড ক্যাটাগরি",
     brands: "ব্র্যান্ড",
     models: "মডেল",
     productTypes: "পণ্যের ধরন",
