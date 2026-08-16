@@ -1,46 +1,82 @@
+
 'use client';
 
 import { useTenant } from '@/context/tenant-context';
 
-export type PermissionAction = 'view' | 'create' | 'edit' | 'delete' | 'export' | 'print' | 'download';
+export type PermissionAction = 
+  | 'view' 
+  | 'create' 
+  | 'edit' 
+  | 'delete' 
+  | 'approve' 
+  | 'reject' 
+  | 'export' 
+  | 'print' 
+  | 'download' 
+  | 'admin';
+
+export type DataScope = 'own' | 'branch' | 'all';
 
 /**
- * usePermissions provides granular access control for every module in the ERP.
- * Strictly checks the role permission matrix defined in Firestore.
- * Production Mode is default. Demo constraints are applied strictly to guests.
+ * usePermissions provides granular, role-based access control (RBAC).
+ * It validates if a user can perform an action and what data they can see.
  */
 export function usePermissions() {
-  const { userRole, isLoading, settings } = useTenant();
+  const { userRole, isLoading, settings, branchId } = useTenant();
 
   /**
-   * Checks if the current user has a specific permission for a module.
+   * Checks if the current user has permission for a specific module action.
    */
-  const can = (moduleKey: string, action: PermissionAction): boolean => {
+  const can = (moduleKey: string, action: PermissionAction = 'view'): boolean => {
     if (isLoading) return false;
     
-    // Global Demo Constraints
-    const isDemoMode = settings?.demoModeEnabled === true;
-    const isGuest = userRole?.id === 'guest-admin';
-    
-    // Hard restrictions for Demo/Guest accounts
-    if (isDemoMode && isGuest) {
-      // 1. Block all destructive actions
-      if (action === 'delete' || action === 'edit') return false;
-      
-      // 2. Block access to critical administrative modules entirely
-      const restrictedModules = ['settings', 'users', 'branches', 'backup'];
-      if (restrictedModules.includes(moduleKey)) return false;
-    }
-
     // Super Admin global bypass
     if (userRole?.isSuperAdmin) return true;
 
-    // Standard role-based permission check
-    const permissions = userRole?.permissions?.[moduleKey];
-    if (!permissions) return false;
+    // Check specific module permissions
+    const modulePerms = userRole?.permissions?.[moduleKey];
+    if (!modulePerms || !Array.isArray(modulePerms)) return false;
 
-    return permissions.includes(action);
+    return modulePerms.includes(action);
   };
 
-  return { can, isLoading, roleName: userRole?.name || 'Authorized User', isDemoMode: settings?.demoModeEnabled };
+  /**
+   * Determines the visibility scope for records in a module.
+   */
+  const getScope = (moduleKey: string): DataScope => {
+    if (userRole?.isSuperAdmin) return 'all';
+    
+    const scope = userRole?.dataScopes?.[moduleKey] as DataScope;
+    return scope || 'own'; // Default to most restrictive
+  };
+
+  /**
+   * Validates if a specific record is accessible based on branch and ownership.
+   */
+  const isAccessible = (record: any, moduleKey: string): boolean => {
+    if (userRole?.isSuperAdmin) return true;
+
+    const scope = getScope(moduleKey);
+
+    if (scope === 'all') return true;
+    
+    if (scope === 'branch') {
+      return record.branchId === branchId;
+    }
+
+    if (scope === 'own') {
+      return record.createdBy === userRole?.id || record.userId === userRole?.id;
+    }
+
+    return false;
+  };
+
+  return { 
+    can, 
+    getScope, 
+    isAccessible,
+    isLoading, 
+    roleName: userRole?.name || 'Authorized User',
+    isSuperAdmin: !!userRole?.isSuperAdmin
+  };
 }

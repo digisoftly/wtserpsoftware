@@ -3,58 +3,92 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- HELPERS ---
+    // --- SYSTEM HELPERS ---
 
     function isSignedIn() {
       return request.auth != null;
     }
 
-    function isOwner(companyId, userId) {
-      return isSignedIn() && request.auth.uid == userId;
+    // Fetches the user document to check core attributes
+    function getUserData(companyId) {
+      return get(/databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid)).data;
     }
 
     function isCompanyMember(companyId) {
-      return isSignedIn() && (
-        exists(/databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid)) ||
-        exists(/databases/$(database)/documents/super_admins/$(request.auth.uid))
-      );
+      return isSignedIn() && exists(/databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid));
     }
 
-    // --- RULES ---
+    function isSuperAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/super_admins/$(request.auth.uid));
+    }
 
-    // 1. System Configuration (Public Read)
+    // Checks if user is an admin for a specific company
+    function isCompanyAdmin(companyId) {
+      let userData = getUserData(companyId);
+      return userData.roleId == 'super-admin' || userData.roleId == 'admin';
+    }
+
+    // Validates branch-level access
+    function hasBranchAccess(companyId, branchId) {
+      let userData = getUserData(companyId);
+      return userData.roleId == 'super-admin' || branchId in userData.allowedBranches;
+    }
+
+    // --- MODULE RULES ---
+
+    // 1. Audit Logs & History (Admin Only)
+    match /companies/{companyId}/audit_logs/{logId} {
+      allow read: if isCompanyAdmin(companyId);
+      allow create: if isCompanyMember(companyId); // System logs its own actions
+      allow update, delete: if false; // Immutable logs
+    }
+
+    match /companies/{companyId}/login_history/{id} {
+      allow read: if isCompanyAdmin(companyId);
+      allow create: if true; // Login trigger
+      allow update, delete: if false;
+    }
+
+    // 2. Organization Master Config
     match /companies/{companyId}/system/config {
       allow read: if true;
-      allow write: if isCompanyMember(companyId);
+      allow write: if isCompanyAdmin(companyId);
     }
 
-    // 2. User Profiles (Owner Access)
-    // Critical for first-time profile creation and login
+    // 3. User & Role Management
     match /companies/{companyId}/users/{userId} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
+      allow read: if isCompanyMember(companyId);
+      allow write: if isCompanyAdmin(companyId) || (request.auth.uid == userId);
     }
 
-    // 3. Warrior Demo Corp (Full access for prototyping)
-    match /companies/warrior-demo-corp/{allPaths=**} {
-      allow read, write: if isSignedIn();
+    match /companies/{companyId}/roles/{roleId} {
+      allow read: if isCompanyMember(companyId);
+      allow write: if isCompanyAdmin(companyId);
     }
 
-    // 4. Standard Company Data (Membership Restricted)
-    match /companies/{companyId}/{allPaths=**} {
-      allow read, write: if isCompanyMember(companyId);
+    // 4. Branch Specific Data
+    // Enforces that users can only interact with records belonging to branches they are authorized for.
+    match /companies/{companyId}/branches/{branchId}/{allPaths=**} {
+      allow read, write: if hasBranchAccess(companyId, branchId);
     }
 
-    // 5. Root Level User Preferences
+    // 5. Global Master Data
+    match /companies/{companyId}/master_data/{id} {
+      allow read: if isCompanyMember(companyId);
+      allow write: if isCompanyAdmin(companyId);
+    }
+
+    // 6. Root Level User Preferences
     match /users/{userId} {
       allow read, write: if isSignedIn() && request.auth.uid == userId;
     }
 
-    // 6. Global Super Admin Bypass
+    // 7. Global Super Admin Bypass
     match /{allPaths=**} {
-      allow read, write: if isSignedIn() && exists(/databases/$(database)/documents/super_admins/$(request.auth.uid));
+      allow read, write: if isSuperAdmin();
     }
 
-    // 7. Default Deny
+    // 8. Default Deny
     match /{path=**} {
       allow read, write: if false;
     }

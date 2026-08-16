@@ -26,7 +26,10 @@ import {
   Database,
   ClipboardList,
   ChevronRight,
-  CreditCard
+  CreditCard,
+  ShieldAlert,
+  History,
+  Lock
 } from "lucide-react"
 
 import { 
@@ -83,6 +86,12 @@ const MASTER_DATA_ITEMS = [
   { name: "customFields", path: "/master/custom-fields" },
 ]
 
+const ADMINISTRATION_ITEMS = [
+  { name: "users", key: "users", icon: Users, path: "/users" },
+  { name: "auditLogs", key: "audit", icon: ShieldAlert, path: "/administration/audit-logs" },
+  { name: "loginHistory", key: "auth", icon: History, path: "/administration/login-history" },
+]
+
 const OTHER_MODULES = [
   { name: "support", key: "support", icon: LifeBuoy, path: "/support", color: "text-violet-500" },
   { name: "crm", key: "crm", icon: Target, path: "/crm", color: "text-pink-500" },
@@ -107,6 +116,7 @@ export function AppSidebar() {
   }
 
   const isMasterActive = pathname.startsWith('/master')
+  const isAdminActive = pathname.startsWith('/administration') || pathname.startsWith('/users')
 
   return (
     <Sidebar collapsible="icon" className="border-r border-white/5 bg-[#111827]">
@@ -202,20 +212,64 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
+
+            {(can('users', 'view') || can('settings', 'view')) && (
+              <Collapsible defaultOpen={isAdminActive} className="group/collapsible">
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton 
+                      isActive={isAdminActive}
+                      tooltip={t('administration')}
+                      className={cn(
+                        "h-8 px-2.5 transition-all hover:bg-white/5",
+                        isAdminActive ? "bg-primary/10 text-primary" : "text-slate-400"
+                      )}
+                    >
+                      <Lock className={cn("h-4 w-4 shrink-0", isAdminActive ? "text-primary" : "text-violet-500")} />
+                      <span className="text-[12px] font-medium">{t('administration')}</span>
+                      <ChevronRight className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenu className="mt-0.5 ml-3 border-l border-white/5 gap-0.5">
+                      {ADMINISTRATION_ITEMS.filter(i => can(i.key as any, 'view')).map((sub) => (
+                        <SidebarMenuItem key={sub.path}>
+                          <SidebarMenuButton 
+                            asChild 
+                            isActive={pathname === sub.path}
+                            className={cn(
+                              "h-7 px-4 text-slate-400 hover:text-white hover:bg-white/5",
+                              pathname === sub.path && "text-white bg-white/5 font-bold"
+                            )}
+                          >
+                            <Link href={sub.path} className="flex items-center gap-2">
+                              <sub.icon className="h-3 w-3" />
+                              <span className="text-[11px]">{t(sub.name as any)}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+            )}
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter className="border-t border-white/5 p-2">
         <SidebarMenu className="px-2">
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip={t('settings')} isActive={pathname.startsWith('/settings')} className="text-slate-400 hover:bg-white/5 h-8 px-2.5">
-              <Link href="/settings" className="flex items-center gap-3">
-                <Settings className="h-4 w-4 text-slate-400" />
-                <span className="text-[12px] font-medium">{t('settings')}</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {can('settings', 'view') && (
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip={t('settings')} isActive={pathname.startsWith('/settings')} className="text-slate-400 hover:bg-white/5 h-8 px-2.5">
+                <Link href="/settings" className="flex items-center gap-3">
+                  <Settings className="h-4 w-4 text-slate-400" />
+                  <span className="text-[12px] font-medium">{t('settings')}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton onClick={handleLogout} className="text-slate-400 hover:text-red-400 hover:bg-red-500/10 h-8 px-2.5">
               <LogOut className="h-4 w-4 text-red-500" />
