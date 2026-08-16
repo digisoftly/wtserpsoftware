@@ -48,15 +48,6 @@ export default function NewProductPage() {
   }, [db, companyId]);
   const { data: masterBrands } = useCollection(brandsQuery);
 
-  const modelsQuery = useMemoFirebase(() => {
-    if (!db || !companyId) return null;
-    if (selectedBrandId) {
-      return query(collection(db, "companies", companyId, "master_models"), where("brandId", "==", selectedBrandId), orderBy("name"));
-    }
-    return query(collection(db, "companies", companyId, "master_models"), orderBy("name"));
-  }, [db, companyId, selectedBrandId]);
-  const { data: masterModels } = useCollection(modelsQuery);
-
   const warrantyQuery = useMemoFirebase(() => {
     if (!db || !companyId) return null;
     return query(collection(db, "companies", companyId, "master_data"), where("type", "==", "warrantyTypes"));
@@ -193,14 +184,7 @@ export default function NewProductPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('model')}</Label>
-                  <Select name="modelId">
-                    <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Select Model" /></SelectTrigger>
-                    <SelectContent className="rounded-xl">
-                      {masterModels?.map((m, idx) => (
-                        <SelectItem key={`model-${m.id}-${idx}`} value={m.name} className="text-xs uppercase">{m.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input name="modelId" className="h-12 rounded-xl font-mono uppercase" placeholder="e.g. DS-2CD1023G0" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('price')} (৳)</Label>
