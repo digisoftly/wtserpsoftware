@@ -2,11 +2,13 @@
 'use client';
 
 import * as React from 'react';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser, useFirestore, useAuth } from '@/firebase';
 import { doc, getDoc, serverTimestamp, setDoc, onSnapshot } from 'firebase/firestore';
+import { signOut } from 'firebase/auth';
 import { Language } from '@/lib/translations';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { toast } from '@/hooks/use-toast';
 
 interface Role {
   id: string;
@@ -14,7 +16,6 @@ interface Role {
   isSuperAdmin?: boolean;
   permissions: Record<string, string[]>;
   dataScopes?: Record<string, string>;
-  approvalLimits?: Record<string, number>;
 }
 
 interface TenantContextType {
@@ -43,6 +44,7 @@ const TenantContext = React.createContext<TenantContextType>({
 
 export function TenantProvider({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
+  const auth = useAuth();
   const db = useFirestore();
   const [isInitializing, setIsInitializing] = React.useState(true);
   const [userRole, setUserRole] = React.useState<Role | null>(null);
@@ -55,91 +57,52 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     let unsubUser: any;
-    let unsubRole: any;
     let unsubSettings: any;
 
-    const initTenant = async () => {
-      if (!isUserLoading && !user) {
-        setIsInitializing(false);
-        return;
-      }
+    if (!isUserLoading && !user) {
+      setIsInitializing(false);
+      return;
+    }
 
-      if (!isUserLoading && user && db) {
-        try {
-          // 1. Subscribe to System Settings
-          unsubSettings = onSnapshot(
-            doc(db, "companies", companyId, "system", "config"), 
-            (snap) => {
-              if (snap.exists()) {
-                setSettings(snap.data());
-              }
-            },
-            async (serverError) => {
-              errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: `companies/${companyId}/system/config`,
-                operation: 'get'
-              }));
-            }
-          );
+    if (!isUserLoading && user && db) {
+      unsubSettings = onSnapshot(doc(db, "companies", companyId, "system", "config"), (snap) => {
+        if (snap.exists()) setSettings(snap.data());
+      });
 
-          // 2. Subscribe to User Profile
-          unsubUser = onSnapshot(
-            doc(db, "companies", companyId, "users", user.uid), 
-            async (userSnap) => {
-              if (userSnap.exists()) {
-                const userData = userSnap.data();
-                const roleId = userData.roleId || "guest";
-                
-                setLanguage(userData.preferredLanguage || 'BN');
-                setBranchId(userData.branchId || 'dhaka-main');
-                setAllowedBranches(userData.allowedBranches || [userData.branchId || 'dhaka-main']);
+      unsubUser = onSnapshot(doc(db, "companies", companyId, "users", user.uid), async (snap) => {
+        if (snap.exists()) {
+          const userData = snap.data();
+          
+          // CRITICAL: Block unauthorized status immediately
+          if (userData.status !== 'active') {
+            toast({ variant: "destructive", title: "Access Restricted", description: "Your terminal has been suspended." });
+            signOut(auth);
+            return;
+          }
 
-                // 3. Fetch Role Data
-                const roleRef = doc(db, "companies", companyId, "roles", roleId);
-                const roleSnap = await getDoc(roleRef);
-                
-                if (roleSnap.exists()) {
-                  setUserRole({ id: roleSnap.id, ...roleSnap.data() } as Role);
-                } else if (roleId === 'super-admin') {
-                  setUserRole({ id: 'super-admin', name: 'Super Admin', isSuperAdmin: true, permissions: {} });
-                }
-              } else {
-                // Provision first user as Super Admin if database is empty or user not found
-                const initialUser = {
-                  id: user.uid,
-                  email: user.email,
-                  roleId: 'super-admin',
-                  branchId: 'dhaka-main',
-                  allowedBranches: ['dhaka-main'],
-                  isActive: true,
-                  createdAt: serverTimestamp()
-                };
-                await setDoc(doc(db, "companies", companyId, "users", user.uid), initialUser);
-              }
-              setIsInitializing(false);
-            },
-            async (serverError) => {
-              errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: `companies/${companyId}/users/${user.uid}`,
-                operation: 'get'
-              }));
-            }
-          );
+          setLanguage(userData.preferredLanguage || 'BN');
+          setBranchId(userData.branchId || 'dhaka-main');
+          setAllowedBranches(userData.allowedBranches || []);
 
-        } catch (error) {
-          console.error("Identity Engine Error:", error);
-          setIsInitializing(false);
+          const roleRef = doc(db, "companies", companyId, "roles", userData.roleId || "default-user");
+          const roleSnap = await getDoc(roleRef);
+          
+          if (roleSnap.exists()) {
+            const roleData = roleSnap.data();
+            // Merge static role permissions with user overrides
+            const finalPermissions = { ...(roleData.permissions || {}), ...(userData.permissionOverrides || {}) };
+            setUserRole({ id: roleSnap.id, ...roleData, permissions: finalPermissions } as Role);
+          }
         }
-      }
-    };
+        setIsInitializing(false);
+      });
+    }
 
-    initTenant();
     return () => {
       unsubUser?.();
-      unsubRole?.();
       unsubSettings?.();
     };
-  }, [user, isUserLoading, db]);
+  }, [user, isUserLoading, db, auth]);
 
   const contextValue = React.useMemo(() => ({ 
     companyId, 
@@ -153,11 +116,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     allowedBranches
   }), [branchId, userRole, language, isUserLoading, isInitializing, companyId, settings, allowedBranches]);
 
-  return (
-    <TenantContext.Provider value={contextValue}>
-      {children}
-    </TenantContext.Provider>
-  );
+  return <TenantContext.Provider value={contextValue}>{children}</TenantContext.Provider>;
 }
 
 export const useTenant = () => React.useContext(TenantContext);

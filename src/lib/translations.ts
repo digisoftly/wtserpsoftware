@@ -36,7 +36,7 @@ export const translations = {
     loginHistory: "Login History",
     
     // Users & Roles
-    addUser: "Add User",
+    addUser: "Create User",
     editUser: "Edit User",
     userList: "User Directory",
     roleList: "Roles & Permissions",
@@ -48,79 +48,48 @@ export const translations = {
     username: "Username",
     permissions: "Permissions",
     matrix: "Permission Matrix",
+    overrides: "Permission Overrides",
     demoManagement: "Demo Management",
-    demoMode: "Demo Mode Active",
-    demoModeSub: "Restrict destructive actions and protect core data.",
-    enableDemo: "Enable Demo Access",
-    guestAdmin: "Guest Administrator",
-    registrationDisabled: "Account registration is disabled. Please contact administrator.",
-    accessDenied: "Access Denied",
-    accessDeniedMsg: "You do not have the necessary permissions to access this module.",
+    securitySettings: "Security Settings",
     
-    // Actions & Scopes
-    dataScope: "Data Scope",
+    // Form Labels
+    personalInfo: "Personal Information",
+    companyInfo: "Company Information",
+    accountInfo: "Account Details",
+    employeeId: "Employee ID",
+    dob: "Date of Birth",
+    gender: "Gender",
+    joiningDate: "Joining Date",
+    employeeType: "Employee Type",
+    reportingManager: "Reporting Manager",
+    primaryBranch: "Primary Branch",
+    allowedBranches: "Allowed Branches",
+    forcePasswordChange: "Force Password Change",
+    
+    // Scopes
     scope_own: "Own Records",
     scope_branch: "Branch Records",
     scope_all: "Organization Wide",
-    approve: "Approve",
-    reject: "Reject",
-    cancelAction: "Cancel Action",
     
-    // Common Actions
+    // Common
     save: "Save",
     cancel: "Cancel",
     loading: "Please wait...",
     success: "Success",
-    successSub: "Operation completed successfully.",
     error: "Error",
-    errorSub: "An unexpected error occurred.",
     view: "View",
     edit: "Edit",
     delete: "Delete",
-    export: "Export",
-    filter: "Filter",
-    search: "Search...",
-    actions: "Actions",
-    back: "Back",
-    print: "Print",
     status: "Status",
     date: "Date",
     amount: "Amount",
-    details: "Details",
-    identity: "Identity",
-    profile: "Profile",
-    share: "Share",
-    isActive: "Active",
-    suspended: "Suspended",
-    
-    // KPI Labels
-    totalRevenue: "Total Revenue",
-    totalOrders: "Total Orders",
-    pendingInvoices: "Pending Invoices",
-    activeCustomers: "Active Customers",
-    totalStaff: "Total Staff",
-    totalLogs: "Total Logs",
-    systemHealth: "System Health",
-
-    // Auth
-    login: "Sign In",
-    email: "Email Address",
-    password: "Password",
-    remember_me: "Remember me",
-    forgot_password: "Forgot Password?",
-    
-    // Statuses
-    paid_status: "Paid",
-    pending_status: "Pending",
-    active_status: "Active",
-    inactive_status: "Inactive",
-    open_status: "Open",
-    closed_status: "Closed",
-    
     goDashboard: "Dashboard",
+    accessRestricted: "Access Denied",
+    accessRestrictedMsg: "Your account does not have permission to access this module.",
+    accountSuspended: "Account Suspended",
+    accountSuspendedMsg: "Your account has been deactivated. Please contact HR."
   },
   BN: {
-    // Navigation
     dashboard: "ড্যাশবোর্ড",
     crm: "সিআরএম",
     sales: "বিক্রয়",
@@ -145,61 +114,19 @@ export const translations = {
     ai: "এআই অ্যাসিস্ট্যান্ট",
     settings: "সেটিংস",
     users: "ইউজার ও রোল",
-    backup: "ব্যাকআপ",
-    dispatch: "ডেলিভারি চালান",
-    masterManagement: "মাস্টার ম্যানেজমেন্ট",
-    administration: "প্রশাসন",
-    auditLogs: "অডিট লগ",
-    loginHistory: "লগইন ইতিহাস",
     
-    // Users & Roles
-    addUser: "ইউজার যোগ করুন",
-    editUser: "ইউজার এডিট",
+    addUser: "ইউজার তৈরি করুন",
     userList: "ইউজার ডিরেক্টরি",
     roleList: "রোল ও পারমিশন",
-    assignRole: "রোল বরাদ্দ করুন",
-    resetPassword: "পাসওয়ার্ড রিসেট",
-    disableUser: "অক্ষম করুন",
-    enableUser: "সক্ষম করুন",
-    fullName: "পুরো নাম",
-    username: "ইউজারনেম",
-    permissions: "পারমিশন",
-    matrix: "পারমিশন মেট্রিক্স",
-    accessDenied: "প্রবেশাধিকার নিষিদ্ধ",
-    accessDeniedMsg: "এই মডিউলটি ব্যবহার করার জন্য আপনার প্রয়োজনীয় অনুমতি নেই।",
+    personalInfo: "ব্যক্তিগত তথ্য",
+    companyInfo: "প্রাতিষ্ঠানিক তথ্য",
+    accountInfo: "অ্যাকাউন্ট তথ্য",
     
-    // Actions & Scopes
-    dataScope: "ডেটা স্কোপ",
-    scope_own: "নিজের রেকর্ড",
-    scope_branch: "শাখার রেকর্ড",
-    scope_all: "প্রতিষ্ঠানের সব",
-    approve: "অনুমোদন",
-    reject: "প্রত্যাখ্যান",
-    
-    // Common Actions
     save: "সংরক্ষণ",
     cancel: "বাতিল",
-    loading: "অপেক্ষা করুন...",
     success: "সফল",
     error: "ত্রুটি",
-    view: "দেখুন",
-    edit: "সম্পাদনা",
-    delete: "মুছুন",
-    export: "এক্সপোর্ট",
-    search: "খুঁজুন...",
-    isActive: "সক্রিয়",
-    suspended: "স্থগিত",
-
-    // KPI Labels
-    totalRevenue: "মোট আয়",
-    totalStaff: "মোট স্টাফ",
-    totalLogs: "মোট লগ",
-
-    // Auth
-    login: "সাইন ইন",
-    email: "ইমেইল অ্যাড্রেস",
-    password: "পাসওয়ার্ড",
-    
     goDashboard: "ড্যাশবোর্ড",
+    accessRestricted: "প্রবেশাধিকার নিষিদ্ধ"
   }
 };
