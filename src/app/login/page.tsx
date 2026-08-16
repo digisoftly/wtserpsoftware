@@ -19,7 +19,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 /**
  * LoginPage provides a production-grade, admin-only entry point.
- * Public registration has been completely removed.
+ * Pre-filled with default super-admin credentials as requested.
  */
 export default function LoginPage() {
   const auth = useAuth();
@@ -29,8 +29,8 @@ export default function LoginPage() {
   const { setLanguage, userRole } = useTenant();
   const router = useRouter();
   
-  const [email, setEmail] = React.useState('erpwts@gmail.com');
-  const [password, setPassword] = React.useState('adminwts123');
+  const [email, setEmail] = React.useState('warriortechsystem@gmail.com');
+  const [password, setPassword] = React.useState('admin123');
   
   const [isLoading, setIsLoading] = React.useState(false);
   const [isRedirecting, setIsRedirecting] = React.useState(false);
