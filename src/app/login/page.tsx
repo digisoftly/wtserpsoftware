@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth, useUser } from '@/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Loader2, ArrowRight, Building2, Lock, Mail, Languages, Info, AlertCircle } from 'lucide-react';
+import { ShieldCheck, Loader2, ArrowRight, Building2, Lock, Mail, Languages, Info, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useSettings } from '@/hooks/use-settings';
 import { useTranslation } from '@/hooks/use-translation';
 import { useTenant } from '@/context/tenant-context';
@@ -31,6 +31,7 @@ export default function LoginPage() {
   
   const [email, setEmail] = React.useState('warriortechsystem@gmail.com');
   const [password, setPassword] = React.useState('admin123');
+  const [showPassword, setShowPassword] = React.useState(false);
   
   const [isLoading, setIsLoading] = React.useState(false);
   const [isRedirecting, setIsRedirecting] = React.useState(false);
@@ -66,12 +67,13 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error: any) {
       setIsLoading(false);
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+      console.error('Auth error:', error);
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-email') {
         setAuthError("Invalid credentials. Please contact your system administrator.");
       } else if (error.code === 'auth/wrong-password') {
         setAuthError("Incorrect password. Please verify your credentials.");
       } else {
-        setAuthError("Authentication failed. Please check your network.");
+        setAuthError("Authentication failed. Please check your network connection.");
       }
     }
   };
@@ -145,13 +147,20 @@ export default function LoginPage() {
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <Input 
-                      type="password" 
+                      type={showPassword ? "text" : "password"} 
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="h-14 pl-11 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-2 focus:ring-blue-600 transition-all text-sm font-bold" 
+                      className="h-14 pl-11 pr-11 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:ring-2 focus:ring-blue-600 transition-all text-sm font-bold" 
                       required
                     />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 hover:text-blue-600 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                 </div>
 
@@ -303,13 +312,20 @@ export default function LoginPage() {
                       <div className="relative group">
                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
                         <Input 
-                          type="password" 
+                          type={showPassword ? "text" : "password"} 
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           placeholder={t('password')}
-                          className="pl-11 h-14 rounded-2xl bg-slate-50 border-transparent focus:bg-white focus:ring-2 focus:ring-blue-600 transition-all font-medium border-slate-100 text-sm" 
+                          className="pl-11 pr-11 h-14 rounded-2xl bg-slate-50 border-transparent focus:bg-white focus:ring-2 focus:ring-blue-600 transition-all font-medium border-slate-100 text-sm" 
                           required
                         />
+                        <button 
+                          type="button" 
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 hover:text-blue-600 transition-colors"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
                       </div>
                     </div>
                     
