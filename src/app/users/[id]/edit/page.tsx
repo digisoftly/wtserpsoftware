@@ -31,6 +31,7 @@ import { useTranslation } from "@/hooks/use-translation"
 import { toast } from "@/hooks/use-toast"
 import { AuditService } from "@/lib/audit-service"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { cn } from "@/lib/utils"
 
 export default function EditUserPage() {
   const { id } = useParams();
@@ -172,8 +173,10 @@ export default function EditUserPage() {
                 <Select value={selectedRole} onValueChange={setSelectedRole}>
                   <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 font-black"><SelectValue /></SelectTrigger>
                   <SelectContent className="rounded-xl shadow-2xl">
-                    {roles?.map(r => <SelectItem key={r.id} value={r.id} className="text-xs font-bold uppercase">{r.name}</SelectItem>)}
-                    <SelectItem value="super-admin" className="text-xs font-black text-violet-600">SUPER ADMIN</SelectItem>
+                    {roles?.filter(r => r.id !== 'super-admin').map(r => (
+                      <SelectItem key={`role-${r.id}`} value={r.id} className="text-xs font-bold uppercase">{r.name}</SelectItem>
+                    ))}
+                    <SelectItem key="system-super-admin" value="super-admin" className="text-xs font-black text-violet-600">SUPER ADMIN</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
