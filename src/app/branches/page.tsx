@@ -69,7 +69,18 @@ export default function BranchesPage() {
       where("isActive", "==", true)
     );
   }, [db, companyId]);
-  const { data: branchTypes } = useCollection(branchTypesQuery);
+  const { data: rawBranchTypes } = useCollection(branchTypesQuery);
+
+  // Filter unique branch types for dropdown to prevent duplicate key error
+  const branchTypes = React.useMemo(() => {
+    if (!rawBranchTypes) return [];
+    const seen = new Set();
+    return rawBranchTypes.filter(t => {
+      if (seen.has(t.name)) return false;
+      seen.add(t.name);
+      return true;
+    });
+  }, [rawBranchTypes]);
 
   const stats = React.useMemo(() => ({
     total: branches?.length || 0,

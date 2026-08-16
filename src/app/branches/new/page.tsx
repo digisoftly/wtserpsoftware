@@ -38,7 +38,18 @@ export default function NewBranchPage() {
       where("isActive", "==", true)
     );
   }, [db, companyId]);
-  const { data: branchTypes } = useCollection(branchTypesQuery);
+  const { data: rawBranchTypes } = useCollection(branchTypesQuery);
+
+  // Deduplicate branch types for dropdown to prevent key errors
+  const branchTypes = React.useMemo(() => {
+    if (!rawBranchTypes) return [];
+    const seen = new Set();
+    return rawBranchTypes.filter(t => {
+      if (seen.has(t.name)) return false;
+      seen.add(t.name);
+      return true;
+    });
+  }, [rawBranchTypes]);
 
   const handleSaveBranch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -109,7 +120,18 @@ export default function NewBranchPage() {
                 <Select name="branchType" defaultValue="Head Office">
                   <SelectTrigger className="h-11 rounded-xl bg-white"><SelectValue /></SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    {branchTypes?.map((t, idx) => <SelectItem key={`${t.id}-${idx}`} value={t.name} className="text-xs font-bold">{t.name}</SelectItem>)}
+                    {branchTypes && branchTypes.length > 0 ? (
+                      branchTypes.map((type, idx) => (
+                        <SelectItem key={`branch-type-new-${type.id}-${idx}`} value={type.name} className="text-xs font-bold">{type.name}</SelectItem>
+                      ))
+                    ) : (
+                      <>
+                        <SelectItem key="def-ho-new" value="Head Office" className="text-xs font-bold">Head Office</SelectItem>
+                        <SelectItem key="def-sc-new" value="Sales Center" className="text-xs font-bold">Sales Center</SelectItem>
+                        <SelectItem key="def-wh-new" value="Warehouse" className="text-xs font-bold">Warehouse</SelectItem>
+                        <SelectItem key="def-sp-new" value="Service Point" className="text-xs font-bold">Service Point</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
