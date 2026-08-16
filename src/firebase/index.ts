@@ -1,45 +1,51 @@
-'use client';
-
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, initializeFirestore } from 'firebase/firestore'
+import { getFirestore, initializeFirestore, Firestore } from 'firebase/firestore';
 
-// IMPORTANT: DO NOT MODIFY THIS FUNCTION
+/**
+ * Robust Firebase initialization for Next.js (Client & Server).
+ * Ensures the config object is used to prevent 'app/no-options' errors on Vercel.
+ * Prevents multiple Firestore initializations during SSR/Build.
+ */
 export function initializeFirebase() {
-  if (!getApps().length) {
-    // Important! initializeApp() is called without any arguments because Firebase App Hosting
-    // integrates with the initializeApp() function to provide the environment variables needed to
-    // populate the FirebaseOptions in production. It is critical that we attempt to call initializeApp()
-    // without arguments.
-    let firebaseApp;
-    try {
-      // Attempt to initialize via Firebase App Hosting environment variables
-      firebaseApp = initializeApp();
-    } catch (e) {
-      // Only warn in production because it's normal to use the firebaseConfig to initialize
-      // during development
-      if (process.env.NODE_ENV === "production") {
-        console.warn('Automatic initialization failed. Falling back to firebase config object.', e);
-      }
-      firebaseApp = initializeApp(firebaseConfig);
-    }
+  let app: FirebaseApp;
 
-    return getSdks(firebaseApp);
+  if (getApps().length > 0) {
+    app = getApp();
+  } else {
+    // Explicitly check for config to avoid opaque 'no-options' errors
+    if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "undefined") {
+      console.warn('Firebase configuration is missing. Ensure NEXT_PUBLIC_FIREBASE_* env vars are set.');
+    }
+    
+    // Always provide config object. Zero-config initializeApp() is only for Firebase App Hosting.
+    app = initializeApp(firebaseConfig);
   }
 
-  // If already initialized, return the SDKs with the already initialized App
-  return getSdks(getApp());
+  return getSdks(app);
 }
 
+/**
+ * Retrieves and configures SDK instances for a given Firebase App.
+ */
 export function getSdks(firebaseApp: FirebaseApp) {
+  let firestore: Firestore;
+  
+  try {
+    // Attempt to initialize Firestore with custom settings
+    firestore = initializeFirestore(firebaseApp, {
+      ignoreUndefinedProperties: true
+    });
+  } catch (e: any) {
+    // Fallback if already initialized (e.g. during Next.js static generation or HMR)
+    firestore = getFirestore(firebaseApp);
+  }
+
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),
-    // CRITICAL: ignoreUndefinedProperties prevents "Unsupported field value: undefined" crashes
-    firestore: initializeFirestore(firebaseApp, {
-      ignoreUndefinedProperties: true
-    })
+    firestore
   };
 }
 
