@@ -63,6 +63,17 @@ export default function BulkInventoryPage() {
   }, [db, companyId]);
   const { data: warrantyTypes } = useCollection(warrantyQuery);
 
+  // Filter unique warranty types for dropdown
+  const uniqueWarrantyTypes = React.useMemo(() => {
+    if (!warrantyTypes) return [];
+    const seen = new Set();
+    return warrantyTypes.filter(w => {
+      if (seen.has(w.name)) return false;
+      seen.add(w.name);
+      return true;
+    });
+  }, [warrantyTypes]);
+
   function createEmptyItem(): BulkItem {
     return {
       id: Math.random().toString(36).substr(2, 9),
@@ -334,8 +345,8 @@ export default function BulkInventoryPage() {
                            <SelectValue />
                          </SelectTrigger>
                          <SelectContent className="rounded-xl shadow-2xl">
-                           {warrantyTypes?.map((w, idx) => (
-                             <SelectItem key={`bulk-warranty-${w.id}-${idx}`} value={w.name}>{w.name}</SelectItem>
+                           {uniqueWarrantyTypes?.map((w, idx) => (
+                             <SelectItem key={`bulk-warranty-${w.id || idx}-${idx}`} value={w.name}>{w.name}</SelectItem>
                            ))}
                          </SelectContent>
                        </Select>

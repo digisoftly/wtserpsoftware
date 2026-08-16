@@ -63,6 +63,17 @@ export default function NewProductPage() {
   }, [db, companyId]);
   const { data: warrantyTypes } = useCollection(warrantyQuery);
 
+  // Filter unique warranty types by name to prevent Radix value collisions
+  const uniqueWarrantyTypes = React.useMemo(() => {
+    if (!warrantyTypes) return [];
+    const seen = new Set();
+    return warrantyTypes.filter(w => {
+      if (seen.has(w.name)) return false;
+      seen.add(w.name);
+      return true;
+    });
+  }, [warrantyTypes]);
+
   const handleSaveProduct = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!db || !companyId || !branchId || isSubmitting) return;
@@ -216,8 +227,8 @@ export default function NewProductPage() {
                   <Select name="warranty" defaultValue="1 Year">
                     <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-xl">
-                      {warrantyTypes?.map((w, idx) => (
-                        <SelectItem key={`warranty-${w.id}-${idx}`} value={w.name} className="text-xs font-bold uppercase">{w.name}</SelectItem>
+                      {uniqueWarrantyTypes?.map((w, idx) => (
+                        <SelectItem key={`warranty-${w.id || idx}-${idx}`} value={w.name} className="text-xs font-bold uppercase">{w.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
