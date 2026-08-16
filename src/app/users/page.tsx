@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -36,7 +35,7 @@ export default function UsersPage() {
     if (!db || !companyId) return null;
     return query(collection(db, "companies", companyId, "roles"), orderBy("name"));
   }, [db, companyId]);
-  const { data: roles } = useCollection(rolesQuery);
+  const { data: roles, isLoading: rolesLoading } = useCollection(rolesQuery);
 
   const filteredUsers = React.useMemo(() => {
     return users?.filter(u => 
