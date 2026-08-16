@@ -5,6 +5,8 @@ import * as React from 'react';
 import { useUser, useFirestore } from '@/firebase';
 import { doc, getDoc, serverTimestamp, setDoc, onSnapshot } from 'firebase/firestore';
 import { Language } from '@/lib/translations';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 interface Role {
   id: string;
@@ -65,46 +67,64 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       if (!isUserLoading && user && db) {
         try {
           // 1. Subscribe to System Settings
-          unsubSettings = onSnapshot(doc(db, "companies", companyId, "system", "config"), (snap) => {
-            if (snap.exists()) {
-              setSettings(snap.data());
+          unsubSettings = onSnapshot(
+            doc(db, "companies", companyId, "system", "config"), 
+            (snap) => {
+              if (snap.exists()) {
+                setSettings(snap.data());
+              }
+            },
+            async (serverError) => {
+              errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: `companies/${companyId}/system/config`,
+                operation: 'get'
+              }));
             }
-          });
+          );
 
           // 2. Subscribe to User Profile
-          unsubUser = onSnapshot(doc(db, "companies", companyId, "users", user.uid), async (userSnap) => {
-            if (userSnap.exists()) {
-              const userData = userSnap.data();
-              const roleId = userData.roleId || "guest";
-              
-              setLanguage(userData.preferredLanguage || 'BN');
-              setBranchId(userData.branchId || 'dhaka-main');
-              setAllowedBranches(userData.allowedBranches || [userData.branchId || 'dhaka-main']);
+          unsubUser = onSnapshot(
+            doc(db, "companies", companyId, "users", user.uid), 
+            async (userSnap) => {
+              if (userSnap.exists()) {
+                const userData = userSnap.data();
+                const roleId = userData.roleId || "guest";
+                
+                setLanguage(userData.preferredLanguage || 'BN');
+                setBranchId(userData.branchId || 'dhaka-main');
+                setAllowedBranches(userData.allowedBranches || [userData.branchId || 'dhaka-main']);
 
-              // 3. Fetch Role Data
-              const roleRef = doc(db, "companies", companyId, "roles", roleId);
-              const roleSnap = await getDoc(roleRef);
-              
-              if (roleSnap.exists()) {
-                setUserRole({ id: roleSnap.id, ...roleSnap.data() } as Role);
-              } else if (roleId === 'super-admin') {
-                setUserRole({ id: 'super-admin', name: 'Super Admin', isSuperAdmin: true, permissions: {} });
+                // 3. Fetch Role Data
+                const roleRef = doc(db, "companies", companyId, "roles", roleId);
+                const roleSnap = await getDoc(roleRef);
+                
+                if (roleSnap.exists()) {
+                  setUserRole({ id: roleSnap.id, ...roleSnap.data() } as Role);
+                } else if (roleId === 'super-admin') {
+                  setUserRole({ id: 'super-admin', name: 'Super Admin', isSuperAdmin: true, permissions: {} });
+                }
+              } else {
+                // Provision first user as Super Admin if database is empty or user not found
+                const initialUser = {
+                  id: user.uid,
+                  email: user.email,
+                  roleId: 'super-admin',
+                  branchId: 'dhaka-main',
+                  allowedBranches: ['dhaka-main'],
+                  isActive: true,
+                  createdAt: serverTimestamp()
+                };
+                await setDoc(doc(db, "companies", companyId, "users", user.uid), initialUser);
               }
-            } else {
-              // Provision first user as Super Admin if database is empty or user not found
-              const initialUser = {
-                id: user.uid,
-                email: user.email,
-                roleId: 'super-admin',
-                branchId: 'dhaka-main',
-                allowedBranches: ['dhaka-main'],
-                isActive: true,
-                createdAt: serverTimestamp()
-              };
-              await setDoc(doc(db, "companies", companyId, "users", user.uid), initialUser);
+              setIsInitializing(false);
+            },
+            async (serverError) => {
+              errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: `companies/${companyId}/users/${user.uid}`,
+                operation: 'get'
+              }));
             }
-            setIsInitializing(false);
-          });
+          );
 
         } catch (error) {
           console.error("Identity Engine Error:", error);

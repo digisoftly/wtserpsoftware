@@ -24,8 +24,9 @@ service cloud.firestore {
 
     // Checks if user is an admin for a specific company
     function isCompanyAdmin(companyId) {
-      let userData = getUserData(companyId);
-      return userData.roleId == 'super-admin' || userData.roleId == 'admin';
+      // Safely check if the user doc exists first to prevent rules evaluation errors
+      let userDocPath = /databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid);
+      return exists(userDocPath) && (get(userDocPath).data.roleId == 'super-admin' || get(userDocPath).data.roleId == 'admin');
     }
 
     // Validates branch-level access
@@ -57,8 +58,10 @@ service cloud.firestore {
 
     // 3. User & Role Management
     match /companies/{companyId}/users/{userId} {
-      allow read: if isCompanyMember(companyId);
-      allow write: if isCompanyAdmin(companyId) || (request.auth.uid == userId);
+      // Allow users to read their own doc if signed in, or admins to read all
+      allow read: if isSignedIn() && (request.auth.uid == userId || isCompanyAdmin(companyId) || isCompanyMember(companyId));
+      // Allow users to update their own doc (basic profile) or admins to manage all
+      allow write: if isCompanyAdmin(companyId) || (isSignedIn() && request.auth.uid == userId);
     }
 
     match /companies/{companyId}/roles/{roleId} {
@@ -67,13 +70,37 @@ service cloud.firestore {
     }
 
     // 4. Branch Specific Data
-    // Enforces that users can only interact with records belonging to branches they are authorized for.
     match /companies/{companyId}/branches/{branchId}/{allPaths=**} {
       allow read, write: if hasBranchAccess(companyId, branchId);
     }
 
     // 5. Global Master Data
     match /companies/{companyId}/master_data/{id} {
+      allow read: if isCompanyMember(companyId);
+      allow write: if isCompanyAdmin(companyId);
+    }
+
+    match /companies/{companyId}/master_units/{id} {
+      allow read: if isCompanyMember(companyId);
+      allow write: if isCompanyAdmin(companyId);
+    }
+
+    match /companies/{companyId}/master_categories/{id} {
+      allow read: if isCompanyMember(companyId);
+      allow write: if isCompanyAdmin(companyId);
+    }
+
+    match /companies/{companyId}/master_brands/{id} {
+      allow read: if isCompanyMember(companyId);
+      allow write: if isCompanyAdmin(companyId);
+    }
+
+    match /companies/{companyId}/master_models/{id} {
+      allow read: if isCompanyMember(companyId);
+      allow write: if isCompanyAdmin(companyId);
+    }
+
+    match /companies/{companyId}/master_custom_fields/{id} {
       allow read: if isCompanyMember(companyId);
       allow write: if isCompanyAdmin(companyId);
     }
