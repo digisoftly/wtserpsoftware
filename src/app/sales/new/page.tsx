@@ -12,7 +12,9 @@ import {
   X,
   PlusCircle,
   FileText,
-  UserPlus
+  UserPlus,
+  Building,
+  User
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -65,6 +67,7 @@ export default function NewInvoicePage() {
   // Quick Customer State
   const [isCustomerModalOpen, setIsCustomerModalOpen] = React.useState(false);
   const [isCreatingCustomer, setIsCustomerCreating] = React.useState(false);
+  const [quickCustType, setQuickCustType] = React.useState<"individual" | "company">("individual");
 
   // Queries
   const customersQuery = useMemoFirebase(() => {
@@ -157,10 +160,13 @@ export default function NewInvoicePage() {
     const customerData = {
       companyId,
       branchId,
-      customerType: 'individual',
+      customerType: quickCustType,
+      companyName: quickCustType === 'company' ? (formData.get("companyName") as string) : "",
       firstName: formData.get("firstName") as string,
       lastName: formData.get("lastName") as string,
       phoneNumber: formData.get("phoneNumber") as string,
+      email: formData.get("email") as string || "",
+      address: formData.get("address") as string || "",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -193,7 +199,7 @@ export default function NewInvoicePage() {
           id: invoiceRef.id,
           invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
           customerId: selectedCustomerId,
-          customerName: customer ? `${customer.firstName} ${customer.lastName}` : "Client",
+          customerName: customer ? (customer.customerType === 'company' ? customer.companyName : `${customer.firstName} ${customer.lastName}`) : "Client",
           customerPhone: customer?.phoneNumber || "",
           customerAddress: customer?.address || "",
           invoiceDate,
@@ -263,7 +269,7 @@ export default function NewInvoicePage() {
                   <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
                     <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select Client" /></SelectTrigger>
                     <SelectContent className="max-h-[300px]">
-                      {customers?.map((c, idx) => <SelectItem key={`cust-new-${c.id}-${idx}`} value={c.id} className="text-xs font-medium">{c.firstName} {c.lastName}</SelectItem>)}
+                      {customers?.map((c, idx) => <SelectItem key={`cust-new-${c.id}-${idx}`} value={c.id} className="text-xs font-medium">{c.customerType === 'company' ? c.companyName : `${c.firstName} ${c.lastName}`}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
@@ -450,27 +456,63 @@ export default function NewInvoicePage() {
 
       {/* Quick Customer Modal */}
       <Dialog open={isCustomerModalOpen} onOpenChange={setIsCustomerModalOpen}>
-        <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-[2rem] bg-white">
+        <DialogContent className="max-w-xl p-0 overflow-hidden border-none shadow-2xl rounded-[2rem] bg-white">
           <DialogHeader className="bg-blue-600 p-6 text-white">
             <DialogTitle className="text-xl font-black font-headline uppercase tracking-tight flex items-center gap-3">
               <UserPlus className="h-6 w-6" /> Quick Registration
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleQuickCustomerCreate} className="p-8 space-y-6">
+            <div className="space-y-4">
+              <Label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Customer Type</Label>
+              <div className="flex gap-4">
+                <Button type="button" variant={quickCustType === 'individual' ? 'default' : 'outline'} className="flex-1 h-12 rounded-xl text-[10px] font-black uppercase gap-2" onClick={() => setQuickCustType('individual')}>
+                  <User className="h-4 w-4" /> Individual
+                </Button>
+                <Button type="button" variant={quickCustType === 'company' ? 'default' : 'outline'} className="flex-1 h-12 rounded-xl text-[10px] font-black uppercase gap-2" onClick={() => setQuickCustType('company')}>
+                  <Building className="h-4 w-4" /> Company / Corp
+                </Button>
+              </div>
+            </div>
+
+            {quickCustType === 'company' && (
+              <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2">
+                <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Company Name *</Label>
+                <Input name="companyName" required className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200" placeholder="Organization Name" />
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">First Name *</Label>
+                  <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">
+                    {quickCustType === 'company' ? 'Contact Person First Name' : 'First Name *'}
+                  </Label>
                   <Input name="firstName" required className="h-11 rounded-xl" />
                </div>
                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Last Name *</Label>
+                  <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">
+                    {quickCustType === 'company' ? 'Contact Person Last Name' : 'Last Name *'}
+                  </Label>
                   <Input name="lastName" required className="h-11 rounded-xl" />
                </div>
             </div>
-            <div className="space-y-1.5">
-               <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Phone Number *</Label>
-               <Input name="phoneNumber" required className="h-11 rounded-xl" placeholder="+880..." />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Phone Number *</Label>
+                <Input name="phoneNumber" required className="h-11 rounded-xl" placeholder="+880..." />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Email Address</Label>
+                <Input name="email" type="email" className="h-11 rounded-xl" placeholder="example@mail.com" />
+              </div>
             </div>
+
+            <div className="space-y-1.5">
+               <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Full Address</Label>
+               <Textarea name="address" className="h-20 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200" placeholder="Street, City, Postcode..." />
+            </div>
+
             <DialogFooter className="pt-4">
               <Button type="button" variant="ghost" onClick={() => setIsCustomerModalOpen(false)} className="rounded-xl h-11 text-[10px] font-black uppercase">Cancel</Button>
               <Button type="submit" disabled={isCreatingCustomer} className="bg-blue-600 hover:bg-blue-700 rounded-xl h-11 px-8 text-[10px] font-black uppercase shadow-lg shadow-blue-100">
