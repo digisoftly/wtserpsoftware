@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -76,7 +75,7 @@ export default function EditQuotationPage() {
 
   React.useEffect(() => {
     if (quote) {
-      setSelectedCustomerId(quote.customerId);
+      setSelectedCustomerId(quote.customerId || "");
       setProjectName(quote.projectName || "");
       setProjectLocation(quote.projectLocation || "");
       
@@ -87,7 +86,12 @@ export default function EditQuotationPage() {
         brand: item.brand || "",
         model: item.model || "",
         specs: item.specs || "",
-        warranty: item.warranty || ""
+        warranty: item.warranty || "",
+        quantity: item.quantity || 0,
+        unitPrice: item.unitPrice || 0,
+        discountValue: item.discountValue || 0,
+        discountType: item.discountType || 'percent',
+        taxPercent: item.taxPercent || 0
       }));
       setLineItems(itemsWithIds);
       
@@ -184,7 +188,7 @@ export default function EditQuotationPage() {
   if (isQuoteLoading) return <div className="flex h-[70vh] items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-blue-600" /></div>;
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 min-h-screen pb-20">
+    <div className="flex flex-col h-full bg-slate-50 min-h-screen pb-20 overflow-x-hidden">
       <div className="sticky top-0 z-30 bg-white border-b px-4 py-3 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full">
@@ -216,11 +220,11 @@ export default function EditQuotationPage() {
                </div>
                <div className="space-y-2">
                  <Label className="text-[10px] font-black uppercase text-slate-400">Project Name</Label>
-                 <Input value={projectName} onChange={e => setProjectName(e.target.value)} className="h-10 rounded-xl font-bold text-xs" />
+                 <Input value={projectName || ''} onChange={e => setProjectName(e.target.value)} className="h-10 rounded-xl font-bold text-xs" />
                </div>
                <div className="space-y-2">
                  <Label className="text-[10px] font-black uppercase text-slate-400">Location</Label>
-                 <Input value={projectLocation} onChange={e => setProjectLocation(e.target.value)} className="h-10 rounded-xl font-bold text-xs" />
+                 <Input value={projectLocation || ''} onChange={e => setProjectLocation(e.target.value)} className="h-10 rounded-xl font-bold text-xs" />
                </div>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 border-t pt-4">
@@ -244,7 +248,7 @@ export default function EditQuotationPage() {
           </Card>
 
           <Card className="rounded-[2rem] border-none shadow-sm ring-1 ring-slate-100 bg-white overflow-hidden flex flex-col">
-            <div className="p-4 border-b bg-slate-50/50 flex items-center justify-between">
+            <div className="p-4 border-b bg-slate-50/50 flex flex-wrap items-center justify-between gap-2">
                <div className="flex items-center gap-3">
                  <LayoutGrid className="h-4 w-4 text-blue-600" />
                  <h3 className="text-[10px] font-black uppercase text-slate-900 tracking-widest">Proposal Matrix</h3>
@@ -253,12 +257,12 @@ export default function EditQuotationPage() {
                  <PackagePlus className="h-4 w-4" /> New Row
                </Button>
             </div>
-            <div className="overflow-x-auto">
-              <Table>
+            <div className="overflow-x-auto custom-scrollbar">
+              <Table className="min-w-[800px]">
                 <TableHeader className="bg-slate-50/30">
                   <TableRow>
                     <TableHead className="w-10 text-center text-[9px] font-black uppercase py-4 pl-6">Sl.</TableHead>
-                    <TableHead className="text-[9px] font-black uppercase py-4">Item Details</TableHead>
+                    <TableHead className="min-w-[350px] text-[9px] font-black uppercase py-4">Product Details & Attributes</TableHead>
                     <TableHead className="text-[9px] font-black uppercase text-center w-20">Unit</TableHead>
                     <TableHead className="text-[9px] font-black uppercase text-center w-20">Qty</TableHead>
                     <TableHead className="text-[9px] font-black uppercase text-right w-24">Price</TableHead>
@@ -268,20 +272,30 @@ export default function EditQuotationPage() {
                 </TableHeader>
                 <TableBody>
                   {lineItems.map((item, idx) => (
-                    <TableRow key={item.id} className="group hover:bg-slate-50/50 transition-colors border-b border-slate-50">
-                      <TableCell className="pl-6 text-center text-[10px] font-bold text-slate-400">{(idx + 1).toString().padStart(2, '0')}</TableCell>
-                      <TableCell className="py-3">
+                    <TableRow key={item.id} className="group hover:bg-slate-50/50 transition-colors border-b border-slate-50 align-top">
+                      <TableCell className="pl-6 text-center text-[10px] font-bold text-slate-400 py-3">{(idx + 1).toString().padStart(2, '0')}</TableCell>
+                      <TableCell className="py-3 px-2">
                         <div className="space-y-2">
-                          <Input className="h-8 text-[11px] font-black uppercase border-none ring-1 ring-slate-100 bg-slate-50/30 rounded-lg" value={item.name || ''} onChange={e => handleUpdateLineItem(item.id, 'name', e.target.value)} placeholder="Item Name" />
-                          <div className="grid grid-cols-3 gap-1.5">
-                             <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.brand || ''} onChange={e => handleUpdateLineItem(item.id, 'brand', e.target.value)} placeholder="Brand" />
+                          <Input 
+                            className="h-8 text-[11px] font-black uppercase border-none bg-slate-100/50 focus:bg-white focus:ring-1 focus:ring-blue-500 transition-all" 
+                            value={item.name || ''} 
+                            onChange={e => handleUpdateLineItem(item.id, 'name', e.target.value)} 
+                            placeholder="Item Name" 
+                          />
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-1.5">
                              <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.model || ''} onChange={e => handleUpdateLineItem(item.id, 'model', e.target.value)} placeholder="Model" />
+                             <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.brand || ''} onChange={e => handleUpdateLineItem(item.id, 'brand', e.target.value)} placeholder="Brand" />
                              <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.warranty || ''} onChange={e => handleUpdateLineItem(item.id, 'warranty', e.target.value)} placeholder="Warranty" />
                           </div>
-                          <textarea className="w-full text-[9px] font-medium bg-slate-50 border border-slate-200 rounded p-1.5 min-h-[40px] resize-none outline-none" value={item.specs || ''} onChange={e => handleUpdateLineItem(item.id, 'specs', e.target.value)} placeholder="Specification" />
+                          <textarea 
+                            className="w-full text-[9px] font-medium bg-slate-50 border border-slate-200 rounded p-1.5 min-h-[40px] resize-none outline-none focus:bg-white focus:ring-1 focus:ring-blue-500 transition-all" 
+                            value={item.specs || ''} 
+                            onChange={e => handleUpdateLineItem(item.id, 'specs', e.target.value)} 
+                            placeholder="Specification" 
+                          />
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-3">
                         <Select value={item.unit || 'Pcs'} onValueChange={(val) => handleUpdateLineItem(item.id, 'unit', val)}>
                           <SelectTrigger className="h-7 border-none bg-slate-50 text-[10px] font-bold uppercase w-14 mx-auto"><SelectValue /></SelectTrigger>
                           <SelectContent>
@@ -290,14 +304,14 @@ export default function EditQuotationPage() {
                           </SelectContent>
                         </Select>
                       </TableCell>
-                      <TableCell className="text-center">
-                         <Input type="number" className="h-8 text-center font-black text-xs rounded-lg w-14 bg-slate-50 border-none mx-auto" value={item.quantity || ''} onChange={e => handleUpdateLineItem(item.id, 'quantity', Number(e.target.value))} />
+                      <TableCell className="py-3 text-center">
+                         <Input type="number" className="h-8 text-center font-black text-xs rounded-lg w-14 bg-slate-50 border-none mx-auto focus:ring-1 focus:ring-blue-500" value={item.quantity || ''} onChange={e => handleUpdateLineItem(item.id, 'quantity', Number(e.target.value))} />
                       </TableCell>
-                      <TableCell className="text-right">
-                         <Input type="number" className="h-8 text-right font-black text-xs rounded-lg w-20 bg-slate-50 border-none ml-auto" value={item.unitPrice || ''} onChange={e => handleUpdateLineItem(item.id, 'unitPrice', Number(e.target.value))} />
+                      <TableCell className="py-3 text-right">
+                         <Input type="number" className="h-8 text-right font-black text-xs rounded-lg w-20 bg-slate-50 border-none ml-auto focus:ring-1 focus:ring-blue-500" value={item.unitPrice || ''} onChange={e => handleUpdateLineItem(item.id, 'unitPrice', Number(e.target.value))} />
                       </TableCell>
-                      <TableCell className="text-right pr-6"><span className="font-black text-xs text-blue-600">৳{(item.total || 0).toLocaleString()}</span></TableCell>
-                      <TableCell className="pr-4"><Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 rounded-full" onClick={() => setLineItems(lineItems.filter(i => i.id !== item.id))}><X className="h-4 w-4" /></Button></TableCell>
+                      <TableCell className="py-3 text-right pr-6"><span className="font-black text-xs text-blue-600">৳{(item.total || 0).toLocaleString()}</span></TableCell>
+                      <TableCell className="py-3 pr-4"><Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 rounded-full" onClick={() => setLineItems(lineItems.filter(i => i.id !== item.id))}><X className="h-4 w-4" /></Button></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -323,7 +337,7 @@ export default function EditQuotationPage() {
             </div>
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Notes & Terms</Label>
-              <textarea className="w-full min-h-[150px] rounded-2xl bg-slate-50 border-none p-4 text-[10px] font-bold text-slate-600 resize-none outline-none" value={notes || ''} onChange={e => setNotes(e.target.value)} />
+              <textarea className="w-full min-h-[150px] rounded-2xl bg-slate-50 border-none p-4 text-[10px] font-bold text-slate-600 resize-none outline-none focus:ring-1 focus:ring-blue-500 transition-all" value={notes || ''} onChange={e => setNotes(e.target.value)} />
             </div>
             <Button className="w-full h-16 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl text-white bg-blue-600 hover:bg-blue-700 transition-all active:scale-95" disabled={isSubmitting || lineItems.length === 0} onClick={handleSaveUpdate}>
               {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <ArrowRight className="h-5 w-5" />}

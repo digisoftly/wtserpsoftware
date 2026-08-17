@@ -103,7 +103,7 @@ export default function NewQuotationPage() {
     const newItem: QuoteItem = {
       id: Math.random().toString(36).substr(2, 9),
       productId: product.id,
-      name: product.name,
+      name: product.name || '',
       description: product.description || "",
       brand: product.brand || "",
       model: product.sku || "",
@@ -235,7 +235,7 @@ export default function NewQuotationPage() {
   };
 
   return (
-    <div className="max-w-full mx-auto space-y-4 pb-20">
+    <div className="max-w-full mx-auto space-y-4 pb-20 overflow-x-hidden">
       <div className="flex items-center justify-between border-b pb-3 bg-white sticky top-0 z-50 px-2">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full">
@@ -293,11 +293,11 @@ export default function NewQuotationPage() {
           </Card>
 
           <Card className="border-none shadow-sm ring-1 ring-slate-200 overflow-hidden">
-            <div className="p-3 bg-slate-50 border-b flex items-center justify-between">
+            <div className="p-3 bg-slate-50 border-b flex flex-wrap items-center justify-between gap-2">
               <h3 className="text-[10px] font-black uppercase text-slate-500">Line Items</h3>
               <div className="flex gap-2">
                 <Select onValueChange={handleAddProduct}>
-                  <SelectTrigger className="h-8 w-48 text-[10px] bg-white border-slate-200 font-bold uppercase"><SelectValue placeholder="Import Product" /></SelectTrigger>
+                  <SelectTrigger className="h-8 w-40 sm:w-48 text-[10px] bg-white border-slate-200 font-bold uppercase"><SelectValue placeholder="Import Product" /></SelectTrigger>
                   <SelectContent className="max-h-[300px]">
                     {products?.map((p, idx) => <SelectItem key={`pq-${p.id}-${idx}`} value={p.id} className="text-xs font-bold">{p.name}</SelectItem>)}
                   </SelectContent>
@@ -307,38 +307,47 @@ export default function NewQuotationPage() {
                 </Button>
               </div>
             </div>
-            <div className="overflow-x-auto">
-              <Table>
+            <div className="overflow-x-auto custom-scrollbar">
+              <Table className="min-w-[800px]">
                 <TableHeader className="bg-slate-50/20 border-b">
                   <TableRow className="hover:bg-transparent h-10">
                     <TableHead className="w-10 text-center text-[9px] font-black uppercase">Sl.</TableHead>
-                    <TableHead className="min-w-[250px] text-[9px] font-black uppercase">Product Details</TableHead>
+                    <TableHead className="min-w-[350px] text-[9px] font-black uppercase">Product Details & Attributes</TableHead>
                     <TableHead className="w-20 text-[9px] font-black uppercase text-center">Unit</TableHead>
                     <TableHead className="w-20 text-[9px] font-black uppercase text-center">Qty</TableHead>
-                    <TableHead className="w-24 text-[9px] font-black uppercase text-right">Price</TableHead>
-                    <TableHead className="w-24 text-[9px] font-black uppercase text-right pr-6">Total</TableHead>
+                    <TableHead className="w-28 text-[9px] font-black uppercase text-right">Price</TableHead>
+                    <TableHead className="w-28 text-[9px] font-black uppercase text-right pr-6">Total</TableHead>
                     <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {lineItems.map((item, idx) => (
-                    <TableRow key={item.id} className="group hover:bg-slate-50/30 border-b border-slate-100">
-                      <TableCell className="text-center text-[10px] font-bold text-slate-400">{(idx + 1).toString().padStart(2, '0')}</TableCell>
-                      <TableCell className="py-2">
+                    <TableRow key={item.id} className="group hover:bg-slate-50/30 border-b border-slate-100 align-top">
+                      <TableCell className="text-center text-[10px] font-bold text-slate-400 py-3">{(idx + 1).toString().padStart(2, '0')}</TableCell>
+                      <TableCell className="py-3 px-2">
                         <div className="space-y-2">
-                          <Input className="h-7 text-[11px] font-black uppercase border-none bg-slate-100/50" value={item.name} onChange={e => updateItem(item.id, 'name', e.target.value)} placeholder="Item Name" />
-                          <div className="grid grid-cols-2 gap-1.5">
-                             <Input className="h-6 text-[9px] font-bold border-slate-200" value={item.model} onChange={e => updateItem(item.id, 'model', e.target.value)} placeholder="Model" />
-                             <Input className="h-6 text-[9px] font-bold border-slate-200" value={item.brand} onChange={e => updateItem(item.id, 'brand', e.target.value)} placeholder="Brand" />
+                          <Input 
+                            className="h-8 text-[11px] font-black uppercase border-none bg-slate-100/50 focus:bg-white focus:ring-1 focus:ring-blue-500 transition-all" 
+                            value={item.name || ''} 
+                            onChange={e => updateItem(item.id, 'name', e.target.value)} 
+                            placeholder="Item Name" 
+                          />
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-1.5">
+                             <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.model || ''} onChange={e => updateItem(item.id, 'model', e.target.value)} placeholder="Model" />
+                             <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.brand || ''} onChange={e => updateItem(item.id, 'brand', e.target.value)} placeholder="Brand" />
+                             <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.sn || ''} onChange={e => updateItem(item.id, 'sn', e.target.value)} placeholder="S/N" />
+                             <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.warranty || ''} onChange={e => updateItem(item.id, 'warranty', e.target.value)} placeholder="Warranty" />
                           </div>
-                          <div className="grid grid-cols-2 gap-1.5">
-                             <Input className="h-6 text-[9px] font-bold border-slate-200" value={item.warranty} onChange={e => updateItem(item.id, 'warranty', e.target.value)} placeholder="Warranty" />
-                          </div>
-                          <textarea className="w-full text-[9px] font-medium bg-slate-50 border border-slate-200 rounded p-1.5 min-h-[40px] resize-none outline-none" value={item.specs} onChange={e => updateItem(item.id, 'specs', e.target.value)} placeholder="Specification" />
+                          <textarea 
+                            className="w-full text-[9px] font-medium bg-slate-50 border border-slate-200 rounded p-1.5 min-h-[40px] resize-none outline-none focus:bg-white focus:ring-1 focus:ring-blue-500 transition-all" 
+                            value={item.specs || ''} 
+                            onChange={e => updateItem(item.id, 'specs', e.target.value)} 
+                            placeholder="Technical Specification" 
+                          />
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <Select value={item.unit} onValueChange={(val) => updateItem(item.id, 'unit', val)}>
+                      <TableCell className="py-3">
+                        <Select value={item.unit || 'Pcs'} onValueChange={(val) => updateItem(item.id, 'unit', val)}>
                           <SelectTrigger className="h-7 border-none bg-slate-50 text-[10px] font-bold uppercase w-14 mx-auto"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {masterUnits?.map((u, uidx) => <SelectItem key={`unq-${u.id}-${uidx}`} value={u.shortName} className="text-xs font-bold">{u.shortName}</SelectItem>)}
@@ -346,14 +355,14 @@ export default function NewQuotationPage() {
                           </SelectContent>
                         </Select>
                       </TableCell>
-                      <TableCell>
-                        <Input type="number" className="h-7 w-12 text-center text-[11px] font-black bg-slate-50 border-none mx-auto" value={item.qty} onChange={e => updateItem(item.id, 'qty', Number(e.target.value))} />
+                      <TableCell className="py-3 text-center">
+                        <Input type="number" className="h-7 w-12 text-center text-[11px] font-black bg-slate-50 border-none mx-auto focus:ring-1 focus:ring-blue-500" value={item.qty || ''} onChange={e => updateItem(item.id, 'qty', Number(e.target.value))} />
                       </TableCell>
-                      <TableCell>
-                        <Input type="number" className="h-7 w-20 text-right text-[11px] font-black bg-slate-50 border-none ml-auto" value={item.price} onChange={e => updateItem(item.id, 'price', Number(e.target.value))} />
+                      <TableCell className="py-3 text-right">
+                        <Input type="number" className="h-7 w-20 text-right text-[11px] font-black bg-slate-50 border-none ml-auto focus:ring-1 focus:ring-blue-500" value={item.price || ''} onChange={e => updateItem(item.id, 'price', Number(e.target.value))} />
                       </TableCell>
-                      <TableCell className="text-right pr-6 font-black text-[11px] text-slate-900">৳{item.total?.toLocaleString()}</TableCell>
-                      <TableCell>
+                      <TableCell className="py-3 text-right pr-6 font-black text-[11px] text-slate-900">৳{(item.total || 0).toLocaleString()}</TableCell>
+                      <TableCell className="py-3">
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-300 hover:text-red-600 rounded-full" onClick={() => setLineItems(lineItems.filter(i => i.id !== item.id))}><Trash2 className="h-3.5 w-3.5" /></Button>
                       </TableCell>
                     </TableRow>
@@ -367,7 +376,7 @@ export default function NewQuotationPage() {
         <div className="xl:col-span-3 space-y-4">
           <Card className="p-6 rounded-2xl shadow-2xl space-y-4 text-center text-white bg-blue-600">
              <p className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em]">Net Proposal Value</p>
-             <h2 className="text-4xl font-headline font-black tracking-tighter">৳{grandTotal?.toLocaleString()}</h2>
+             <h2 className="text-3xl font-headline font-black tracking-tighter">৳{grandTotal?.toLocaleString()}</h2>
           </Card>
 
           <Card className="p-4 rounded-2xl border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-4">
@@ -379,7 +388,7 @@ export default function NewQuotationPage() {
             </div>
             <div className="space-y-3 pt-3 border-t">
                <Label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Notes</Label>
-               <Textarea className="min-h-[120px] text-[11px] font-bold rounded-xl" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Terms..." />
+               <Textarea className="min-h-[120px] text-[11px] font-bold rounded-xl" value={notes || ''} onChange={e => setNotes(e.target.value)} placeholder="Terms..." />
             </div>
             <Button className="w-full h-16 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-blue-100 bg-blue-600 hover:bg-blue-700" disabled={isSubmitting || lineItems.length === 0} onClick={handleSave}>
               {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <Save className="h-5 w-5" />}
