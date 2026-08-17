@@ -87,14 +87,21 @@ export default function ViewQuotationPage() {
           date={quote.quotationDate}
           customerName={quote.customerName}
           customerInfo={`Phone: ${quote.customerPhone || 'N/A'}\nAddress: ${quote.customerAddress || 'Interested Prospect'}`}
-          items={quote.items.map((i: any) => ({
+          projectName={quote.projectName}
+          projectLocation={quote.projectLocation}
+          items={(quote.items || []).map((i: any) => ({
             name: i.name,
             description: i.description,
             quantity: i.quantity,
             unit: i.unit,
             unitPrice: i.unitPrice,
             total: i.total,
-            discount: i.discountValue
+            discount: i.discountValue,
+            brand: i.brand,
+            model: i.model,
+            sn: i.sn,
+            specs: i.specs,
+            warranty: i.warranty
           }))}
           subtotal={quote.subtotal}
           taxAmount={quote.taxAmount}

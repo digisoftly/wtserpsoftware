@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -236,15 +235,15 @@ export default function NewQuotationPage() {
   };
 
   return (
-    <div className="max-w-[1600px] mx-auto space-y-6 pb-20">
-      <div className="flex items-center justify-between border-b pb-4 bg-white sticky top-0 z-50 px-2">
+    <div className="max-w-full mx-auto space-y-4 pb-20">
+      <div className="flex items-center justify-between border-b pb-3 bg-white sticky top-0 z-50 px-2">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
             <h1 className="text-lg font-bold text-slate-900 tracking-tight">{t('createQuote')}</h1>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Enterprise Proposal Module</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Proposal Module</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -256,122 +255,106 @@ export default function NewQuotationPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-        <div className="xl:col-span-9 space-y-6">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+        <div className="xl:col-span-9 space-y-4">
           <Card className="border-none shadow-sm ring-1 ring-slate-200">
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('customer')}</Label>
-                  <div className="flex gap-2">
-                    <div className="flex-1">
-                      <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                        <SelectTrigger className="h-10 text-xs font-bold bg-slate-50/50"><SelectValue placeholder="Select Client" /></SelectTrigger>
-                        <SelectContent className="max-h-[300px]">
-                          {customers?.map((c, idx) => <SelectItem key={`cust-qtn-${c.id}-${idx}`} value={c.id} className="text-xs font-medium">{c.customerType === 'company' ? c.companyName : `${c.firstName} ${c.lastName}`}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-lg border-slate-200 text-blue-600" onClick={() => setIsCustomerModalOpen(true)}><UserPlus className="h-4 w-4" /></Button>
+            <CardContent className="p-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div className="space-y-1">
+                  <Label className="text-[10px] font-bold uppercase text-slate-500">{t('customer')}</Label>
+                  <div className="flex gap-1">
+                    <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                      <SelectTrigger className="h-9 text-[11px] font-bold bg-slate-50/50"><SelectValue placeholder="Client" /></SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        {customers?.map((c, idx) => <SelectItem key={`cq-${c.id}-${idx}`} value={c.id} className="text-xs font-medium">{c.customerType === 'company' ? c.companyName : `${c.firstName} ${c.lastName}`}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <Button type="button" variant="outline" size="icon" className="h-9 w-9 shrink-0 border-slate-200 text-blue-600" onClick={() => setIsCustomerModalOpen(true)}><UserPlus className="h-3.5 w-3.5" /></Button>
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">Project Name</Label>
-                  <Input value={projectName} onChange={e => setProjectName(e.target.value)} className="h-10 text-xs font-bold" placeholder="e.g. Fiber Optic Setup" />
+                <div className="space-y-1">
+                  <Label className="text-[10px] font-bold uppercase text-slate-500">Project Name</Label>
+                  <Input value={projectName} onChange={e => setProjectName(e.target.value)} className="h-9 text-[11px] font-bold" placeholder="Fiber Setup" />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">Project Location</Label>
-                  <Input value={projectLocation} onChange={e => setProjectLocation(e.target.value)} className="h-10 text-xs font-bold" placeholder="e.g. Mohakhali, Dhaka" />
+                <div className="space-y-1">
+                  <Label className="text-[10px] font-bold uppercase text-slate-500">Location</Label>
+                  <Input value={projectLocation} onChange={e => setProjectLocation(e.target.value)} className="h-9 text-[11px] font-bold" placeholder="Dhaka" />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('date')}</Label>
-                  <Input type="date" value={quotationDate} onChange={e => setQuotationDate(e.target.value)} className="h-10 text-xs font-bold" />
+                <div className="space-y-1">
+                  <Label className="text-[10px] font-bold uppercase text-slate-500">{t('date')}</Label>
+                  <Input type="date" value={quotationDate} onChange={e => setQuotationDate(e.target.value)} className="h-9 text-[11px] font-bold" />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('validUntil')}</Label>
-                  <Input type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} className="h-10 text-xs font-bold" />
+                <div className="space-y-1">
+                  <Label className="text-[10px] font-bold uppercase text-slate-500">Expiry</Label>
+                  <Input type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} className="h-9 text-[11px] font-bold" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-none shadow-sm ring-1 ring-slate-200 overflow-hidden">
-            <div className="p-4 bg-slate-50/50 border-b flex items-center justify-between">
-              <h3 className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Line Item Matrix</h3>
+            <div className="p-3 bg-slate-50 border-b flex items-center justify-between">
+              <h3 className="text-[10px] font-black uppercase text-slate-500">Line Items</h3>
               <div className="flex gap-2">
                 <Select onValueChange={handleAddProduct}>
-                  <SelectTrigger className="h-9 w-64 text-[10px] bg-white border-slate-200 font-bold uppercase"><SelectValue placeholder="Import Catalog Item" /></SelectTrigger>
+                  <SelectTrigger className="h-8 w-48 text-[10px] bg-white border-slate-200 font-bold uppercase"><SelectValue placeholder="Import Product" /></SelectTrigger>
                   <SelectContent className="max-h-[300px]">
-                    {products?.map((p, idx) => <SelectItem key={`prod-qtn-${p.id}-${idx}`} value={p.id} className="text-xs font-bold">{p.name}</SelectItem>)}
+                    {products?.map((p, idx) => <SelectItem key={`pq-${p.id}-${idx}`} value={p.id} className="text-xs font-bold">{p.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
-                <Button variant="outline" size="sm" className="h-9 rounded-lg gap-2 text-[10px] font-black uppercase" onClick={addManualRow}>
-                  <PlusCircle className="h-4 w-4" /> {t('addGeneric')}
+                <Button variant="outline" size="sm" className="h-8 rounded-lg gap-2 text-[10px] font-black uppercase" onClick={addManualRow}>
+                  <PlusCircle className="h-3.5 w-3.5" /> {t('addGeneric')}
                 </Button>
               </div>
             </div>
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader className="bg-slate-50/20 border-b">
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="w-12 text-center text-[10px] font-black uppercase">Sl.</TableHead>
-                    <TableHead className="min-w-[300px] text-[10px] font-black uppercase">Product Details</TableHead>
-                    <TableHead className="w-24 text-[10px] font-black uppercase text-center">Unit</TableHead>
-                    <TableHead className="w-24 text-[10px] font-black uppercase text-center">Qty</TableHead>
-                    <TableHead className="w-32 text-[10px] font-black uppercase text-right">Price</TableHead>
-                    <TableHead className="w-20 text-[10px] font-black uppercase text-center">Disc%</TableHead>
-                    <TableHead className="w-32 text-[10px] font-black uppercase text-right pr-10">Total</TableHead>
-                    <TableHead className="w-12"></TableHead>
+                  <TableRow className="hover:bg-transparent h-10">
+                    <TableHead className="w-10 text-center text-[9px] font-black uppercase">Sl.</TableHead>
+                    <TableHead className="min-w-[250px] text-[9px] font-black uppercase">Product Details</TableHead>
+                    <TableHead className="w-20 text-[9px] font-black uppercase text-center">Unit</TableHead>
+                    <TableHead className="w-20 text-[9px] font-black uppercase text-center">Qty</TableHead>
+                    <TableHead className="w-24 text-[9px] font-black uppercase text-right">Price</TableHead>
+                    <TableHead className="w-24 text-[9px] font-black uppercase text-right pr-6">Total</TableHead>
+                    <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {lineItems.map((item, idx) => (
-                    <TableRow key={item.id} className="group hover:bg-slate-50/30 transition-colors border-b border-slate-100">
+                    <TableRow key={item.id} className="group hover:bg-slate-50/30 border-b border-slate-100">
                       <TableCell className="text-center text-[10px] font-bold text-slate-400">{(idx + 1).toString().padStart(2, '0')}</TableCell>
-                      <TableCell className="py-4">
-                        <div className="space-y-3">
-                          <Input className="h-8 text-[11px] font-black uppercase border-none bg-slate-100/50" value={item.name} onChange={e => updateItem(item.id, 'name', e.target.value)} placeholder="Item Name" />
-                          <div className="grid grid-cols-2 gap-2">
-                             <div className="space-y-1">
-                                <Label className="text-[8px] font-black uppercase text-slate-400">Model</Label>
-                                <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.model} onChange={e => updateItem(item.id, 'model', e.target.value)} />
-                             </div>
-                             <div className="space-y-1">
-                                <Label className="text-[8px] font-black uppercase text-slate-400">Brand</Label>
-                                <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.brand} onChange={e => updateItem(item.id, 'brand', e.target.value)} />
-                             </div>
+                      <TableCell className="py-2">
+                        <div className="space-y-2">
+                          <Input className="h-7 text-[11px] font-black uppercase border-none bg-slate-100/50" value={item.name} onChange={e => updateItem(item.id, 'name', e.target.value)} placeholder="Item Name" />
+                          <div className="grid grid-cols-2 gap-1.5">
+                             <Input className="h-6 text-[9px] font-bold border-slate-200" value={item.model} onChange={e => updateItem(item.id, 'model', e.target.value)} placeholder="Model" />
+                             <Input className="h-6 text-[9px] font-bold border-slate-200" value={item.brand} onChange={e => updateItem(item.id, 'brand', e.target.value)} placeholder="Brand" />
                           </div>
-                          <div className="space-y-1">
-                             <Label className="text-[8px] font-black uppercase text-slate-400">Warranty</Label>
-                             <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.warranty} onChange={e => updateItem(item.id, 'warranty', e.target.value)} />
+                          <div className="grid grid-cols-2 gap-1.5">
+                             <Input className="h-6 text-[9px] font-bold border-slate-200" value={item.warranty} onChange={e => updateItem(item.id, 'warranty', e.target.value)} placeholder="Warranty" />
                           </div>
-                          <div className="space-y-1">
-                             <Label className="text-[8px] font-black uppercase text-slate-400">Specifications</Label>
-                             <textarea className="w-full text-[9px] font-medium bg-slate-50 border border-slate-200 rounded p-2 min-h-[60px] resize-none" value={item.specs} onChange={e => updateItem(item.id, 'specs', e.target.value)} placeholder="Technical details..." />
-                          </div>
+                          <textarea className="w-full text-[9px] font-medium bg-slate-50 border border-slate-200 rounded p-1.5 min-h-[40px] resize-none outline-none" value={item.specs} onChange={e => updateItem(item.id, 'specs', e.target.value)} placeholder="Specification" />
                         </div>
                       </TableCell>
                       <TableCell>
                         <Select value={item.unit} onValueChange={(val) => updateItem(item.id, 'unit', val)}>
-                          <SelectTrigger className="h-8 border-none bg-slate-50 text-[10px] font-bold uppercase w-16 mx-auto"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="h-7 border-none bg-slate-50 text-[10px] font-bold uppercase w-14 mx-auto"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            {masterUnits?.map((u, uidx) => <SelectItem key={`unit-qtn-${u.id}-${uidx}`} value={u.shortName} className="text-xs font-bold">{u.shortName}</SelectItem>)}
+                            {masterUnits?.map((u, uidx) => <SelectItem key={`unq-${u.id}-${uidx}`} value={u.shortName} className="text-xs font-bold">{u.shortName}</SelectItem>)}
                             {!masterUnits?.length && <SelectItem value="Pcs">Pcs</SelectItem>}
                           </SelectContent>
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Input type="number" className="h-8 w-14 text-center text-xs font-black bg-slate-50 border-none mx-auto" value={item.qty} onChange={e => updateItem(item.id, 'qty', Number(e.target.value))} />
+                        <Input type="number" className="h-7 w-12 text-center text-[11px] font-black bg-slate-50 border-none mx-auto" value={item.qty} onChange={e => updateItem(item.id, 'qty', Number(e.target.value))} />
                       </TableCell>
                       <TableCell>
-                        <Input type="number" className="h-8 w-24 text-right text-xs font-black bg-slate-50 border-none ml-auto" value={item.price} onChange={e => updateItem(item.id, 'price', Number(e.target.value))} />
+                        <Input type="number" className="h-7 w-20 text-right text-[11px] font-black bg-slate-50 border-none ml-auto" value={item.price} onChange={e => updateItem(item.id, 'price', Number(e.target.value))} />
                       </TableCell>
+                      <TableCell className="text-right pr-6 font-black text-[11px] text-slate-900">৳{item.total?.toLocaleString()}</TableCell>
                       <TableCell>
-                        <Input type="number" className="h-8 w-12 text-center text-xs font-bold bg-slate-50 border-none mx-auto" value={item.discount} onChange={e => updateItem(item.id, 'discount', Number(e.target.value))} />
-                      </TableCell>
-                      <TableCell className="text-right pr-10 font-black text-xs text-slate-900">৳{item.total.toLocaleString()}</TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:text-red-600 rounded-full" onClick={() => setLineItems(lineItems.filter(i => i.id !== item.id))}><Trash2 className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-300 hover:text-red-600 rounded-full" onClick={() => setLineItems(lineItems.filter(i => i.id !== item.id))}><Trash2 className="h-3.5 w-3.5" /></Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -381,22 +364,22 @@ export default function NewQuotationPage() {
           </Card>
         </div>
 
-        <div className="xl:col-span-3 space-y-6">
-          <Card className="p-8 rounded-[2rem] shadow-2xl space-y-6 text-center text-white bg-blue-600">
+        <div className="xl:col-span-3 space-y-4">
+          <Card className="p-6 rounded-2xl shadow-2xl space-y-4 text-center text-white bg-blue-600">
              <p className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em]">Net Proposal Value</p>
-             <h2 className="text-4xl font-headline font-black tracking-tighter">৳{grandTotal.toLocaleString()}</h2>
+             <h2 className="text-4xl font-headline font-black tracking-tighter">৳{grandTotal?.toLocaleString()}</h2>
           </Card>
 
-          <Card className="p-6 rounded-[2rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-6">
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-slate-400">Global Discount (৳)</Label>
-                <Input type="number" className="h-10 rounded-xl bg-slate-50 border-none font-black text-red-600" value={globalDiscount || ''} onChange={e => setGlobalDiscount(Number(e.target.value))} />
+          <Card className="p-4 rounded-2xl border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-4">
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label className="text-[9px] font-black uppercase text-slate-400">Global Discount (৳)</Label>
+                <Input type="number" className="h-8 rounded-lg bg-slate-50 border-none font-black text-red-600" value={globalDiscount || ''} onChange={e => setGlobalDiscount(Number(e.target.value))} />
               </div>
             </div>
-            <div className="space-y-4 pt-4 border-t">
-               <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Document Notes</Label>
-               <Textarea className="min-h-[150px] text-xs font-bold rounded-xl" value={notes} onChange={e => setNotes(e.target.value)} />
+            <div className="space-y-3 pt-3 border-t">
+               <Label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Notes</Label>
+               <Textarea className="min-h-[120px] text-[11px] font-bold rounded-xl" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Terms..." />
             </div>
             <Button className="w-full h-16 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-blue-100 bg-blue-600 hover:bg-blue-700" disabled={isSubmitting || lineItems.length === 0} onClick={handleSave}>
               {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <Save className="h-5 w-5" />}

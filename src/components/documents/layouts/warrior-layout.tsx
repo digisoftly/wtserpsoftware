@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -8,7 +7,6 @@ import { DocumentTemplateProps } from "../document-template"
 
 /**
  * Warrior Official Premium Layout
- * Updated to capture rich metadata from the provided image samples.
  */
 export function WarriorLayout({
   title,
@@ -16,12 +14,13 @@ export function WarriorLayout({
   date,
   customerName,
   customerInfo,
+  projectName,
+  projectLocation,
   items,
   subtotal,
   taxAmount,
   discount,
   grandTotal,
-  status,
   notes,
 }: DocumentTemplateProps) {
   const { settings } = useSettings();
@@ -29,18 +28,12 @@ export function WarriorLayout({
 
   // Dynamic Content Fetching from Settings
   const docMainHeadline = settings?.docMainHeadline || "PRODUCT PURCHASE COST SUMMARY";
-  const docSubHeadline = settings?.docSubHeadline || "BUDGETED PROPOSAL ON NETWORK SOLUTION AND CCTV.";
   const docInWordLabel = settings?.docInWordLabel || "In Word Amount:";
   
   const footerService1 = settings?.footerService1 || "Security System";
   const footerService2 = settings?.footerService2 || "Communication System";
   const footerService3 = settings?.footerService3 || "Fire Safety";
   const footerService4 = settings?.footerService4 || "Network & IT Solutions";
-
-  // Use props directly if they exist, otherwise try to extract from notes or use placeholder
-  // This supports legacy data where these fields might not be explicitly passed
-  const projectName = (props: any) => props.projectName || "---";
-  const projectLocation = (props: any) => props.projectLocation || "---";
 
   return (
     <div className="flex flex-col min-h-full bg-white text-[#222222] font-sans p-0 select-none border-none leading-tight document-body">
@@ -92,8 +85,8 @@ export function WarriorLayout({
           <div className="grid grid-cols-[120px_10px_1fr] text-[11px] leading-relaxed">
             <span className="font-bold uppercase">Invoice No</span> <span>:</span> <span className="font-black text-blue-800">{docNumber}</span>
             <span className="font-bold uppercase">Invoice Date</span> <span>:</span> <span>{new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
-            <span className="font-bold uppercase">Project Name</span> <span>:</span> <span>{(arguments[0] as any).projectName || "---"}</span>
-            <span className="font-bold uppercase">Project Location</span> <span>:</span> <span>{(arguments[0] as any).projectLocation || "---"}</span>
+            <span className="font-bold uppercase">Project Name</span> <span>:</span> <span>{projectName || "---"}</span>
+            <span className="font-bold uppercase">Project Location</span> <span>:</span> <span>{projectLocation || "---"}</span>
           </div>
         </div>
       </div>
@@ -128,14 +121,14 @@ export function WarriorLayout({
                 <td className="border-x border-black p-2">
                   <div className="text-[11px] space-y-1 leading-normal">
                     <p className="font-bold text-slate-900">{item.name}</p>
-                    <p className="text-[10px] font-normal text-slate-700">Model: {(item as any).model || '---'}</p>
-                    <p className="text-[10px] font-normal text-slate-700">Brand: {(item as any).brand || '---'}</p>
-                    {(item as any).sn && <p className="text-[10px] font-normal text-slate-700 mt-2">S/N No: {(item as any).sn}</p>}
-                    {(item as any).specs && <p className="text-[10px] font-normal text-slate-700 mt-1 leading-tight"><span className="font-bold">Specification:</span> {(item as any).specs}</p>}
-                    <p className="text-[10px] font-normal text-slate-700 mt-1"><span className="font-bold">Warranty:</span> {(item as any).warranty || '---'}</p>
+                    { item.model && <p className="text-[10px] font-normal text-slate-700">Model: {item.model}</p> }
+                    { item.brand && <p className="text-[10px] font-normal text-slate-700">Brand: {item.brand}</p> }
+                    { item.sn && <p className="text-[10px] font-normal text-slate-700 mt-2">S/N No: {item.sn}</p> }
+                    { item.specs && <p className="text-[10px] font-normal text-slate-700 mt-1 leading-tight"><span className="font-bold">Specification:</span> {item.specs}</p> }
+                    { item.warranty && <p className="text-[10px] font-normal text-slate-700 mt-1"><span className="font-bold">Warranty:</span> {item.warranty}</p> }
                   </div>
                 </td>
-                <td className="border-x border-black p-2 text-center text-[11px] font-normal uppercase">{(item as any).brand || '---'}</td>
+                <td className="border-x border-black p-2 text-center text-[11px] font-normal uppercase">{item.brand || '---'}</td>
                 <td className="border-x border-black p-2 text-center text-[11px] font-normal">{item.quantity} ({item.unit || 'Pcs'})</td>
                 <td className="border-x border-black p-2 text-center text-[11px] font-normal">{(item.unitPrice || 0).toLocaleString()}</td>
                 <td className="border-x border-black p-2 text-right text-[11px] font-normal pr-4">{(item.total || 0).toLocaleString()}</td>

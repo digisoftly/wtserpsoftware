@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -69,7 +68,7 @@ export default function ViewInvoicePage() {
 
   const handleShareWhatsApp = () => {
     if (!invoice) return;
-    const text = `Hello ${invoice.customerName}, your invoice ${invoice.invoiceNumber} has been generated for ৳${invoice.totalAmount.toLocaleString()}. Status: ${invoice.status.toUpperCase()}.`;
+    const text = `Hello ${invoice.customerName}, your invoice ${invoice.invoiceNumber} has been generated for ৳${invoice.totalAmount?.toLocaleString()}. Status: ${invoice.status?.toUpperCase()}.`;
     window.open(`https://wa.me/${invoice.customerPhone}?text=${encodeURIComponent(text)}`, '_blank');
   };
 
@@ -132,14 +131,21 @@ export default function ViewInvoicePage() {
               date={invoice.invoiceDate}
               customerName={invoice.customerName}
               customerInfo={`Mobile: ${invoice.customerPhone || 'N/A'}\n${invoice.customerAddress || 'Walk-in Customer'}`}
-              items={invoice.items.map((i: any) => ({
+              projectName={invoice.projectName}
+              projectLocation={invoice.projectLocation}
+              items={(invoice.items || []).map((i: any) => ({
                 name: i.name,
                 quantity: i.qty,
                 unit: i.unit,
                 unitPrice: i.price,
                 total: i.total,
                 discount: i.discount,
-                description: i.description
+                description: i.description,
+                brand: i.brand,
+                model: i.model,
+                sn: i.sn,
+                specs: i.specs,
+                warranty: i.warranty
               }))}
               subtotal={invoice.subtotal}
               taxAmount={invoice.taxAmount}

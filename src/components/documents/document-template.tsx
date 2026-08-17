@@ -20,6 +20,11 @@ export interface DocumentItem {
   total: number;
   serialNumber?: string;
   discount?: number;
+  brand?: string;
+  model?: string;
+  sn?: string;
+  specs?: string;
+  warranty?: string;
 }
 
 export type DocumentLayoutType = 'professional' | 'minimal' | 'modern' | 'thermal' | 'erppro' | 'warrior' | 'service-bill';
@@ -30,6 +35,8 @@ export interface DocumentTemplateProps {
   date: string;
   customerName?: string;
   customerInfo?: string;
+  projectName?: string;
+  projectLocation?: string;
   items: DocumentItem[];
   subtotal: number;
   taxAmount?: number;
