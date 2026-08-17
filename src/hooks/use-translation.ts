@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useTenant } from '@/context/tenant-context';
@@ -17,17 +16,22 @@ export function useTranslation() {
     
     let result: any = dictionary;
     for (const key of keys) {
-      if (result[key] === undefined) {
+      if (result === undefined || result === null || result[key] === undefined) {
         // Fallback to English if key missing in current language
-        let fallback = (translations['EN'] as any);
+        let fallback: any = (translations['EN'] as any);
         for (const fKey of keys) {
           fallback = fallback?.[fKey];
-          if (fallback === undefined) return path;
         }
+        // If fallback also fails, return the path
+        if (typeof fallback === 'object' || fallback === undefined) return path;
         return fallback;
       }
       result = result[key];
     }
+    
+    // Safety check: if result is an object, return the path to prevent React crash
+    if (typeof result === 'object' && result !== null) return path;
+    
     return result || path;
   };
 
@@ -46,7 +50,7 @@ export function useTranslation() {
     const formatted = new Intl.NumberFormat(currentLang === 'BN' ? 'bn-BD' : 'en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
-    }).format(amount);
+    }).format(amount || 0);
     return currentLang === 'BN' ? `${symbol}${formatted}` : `${symbol}${formatted}`;
   };
 
@@ -55,14 +59,18 @@ export function useTranslation() {
    */
   const formatDate = (dateInput: string | Date | any): string => {
     if (!dateInput) return '---';
-    const date = typeof dateInput === 'string' ? new Date(dateInput) : 
-                 dateInput.toDate ? dateInput.toDate() : new Date(dateInput);
-                 
-    return new Intl.DateTimeFormat(currentLang === 'BN' ? 'bn-BD' : 'en-GB', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric'
-    }).format(date);
+    try {
+      const date = typeof dateInput === 'string' ? new Date(dateInput) : 
+                   dateInput.toDate ? dateInput.toDate() : new Date(dateInput);
+                   
+      return new Intl.DateTimeFormat(currentLang === 'BN' ? 'bn-BD' : 'en-GB', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+      }).format(date);
+    } catch (e) {
+      return '---';
+    }
   };
 
   return { t, language: currentLang, formatNumber, formatCurrency, formatDate };

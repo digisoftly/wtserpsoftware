@@ -42,39 +42,39 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-slate-900">{t('dashboard')}</h1>
+        <h1 className="text-xl font-bold text-slate-900">{t('nav.dashboard')}</h1>
         <div className="flex items-center gap-2">
           <Select defaultValue="this-month">
             <SelectTrigger className="w-[130px] h-9 text-xs font-bold bg-white border-slate-200 rounded-lg">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="rounded-xl shadow-xl border-slate-100">
-              <SelectItem value="this-month">{t('thisMonth')}</SelectItem>
-              <SelectItem value="last-month">{t('lastMonth')}</SelectItem>
-              <SelectItem value="this-quarter">{t('thisQuarter')}</SelectItem>
+              <SelectItem value="this-month">{t('dashboard.thisMonth') || 'This Month'}</SelectItem>
+              <SelectItem value="last-month">{t('dashboard.lastMonth') || 'Last Month'}</SelectItem>
+              <SelectItem value="this-quarter">{t('dashboard.thisQuarter') || 'This Quarter'}</SelectItem>
             </SelectContent>
           </Select>
           <Button size="sm" className="h-9 rounded-lg gap-2 px-6 font-bold bg-primary" asChild>
             <Link href="/sales/new">
-              <Plus className="h-4 w-4" /> New Sale
+              <Plus className="h-4 w-4" /> {t('nav.sales')}
             </Link>
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title={t('totalRevenue')} value={`৳${stats.totalSales.toLocaleString()}`} icon={TrendingUp} colorClass="bg-blue-600" trend={{ value: 12, isPositive: true }} />
-        <KPICard title={t('totalOrders')} value={recentInvoices?.length || 0} icon={ShoppingCart} colorClass="bg-indigo-600" />
-        <KPICard title={t('pendingInvoices')} value={`৳${stats.dues.toLocaleString()}`} icon={Clock} colorClass="bg-orange-600" />
-        <KPICard title={t('activeCustomers')} value="428" icon={Target} colorClass="bg-purple-600" />
+        <KPICard title={t('dashboard.totalRevenue')} value={`৳${stats.totalSales.toLocaleString()}`} icon={TrendingUp} colorClass="bg-blue-600" trend={{ value: 12, isPositive: true }} />
+        <KPICard title={t('dashboard.totalOrders')} value={recentInvoices?.length || 0} icon={ShoppingCart} colorClass="bg-indigo-600" />
+        <KPICard title={t('dashboard.pendingInvoices')} value={`৳${stats.dues.toLocaleString()}`} icon={Clock} colorClass="bg-orange-600" />
+        <KPICard title={t('dashboard.activeCustomers')} value="428" icon={Target} colorClass="bg-purple-600" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 border-none shadow-sm rounded-xl bg-white ring-1 ring-slate-100 overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between border-b border-slate-50 px-6 py-4">
-            <CardTitle className="text-[11px] font-black uppercase tracking-widest text-slate-500">{t('recentTransactions')}</CardTitle>
+            <CardTitle className="text-[11px] font-black uppercase tracking-widest text-slate-500">{t('dashboard.recentTransactions')}</CardTitle>
             <Button variant="ghost" size="sm" className="h-7 text-[10px] font-black uppercase tracking-widest text-primary" asChild>
-              <Link href="/sales">View All</Link>
+              <Link href="/sales">{t('common.view')} {t('common.all') || 'All'}</Link>
             </Button>
           </CardHeader>
           <CardContent className="p-0">
@@ -85,9 +85,9 @@ export default function Dashboard() {
                 <TableHeader className="bg-slate-50/50">
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="text-[10px] uppercase font-black text-slate-400 pl-6 h-10">Ref #</TableHead>
-                    <TableHead className="text-[10px] uppercase font-black text-slate-400 h-10">{t('customer')}</TableHead>
-                    <TableHead className="text-[10px] uppercase font-black text-slate-400 h-10">{t('amount')}</TableHead>
-                    <TableHead className="text-[10px] uppercase font-black text-slate-400 text-right pr-6 h-10">{t('status')}</TableHead>
+                    <TableHead className="text-[10px] uppercase font-black text-slate-400 h-10">{t('forms.customer')}</TableHead>
+                    <TableHead className="text-[10px] uppercase font-black text-slate-400 h-10">{t('common.amount')}</TableHead>
+                    <TableHead className="text-[10px] uppercase font-black text-slate-400 text-right pr-6 h-10">{t('common.status')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -109,7 +109,7 @@ export default function Dashboard() {
                 </TableBody>
               </Table>
             ) : (
-              <div className="text-center py-16 text-slate-300 text-xs font-bold uppercase tracking-widest">{t('noSales')}</div>
+              <div className="text-center py-16 text-slate-300 text-xs font-bold uppercase tracking-widest">{t('common.noData')}</div>
             )}
           </CardContent>
         </Card>
@@ -118,14 +118,14 @@ export default function Dashboard() {
           <Card className="border-none shadow-sm rounded-xl bg-white ring-1 ring-slate-100 overflow-hidden">
             <CardHeader className="border-b border-slate-50 px-6 py-4">
               <CardTitle className="text-[11px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                <AlertCircle className="h-3.5 w-3.5 text-orange-500" /> {t('stockAlerts')}
+                <AlertCircle className="h-3.5 w-3.5 text-orange-500" /> {t('dashboard.stockAlerts')}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               {stats.lowStockCount > 0 ? (
                 <Link href="/inventory" className="flex items-center justify-between p-4 bg-red-50 rounded-xl border border-red-100 group transition-all">
                   <div className="space-y-0.5">
-                    <p className="text-xs font-black text-red-900">{stats.lowStockCount} Items Low</p>
+                    <p className="text-xs font-black text-red-900">{stats.lowStockCount} {t('dashboard.lowStock')}</p>
                     <p className="text-[9px] text-red-600 font-black uppercase tracking-tighter">Restock required</p>
                   </div>
                   <CheckCircle2 className="h-4 w-4 text-red-300 group-hover:scale-110 transition-transform" />
@@ -133,7 +133,7 @@ export default function Dashboard() {
               ) : (
                 <div className="text-center py-8 opacity-20">
                   <CheckCircle2 className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em]">{t('allHealthy')}</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em]">{t('dashboard.allHealthy')}</p>
                 </div>
               )}
             </CardContent>
@@ -141,11 +141,11 @@ export default function Dashboard() {
 
           <Card className="border-none shadow-lg rounded-xl bg-primary text-white overflow-hidden p-8 relative">
             <BarChart3 className="absolute bottom-[-10px] right-[-10px] h-24 w-24 opacity-10" />
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-200 mb-2">{t('totalRevenue')}</h4>
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-200 mb-2">{t('dashboard.totalRevenue')}</h4>
             <div className="text-3xl font-black tracking-tighter">৳{stats.totalSales.toLocaleString()}</div>
             <div className="mt-6 flex items-center gap-2 text-[10px] font-black bg-white/10 w-fit px-3 py-1 rounded-full">
               <TrendingUp className="h-3 w-3" />
-              <span>+8.4% Growth</span>
+              <span>+8.4% {t('dashboard.growth')}</span>
             </div>
           </Card>
         </div>
