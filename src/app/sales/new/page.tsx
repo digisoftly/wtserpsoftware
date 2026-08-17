@@ -11,7 +11,8 @@ import {
   Calculator,
   X,
   PlusCircle,
-  FileText
+  FileText,
+  UserPlus
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,11 +22,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, doc, runTransaction, serverTimestamp, increment, query, orderBy } from "firebase/firestore"
+import { collection, doc, runTransaction, serverTimestamp, increment, query, orderBy, setDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { useTranslation } from "@/hooks/use-translation"
 import { toast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 
 interface InvoiceItem {
   id: string;
@@ -59,6 +61,10 @@ export default function NewInvoicePage() {
   const [paidAmount, setPaidAmount] = React.useState(0);
   const [notes, setNotes] = React.useState("");
   const [terms, setTerms] = React.useState("");
+
+  // Quick Customer State
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = React.useState(false);
+  const [isCreatingCustomer, setIsCustomerCreating] = React.useState(false);
 
   // Queries
   const customersQuery = useMemoFirebase(() => {
@@ -141,6 +147,39 @@ export default function NewInvoicePage() {
     }));
   };
 
+  const handleQuickCustomerCreate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!db || !companyId || !branchId || isCreatingCustomer) return;
+
+    setIsCustomerCreating(true);
+    const formData = new FormData(e.currentTarget);
+    
+    const customerData = {
+      companyId,
+      branchId,
+      customerType: 'individual',
+      firstName: formData.get("firstName") as string,
+      lastName: formData.get("lastName") as string,
+      phoneNumber: formData.get("phoneNumber") as string,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    try {
+      const colRef = collection(db, "companies", companyId, "branches", branchId, "customers");
+      const newDocRef = doc(colRef);
+      await setDoc(newDocRef, { ...customerData, id: newDocRef.id });
+      
+      setSelectedCustomerId(newDocRef.id);
+      setIsCustomerModalOpen(false);
+      toast({ title: t('success'), description: "Customer created and selected." });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: t('error'), description: err.message });
+    } finally {
+      setIsCustomerCreating(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!selectedCustomerId || lineItems.length === 0 || isSubmitting) return;
     setIsSubmitting(true);
@@ -155,6 +194,8 @@ export default function NewInvoicePage() {
           invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
           customerId: selectedCustomerId,
           customerName: customer ? `${customer.firstName} ${customer.lastName}` : "Client",
+          customerPhone: customer?.phoneNumber || "",
+          customerAddress: customer?.address || "",
           invoiceDate,
           dueDate,
           paymentMethod,
@@ -217,12 +258,25 @@ export default function NewInvoicePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <div className="space-y-1.5">
               <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('customer')}</Label>
-              <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select Client" /></SelectTrigger>
-                <SelectContent className="max-h-[300px]">
-                  {customers?.map((c, idx) => <SelectItem key={`cust-new-${c.id}-${idx}`} value={c.id} className="text-xs font-medium">{c.firstName} {c.lastName}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select Client" /></SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      {customers?.map((c, idx) => <SelectItem key={`cust-new-${c.id}-${idx}`} value={c.id} className="text-xs font-medium">{c.firstName} {c.lastName}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="icon" 
+                  className="h-9 w-9 rounded-md border-slate-200 text-blue-600 hover:bg-blue-50"
+                  onClick={() => setIsCustomerModalOpen(true)}
+                >
+                  <UserPlus className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('invoiceDate')}</Label>
@@ -242,10 +296,6 @@ export default function NewInvoicePage() {
                   <SelectItem value="bkash" className="text-xs font-medium text-pink-600">bKash</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('salesPerson')}</Label>
-              <Input value={salesPerson} onChange={e => setSalesPerson(e.target.value)} className="h-9 text-xs" placeholder="Employee Name" />
             </div>
           </div>
         </CardContent>
@@ -397,6 +447,39 @@ export default function NewInvoicePage() {
           </Card>
         </div>
       </div>
+
+      {/* Quick Customer Modal */}
+      <Dialog open={isCustomerModalOpen} onOpenChange={setIsCustomerModalOpen}>
+        <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-[2rem] bg-white">
+          <DialogHeader className="bg-blue-600 p-6 text-white">
+            <DialogTitle className="text-xl font-black font-headline uppercase tracking-tight flex items-center gap-3">
+              <UserPlus className="h-6 w-6" /> Quick Registration
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleQuickCustomerCreate} className="p-8 space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+               <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">First Name *</Label>
+                  <Input name="firstName" required className="h-11 rounded-xl" />
+               </div>
+               <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Last Name *</Label>
+                  <Input name="lastName" required className="h-11 rounded-xl" />
+               </div>
+            </div>
+            <div className="space-y-1.5">
+               <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Phone Number *</Label>
+               <Input name="phoneNumber" required className="h-11 rounded-xl" placeholder="+880..." />
+            </div>
+            <DialogFooter className="pt-4">
+              <Button type="button" variant="ghost" onClick={() => setIsCustomerModalOpen(false)} className="rounded-xl h-11 text-[10px] font-black uppercase">Cancel</Button>
+              <Button type="submit" disabled={isCreatingCustomer} className="bg-blue-600 hover:bg-blue-700 rounded-xl h-11 px-8 text-[10px] font-black uppercase shadow-lg shadow-blue-100">
+                {isCreatingCustomer ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />} Save Customer
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
