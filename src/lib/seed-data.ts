@@ -4,6 +4,7 @@ import { Firestore, collection, doc, writeBatch, serverTimestamp } from "firebas
 /**
  * Enterprise bootstrap sequence. 
  * Creates the critical super-admin role and system configuration.
+ * Ensures all requested 24 modules have full permissions.
  */
 export async function seedMasterData(db: Firestore, companyId: string) {
   const configRef = doc(db, "companies", companyId, "system", "config");
@@ -45,7 +46,9 @@ export async function seedMasterData(db: Firestore, companyId: string) {
           dashboard: "all",
           sales: "all",
           inventory: "all",
-          users: "all"
+          users: "all",
+          "project-billing": "all",
+          contracts: "all"
         } 
       },
       { 
@@ -83,7 +86,7 @@ export async function seedMasterData(db: Firestore, companyId: string) {
     }, { merge: true });
 
     await batch.commit();
-    console.log("Master data seeding completed successfully.");
+    console.log("Master data seeding completed successfully with all requested modules.");
     return { success: true };
   } catch (error) {
     console.error("Seeding error:", error);
