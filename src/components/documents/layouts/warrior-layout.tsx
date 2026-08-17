@@ -152,9 +152,9 @@ export function WarriorLayout({
                   </div>
                 </td>
                 <td className="border-x border-black p-2 text-center text-[11px] font-bold">{item.quantity} ({item.unit || 'Pcs'})</td>
-                <td className="border-x border-black p-2 text-right text-[11px] font-bold px-3">{item.unitPrice.toLocaleString()}</td>
+                <td className="border-x border-black p-2 text-right text-[11px] font-bold px-3">{(item.unitPrice || 0).toLocaleString()}</td>
                 <td className="border-x border-black p-2 text-center text-[11px] font-bold">{item.discount || '0'}</td>
-                <td className="border-x border-black p-2 text-right text-[11px] font-black pr-4">{item.total.toLocaleString()}</td>
+                <td className="border-x border-black p-2 text-right text-[11px] font-black pr-4">{(item.total || 0).toLocaleString()}</td>
               </tr>
             ))}
             
@@ -165,7 +165,7 @@ export function WarriorLayout({
                   <p className="text-[11px] font-bold italic text-slate-500 mt-4 capitalize">Only --- BDT</p>
                </td>
                <td colSpan={2} className="bg-[#FFC107] border border-black p-1.5 text-right text-[10px] font-black uppercase px-3">Sub Total (BDT)</td>
-               <td className="border border-black p-1.5 text-right text-[11px] font-black pr-4">{subtotal.toLocaleString()}</td>
+               <td className="border border-black p-1.5 text-right text-[11px] font-black pr-4">{(subtotal || 0).toLocaleString()}</td>
             </tr>
             <tr>
                <td colSpan={2} className="bg-[#D6EAF8] border border-black p-1.5 text-right text-[10px] font-black uppercase px-3">Discount (BDT)</td>
@@ -177,11 +177,11 @@ export function WarriorLayout({
             </tr>
             <tr>
                <td colSpan={2} className="bg-[#AED6F1] border border-black p-1.5 text-right text-[12px] font-black uppercase px-3">Grand Total</td>
-               <td className="border border-black p-1.5 text-right text-[14px] font-black pr-4 text-[#0056B3]">{grandTotal.toLocaleString()}</td>
+               <td className="border border-black p-1.5 text-right text-[14px] font-black pr-4 text-[#0056B3]">{(grandTotal || 0).toLocaleString()}</td>
             </tr>
             <tr>
                <td colSpan={2} className="bg-[#D5F5E3] border border-black p-1.5 text-right text-[10px] font-black uppercase px-3">Paid</td>
-               <td className="border border-black p-1.5 text-right text-[11px] font-black pr-4 text-[#155724]">{grandTotal.toLocaleString()}</td>
+               <td className="border border-black p-1.5 text-right text-[11px] font-black pr-4 text-[#155724]">{(grandTotal || 0).toLocaleString()}</td>
             </tr>
             <tr>
                <td colSpan={2} className="bg-[#D5F5E3] border border-black p-1.5 text-right text-[10px] font-black uppercase px-3">Due</td>

@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -136,7 +137,7 @@ export function ServiceBillLayout({
               </td>
               <td className="border-r border-gray-200"></td>
               <td className="px-4 text-right text-[13px] font-black text-blue-800 tabular-nums">
-                {Number(grandTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                {Number(grandTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
               </td>
             </tr>
           </tbody>
@@ -148,7 +149,7 @@ export function ServiceBillLayout({
         <div className="space-y-1">
           <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Amount in Words:</p>
           <p className="text-xs font-bold text-slate-700 italic bg-slate-50 p-3 rounded-lg border border-slate-100">
-            Only {Number(grandTotal).toLocaleString('en-IN')} BDT
+            Only {Number(grandTotal || 0).toLocaleString('en-IN')} BDT
           </p>
         </div>
 

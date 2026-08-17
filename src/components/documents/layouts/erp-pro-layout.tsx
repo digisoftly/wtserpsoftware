@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -6,7 +7,6 @@ import { cn } from "@/lib/utils"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DocumentTemplateProps } from "../document-template"
 import { Badge } from "@/components/ui/badge"
-import { QrCode, Barcode } from "lucide-react"
 
 export function ERPProLayout({
   title,
@@ -21,8 +21,6 @@ export function ERPProLayout({
   discount,
   grandTotal,
   status,
-  notes,
-  type
 }: DocumentTemplateProps) {
   const { currencySymbol, settings } = useSettings()
 
@@ -42,7 +40,7 @@ export function ERPProLayout({
               </div>
               <div>
                 <h1 className="text-2xl font-black uppercase tracking-tight leading-none">Warrior Tech System</h1>
-                <p className="text-[10px] font-bold text-blue-100 uppercase tracking-widest mt-1 opacity-80">Innovative Security, Reliable Communication</p>
+                <p className="text-[10px] font-bold text-blue-100 uppercase tracking-widest mt-1.5 opacity-80">Innovative Security, Reliable Communication</p>
               </div>
             </div>
             <div className="text-[10px] font-bold text-blue-50/70 uppercase tracking-tighter">
@@ -66,7 +64,6 @@ export function ERPProLayout({
               <h2 className="text-3xl font-black uppercase opacity-20 tracking-tighter mb-2">{title}</h2>
               <p className="text-xs font-mono font-bold tracking-tight">NO: <span className="text-white">{docNumber}</span></p>
               <p className="text-[10px] font-bold opacity-70">DATE: {new Date(date).toLocaleDateString()}</p>
-              <p className="text-[10px] font-bold opacity-70">DUE: {new Date(date).toLocaleDateString()}</p>
             </div>
           </div>
         </div>
@@ -120,13 +117,13 @@ export function ERPProLayout({
                     <span className="text-xs font-bold text-slate-700">{item.quantity} {item.unit || 'Pcs'}</span>
                   </TableCell>
                   <TableCell className="text-right text-xs font-bold text-slate-700">
-                    {currencySymbol}{item.unitPrice.toLocaleString()}
+                    {currencySymbol}{(item.unitPrice || 0).toLocaleString()}
                   </TableCell>
                   <TableCell className="text-right text-xs font-bold text-slate-500">
                     {item.discount ? `${currencySymbol}${item.discount.toLocaleString()}` : "0.00"}
                   </TableCell>
                   <TableCell className="text-right text-xs font-black text-slate-900">
-                    {currencySymbol}{item.total.toLocaleString()}
+                    {currencySymbol}{(item.total || 0).toLocaleString()}
                   </TableCell>
                 </TableRow>
               ))}
@@ -165,7 +162,7 @@ export function ERPProLayout({
         <div className="flex flex-col gap-2">
            <div className="flex justify-between px-4 text-xs font-bold text-slate-500 uppercase">
              <span>Sub Total</span>
-             <span>{currencySymbol}{subtotal.toLocaleString()}</span>
+             <span>{currencySymbol}{(subtotal || 0).toLocaleString()}</span>
            </div>
            <div className="flex justify-between px-4 text-xs font-bold text-slate-500 uppercase">
              <span>Discount</span>
@@ -182,13 +179,13 @@ export function ERPProLayout({
            
            <div className="bg-[#0D6EFD] text-white p-5 rounded-xl shadow-xl flex justify-between items-center mt-4">
               <span className="text-xs font-black uppercase tracking-[0.2em]">Grand Total</span>
-              <span className="text-2xl font-black">{currencySymbol}{grandTotal.toLocaleString()}</span>
+              <span className="text-2xl font-black">{currencySymbol}{(grandTotal || 0).toLocaleString()}</span>
            </div>
 
            <div className="grid grid-cols-2 gap-4 mt-2">
               <div className="bg-[#198754]/10 p-3 rounded-xl flex flex-col items-center">
                  <p className="text-[8px] font-black text-[#198754] uppercase tracking-widest mb-1">Paid Amount</p>
-                 <p className="text-sm font-black text-[#198754]">{currencySymbol}{grandTotal.toLocaleString()}</p>
+                 <p className="text-sm font-black text-[#198754]">{currencySymbol}{(grandTotal || 0).toLocaleString()}</p>
               </div>
               <div className="bg-[#DC3545]/10 p-3 rounded-xl flex flex-col items-center">
                  <p className="text-[8px] font-black text-[#DC3545] uppercase tracking-widest mb-1">Due Amount</p>

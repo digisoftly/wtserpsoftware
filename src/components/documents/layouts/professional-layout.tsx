@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -6,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DocumentTemplateProps } from "../document-template"
 import { QrCode, Barcode, ShieldCheck, CheckCircle2 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 
 export function ProfessionalLayout({
   title,
@@ -139,10 +141,10 @@ export function ProfessionalLayout({
                    <span className="text-[11px] font-black text-slate-600 bg-slate-100 px-3 py-1 rounded-full">{item.quantity} {item.unit || 'Pcs'}</span>
                 </TableCell>
                 <TableCell className="text-right font-bold text-xs text-slate-700">
-                  {item.unitPrice.toLocaleString()}
+                  {(item.unitPrice || 0).toLocaleString()}
                 </TableCell>
                 <TableCell className="text-right pr-10 font-black text-sm text-slate-900">
-                  {item.total.toLocaleString()}
+                  {(item.total || 0).toLocaleString()}
                 </TableCell>
               </TableRow>
             ))}
@@ -157,8 +159,9 @@ export function ProfessionalLayout({
             <h4 className="text-[10px] font-black uppercase text-slate-400 mb-3 tracking-[0.3em]">Corporate Terms & Conditions</h4>
             <div className="text-[9px] font-bold text-slate-500 leading-relaxed space-y-1 bg-slate-50 p-6 rounded-2xl border-2 border-dotted border-slate-200">
               <p>1. Payments are due within 15 days of invoice date unless specified otherwise.</p>
-              <p>2. Hardware items are subject to specific manufacturer warranty policies.</p>
-              <p>3. This document is a computer-generated transaction record.</p>
+              <p>2. Equipment remains property of Warrior Tech System until full payment is realized.</p>
+              <p>3. Hardware items are subject to specific manufacturer warranty policies.</p>
+              <p>4. This document is a computer-generated transaction record.</p>
             </div>
           </div>
           {notes && (
@@ -172,18 +175,18 @@ export function ProfessionalLayout({
         <div className="w-96 bg-white p-8 rounded-[2rem] border-4 border-primary/5 shadow-xl space-y-5">
           <div className="flex justify-between text-[11px] font-black text-slate-400 uppercase tracking-widest">
             <span>Subtotal Gross</span>
-            <span className="text-slate-900">{currencySymbol}{subtotal.toLocaleString()}</span>
+            <span className="text-slate-900">{currencySymbol}{(subtotal || 0).toLocaleString()}</span>
           </div>
           {taxRate !== undefined && taxAmount !== undefined && (
             <div className="flex justify-between text-[11px] font-black text-slate-400 uppercase tracking-widest">
               <span>VAT / Taxes ({taxRate}%)</span>
-              <span className="text-slate-900">+{currencySymbol}{taxAmount.toLocaleString()}</span>
+              <span className="text-slate-900">+{currencySymbol}{(taxAmount || 0).toLocaleString()}</span>
             </div>
           )}
           {discount !== undefined && discount > 0 && (
             <div className="flex justify-between text-[11px] font-black text-red-500 uppercase tracking-widest">
               <span>Discount Net</span>
-              <span className="font-black">-{currencySymbol}{discount.toLocaleString()}</span>
+              <span className="font-black">-{currencySymbol}{(discount || 0).toLocaleString()}</span>
             </div>
           )}
           <div className="pt-6 border-t-2 border-slate-100 mt-2">
@@ -192,7 +195,7 @@ export function ProfessionalLayout({
                  <span className="text-xs font-black font-headline uppercase text-primary tracking-widest leading-none">Net Payable</span>
                  <p className="text-[8px] font-bold text-slate-400 uppercase">Inclusive of all duties</p>
               </div>
-              <span className="text-3xl font-black font-headline text-primary tracking-tighter leading-none">{currencySymbol}{grandTotal.toLocaleString()}</span>
+              <span className="text-3xl font-black font-headline text-primary tracking-tighter leading-none">{currencySymbol}{(grandTotal || 0).toLocaleString()}</span>
             </div>
           </div>
           
