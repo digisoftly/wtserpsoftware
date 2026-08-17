@@ -8,8 +8,7 @@ import { DocumentTemplateProps } from "../document-template"
 
 /**
  * Warrior Official Premium Layout
- * A pixel-perfect digital replica of the official Warrior Tech System A4 document.
- * Optimized for professional A4 portrait printing and PDF export.
+ * Updated to capture rich metadata from the provided image samples.
  */
 export function WarriorLayout({
   title,
@@ -37,6 +36,11 @@ export function WarriorLayout({
   const footerService2 = settings?.footerService2 || "Communication System";
   const footerService3 = settings?.footerService3 || "Fire Safety";
   const footerService4 = settings?.footerService4 || "Network & IT Solutions";
+
+  // Use props directly if they exist, otherwise try to extract from notes or use placeholder
+  // This supports legacy data where these fields might not be explicitly passed
+  const projectName = (props: any) => props.projectName || "---";
+  const projectLocation = (props: any) => props.projectLocation || "---";
 
   return (
     <div className="flex flex-col min-h-full bg-white text-[#222222] font-sans p-0 select-none border-none leading-tight document-body">
@@ -83,17 +87,13 @@ export function WarriorLayout({
           <div className="text-[11px] leading-relaxed text-slate-700 whitespace-pre-wrap">
             {customerInfo || "Address Not Available"}
           </div>
-          <div className="grid grid-cols-[80px_10px_1fr] text-[11px] pt-1">
-            <span className="font-bold">Mobile No</span> <span>:</span> <span className="font-bold">---</span>
-            <span className="font-bold">E-mail</span> <span>:</span> <span>---</span>
-          </div>
         </div>
         <div className="space-y-1 flex flex-col justify-end">
           <div className="grid grid-cols-[120px_10px_1fr] text-[11px] leading-relaxed">
             <span className="font-bold uppercase">Invoice No</span> <span>:</span> <span className="font-black text-blue-800">{docNumber}</span>
             <span className="font-bold uppercase">Invoice Date</span> <span>:</span> <span>{new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
-            <span className="font-bold uppercase">Project Name</span> <span>:</span> <span>---</span>
-            <span className="font-bold uppercase">Project Location</span> <span>:</span> <span>---</span>
+            <span className="font-bold uppercase">Project Name</span> <span>:</span> <span>{(arguments[0] as any).projectName || "---"}</span>
+            <span className="font-bold uppercase">Project Location</span> <span>:</span> <span>{(arguments[0] as any).projectLocation || "---"}</span>
           </div>
         </div>
       </div>
@@ -123,26 +123,28 @@ export function WarriorLayout({
           </thead>
           <tbody>
             {items.map((item, idx) => (
-              <tr key={idx} className="border-b border-black align-top min-h-[150px]">
+              <tr key={idx} className="border-b border-black align-top">
                 <td className="border-x border-black p-2 text-center text-[11px] font-bold">{(idx + 1).toString().padStart(2, '0')}</td>
                 <td className="border-x border-black p-2">
                   <div className="text-[11px] space-y-1 leading-normal">
-                    <p className="font-normal text-slate-800">{item.name}</p>
-                    {item.description && <p className="text-[10px] font-normal text-slate-600">{item.description}</p>}
-                    <p className="text-[10px] font-normal text-slate-700">Model: (None Bold Text)</p>
-                    <p className="text-[10px] font-normal text-slate-700">Brand: (None Bold Text)</p>
-                    <p className="text-[10px] font-normal text-slate-700 mt-2">S/N No (If Need): (None Bold Text)</p>
-                    <p className="text-[10px] font-normal text-slate-700 mt-2"><span className="font-bold">Specification:</span> (None Bold Text)</p>
-                    <p className="text-[10px] font-normal text-slate-700 mt-2"><span className="font-bold">Warranty:</span> (None Bold Text)</p>
+                    <p className="font-bold text-slate-900">{item.name}</p>
+                    <p className="text-[10px] font-normal text-slate-700">Model: {(item as any).model || '---'}</p>
+                    <p className="text-[10px] font-normal text-slate-700">Brand: {(item as any).brand || '---'}</p>
+                    {(item as any).sn && <p className="text-[10px] font-normal text-slate-700 mt-2">S/N No: {(item as any).sn}</p>}
+                    {(item as any).specs && <p className="text-[10px] font-normal text-slate-700 mt-1 leading-tight"><span className="font-bold">Specification:</span> {(item as any).specs}</p>}
+                    <p className="text-[10px] font-normal text-slate-700 mt-1"><span className="font-bold">Warranty:</span> {(item as any).warranty || '---'}</p>
                   </div>
                 </td>
-                <td className="border-x border-black p-2 text-center text-[11px] font-normal">---</td>
-                <td className="border-x border-black p-2 text-center text-[11px] font-normal">{item.quantity}</td>
+                <td className="border-x border-black p-2 text-center text-[11px] font-normal uppercase">{(item as any).brand || '---'}</td>
+                <td className="border-x border-black p-2 text-center text-[11px] font-normal">{item.quantity} ({item.unit || 'Pcs'})</td>
                 <td className="border-x border-black p-2 text-center text-[11px] font-normal">{(item.unitPrice || 0).toLocaleString()}</td>
                 <td className="border-x border-black p-2 text-right text-[11px] font-normal pr-4">{(item.total || 0).toLocaleString()}</td>
               </tr>
             ))}
             
+            {/* Blank row to fill space like in the image */}
+            <tr className="h-20"><td className="border-x border-black"></td><td className="border-x border-black"></td><td className="border-x border-black"></td><td className="border-x border-black"></td><td className="border-x border-black"></td><td className="border-x border-black"></td></tr>
+
             {/* 6. INTEGRATED CALCULATION FOOTER */}
             <tr className="h-8">
                <td colSpan={5} className="bg-[#D6EAF8]/50 border border-black p-1 text-right text-[11px] font-black uppercase pr-4">Subtotal</td>
@@ -185,7 +187,6 @@ export function WarriorLayout({
             <p className="text-[11px] font-bold uppercase tracking-tight">Checked By</p>
           </div>
           <div className="space-y-3 relative">
-            {/* PROPRIETOR SEAL SIMULATION */}
             <div className="absolute -top-16 left-1/2 -translate-x-1/2 opacity-40 pointer-events-none flex flex-col items-center">
                <p className="text-[9px] font-black text-slate-900 leading-none">Warrior Tech System</p>
                <div className="w-14 h-14 rounded-full border-[1.5px] border-slate-700 flex items-center justify-center rotate-[15deg] mt-1 shadow-inner">

@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -36,6 +37,10 @@ interface QuoteItem {
   productId: string;
   name: string;
   description: string;
+  brand: string;
+  model: string;
+  specs: string;
+  warranty: string;
   qty: number;
   unit: string;
   price: number;
@@ -55,6 +60,8 @@ export default function NewQuotationPage() {
   const [selectedCustomerId, setSelectedCustomerId] = React.useState("");
   const [quotationDate, setQuotationDate] = React.useState(new Date().toISOString().split('T')[0]);
   const [expiryDate, setExpiryDate] = React.useState("");
+  const [projectName, setProjectName] = React.useState("");
+  const [projectLocation, setProjectLocation] = React.useState("");
   const [lineItems, setLineItems] = React.useState<QuoteItem[]>([]);
   const [globalDiscount, setGlobalDiscount] = React.useState(0);
   const [notes, setNotes] = React.useState("");
@@ -99,6 +106,10 @@ export default function NewQuotationPage() {
       productId: product.id,
       name: product.name,
       description: product.description || "",
+      brand: product.brand || "",
+      model: product.sku || "",
+      specs: "",
+      warranty: product.warranty || "1 Year",
       qty: 1,
       unit: product.unit || "Pcs",
       price: product.unitPrice || 0,
@@ -115,6 +126,10 @@ export default function NewQuotationPage() {
       productId: "custom",
       name: "",
       description: "",
+      brand: "",
+      model: "",
+      specs: "",
+      warranty: "1 Year",
       qty: 1,
       unit: "Pcs",
       price: 0,
@@ -195,6 +210,8 @@ export default function NewQuotationPage() {
         customerName: customer ? (customer.customerType === 'company' ? customer.companyName : `${customer.firstName} ${customer.lastName}`) : "Client",
         customerPhone: customer?.phoneNumber || "",
         customerAddress: customer?.address || "",
+        projectName,
+        projectLocation,
         quotationDate,
         expiryDate,
         items: lineItems,
@@ -227,245 +244,198 @@ export default function NewQuotationPage() {
           </Button>
           <div>
             <h1 className="text-lg font-bold text-slate-900 tracking-tight">{t('createQuote')}</h1>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Enterprise Proposal Module</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="font-bold text-xs" onClick={() => router.back()}>{t('cancel')}</Button>
-          <Button size="sm" className="font-bold text-xs gap-2" disabled={isSubmitting} onClick={handleSave}>
+          <Button size="sm" className="font-bold text-xs gap-2 px-6 h-9 rounded-lg" disabled={isSubmitting} onClick={handleSave}>
             {isSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
             {t('save')}
           </Button>
         </div>
       </div>
 
-      <Card className="border-none shadow-sm ring-1 ring-slate-200">
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('customer')}</Label>
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                    <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select Client" /></SelectTrigger>
-                    <SelectContent className="max-h-[300px]">
-                      {customers?.map((c, idx) => <SelectItem key={`cust-new-${c.id}-${idx}`} value={c.id} className="text-xs font-medium">{c.customerType === 'company' ? c.companyName : `${c.firstName} ${c.lastName}`}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+        <div className="xl:col-span-9 space-y-6">
+          <Card className="border-none shadow-sm ring-1 ring-slate-200">
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('customer')}</Label>
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                        <SelectTrigger className="h-10 text-xs font-bold bg-slate-50/50"><SelectValue placeholder="Select Client" /></SelectTrigger>
+                        <SelectContent className="max-h-[300px]">
+                          {customers?.map((c, idx) => <SelectItem key={`cust-qtn-${c.id}-${idx}`} value={c.id} className="text-xs font-medium">{c.customerType === 'company' ? c.companyName : `${c.firstName} ${c.lastName}`}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-lg border-slate-200 text-blue-600" onClick={() => setIsCustomerModalOpen(true)}><UserPlus className="h-4 w-4" /></Button>
+                  </div>
                 </div>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="icon" 
-                  className="h-9 w-9 rounded-md border-slate-200 text-blue-600 hover:bg-blue-50"
-                  onClick={() => setIsCustomerModalOpen(true)}
-                >
-                  <UserPlus className="h-4 w-4" />
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">Project Name</Label>
+                  <Input value={projectName} onChange={e => setProjectName(e.target.value)} className="h-10 text-xs font-bold" placeholder="e.g. Fiber Optic Setup" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">Project Location</Label>
+                  <Input value={projectLocation} onChange={e => setProjectLocation(e.target.value)} className="h-10 text-xs font-bold" placeholder="e.g. Mohakhali, Dhaka" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('date')}</Label>
+                  <Input type="date" value={quotationDate} onChange={e => setQuotationDate(e.target.value)} className="h-10 text-xs font-bold" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('validUntil')}</Label>
+                  <Input type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} className="h-10 text-xs font-bold" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-none shadow-sm ring-1 ring-slate-200 overflow-hidden">
+            <div className="p-4 bg-slate-50/50 border-b flex items-center justify-between">
+              <h3 className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Line Item Matrix</h3>
+              <div className="flex gap-2">
+                <Select onValueChange={handleAddProduct}>
+                  <SelectTrigger className="h-9 w-64 text-[10px] bg-white border-slate-200 font-bold uppercase"><SelectValue placeholder="Import Catalog Item" /></SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    {products?.map((p, idx) => <SelectItem key={`prod-qtn-${p.id}-${idx}`} value={p.id} className="text-xs font-bold">{p.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" size="sm" className="h-9 rounded-lg gap-2 text-[10px] font-black uppercase" onClick={addManualRow}>
+                  <PlusCircle className="h-4 w-4" /> {t('addGeneric')}
                 </Button>
               </div>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('date')}</Label>
-              <Input type="date" value={quotationDate} onChange={e => setQuotationDate(e.target.value)} className="h-9 text-xs font-bold" />
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-slate-50/20 border-b">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="w-12 text-center text-[10px] font-black uppercase">Sl.</TableHead>
+                    <TableHead className="min-w-[300px] text-[10px] font-black uppercase">Product Details</TableHead>
+                    <TableHead className="w-24 text-[10px] font-black uppercase text-center">Unit</TableHead>
+                    <TableHead className="w-24 text-[10px] font-black uppercase text-center">Qty</TableHead>
+                    <TableHead className="w-32 text-[10px] font-black uppercase text-right">Price</TableHead>
+                    <TableHead className="w-20 text-[10px] font-black uppercase text-center">Disc%</TableHead>
+                    <TableHead className="w-32 text-[10px] font-black uppercase text-right pr-10">Total</TableHead>
+                    <TableHead className="w-12"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {lineItems.map((item, idx) => (
+                    <TableRow key={item.id} className="group hover:bg-slate-50/30 transition-colors border-b border-slate-100">
+                      <TableCell className="text-center text-[10px] font-bold text-slate-400">{(idx + 1).toString().padStart(2, '0')}</TableCell>
+                      <TableCell className="py-4">
+                        <div className="space-y-3">
+                          <Input className="h-8 text-[11px] font-black uppercase border-none bg-slate-100/50" value={item.name} onChange={e => updateItem(item.id, 'name', e.target.value)} placeholder="Item Name" />
+                          <div className="grid grid-cols-2 gap-2">
+                             <div className="space-y-1">
+                                <Label className="text-[8px] font-black uppercase text-slate-400">Model</Label>
+                                <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.model} onChange={e => updateItem(item.id, 'model', e.target.value)} />
+                             </div>
+                             <div className="space-y-1">
+                                <Label className="text-[8px] font-black uppercase text-slate-400">Brand</Label>
+                                <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.brand} onChange={e => updateItem(item.id, 'brand', e.target.value)} />
+                             </div>
+                          </div>
+                          <div className="space-y-1">
+                             <Label className="text-[8px] font-black uppercase text-slate-400">Warranty</Label>
+                             <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.warranty} onChange={e => updateItem(item.id, 'warranty', e.target.value)} />
+                          </div>
+                          <div className="space-y-1">
+                             <Label className="text-[8px] font-black uppercase text-slate-400">Specifications</Label>
+                             <textarea className="w-full text-[9px] font-medium bg-slate-50 border border-slate-200 rounded p-2 min-h-[60px] resize-none" value={item.specs} onChange={e => updateItem(item.id, 'specs', e.target.value)} placeholder="Technical details..." />
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Select value={item.unit} onValueChange={(val) => updateItem(item.id, 'unit', val)}>
+                          <SelectTrigger className="h-8 border-none bg-slate-50 text-[10px] font-bold uppercase w-16 mx-auto"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {masterUnits?.map((u, uidx) => <SelectItem key={`unit-qtn-${u.id}-${uidx}`} value={u.shortName} className="text-xs font-bold">{u.shortName}</SelectItem>)}
+                            {!masterUnits?.length && <SelectItem value="Pcs">Pcs</SelectItem>}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Input type="number" className="h-8 w-14 text-center text-xs font-black bg-slate-50 border-none mx-auto" value={item.qty} onChange={e => updateItem(item.id, 'qty', Number(e.target.value))} />
+                      </TableCell>
+                      <TableCell>
+                        <Input type="number" className="h-8 w-24 text-right text-xs font-black bg-slate-50 border-none ml-auto" value={item.price} onChange={e => updateItem(item.id, 'price', Number(e.target.value))} />
+                      </TableCell>
+                      <TableCell>
+                        <Input type="number" className="h-8 w-12 text-center text-xs font-bold bg-slate-50 border-none mx-auto" value={item.discount} onChange={e => updateItem(item.id, 'discount', Number(e.target.value))} />
+                      </TableCell>
+                      <TableCell className="text-right pr-10 font-black text-xs text-slate-900">৳{item.total.toLocaleString()}</TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:text-red-600 rounded-full" onClick={() => setLineItems(lineItems.filter(i => i.id !== item.id))}><Trash2 className="h-4 w-4" /></Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('validUntil')}</Label>
-              <Input type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} className="h-9 text-xs font-bold" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </Card>
+        </div>
 
-      <Card className="border-none shadow-sm ring-1 ring-slate-200 overflow-hidden">
-        <div className="p-4 bg-slate-50/50 border-b flex items-center justify-between">
-          <h3 className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('itemDescription')}</h3>
-          <div className="flex gap-2">
-            <Select onValueChange={handleAddProduct}>
-              <SelectTrigger className="h-8 w-64 text-[10px] bg-white border-slate-200 font-bold uppercase"><SelectValue placeholder="Add From Catalog" /></SelectTrigger>
-              <SelectContent className="max-h-[300px]">
-                {products?.map((p, idx) => <SelectItem key={`prod-new-${p.id}-${idx}`} value={p.id} className="text-xs">{p.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Button variant="outline" size="sm" className="h-8 rounded-md gap-2 text-[10px] font-bold uppercase" onClick={addManualRow}>
-              <PlusCircle className="h-3.5 w-3.5" /> {t('addGeneric')}
+        <div className="xl:col-span-3 space-y-6">
+          <Card className="p-8 rounded-[2rem] shadow-2xl space-y-6 text-center text-white bg-blue-600">
+             <p className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em]">Net Proposal Value</p>
+             <h2 className="text-4xl font-headline font-black tracking-tighter">৳{grandTotal.toLocaleString()}</h2>
+          </Card>
+
+          <Card className="p-6 rounded-[2rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-6">
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-black uppercase text-slate-400">Global Discount (৳)</Label>
+                <Input type="number" className="h-10 rounded-xl bg-slate-50 border-none font-black text-red-600" value={globalDiscount || ''} onChange={e => setGlobalDiscount(Number(e.target.value))} />
+              </div>
+            </div>
+            <div className="space-y-4 pt-4 border-t">
+               <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Document Notes</Label>
+               <Textarea className="min-h-[150px] text-xs font-bold rounded-xl" value={notes} onChange={e => setNotes(e.target.value)} />
+            </div>
+            <Button className="w-full h-16 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-blue-100 bg-blue-600 hover:bg-blue-700" disabled={isSubmitting || lineItems.length === 0} onClick={handleSave}>
+              {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <Save className="h-5 w-5" />}
+              Draft Quotation
             </Button>
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader className="bg-white border-b">
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="w-12 text-center text-[10px] font-black uppercase tracking-tighter">SL</TableHead>
-                <TableHead className="min-w-[200px] text-[10px] font-black uppercase tracking-tighter">Item</TableHead>
-                <TableHead className="min-w-[200px] text-[10px] font-black uppercase tracking-tighter">Description</TableHead>
-                <TableHead className="w-24 text-[10px] font-black uppercase tracking-tighter text-center">Unit</TableHead>
-                <TableHead className="w-32 text-[10px] font-black uppercase tracking-tighter text-center">Quantity</TableHead>
-                <TableHead className="w-32 text-[10px] font-black uppercase tracking-tighter text-right">Rate</TableHead>
-                <TableHead className="w-24 text-[10px] font-black uppercase tracking-tighter text-center">Disc%</TableHead>
-                <TableHead className="w-24 text-[10px] font-black uppercase tracking-tighter text-center">VAT%</TableHead>
-                <TableHead className="w-32 text-[10px] font-black uppercase tracking-tighter text-right pr-10">Amount</TableHead>
-                <TableHead className="w-20 text-right pr-4"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {lineItems.map((item, idx) => (
-                <TableRow key={item.id} className="group hover:bg-slate-50 transition-colors h-16 border-b border-slate-100">
-                  <TableCell className="text-center text-[10px] font-bold text-slate-400">{(idx + 1).toString().padStart(2, '0')}</TableCell>
-                  <TableCell>
-                    {item.isCustom ? (
-                      <Input className="h-8 text-xs font-bold uppercase border-slate-200" value={item.name} onChange={e => updateItem(item.id, 'name', e.target.value)} />
-                    ) : (
-                      <span className="text-[11px] font-black uppercase text-slate-900 leading-tight">{item.name}</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <textarea className="w-full text-[10px] font-medium bg-transparent border-none resize-none h-8 focus:ring-0 outline-none" value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} placeholder="Technical Specs..." />
-                  </TableCell>
-                  <TableCell>
-                    <Select value={item.unit} onValueChange={(val) => updateItem(item.id, 'unit', val)}>
-                      <SelectTrigger className="h-8 border-none bg-slate-50 text-[10px] font-bold uppercase w-20 mx-auto">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {masterUnits?.map((u, uidx) => <SelectItem key={`unit-new-${u.id}-${uidx}`} value={u.shortName} className="text-xs font-bold">{u.shortName}</SelectItem>)}
-                        {!masterUnits?.length && <SelectItem value="Pcs">Pcs</SelectItem>}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1 justify-center">
-                      <Input type="number" className="h-8 w-16 text-center text-xs font-bold bg-slate-50 border-none" value={item.qty} onChange={e => updateItem(item.id, 'qty', e.target.value)} />
-                      <span className="text-[9px] font-black text-slate-400 uppercase">{item.unit}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Input type="number" className="h-8 w-24 text-right text-xs font-black bg-slate-50 border-none ml-auto" value={item.price} onChange={e => updateItem(item.id, 'price', e.target.value)} />
-                  </TableCell>
-                  <TableCell><Input type="number" className="h-8 w-14 text-center text-xs font-bold bg-slate-50 border-none mx-auto" value={item.discount} onChange={e => updateItem(item.id, 'discount', e.target.value)} /></TableCell>
-                  <TableCell><Input type="number" className="h-8 w-14 text-center text-xs font-bold bg-slate-50 border-none mx-auto" value={item.tax} onChange={e => updateItem(item.id, 'tax', e.target.value)} /></TableCell>
-                  <TableCell className="text-right pr-10 font-black text-xs text-slate-900">৳{item.total.toLocaleString()}</TableCell>
-                  <TableCell className="text-right pr-4">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:text-red-600 rounded-full" onClick={() => setLineItems(lineItems.filter(i => i.id !== item.id))}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </Card>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('customerNotes')}</Label>
-            <Textarea className="h-24 text-xs font-medium bg-white rounded-xl border-slate-200" placeholder="Notes for proposal..." value={notes} onChange={e => setNotes(e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">Terms & Conditions</Label>
-            <Textarea className="h-24 text-xs font-medium bg-white rounded-xl border-slate-200" placeholder="Validity, Payment conditions..." value={terms} onChange={e => setTerms(e.target.value)} />
-          </div>
-        </div>
-
-        <div className="flex flex-col items-end">
-          <Card className="w-full max-w-md border-none shadow-sm ring-1 ring-slate-200 bg-white">
-            <CardContent className="p-8 space-y-4">
-              <div className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-tight">
-                <span>Subtotal Gross</span>
-                <span className="text-slate-900">৳{subtotal.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between items-center text-xs font-bold text-red-500 uppercase tracking-tight">
-                <span>Item Discounts</span>
-                <span>-৳{itemDiscounts.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-tight">
-                <span>Total VAT / Tax</span>
-                <span className="text-slate-900">+৳{itemTaxes.toLocaleString()}</span>
-              </div>
-              
-              <div className="space-y-1.5 pt-4 border-t border-slate-50">
-                <Label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Extra Discount (৳)</Label>
-                <Input type="number" className="h-9 text-xs font-bold bg-slate-50" value={globalDiscount || ''} onChange={e => setGlobalDiscount(Number(e.target.value))} />
-              </div>
-
-              <div className="pt-6 border-t mt-4">
-                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Grand Total</p>
-                <h2 className="text-3xl font-black text-blue-600 tracking-tighter">৳{grandTotal.toLocaleString()}</h2>
-              </div>
-
-              <Button className="w-full h-14 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-100 mt-6" disabled={isSubmitting || lineItems.length === 0} onClick={handleSave}>
-                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                Draft Quotation
-              </Button>
-            </CardContent>
           </Card>
         </div>
       </div>
 
-      {/* Quick Customer Modal */}
+      {/* QUICK CUSTOMER MODAL */}
       <Dialog open={isCustomerModalOpen} onOpenChange={setIsCustomerModalOpen}>
-        <DialogContent className="max-w-xl p-0 overflow-hidden border-none shadow-2xl rounded-[2rem] bg-white">
-          <DialogHeader className="bg-blue-600 p-6 text-white">
-            <DialogTitle className="text-xl font-black font-headline uppercase tracking-tight flex items-center gap-3">
-              <UserPlus className="h-6 w-6" /> Quick Registration
-            </DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-w-xl p-0 overflow-hidden border-none shadow-2xl rounded-[2.5rem] bg-white">
+          <DialogHeader className="bg-blue-600 p-6 text-white"><DialogTitle className="text-xl font-black uppercase tracking-tight flex items-center gap-3"><UserPlus className="h-6 w-6" /> Quick Registration</DialogTitle></DialogHeader>
           <form onSubmit={handleQuickCustomerCreate} className="p-8 space-y-6">
             <div className="space-y-4">
               <Label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Customer Type</Label>
               <div className="flex gap-4">
-                <Button type="button" variant={quickCustType === 'individual' ? 'default' : 'outline'} className="flex-1 h-12 rounded-xl text-[10px] font-black uppercase gap-2" onClick={() => setQuickCustType('individual')}>
-                  <User className="h-4 w-4" /> Individual
-                </Button>
-                <Button type="button" variant={quickCustType === 'company' ? 'default' : 'outline'} className="flex-1 h-12 rounded-xl text-[10px] font-black uppercase gap-2" onClick={() => setQuickCustType('company')}>
-                  <Building className="h-4 w-4" /> Company / Corp
-                </Button>
+                <Button type="button" variant={quickCustType === 'individual' ? 'default' : 'outline'} className="flex-1 h-12 rounded-xl text-[10px] font-black uppercase gap-2" onClick={() => setQuickCustType('individual')}><User className="h-4 w-4" /> Individual</Button>
+                <Button type="button" variant={quickCustType === 'company' ? 'default' : 'outline'} className="flex-1 h-12 rounded-xl text-[10px] font-black uppercase gap-2" onClick={() => setQuickCustType('company')}><Building className="h-4 w-4" /> Company / Corp</Button>
               </div>
             </div>
-
             {quickCustType === 'company' && (
               <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2">
                 <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Company Name *</Label>
-                <Input name="companyName" required className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200" placeholder="Organization Name" />
+                <Input name="companyName" required className="h-11 rounded-xl bg-slate-50" />
               </div>
             )}
-
             <div className="grid grid-cols-2 gap-4">
-               <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">
-                    {quickCustType === 'company' ? 'Contact Person First Name' : 'First Name *'}
-                  </Label>
-                  <Input name="firstName" required className="h-11 rounded-xl" />
-               </div>
-               <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">
-                    {quickCustType === 'company' ? 'Contact Person Last Name' : 'Last Name *'}
-                  </Label>
-                  <Input name="lastName" required className="h-11 rounded-xl" />
-               </div>
+               <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">First Name *</Label><Input name="firstName" required className="h-11 rounded-xl" /></div>
+               <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Last Name *</Label><Input name="lastName" required className="h-11 rounded-xl" /></div>
             </div>
-
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Phone Number *</Label>
-                <Input name="phoneNumber" required className="h-11 rounded-xl" placeholder="+880..." />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Email Address</Label>
-                <Input name="email" type="email" className="h-11 rounded-xl" placeholder="example@mail.com" />
-              </div>
+              <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Mobile *</Label><Input name="phoneNumber" required className="h-11 rounded-xl" /></div>
+              <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Email</Label><Input name="email" type="email" className="h-11 rounded-xl" /></div>
             </div>
-
-            <div className="space-y-1.5">
-               <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Full Address</Label>
-               <Textarea name="address" className="h-20 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200" placeholder="Street, City, Postcode..." />
-            </div>
-
+            <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Full Address</Label><textarea name="address" className="w-full h-20 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 p-3 text-xs" /></div>
             <DialogFooter className="pt-4">
               <Button type="button" variant="ghost" onClick={() => setIsCustomerModalOpen(false)} className="rounded-xl h-11 text-[10px] font-black uppercase">Cancel</Button>
-              <Button type="submit" disabled={isCreatingCustomer} className="bg-blue-600 hover:bg-blue-700 rounded-xl h-11 px-8 text-[10px] font-black uppercase shadow-lg shadow-blue-100">
-                {isCreatingCustomer ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />} Save Customer
-              </Button>
+              <Button type="submit" disabled={isCreatingCustomer} className="bg-blue-600 hover:bg-blue-700 rounded-xl h-11 px-8 text-[10px] font-black uppercase shadow-lg shadow-blue-100">{isCreatingCustomer ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />} Save Customer</Button>
             </DialogFooter>
           </form>
         </DialogContent>
