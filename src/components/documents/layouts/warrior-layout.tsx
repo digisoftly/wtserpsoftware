@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 import { DocumentTemplateProps } from "../document-template"
 
 /**
- * Warrior Official Premium Layout - Centered Corporate Edition
+ * Warrior Official Premium Layout - Side Logo & Centered Identity Block
  */
 export function WarriorLayout({
   title,
@@ -29,10 +29,10 @@ export function WarriorLayout({
 
   return (
     <div className="flex flex-col min-h-full bg-white text-[#222222] font-sans p-0 select-none border-none leading-tight document-body">
-      {/* 1. CORPORATE BRAND HEADER - FULLY CENTERED */}
-      <div className="flex flex-col items-center text-center px-4 pt-4 mb-4">
-        {/* Logo */}
-        <div className="w-[90px] h-[90px] mb-4">
+      {/* 1. CORPORATE BRAND HEADER - SIDE LOGO & CENTERED TEXT BLOCK */}
+      <div className="flex items-center gap-6 px-4 pt-4 mb-4">
+        {/* Logo - Left Side */}
+        <div className="w-[100px] h-[100px] shrink-0">
            {settings?.companyLogo ? (
              <img src={settings.companyLogo} alt="Logo" className="w-full h-full object-contain" />
            ) : (
@@ -40,8 +40,8 @@ export function WarriorLayout({
            )}
         </div>
         
-        {/* Company Identity */}
-        <div className="space-y-1">
+        {/* Company Identity - Centered Block within Flex-1 */}
+        <div className="flex-1 flex flex-col items-center text-center space-y-1">
           <h1 className="text-[42px] font-black tracking-tighter flex items-center justify-center leading-none">
             <span className="text-[#00D4AA]">WARRIOR</span>
             <span className="text-[#0056B3] ml-2">TECH</span>
@@ -54,10 +54,10 @@ export function WarriorLayout({
           {/* Contact Details Grid */}
           <div className="flex items-center justify-center gap-8 text-[11px] font-bold text-[#444444] mt-3">
             <span className="flex items-center gap-2">
-              <span className="text-[#F57C00]">📞</span> {settings?.phone || "+8801753646372"}
+              <span className="text-[#0056B3]">📞</span> {settings?.phone || "+8801753646372"}
             </span>
             <span className="flex items-center gap-2">
-              <span className="text-[#0056B3]">📧</span> {settings?.email || "warriortechsystem@gmail.com"}
+              <span className="text-[#F57C00]">📧</span> {settings?.email || "warriortechsystem@gmail.com"}
             </span>
             <span className="flex items-center gap-2">
               <span className="text-[#0056B3]">🌐</span> {settings?.website || "www.warriortechsystem.com"}
