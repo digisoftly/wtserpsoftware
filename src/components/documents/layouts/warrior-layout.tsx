@@ -9,7 +9,7 @@ import { DocumentTemplateProps } from "../document-template"
 
 /**
  * Warrior Official Premium Layout - Fully Localized
- * Updated with robust null checks for numeric formatting.
+ * Updated with robust null checks for numeric formatting and enhanced summary section.
  */
 export function WarriorLayout({
   title,
@@ -125,15 +125,23 @@ export function WarriorLayout({
               </tr>
             ))}
             {/* Fillers to maintain structure */}
-            <tr className="h-20"><td className="border-x border-black"></td><td className="border-x border-black"></td><td className="border-x border-black"></td><td className="border-x border-black"></td><td className="border-x border-black"></td><td className="border-x border-black"></td></tr>
+            <tr className="h-10"><td className="border-x border-black"></td><td className="border-x border-black"></td><td className="border-x border-black"></td><td className="border-x border-black"></td><td className="border-x border-black"></td><td className="border-x border-black"></td></tr>
+            
+            {/* SUMMARY ROWS */}
             <tr className="h-8">
-               <td colSpan={5} className="bg-[#D6EAF8]/50 border border-black p-1 text-right text-[11px] font-black uppercase pr-4">{t('forms.subtotal')}</td>
+               <td colSpan={5} className="bg-[#f8f9fa] border border-black p-1 text-right text-[11px] font-black uppercase pr-4">Total (Gross)</td>
                <td className="border border-black p-1 text-right text-[11px] font-black pr-4">{formatCurrency(subtotal || 0)}</td>
             </tr>
             { discount ? (
               <tr className="h-8">
                  <td colSpan={5} className="bg-red-50 border border-black p-1 text-right text-[11px] font-black uppercase pr-4 text-red-700">{t('forms.discount')}</td>
                  <td className="border border-black p-1 text-right text-[11px] font-black pr-4 text-red-700">-{formatCurrency(discount)}</td>
+              </tr>
+            ) : null }
+            { taxAmount ? (
+              <tr className="h-8">
+                 <td colSpan={5} className="bg-[#f8f9fa] border border-black p-1 text-right text-[11px] font-black uppercase pr-4">VAT / Tax</td>
+                 <td className="border border-black p-1 text-right text-[11px] font-black pr-4">+{formatCurrency(taxAmount)}</td>
               </tr>
             ) : null }
             <tr className="h-10">
