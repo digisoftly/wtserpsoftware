@@ -40,6 +40,7 @@ interface QuoteItem {
   model: string;
   specs: string;
   warranty: string;
+  sn: string;
   qty: number;
   unit: string;
   price: number;
@@ -107,8 +108,9 @@ export default function NewQuotationPage() {
       description: product.description || "",
       brand: product.brand || "",
       model: product.sku || "",
-      specs: "",
+      specs: product.description || "",
       warranty: product.warranty || "1 Year",
+      sn: "",
       qty: 1,
       unit: product.unit || "Pcs",
       price: product.unitPrice || 0,
@@ -129,6 +131,7 @@ export default function NewQuotationPage() {
       model: "",
       specs: "",
       warranty: "1 Year",
+      sn: "",
       qty: 1,
       unit: "Pcs",
       price: 0,
@@ -186,9 +189,9 @@ export default function NewQuotationPage() {
       
       setSelectedCustomerId(newDocRef.id);
       setIsCustomerModalOpen(false);
-      toast({ title: t('success'), description: "Customer created and selected." });
+      toast({ title: t('common.success'), description: "Customer created and selected." });
     } catch (err: any) {
-      toast({ variant: "destructive", title: t('error'), description: err.message });
+      toast({ variant: "destructive", title: t('common.error'), description: err.message });
     } finally {
       setIsCustomerCreating(false);
     }
@@ -226,10 +229,10 @@ export default function NewQuotationPage() {
       };
 
       await setDoc(quoteRef, quoteData);
-      toast({ title: t('success') });
+      toast({ title: t('common.success') });
       router.push("/quotations");
     } catch (e: any) {
-      toast({ variant: "destructive", title: t('error'), description: e.message });
+      toast({ variant: "destructive", title: t('common.error'), description: e.message });
       setIsSubmitting(false);
     }
   };
@@ -242,15 +245,15 @@ export default function NewQuotationPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-lg font-bold text-slate-900 tracking-tight">{t('createQuote')}</h1>
+            <h1 className="text-lg font-bold text-slate-900 tracking-tight">{t('nav.quotations')} / New Proposal</h1>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Proposal Module</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="font-bold text-xs" onClick={() => router.back()}>{t('cancel')}</Button>
+          <Button variant="outline" size="sm" className="font-bold text-xs" onClick={() => router.back()}>{t('common.cancel')}</Button>
           <Button size="sm" className="font-bold text-xs gap-2 px-6 h-9 rounded-lg" disabled={isSubmitting} onClick={handleSave}>
             {isSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-            {t('save')}
+            {t('common.save')}
           </Button>
         </div>
       </div>
@@ -261,7 +264,7 @@ export default function NewQuotationPage() {
             <CardContent className="p-4">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                 <div className="space-y-1">
-                  <Label className="text-[10px] font-bold uppercase text-slate-500">{t('customer')}</Label>
+                  <Label className="text-[10px] font-bold uppercase text-slate-500">{t('forms.customer')}</Label>
                   <div className="flex gap-1">
                     <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
                       <SelectTrigger className="h-9 text-[11px] font-bold bg-slate-50/50"><SelectValue placeholder="Client" /></SelectTrigger>
@@ -273,15 +276,15 @@ export default function NewQuotationPage() {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-[10px] font-bold uppercase text-slate-500">Project Name</Label>
+                  <Label className="text-[10px] font-bold uppercase text-slate-500">{t('forms.project')}</Label>
                   <Input value={projectName} onChange={e => setProjectName(e.target.value)} className="h-9 text-[11px] font-bold" placeholder="Fiber Setup" />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-[10px] font-bold uppercase text-slate-500">Location</Label>
+                  <Label className="text-[10px] font-bold uppercase text-slate-500">{t('forms.location')}</Label>
                   <Input value={projectLocation} onChange={e => setProjectLocation(e.target.value)} className="h-9 text-[11px] font-bold" placeholder="Dhaka" />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-[10px] font-bold uppercase text-slate-500">{t('date')}</Label>
+                  <Label className="text-[10px] font-bold uppercase text-slate-500">{t('common.date')}</Label>
                   <Input type="date" value={quotationDate} onChange={e => setQuotationDate(e.target.value)} className="h-9 text-[11px] font-bold" />
                 </div>
                 <div className="space-y-1">
@@ -294,7 +297,7 @@ export default function NewQuotationPage() {
 
           <Card className="border-none shadow-sm ring-1 ring-slate-200 overflow-hidden">
             <div className="p-3 bg-slate-50 border-b flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-[10px] font-black uppercase text-slate-500">Line Items</h3>
+              <h3 className="text-[10px] font-black uppercase text-slate-500">{t('common.details')}</h3>
               <div className="flex gap-2">
                 <Select onValueChange={handleAddProduct}>
                   <SelectTrigger className="h-8 w-40 sm:w-48 text-[10px] bg-white border-slate-200 font-bold uppercase"><SelectValue placeholder="Import Product" /></SelectTrigger>
@@ -303,16 +306,16 @@ export default function NewQuotationPage() {
                   </SelectContent>
                 </Select>
                 <Button variant="outline" size="sm" className="h-8 rounded-lg gap-2 text-[10px] font-black uppercase" onClick={addManualRow}>
-                  <PlusCircle className="h-3.5 w-3.5" /> {t('addGeneric')}
+                  <PlusCircle className="h-3.5 w-3.5" /> {t('common.add')} Generic
                 </Button>
               </div>
             </div>
             <div className="overflow-x-auto custom-scrollbar">
-              <Table className="min-w-[800px]">
+              <Table className="min-w-[1000px]">
                 <TableHeader className="bg-slate-50/20 border-b">
                   <TableRow className="hover:bg-transparent h-10">
                     <TableHead className="w-10 text-center text-[9px] font-black uppercase">Sl.</TableHead>
-                    <TableHead className="min-w-[350px] text-[9px] font-black uppercase">Product Details & Attributes</TableHead>
+                    <TableHead className="min-w-[400px] text-[9px] font-black uppercase">Item Details & Attributes</TableHead>
                     <TableHead className="w-20 text-[9px] font-black uppercase text-center">Unit</TableHead>
                     <TableHead className="w-20 text-[9px] font-black uppercase text-center">Qty</TableHead>
                     <TableHead className="w-28 text-[9px] font-black uppercase text-right">Price</TableHead>
@@ -382,12 +385,12 @@ export default function NewQuotationPage() {
           <Card className="p-4 rounded-2xl border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-4">
             <div className="space-y-3">
               <div className="space-y-1">
-                <Label className="text-[9px] font-black uppercase text-slate-400">Global Discount (৳)</Label>
+                <Label className="text-[9px] font-black uppercase text-slate-400">{t('forms.discount')} (৳)</Label>
                 <Input type="number" className="h-8 rounded-lg bg-slate-50 border-none font-black text-red-600" value={globalDiscount || ''} onChange={e => setGlobalDiscount(Number(e.target.value))} />
               </div>
             </div>
             <div className="space-y-3 pt-3 border-t">
-               <Label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Notes</Label>
+               <Label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{t('forms.notes')}</Label>
                <Textarea className="min-h-[120px] text-[11px] font-bold rounded-xl" value={notes || ''} onChange={e => setNotes(e.target.value)} placeholder="Terms..." />
             </div>
             <Button className="w-full h-16 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-blue-100 bg-blue-600 hover:bg-blue-700" disabled={isSubmitting || lineItems.length === 0} onClick={handleSave}>

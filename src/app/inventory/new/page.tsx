@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -35,7 +34,7 @@ export default function NewProductPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isSerialTracking, setIsSerialTracking] = React.useState(false);
   const [rawSerials, setRawSerials] = React.useState("");
-  const [selectedBrandId, setSelectedBrandId] = React.useState<string | null>(null);
+  const [selectedBrandId, setSelectedBrandId] = React.useState<string>("");
 
   // Hierarchical Category State
   const [catLevel1, setCatLevel1] = React.useState<string>("");
@@ -66,7 +65,6 @@ export default function NewProductPage() {
   const level2List = React.useMemo(() => allCategories?.filter(c => c.parentId === catLevel1) || [], [allCategories, catLevel1]);
   const level3List = React.useMemo(() => allCategories?.filter(c => c.parentId === catLevel2) || [], [allCategories, catLevel2]);
 
-  // Filter unique warranty types
   const uniqueWarrantyTypes = React.useMemo(() => {
     if (!warrantyTypes) return [];
     const seen = new Set();
@@ -81,23 +79,24 @@ export default function NewProductPage() {
     e.preventDefault();
     if (!db || !companyId || !branchId || isSubmitting) return;
 
-    // The actual category assigned is the deepest one selected
     const finalCategoryId = catLevel3 || catLevel2 || catLevel1;
 
     if (!finalCategoryId) {
-      toast({ variant: "destructive", title: t('error'), description: "Please select a category." });
+      toast({ variant: "destructive", title: t('common.error'), description: "Please select a category." });
       return;
     }
 
     setIsSubmitting(true);
     const formData = new FormData(e.currentTarget);
+    const brandName = masterBrands?.find(b => b.id === selectedBrandId)?.name || "";
     
     const productData = {
       companyId,
       branchId,
       name: formData.get("name") as string,
       sku: (formData.get("modelId") as string) || "",
-      brandId: formData.get("brandId") as string,
+      brandId: selectedBrandId,
+      brand: brandName,
       categoryId: finalCategoryId,
       unitId: "piece",
       unitPrice: Number(formData.get("unitPrice")),
@@ -140,10 +139,10 @@ export default function NewProductPage() {
       }
 
       await batch.commit();
-      toast({ title: t('success') });
+      toast({ title: t('common.success') });
       router.push("/inventory");
     } catch (err: any) {
-      toast({ variant: "destructive", title: t('error'), description: err.message });
+      toast({ variant: "destructive", title: t('common.error'), description: err.message });
       setIsSubmitting(false);
     }
   };
@@ -156,17 +155,17 @@ export default function NewProductPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-lg font-black font-headline uppercase tracking-tight text-blue-600">{t('addProduct')}</h1>
+            <h1 className="text-lg font-black font-headline uppercase tracking-tight text-blue-600">{t('inventory.addProduct')}</h1>
             <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Catalog Definition Terminal</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="ghost" className="rounded-full text-[10px] font-black uppercase tracking-widest px-6" onClick={() => router.back()}>
-            {t('cancel')}
+            {t('common.cancel')}
           </Button>
           <Button type="submit" form="product-form" className="bg-blue-600 hover:bg-blue-700 rounded-full px-8 h-10 text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-100 gap-2" disabled={isSubmitting}>
             {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />}
-            {t('save')}
+            {t('common.save')}
           </Button>
         </div>
       </div>
@@ -175,14 +174,13 @@ export default function NewProductPage() {
         <form id="product-form" onSubmit={handleSaveProduct} className="space-y-8">
           <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-8">
             <CardContent className="p-0 space-y-10">
-              {/* PRIMARY IDENTITY */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('itemDescription')} *</Label>
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('forms.itemName')} *</Label>
                   <Input name="name" required className="h-12 rounded-xl" placeholder="e.g. Sony 4K IP Camera Pro" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('brand')}</Label>
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('forms.brand')}</Label>
                   <Select name="brandId" onValueChange={setSelectedBrandId} required>
                     <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Select Brand" /></SelectTrigger>
                     <SelectContent className="rounded-xl shadow-2xl">
@@ -194,7 +192,6 @@ export default function NewProductPage() {
                 </div>
               </div>
 
-              {/* THREE-LEVEL HIERARCHICAL CATEGORY SELECTION */}
               <div className="space-y-4 p-6 bg-slate-50/50 rounded-3xl ring-1 ring-slate-100">
                 <div className="flex items-center gap-2 mb-2">
                    <Layers className="h-4 w-4 text-blue-600" />
@@ -202,7 +199,7 @@ export default function NewProductPage() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">{t('categories')}</Label>
+                    <Label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">{t('nav.categories')}</Label>
                     <Select value={catLevel1} onValueChange={(val) => { setCatLevel1(val); setCatLevel2(""); setCatLevel3(""); }}>
                       <SelectTrigger className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200">
                         <SelectValue placeholder="Root Category" />
@@ -215,7 +212,7 @@ export default function NewProductPage() {
 
                   {level2List.length > 0 && (
                     <div className="space-y-1.5 animate-in fade-in zoom-in-95 duration-200">
-                      <Label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">{t('subCategory')}</Label>
+                      <Label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">Sub Category</Label>
                       <Select value={catLevel2} onValueChange={(val) => { setCatLevel2(val); setCatLevel3(""); }}>
                         <SelectTrigger className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200">
                           <SelectValue placeholder="Sub Category" />
@@ -229,7 +226,7 @@ export default function NewProductPage() {
 
                   {level3List.length > 0 && catLevel2 && (
                     <div className="space-y-1.5 animate-in fade-in zoom-in-95 duration-200">
-                      <Label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">{t('subChildCategory')}</Label>
+                      <Label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">Child Category</Label>
                       <Select value={catLevel3} onValueChange={setCatLevel3}>
                         <SelectTrigger className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200">
                           <SelectValue placeholder="Child Category" />
@@ -243,31 +240,29 @@ export default function NewProductPage() {
                 </div>
               </div>
 
-              {/* TECHNICAL & FINANCIAL */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('model')}</Label>
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('forms.model')}</Label>
                   <Input name="modelId" className="h-12 rounded-xl font-mono uppercase" placeholder="e.g. SNC-VB770" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('price')} (৳)</Label>
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('forms.price')} (৳)</Label>
                   <Input name="unitPrice" type="number" required className="h-12 rounded-xl text-blue-600 font-black text-lg" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('costPrice')} (৳)</Label>
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground">Cost Price (৳)</Label>
                   <Input name="costPrice" type="number" required className="h-12 rounded-xl" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('stock')}</Label>
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground">Initial Stock</Label>
                   <Input name="currentStock" type="number" required className="h-12 rounded-xl font-bold" />
                 </div>
               </div>
 
-              {/* LOGISTICS & WARRANTY */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1">
-                    <ShieldCheck className="h-3 w-3 text-emerald-500" /> {t('warranty')}
+                    <ShieldCheck className="h-3 w-3 text-emerald-500" /> {t('forms.warranty')}
                   </Label>
                   <Select name="warranty" defaultValue="1 Year">
                     <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue /></SelectTrigger>
@@ -280,22 +275,21 @@ export default function NewProductPage() {
                 </div>
                 <div className="space-y-1.5 lg:col-span-2">
                   <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1">
-                    <MapPin className="h-3 w-3 text-blue-500" /> {t('storageLocation')}
+                    <MapPin className="h-3 w-3 text-blue-500" /> Storage Location
                   </Label>
                   <Input name="location" className="h-12 rounded-xl" placeholder="e.g. Shelf A-04, Rack 2" />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('details')}</Label>
+                <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('common.details')}</Label>
                 <Textarea name="description" className="min-h-[100px] rounded-2xl border-slate-200" placeholder="Technical specifications..." />
               </div>
 
-              {/* SERIAL TRACKING */}
               <div className="space-y-4 pt-6 border-t border-slate-100">
                 <div className="flex items-center justify-between bg-slate-50 p-6 rounded-3xl ring-1 ring-slate-100">
                   <div className="space-y-1">
-                    <Label className="text-sm font-black uppercase text-slate-900">{t('serialRequired')}</Label>
+                    <Label className="text-sm font-black uppercase text-slate-900">Serial Tracking Required?</Label>
                     <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Enable individual tracking for IMEI/SN</p>
                   </div>
                   <Switch checked={isSerialTracking} onCheckedChange={setIsSerialTracking} className="data-[state=checked]:bg-blue-600" />

@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -9,6 +8,7 @@ import { DocumentTemplateProps } from "../document-template"
 
 /**
  * Warrior Official Premium Layout - Fully Localized
+ * Updated to support conditional Brand, Model, Specs, Warranty, and S/N display
  */
 export function WarriorLayout({
   title,
@@ -74,7 +74,7 @@ export function WarriorLayout({
         </div>
         <div className="space-y-1 flex flex-col justify-end">
           <div className="grid grid-cols-[120px_10px_1fr] text-[11px] leading-relaxed">
-            <span className="font-bold uppercase">{t('nav.sales')} NO</span> <span>:</span> <span className="font-black text-blue-800">{docNumber}</span>
+            <span className="font-bold uppercase">DOC NO</span> <span>:</span> <span className="font-black text-blue-800">{docNumber}</span>
             <span className="font-bold uppercase">{t('common.date')}</span> <span>:</span> <span>{formatDate(date)}</span>
             <span className="font-bold uppercase">{t('forms.project')}</span> <span>:</span> <span>{projectName || "---"}</span>
             <span className="font-bold uppercase">{t('forms.location')}</span> <span>:</span> <span>{projectLocation || "---"}</span>
@@ -86,7 +86,7 @@ export function WarriorLayout({
         <div className="bg-[#FDEBD0] border border-black p-1.5 text-center flex items-center justify-center">
           <span className="text-[12px] font-black text-blue-800 mr-2 border-r border-black pr-2">Part-A</span>
           <h3 className="text-[15px] font-black text-[#0056B3] uppercase tracking-tight">
-            {settings?.docMainHeadline || t('forms.itemName').toUpperCase() + " SUMMARY"}
+            {title || "IMPLEMENTATION AND COST SUMMARY"}
           </h3>
         </div>
       </div>
@@ -106,13 +106,15 @@ export function WarriorLayout({
           <tbody>
             {items.map((item, idx) => (
               <tr key={idx} className="border-b border-black align-top">
-                <td className="border-x border-black p-2 text-center text-[11px] font-bold">{formatDate(idx + 1).split(' ')[0]}</td>
+                <td className="border-x border-black p-2 text-center text-[11px] font-bold">{(idx + 1).toString().padStart(2, '0')}</td>
                 <td className="border-x border-black p-2">
                   <div className="text-[11px] space-y-1 leading-normal">
-                    <p className="font-bold text-slate-900">{item.name}</p>
-                    { item.model && <p className="text-[10px] font-normal text-slate-700">{t('forms.model')}: {item.model}</p> }
-                    { item.sn && <p className="text-[10px] font-normal text-slate-700 mt-2">{t('forms.sn')}: {item.sn}</p> }
+                    <p className="font-bold text-slate-900 uppercase">{item.name}</p>
+                    { item.brand && <p className="text-[10px] font-normal text-slate-700">{t('forms.brand')}: <span className="font-bold">{item.brand}</span></p> }
+                    { item.model && <p className="text-[10px] font-normal text-slate-700">{t('forms.model')}: <span className="font-bold">{item.model}</span></p> }
+                    { item.sn && <p className="text-[10px] font-normal text-slate-700 mt-1">{t('forms.sn')}: <span className="font-black text-blue-700">{item.sn}</span></p> }
                     { item.warranty && <p className="text-[10px] font-normal text-slate-700 mt-1"><span className="font-bold">{t('forms.warranty')}:</span> {item.warranty}</p> }
+                    { item.specs && <p className="text-[9px] font-normal text-slate-500 mt-1 italic whitespace-pre-wrap">{item.specs}</p> }
                   </div>
                 </td>
                 <td className="border-x border-black p-2 text-center text-[11px] font-normal uppercase">{item.brand || '---'}</td>
@@ -121,17 +123,31 @@ export function WarriorLayout({
                 <td className="border-x border-black p-2 text-right text-[11px] font-normal pr-4">{formatCurrency(item.total || 0)}</td>
               </tr>
             ))}
+            {/* Fillers to maintain structure */}
             <tr className="h-20"><td className="border-x border-black"></td><td className="border-x border-black"></td><td className="border-x border-black"></td><td className="border-x border-black"></td><td className="border-x border-black"></td><td className="border-x border-black"></td></tr>
             <tr className="h-8">
                <td colSpan={5} className="bg-[#D6EAF8]/50 border border-black p-1 text-right text-[11px] font-black uppercase pr-4">{t('forms.subtotal')}</td>
                <td className="border border-black p-1 text-right text-[11px] font-black pr-4">{formatCurrency(subtotal || 0)}</td>
             </tr>
+            { discount ? (
+              <tr className="h-8">
+                 <td colSpan={5} className="bg-red-50 border border-black p-1 text-right text-[11px] font-black uppercase pr-4 text-red-700">{t('forms.discount')}</td>
+                 <td className="border border-black p-1 text-right text-[11px] font-black pr-4 text-red-700">-{formatCurrency(discount)}</td>
+              </tr>
+            ) : null }
             <tr className="h-10">
                <td colSpan={5} className="bg-[#F57C00] border border-black p-1 text-right text-[12px] font-black uppercase pr-4 text-white">{t('forms.grandTotal')}</td>
                <td className="bg-[#F57C00] border border-black p-1 text-right text-[14px] font-black pr-4 text-white">{formatCurrency(grandTotal || 0)}</td>
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <div className="px-4 mt-6">
+        <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Amount In Words:</p>
+        <p className="text-[11px] font-bold text-slate-800 italic border-l-2 border-slate-200 pl-3">
+          Only {formatCurrency(grandTotal || 0).replace('৳', '')} BDT.
+        </p>
       </div>
 
       <div className="mt-auto pt-4 pb-6 text-center space-y-1.5 border-t-2 border-[#F57C00] mx-2">

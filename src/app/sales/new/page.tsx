@@ -114,7 +114,7 @@ export default function NewInvoicePage() {
       description: product.description || "",
       brand: product.brand || "",
       model: product.sku || "",
-      specs: "",
+      specs: product.description || "",
       warranty: product.warranty || "1 Year",
       sn: "",
       qty: 1,
@@ -195,9 +195,9 @@ export default function NewInvoicePage() {
       
       setSelectedCustomerId(newDocRef.id);
       setIsCustomerModalOpen(false);
-      toast({ title: t('success'), description: "Customer created and selected." });
+      toast({ title: t('common.success'), description: "Customer created and selected." });
     } catch (err: any) {
-      toast({ variant: "destructive", title: t('error'), description: err.message });
+      toast({ variant: "destructive", title: t('common.error'), description: err.message });
     } finally {
       setIsCustomerCreating(false);
     }
@@ -249,10 +249,10 @@ export default function NewInvoicePage() {
         }
       });
 
-      toast({ title: t('success') });
+      toast({ title: t('common.success') });
       router.push("/sales");
     } catch (e: any) {
-      toast({ variant: "destructive", title: t('error'), description: e.message });
+      toast({ variant: "destructive", title: t('common.error'), description: e.message });
       setIsSubmitting(false);
     }
   };
@@ -265,27 +265,26 @@ export default function NewInvoicePage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-lg font-bold text-slate-900 tracking-tight">{t('newInvoice')}</h1>
+            <h1 className="text-lg font-bold text-slate-900 tracking-tight">{t('nav.sales')} / New Invoice</h1>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Billing Module</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="font-bold text-xs" onClick={() => router.back()}>{t('cancel')}</Button>
+          <Button variant="outline" size="sm" className="font-bold text-xs" onClick={() => router.back()}>{t('common.cancel')}</Button>
           <Button size="sm" className="font-bold text-xs gap-2 px-6 h-9 rounded-lg" disabled={isSubmitting} onClick={handleSave}>
             {isSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-            {t('save')}
+            {t('common.save')}
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
         <div className="xl:col-span-9 space-y-4">
-          {/* HEADER INFO */}
           <Card className="border-none shadow-sm ring-1 ring-slate-200">
             <CardContent className="p-4">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div className="space-y-1">
-                  <Label className="text-[10px] font-bold uppercase text-slate-500">{t('customer')}</Label>
+                  <Label className="text-[10px] font-bold uppercase text-slate-500">{t('forms.customer')}</Label>
                   <div className="flex gap-1">
                     <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
                       <SelectTrigger className="h-9 text-[11px] font-bold bg-slate-50/50"><SelectValue placeholder="Client" /></SelectTrigger>
@@ -297,23 +296,23 @@ export default function NewInvoicePage() {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-[10px] font-bold uppercase text-slate-500">Project Name</Label>
+                  <Label className="text-[10px] font-bold uppercase text-slate-500">{t('forms.project')}</Label>
                   <Input value={projectName} onChange={e => setProjectName(e.target.value)} className="h-9 text-[11px] font-bold" placeholder="Site Expansion" />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-[10px] font-bold uppercase text-slate-500">Location</Label>
+                  <Label className="text-[10px] font-bold uppercase text-slate-500">{t('forms.location')}</Label>
                   <Input value={projectLocation} onChange={e => setProjectLocation(e.target.value)} className="h-9 text-[11px] font-bold" placeholder="Dhaka" />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-[10px] font-bold uppercase text-slate-500">{t('invoiceDate')}</Label>
+                  <Label className="text-[10px] font-bold uppercase text-slate-500">{t('forms.invoiceDate')}</Label>
                   <Input type="date" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} className="h-9 text-[11px] font-bold" />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-[10px] font-bold uppercase text-slate-500">{t('dueDate')}</Label>
+                  <Label className="text-[10px] font-bold uppercase text-slate-500">{t('forms.dueDate')}</Label>
                   <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="h-9 text-[11px] font-bold" />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-[10px] font-bold uppercase text-slate-500">Payment</Label>
+                  <Label className="text-[10px] font-bold uppercase text-slate-500">{t('forms.paymentMethod')}</Label>
                   <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                     <SelectTrigger className="h-9 text-[11px] font-bold bg-slate-50/50"><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -327,10 +326,9 @@ export default function NewInvoicePage() {
             </CardContent>
           </Card>
 
-          {/* LINE ITEMS */}
           <Card className="border-none shadow-sm ring-1 ring-slate-200 overflow-hidden">
             <div className="p-3 bg-slate-50 border-b flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-[10px] font-black uppercase text-slate-500">Line Items</h3>
+              <h3 className="text-[10px] font-black uppercase text-slate-500">{t('common.details')}</h3>
               <div className="flex gap-2">
                 <Select onValueChange={handleAddProduct}>
                   <SelectTrigger className="h-8 w-40 sm:w-48 text-[10px] bg-white border-slate-200 font-bold uppercase"><SelectValue placeholder="Import Product" /></SelectTrigger>
@@ -339,16 +337,16 @@ export default function NewInvoicePage() {
                   </SelectContent>
                 </Select>
                 <Button variant="outline" size="sm" className="h-8 rounded-lg gap-2 text-[10px] font-black uppercase" onClick={addManualRow}>
-                  <PlusCircle className="h-3.5 w-3.5" /> {t('addGeneric')}
+                  <PlusCircle className="h-3.5 w-3.5" /> {t('common.add')} Generic
                 </Button>
               </div>
             </div>
             <div className="overflow-x-auto custom-scrollbar">
-              <Table className="min-w-[800px]">
+              <Table className="min-w-[1000px]">
                 <TableHeader className="bg-slate-50/20 border-b">
                   <TableRow className="hover:bg-transparent h-10">
                     <TableHead className="w-10 text-center text-[9px] font-black uppercase">Sl.</TableHead>
-                    <TableHead className="min-w-[350px] text-[9px] font-black uppercase">Item Details & Attributes</TableHead>
+                    <TableHead className="min-w-[400px] text-[9px] font-black uppercase">Item Details & Attributes</TableHead>
                     <TableHead className="w-20 text-[9px] font-black uppercase text-center">Unit</TableHead>
                     <TableHead className="w-20 text-[9px] font-black uppercase text-center">Qty</TableHead>
                     <TableHead className="w-28 text-[9px] font-black uppercase text-right">Unit Price</TableHead>
@@ -409,35 +407,34 @@ export default function NewInvoicePage() {
           </Card>
         </div>
 
-        {/* SIDEBAR TOTALS */}
         <div className="xl:col-span-3 space-y-4">
           <Card className="p-6 rounded-2xl shadow-xl space-y-4 text-center text-white bg-blue-600">
              <p className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em]">Net Invoice Value</p>
              <h2 className="text-3xl font-headline font-black tracking-tighter">৳{(grandTotal || 0).toLocaleString()}</h2>
              <div className="pt-4 space-y-1.5 border-t border-white/10 text-[9px] font-bold uppercase tracking-widest text-left">
-                <div className="flex justify-between opacity-70"><span>Gross Subtotal</span><span>৳{(subtotal || 0).toLocaleString()}</span></div>
-                <div className="flex justify-between text-blue-100"><span>Accrued VAT</span><span>+৳{(itemTaxes || 0).toLocaleString()}</span></div>
+                <div className="flex justify-between opacity-70"><span>{t('forms.subtotal')}</span><span>৳{(subtotal || 0).toLocaleString()}</span></div>
+                <div className="flex justify-between text-blue-100"><span>Accrued {t('forms.tax')}</span><span>+৳{(itemTaxes || 0).toLocaleString()}</span></div>
              </div>
           </Card>
 
           <Card className="p-4 rounded-2xl border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-4">
             <div className="space-y-3">
               <div className="space-y-1">
-                <Label className="text-[9px] font-black uppercase text-slate-400">Extra Discount (৳)</Label>
+                <Label className="text-[9px] font-black uppercase text-slate-400">{t('forms.discount')} (৳)</Label>
                 <Input type="number" className="h-8 rounded-lg bg-slate-50 border-none font-black text-red-600" value={globalDiscount || ''} onChange={e => setGlobalDiscount(Number(e.target.value))} />
               </div>
               <div className="space-y-1">
-                <Label className="text-[9px] font-black uppercase text-slate-400">Paid Amount (৳)</Label>
+                <Label className="text-[9px] font-black uppercase text-slate-400">{t('forms.paidAmount')} (৳)</Label>
                 <Input type="number" className="h-10 rounded-lg bg-green-50 border-none font-black text-green-700 text-base" value={paidAmount || ''} onChange={e => setPaidAmount(Number(e.target.value))} />
               </div>
               <div className="p-3 rounded-xl bg-red-50 flex justify-between items-center">
-                 <span className="text-[8px] font-black uppercase text-red-600">Balance</span>
+                 <span className="text-[8px] font-black uppercase text-red-600">{t('forms.balanceDue')}</span>
                  <span className="text-base font-black text-red-700">৳{balanceDue?.toLocaleString()}</span>
               </div>
             </div>
             
             <div className="space-y-3 pt-3 border-t">
-               <Label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Notes</Label>
+               <Label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{t('forms.notes')}</Label>
                <Textarea className="min-h-[80px] text-[11px] font-bold rounded-xl" value={notes || ''} onChange={e => setNotes(e.target.value)} placeholder="Terms..." />
             </div>
 
@@ -449,7 +446,6 @@ export default function NewInvoicePage() {
         </div>
       </div>
 
-      {/* QUICK CUSTOMER MODAL */}
       <Dialog open={isCustomerModalOpen} onOpenChange={setIsCustomerModalOpen}>
         <DialogContent className="max-w-xl p-0 overflow-hidden border-none shadow-2xl rounded-[2.5rem] bg-white">
           <DialogHeader className="bg-blue-600 p-6 text-white"><DialogTitle className="text-xl font-black uppercase tracking-tight flex items-center gap-3"><UserPlus className="h-6 w-6" /> Quick Registration</DialogTitle></DialogHeader>
