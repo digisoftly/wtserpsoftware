@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -134,18 +135,10 @@ export default function ViewInvoicePage() {
               projectName={invoice.projectName}
               projectLocation={invoice.projectLocation}
               items={(invoice.items || []).map((i: any) => ({
-                name: i.name,
+                ...i,
                 quantity: i.qty,
-                unit: i.unit,
                 unitPrice: i.price,
-                total: i.total,
-                discount: i.discount,
-                description: i.description,
-                brand: i.brand,
-                model: i.model,
-                sn: i.sn,
-                specs: i.specs,
-                warranty: i.warranty
+                total: i.total
               }))}
               subtotal={invoice.subtotal}
               taxAmount={invoice.taxAmount}

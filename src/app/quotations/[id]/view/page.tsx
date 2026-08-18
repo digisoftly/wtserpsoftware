@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -90,18 +91,10 @@ export default function ViewQuotationPage() {
           projectName={quote.projectName}
           projectLocation={quote.projectLocation}
           items={(quote.items || []).map((i: any) => ({
-            name: i.name,
-            description: i.description,
-            quantity: i.quantity,
-            unit: i.unit,
-            unitPrice: i.unitPrice,
-            total: i.total,
-            discount: i.discountValue,
-            brand: i.brand,
-            model: i.model,
-            sn: i.sn,
-            specs: i.specs,
-            warranty: i.warranty
+            ...i,
+            quantity: i.qty,
+            unitPrice: i.price,
+            total: i.total
           }))}
           subtotal={quote.subtotal}
           taxAmount={quote.taxAmount}

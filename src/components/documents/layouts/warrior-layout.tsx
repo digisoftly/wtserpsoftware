@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -8,7 +9,7 @@ import { DocumentTemplateProps } from "../document-template"
 
 /**
  * Warrior Official Premium Layout - Fully Localized
- * Updated to support conditional Brand, Model, Specs, Warranty, and S/N display
+ * Updated with robust null checks for numeric formatting.
  */
 export function WarriorLayout({
   title,
@@ -104,7 +105,7 @@ export function WarriorLayout({
             </tr>
           </thead>
           <tbody>
-            {items.map((item, idx) => (
+            {(items || []).map((item, idx) => (
               <tr key={idx} className="border-b border-black align-top">
                 <td className="border-x border-black p-2 text-center text-[11px] font-bold">{(idx + 1).toString().padStart(2, '0')}</td>
                 <td className="border-x border-black p-2">
@@ -118,7 +119,7 @@ export function WarriorLayout({
                   </div>
                 </td>
                 <td className="border-x border-black p-2 text-center text-[11px] font-normal uppercase">{item.brand || '---'}</td>
-                <td className="border-x border-black p-2 text-center text-[11px] font-normal">{item.quantity} ({item.unit || 'Pcs'})</td>
+                <td className="border-x border-black p-2 text-center text-[11px] font-normal">{(item.quantity || 0)} ({item.unit || 'Pcs'})</td>
                 <td className="border-x border-black p-2 text-center text-[11px] font-normal">{formatCurrency(item.unitPrice || 0)}</td>
                 <td className="border-x border-black p-2 text-right text-[11px] font-normal pr-4">{formatCurrency(item.total || 0)}</td>
               </tr>
@@ -146,7 +147,7 @@ export function WarriorLayout({
       <div className="px-4 mt-6">
         <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Amount In Words:</p>
         <p className="text-[11px] font-bold text-slate-800 italic border-l-2 border-slate-200 pl-3">
-          Only {formatCurrency(grandTotal || 0).replace('৳', '')} BDT.
+          Only {formatCurrency(grandTotal || 0).replace('৳', '').replace('BDT', '')} BDT.
         </p>
       </div>
 

@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -85,8 +86,8 @@ export default function ChallansPage() {
     <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold font-headline text-amber-600 uppercase tracking-tight">{t('dispatch')}</h1>
-          <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{t('happeningToday')}</p>
+          <h1 className="text-xl font-bold font-headline text-amber-600 uppercase tracking-tight">{t('nav.dispatch')}</h1>
+          <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{t('dashboard.happeningToday')}</p>
         </div>
         <Button className="rounded-full gap-2 h-10 px-8 bg-amber-600 hover:bg-amber-700 font-bold text-[10px] uppercase shadow-xl shadow-amber-100 transition-all active:scale-95 w-full md:w-auto" asChild>
           <Link href="/challans/new">
@@ -105,7 +106,7 @@ export default function ChallansPage() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <input 
-            placeholder={t('search')} 
+            placeholder={t('common.search')} 
             className="pl-9 h-10 w-full rounded-xl bg-slate-50/50 border-none text-xs focus:ring-2 focus:ring-amber-500 transition-all outline-none" 
             value={searchTerm} 
             onChange={e => setSearchTerm(e.target.value)} 
@@ -121,11 +122,11 @@ export default function ChallansPage() {
             <Table>
               <TableHeader className="bg-muted/10">
                 <TableRow>
-                  <TableHead className="h-10 text-[10px] uppercase font-black pl-6">{t('challanNumber')}</TableHead>
-                  <TableHead className="h-10 text-[10px] uppercase font-black">{t('customer')}</TableHead>
-                  <TableHead className="h-10 text-[10px] uppercase font-black">{t('dispatchDate')}</TableHead>
-                  <TableHead className="h-10 text-[10px] uppercase font-black text-center">{t('status')}</TableHead>
-                  <TableHead className="h-10 text-right pr-6 sticky right-0 bg-white/95 backdrop-blur-sm z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">{t('actions')}</TableHead>
+                  <TableHead className="h-10 text-[10px] uppercase font-black pl-6">ID</TableHead>
+                  <TableHead className="h-10 text-[10px] uppercase font-black">{t('forms.customer')}</TableHead>
+                  <TableHead className="h-10 text-[10px] uppercase font-black">{t('common.date')}</TableHead>
+                  <TableHead className="h-10 text-[10px] uppercase font-black text-center">{t('common.status')}</TableHead>
+                  <TableHead className="h-10 text-right pr-6 sticky right-0 bg-white/95 backdrop-blur-sm z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">{t('common.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -133,36 +134,26 @@ export default function ChallansPage() {
                   <TableRow key={c.id} className="h-14 hover:bg-muted/5 transition-colors group">
                     <TableCell className="pl-6 font-black text-xs uppercase text-amber-600">
                       {c.challanNumber}
-                      <p className="text-[8px] text-muted-foreground font-bold mt-0.5">INV: {c.invoiceNumber}</p>
                     </TableCell>
                     <TableCell className="text-xs font-bold text-slate-700">{c.customerName}</TableCell>
                     <TableCell className="text-xs font-medium text-slate-500">{new Date(c.dispatchDate).toLocaleDateString()}</TableCell>
                     <TableCell className="text-center">
                       <Badge variant="outline" className={cn("text-[8px] h-5 uppercase border-none px-2 font-black", 
-                        c.status === 'delivered' ? "bg-green-50 text-green-700" : 
-                        c.status === 'processing' ? "bg-blue-50 text-blue-700" : 
-                        c.status === 'cancelled' ? "bg-red-50 text-red-700" : "bg-orange-50 text-orange-700")}>
-                        {t(`${c.status}_status` as any)}
+                        c.status === 'delivered' ? "bg-green-50 text-green-700" : "bg-orange-50 text-orange-700")}>
+                        {c.status.toUpperCase()}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right pr-6 sticky right-0 bg-white/90 backdrop-blur-sm group-hover:bg-slate-50/90 transition-colors z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
                       <div className="flex justify-end items-center gap-1">
-                        <div className="hidden md:flex items-center gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-blue-600 hover:bg-blue-50" onClick={() => { setSelectedRecord(c); setIsViewModalOpen(true); }} title={t('view')}><Eye className="h-3.5 w-3.5" /></Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-amber-600 hover:bg-amber-50" onClick={() => router.push(`/challans/${c.id}/edit`)} title={t('edit')}><Edit className="h-3.5 w-3.5" /></Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-slate-600 hover:bg-slate-100" onClick={() => { setSelectedRecord(c); setIsViewModalOpen(true); }} title={t('print')}><Printer className="h-3.5 w-3.5" /></Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-red-600 hover:bg-red-50" onClick={() => { setSelectedRecord(c); setIsDeleteAlertOpen(true); }} title={t('delete')}><Trash2 className="h-3.5 w-3.5" /></Button>
-                        </div>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-blue-600" onClick={() => { setSelectedRecord(c); setIsViewModalOpen(true); }}><Eye className="h-3.5 w-3.5" /></Button>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden rounded-full hover:bg-amber-50 text-amber-600 transition-colors"><MoreVertical className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-400"><MoreVertical className="h-4 w-4" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl">
-                            <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedRecord(c); setIsViewModalOpen(true); }}><Eye className="mr-2 h-3.5 w-3.5" /> {t('view')}</DropdownMenuItem>
-                            <DropdownMenuItem className="text-xs font-bold" onClick={() => router.push(`/challans/${c.id}/edit`)}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
-                            <DropdownMenuItem className="text-xs font-bold" onClick={() => handleShareWhatsApp(c)}><Share2 className="mr-2 h-3.5 w-3.5" /> {t('share')}</DropdownMenuItem>
+                            <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedRecord(c); setIsViewModalOpen(true); }}><Printer className="mr-2 h-3.5 w-3.5" /> {t('common.print')}</DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(c); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
+                            <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(c); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('common.delete')}</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -194,19 +185,18 @@ export default function ChallansPage() {
                 docNumber={selectedRecord.challanNumber}
                 date={selectedRecord.dispatchDate}
                 customerName={selectedRecord.customerName}
-                customerInfo={`${selectedRecord.customerPhone}\n${selectedRecord.customerAddress}`}
-                items={selectedRecord.items.map((i: any) => ({
-                  name: i.name,
-                  quantity: i.quantity,
-                  unit: i.unit,
-                  unitPrice: i.unitPrice,
-                  total: i.total,
-                  description: i.isCustom ? "Individual / Custom Item" : `SKU: ${i.sku}`
+                customerInfo={`${selectedRecord.customerPhone || ''}\n${selectedRecord.customerAddress || ''}`}
+                items={(selectedRecord.items || []).map((i: any) => ({
+                  ...i,
+                  quantity: i.qty,
+                  unitPrice: i.price,
+                  total: i.total
                 }))}
                 subtotal={selectedRecord.totalAmount}
                 grandTotal={selectedRecord.totalAmount}
                 status={selectedRecord.status}
-                notes={selectedRecord.notes || `Delivery Via: ${selectedRecord.deliveryMethod}\nVehicle: ${selectedRecord.vehicleNumber}\nDriver: ${selectedRecord.driverName}`}
+                notes={selectedRecord.notes}
+                layoutOverride="warrior"
               />
             </div>
           )}
@@ -216,12 +206,12 @@ export default function ChallansPage() {
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tight text-slate-900">{t('delete')}?</AlertDialogTitle>
-            <AlertDialogDescription className="text-xs font-medium leading-relaxed">{t('errorSub')}</AlertDialogDescription>
+            <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tight text-slate-900">{t('common.confirmDelete')}?</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs font-medium leading-relaxed">This record will be permanently removed.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-8 gap-3">
-            <AlertDialogCancel className="rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest">{t('cancel')}</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700 rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest" onClick={() => { if(selectedRecord) deleteDocumentNonBlocking(doc(db!, "companies", companyId!, "branches", branchId!, "delivery_challans", selectedRecord.id)); setIsDeleteAlertOpen(false); toast({ title: t('success') }); }}>{t('delete')}</AlertDialogAction>
+            <AlertDialogCancel className="rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest">{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest" onClick={() => { if(selectedRecord) deleteDocumentNonBlocking(doc(db!, "companies", companyId!, "branches", branchId!, "delivery_challans", selectedRecord.id)); setIsDeleteAlertOpen(false); toast({ title: t('common.success') }); }}>{t('common.delete')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
