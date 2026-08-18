@@ -14,7 +14,8 @@ import {
   FileText,
   UserPlus,
   Building,
-  User
+  User,
+  LayoutGrid
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -93,9 +94,9 @@ export default function NewQuotationPage() {
 
   // Calculations
   const subtotal = React.useMemo(() => lineItems.reduce((sum, item) => sum + (item.qty * item.price), 0), [lineItems]);
-  const itemDiscounts = React.useMemo(() => lineItems.reduce((sum, item) => sum + (item.qty * item.price * (item.discount / 100)), 0), [lineItems]);
-  const itemTaxes = React.useMemo(() => lineItems.reduce((sum, item) => sum + ((item.qty * item.price) - (item.qty * item.price * (item.discount / 100))) * (item.tax / 100), 0), [lineItems]);
-  const grandTotal = React.useMemo(() => subtotal - itemDiscounts + itemTaxes - globalDiscount, [subtotal, itemDiscounts, itemTaxes, globalDiscount]);
+  const itemDiscounts = lineItems.reduce((sum, item) => sum + (item.qty * item.price * (item.discount / 100)), 0);
+  const itemTaxes = lineItems.reduce((sum, item) => sum + ((item.qty * item.price) - (item.qty * item.price * (item.discount / 100))) * (item.tax / 100), 0);
+  const grandTotal = subtotal - itemDiscounts + itemTaxes - globalDiscount;
 
   const handleAddProduct = (productId: string) => {
     const product = products?.find(p => p.id === productId);
@@ -314,12 +315,12 @@ export default function NewQuotationPage() {
               <Table className="min-w-[1000px]">
                 <TableHeader className="bg-slate-50/20 border-b">
                   <TableRow className="hover:bg-transparent h-10">
-                    <TableHead className="w-10 text-center text-[9px] font-black uppercase">Sl.</TableHead>
-                    <TableHead className="min-w-[400px] text-[9px] font-black uppercase">Item Details & Attributes</TableHead>
-                    <TableHead className="w-20 text-[9px] font-black uppercase text-center">Unit</TableHead>
-                    <TableHead className="w-20 text-[9px] font-black uppercase text-center">Qty</TableHead>
-                    <TableHead className="w-28 text-[9px] font-black uppercase text-right">Price</TableHead>
-                    <TableHead className="w-28 text-[9px] font-black uppercase text-right pr-6">Total</TableHead>
+                    <TableHead className="w-10 text-center text-[9px] font-black uppercase">{t('forms.sl')}</TableHead>
+                    <TableHead className="min-w-[400px] text-[9px] font-black uppercase">{t('forms.itemName')} & {t('forms.specs')}</TableHead>
+                    <TableHead className="w-20 text-[9px] font-black uppercase text-center">{t('forms.unit')}</TableHead>
+                    <TableHead className="w-20 text-[9px] font-black uppercase text-center">{t('forms.qty')}</TableHead>
+                    <TableHead className="w-28 text-[9px] font-black uppercase text-right">{t('forms.price')}</TableHead>
+                    <TableHead className="w-28 text-[9px] font-black uppercase text-right pr-6">{t('common.total')}</TableHead>
                     <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -333,19 +334,19 @@ export default function NewQuotationPage() {
                             className="h-8 text-[11px] font-black uppercase border-none bg-slate-100/50 focus:bg-white focus:ring-1 focus:ring-blue-500 transition-all" 
                             value={item.name || ''} 
                             onChange={e => updateItem(item.id, 'name', e.target.value)} 
-                            placeholder="Item Name" 
+                            placeholder={t('forms.itemName')} 
                           />
                           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-1.5">
-                             <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.model || ''} onChange={e => updateItem(item.id, 'model', e.target.value)} placeholder="Model" />
-                             <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.brand || ''} onChange={e => updateItem(item.id, 'brand', e.target.value)} placeholder="Brand" />
-                             <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.sn || ''} onChange={e => updateItem(item.id, 'sn', e.target.value)} placeholder="S/N" />
-                             <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.warranty || ''} onChange={e => updateItem(item.id, 'warranty', e.target.value)} placeholder="Warranty" />
+                             <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.model || ''} onChange={e => updateItem(item.id, 'model', e.target.value)} placeholder={t('forms.model')} />
+                             <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.brand || ''} onChange={e => updateItem(item.id, 'brand', e.target.value)} placeholder={t('forms.brand')} />
+                             <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.sn || ''} onChange={e => updateItem(item.id, 'sn', e.target.value)} placeholder={t('forms.sn')} />
+                             <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.warranty || ''} onChange={e => updateItem(item.id, 'warranty', e.target.value)} placeholder={t('forms.warranty')} />
                           </div>
                           <textarea 
                             className="w-full text-[9px] font-medium bg-slate-50 border border-slate-200 rounded p-1.5 min-h-[40px] resize-none outline-none focus:bg-white focus:ring-1 focus:ring-blue-500 transition-all" 
                             value={item.specs || ''} 
                             onChange={e => updateItem(item.id, 'specs', e.target.value)} 
-                            placeholder="Technical Specification" 
+                            placeholder={t('forms.specs')} 
                           />
                         </div>
                       </TableCell>
@@ -378,7 +379,7 @@ export default function NewQuotationPage() {
 
         <div className="xl:col-span-3 space-y-4">
           <Card className="p-6 rounded-2xl shadow-2xl space-y-4 text-center text-white bg-blue-600">
-             <p className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em]">Net Proposal Value</p>
+             <p className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em]">{t('forms.grandTotal')}</p>
              <h2 className="text-3xl font-headline font-black tracking-tighter">৳{grandTotal?.toLocaleString()}</h2>
           </Card>
 

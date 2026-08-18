@@ -1,4 +1,3 @@
-
 {
   "common": {
     "save": "সংরক্ষণ",
@@ -25,7 +24,17 @@
     "noData": "কোন তথ্য পাওয়া যায়নি",
     "confirmDelete": "আপনি কি নিশ্চিতভাবে এটি মুছে ফেলতে চান?",
     "itemsSelected": "টি আইটেম সিলেক্ট করা হয়েছে",
-    "bulkActions": "বাল্ক অ্যাকশন"
+    "bulkActions": "বাল্ক অ্যাকশন",
+    "all": "সব",
+    "allHealthy": "সব ঠিক আছে",
+    "goDashboard": "ড্যাশবোর্ডে যান",
+    "searchPlaceholder": "অনুসন্ধান করুন...",
+    "partA": "অংশ-ক",
+    "partB": "অংশ-খ",
+    "docNo": "দলিল নং",
+    "amountInWords": "কথায় এমাউন্ট",
+    "only": "মাত্র",
+    "bdt": "টাকা"
   },
   "nav": {
     "dashboard": "ড্যাশবোর্ড",
@@ -37,7 +46,7 @@
     "returns": "রিটার্নস",
     "inventory": "ইনভেন্টরি",
     "serialTracking": "সিরিয়াল ট্র্যাকিং",
-    "projectBilling": "প্রকল্প ও বিলিং সিস্টেম",
+    "projectBilling": "প্রকল্প ও বিলিং",
     "contracts": "সার্ভিস চুক্তি",
     "customers": "গ্রাহক",
     "suppliers": "সরবরাহকারী",
@@ -74,7 +83,11 @@
     "stockAlerts": "স্টক অ্যালার্ট",
     "lowStock": "টি আইটেম কম আছে",
     "allHealthy": "স্টক লেভেল পর্যাপ্ত আছে",
-    "growth": "প্রবৃদ্ধি"
+    "growth": "প্রবৃদ্ধি",
+    "thisMonth": "এই মাস",
+    "lastMonth": "গত মাস",
+    "thisQuarter": "এই কোয়ার্টার",
+    "happeningToday": "আজকের আপডেট"
   },
   "forms": {
     "customer": "গ্রাহক",
@@ -98,7 +111,9 @@
     "paidAmount": "পরিশোধিত টাকা",
     "balanceDue": "বকেয়া টাকা",
     "subtotal": "উপ-মোট",
-    "grandTotal": "সর্বমোট"
+    "grandTotal": "সর্বমোট",
+    "sl": "ক্র.নং",
+    "unit": "ইউনিট"
   },
   "inventory": {
     "totalProducts": "মোট পণ্য",

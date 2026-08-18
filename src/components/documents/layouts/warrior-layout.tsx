@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -8,8 +7,7 @@ import { cn } from "@/lib/utils"
 import { DocumentTemplateProps } from "../document-template"
 
 /**
- * Warrior Official Premium Layout - Fully Localized
- * Updated with robust null checks for numeric formatting and enhanced summary section.
+ * Warrior Official Premium Layout - Fully Localized & Comprehensive Summary
  */
 export function WarriorLayout({
   title,
@@ -75,7 +73,7 @@ export function WarriorLayout({
         </div>
         <div className="space-y-1 flex flex-col justify-end">
           <div className="grid grid-cols-[120px_10px_1fr] text-[11px] leading-relaxed">
-            <span className="font-bold uppercase">DOC NO</span> <span>:</span> <span className="font-black text-blue-800">{docNumber}</span>
+            <span className="font-bold uppercase">{t('common.docNo')}</span> <span>:</span> <span className="font-black text-blue-800">{docNumber}</span>
             <span className="font-bold uppercase">{t('common.date')}</span> <span>:</span> <span>{formatDate(date)}</span>
             <span className="font-bold uppercase">{t('forms.project')}</span> <span>:</span> <span>{projectName || "---"}</span>
             <span className="font-bold uppercase">{t('forms.location')}</span> <span>:</span> <span>{projectLocation || "---"}</span>
@@ -85,7 +83,7 @@ export function WarriorLayout({
 
       <div className="px-0 space-y-[1px]">
         <div className="bg-[#FDEBD0] border border-black p-1.5 text-center flex items-center justify-center">
-          <span className="text-[12px] font-black text-blue-800 mr-2 border-r border-black pr-2">Part-A</span>
+          <span className="text-[12px] font-black text-blue-800 mr-2 border-r border-black pr-2">{t('common.partA')}</span>
           <h3 className="text-[15px] font-black text-[#0056B3] uppercase tracking-tight">
             {title || "IMPLEMENTATION AND COST SUMMARY"}
           </h3>
@@ -96,7 +94,7 @@ export function WarriorLayout({
         <table className="w-full border-collapse border border-black table-fixed">
           <thead>
             <tr className="bg-[#F57C00] text-white h-10">
-              <th className="border border-black w-[45px] text-[10px] font-black uppercase">Sl.</th>
+              <th className="border border-black w-[45px] text-[10px] font-black uppercase">{t('forms.sl')}</th>
               <th className="border border-black px-4 text-left text-[10px] font-black uppercase">{t('forms.itemName')}</th>
               <th className="border border-black w-[100px] text-center text-[10px] font-black uppercase">{t('forms.brand')}</th>
               <th className="border border-black w-[80px] text-center text-[10px] font-black uppercase">{t('forms.qty')}</th>
@@ -124,24 +122,24 @@ export function WarriorLayout({
                 <td className="border-x border-black p-2 text-right text-[11px] font-normal pr-4">{formatCurrency(item.total || 0)}</td>
               </tr>
             ))}
-            {/* Fillers to maintain structure */}
+            {/* Filler rows for A4 height stability */}
             <tr className="h-10"><td className="border-x border-black"></td><td className="border-x border-black"></td><td className="border-x border-black"></td><td className="border-x border-black"></td><td className="border-x border-black"></td><td className="border-x border-black"></td></tr>
             
-            {/* SUMMARY ROWS */}
+            {/* SUMMARY MATRIX */}
             <tr className="h-8">
-               <td colSpan={5} className="bg-[#f8f9fa] border border-black p-1 text-right text-[11px] font-black uppercase pr-4">Total (Gross)</td>
+               <td colSpan={5} className="bg-[#f8f9fa] border border-black p-1 text-right text-[11px] font-black uppercase pr-4">{t('forms.subtotal')}</td>
                <td className="border border-black p-1 text-right text-[11px] font-black pr-4">{formatCurrency(subtotal || 0)}</td>
             </tr>
-            { discount ? (
+            { (discount || 0) > 0 ? (
               <tr className="h-8">
                  <td colSpan={5} className="bg-red-50 border border-black p-1 text-right text-[11px] font-black uppercase pr-4 text-red-700">{t('forms.discount')}</td>
-                 <td className="border border-black p-1 text-right text-[11px] font-black pr-4 text-red-700">-{formatCurrency(discount)}</td>
+                 <td className="border border-black p-1 text-right text-[11px] font-black pr-4 text-red-700">-{formatCurrency(discount || 0)}</td>
               </tr>
             ) : null }
-            { taxAmount ? (
+            { (taxAmount || 0) > 0 ? (
               <tr className="h-8">
-                 <td colSpan={5} className="bg-[#f8f9fa] border border-black p-1 text-right text-[11px] font-black uppercase pr-4">VAT / Tax</td>
-                 <td className="border border-black p-1 text-right text-[11px] font-black pr-4">+{formatCurrency(taxAmount)}</td>
+                 <td colSpan={5} className="bg-[#f8f9fa] border border-black p-1 text-right text-[11px] font-black uppercase pr-4">{t('forms.tax')}</td>
+                 <td className="border border-black p-1 text-right text-[11px] font-black pr-4">+{formatCurrency(taxAmount || 0)}</td>
               </tr>
             ) : null }
             <tr className="h-10">
@@ -153,9 +151,9 @@ export function WarriorLayout({
       </div>
 
       <div className="px-4 mt-6">
-        <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Amount In Words:</p>
+        <p className="text-[10px] font-black uppercase text-slate-400 mb-1">{t('common.amountInWords')}:</p>
         <p className="text-[11px] font-bold text-slate-800 italic border-l-2 border-slate-200 pl-3">
-          Only {formatCurrency(grandTotal || 0).replace('৳', '').replace('BDT', '')} BDT.
+          {t('common.only')} {formatCurrency(grandTotal || 0).replace('৳', '').replace('BDT', '')} {t('common.bdt')} {t('common.only')}.
         </p>
       </div>
 

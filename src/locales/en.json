@@ -1,4 +1,3 @@
-
 {
   "common": {
     "save": "Save",
@@ -25,7 +24,17 @@
     "noData": "No records found",
     "confirmDelete": "Are you sure you want to delete this?",
     "itemsSelected": "Items Selected",
-    "bulkActions": "Bulk Actions"
+    "bulkActions": "Bulk Actions",
+    "all": "All",
+    "allHealthy": "All Healthy",
+    "goDashboard": "Go to Dashboard",
+    "searchPlaceholder": "Search...",
+    "partA": "Part-A",
+    "partB": "Part-B",
+    "docNo": "DOC NO",
+    "amountInWords": "Amount In Words",
+    "only": "Only",
+    "bdt": "BDT"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -37,7 +46,7 @@
     "returns": "Returns",
     "inventory": "Inventory",
     "serialTracking": "Serial Tracking",
-    "projectBilling": "Project & Billing System",
+    "projectBilling": "Project & Billing",
     "contracts": "Service Contracts",
     "customers": "Customers",
     "suppliers": "Suppliers",
@@ -74,7 +83,11 @@
     "stockAlerts": "Stock Alerts",
     "lowStock": "Items Low",
     "allHealthy": "Inventory levels are healthy",
-    "growth": "Growth"
+    "growth": "Growth",
+    "thisMonth": "This Month",
+    "lastMonth": "Last Month",
+    "thisQuarter": "This Quarter",
+    "happeningToday": "Happening Today"
   },
   "forms": {
     "customer": "Customer",
@@ -98,7 +111,9 @@
     "paidAmount": "Paid Amount",
     "balanceDue": "Balance Due",
     "subtotal": "Subtotal",
-    "grandTotal": "Grand Total"
+    "grandTotal": "Grand Total",
+    "sl": "Sl.",
+    "unit": "Unit"
   },
   "inventory": {
     "totalProducts": "Total Products",

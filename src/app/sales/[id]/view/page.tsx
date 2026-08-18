@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -89,7 +88,7 @@ export default function ViewInvoicePage() {
     );
   }
 
-  if (!invoice) return <div className="p-20 text-center uppercase font-black text-muted-foreground">{t('dataNotFound')}</div>;
+  if (!invoice) return <div className="p-20 text-center uppercase font-black text-muted-foreground">{t('common.noData')}</div>;
 
   return (
     <div className="flex flex-col h-full bg-[#F8FAFC] min-h-screen pb-20 no-scrollbar">
@@ -114,7 +113,7 @@ export default function ViewInvoicePage() {
             <MessageSquare className="h-3.5 w-3.5" /> WhatsApp
           </Button>
           <Button variant="outline" className="rounded-full h-10 px-6 font-black text-[10px] uppercase gap-2 border-none ring-1 ring-slate-200 shadow-sm bg-white" onClick={() => window.print()}>
-            <Printer className="h-4 w-4 text-blue-600" /> {t('print')}
+            <Printer className="h-4 w-4 text-blue-600" /> {t('common.print')}
           </Button>
           <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full h-10 px-8 font-black text-[10px] uppercase gap-2 shadow-xl shadow-blue-100" onClick={() => window.print()}>
             <Download className="h-4 w-4" /> Download PDF
@@ -127,7 +126,7 @@ export default function ViewInvoicePage() {
         <div className="xl:col-span-8 space-y-6">
           <div className="bg-white shadow-2xl rounded-2xl overflow-hidden border border-slate-100 ring-1 ring-slate-100/50 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <DocumentTemplate
-              title={t('taxInvoice')}
+              title={t('nav.sales')}
               docNumber={invoice.invoiceNumber}
               date={invoice.invoiceDate}
               customerName={invoice.customerName}
@@ -136,8 +135,8 @@ export default function ViewInvoicePage() {
               projectLocation={invoice.projectLocation}
               items={(invoice.items || []).map((i: any) => ({
                 ...i,
-                quantity: i.qty,
-                unitPrice: i.price,
+                quantity: i.qty || i.quantity,
+                unitPrice: i.price || i.unitPrice,
                 total: i.total
               }))}
               subtotal={invoice.subtotal}
@@ -157,7 +156,7 @@ export default function ViewInvoicePage() {
           <Card className="border-none shadow-sm rounded-[2rem] bg-slate-900 text-white overflow-hidden">
              <CardHeader className="bg-white/5 p-6 border-b border-white/5">
                 <CardTitle className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                  <CreditCard className="h-4 w-4 text-emerald-400" /> {t('payment')} Summary
+                  <CreditCard className="h-4 w-4 text-emerald-400" /> {t('nav.payments')} Summary
                 </CardTitle>
              </CardHeader>
              <CardContent className="p-8 space-y-6">
@@ -176,42 +175,10 @@ export default function ViewInvoicePage() {
                 
                 {invoice.status !== 'paid' && (
                   <Button className="w-full h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[10px] uppercase tracking-widest gap-2 mt-4 shadow-xl shadow-emerald-900/50" onClick={() => router.push(`/sales/payments/collect/${id}`)}>
-                    <Plus className="h-4 w-4" /> {t('collectPayment')}
+                    <Plus className="h-4 w-4" /> {t('common.add')} Payment
                   </Button>
                 )}
              </CardContent>
-          </Card>
-
-          <Card className="border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 overflow-hidden">
-            <CardHeader className="p-6 border-b border-slate-50 flex flex-row items-center justify-between">
-              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                <History className="h-4 w-4 text-blue-600" /> {t('paymentHistory')}
-              </CardTitle>
-              <Button variant="ghost" size="sm" className="h-7 text-[9px] font-black uppercase text-blue-600" onClick={() => router.push('/payments')}>
-                {t('allPayments')}
-              </Button>
-            </CardHeader>
-            <CardContent className="p-0">
-               <Table>
-                 <TableBody>
-                   {payments?.length === 0 ? (
-                     <TableRow><TableCell className="h-32 text-center text-[10px] font-bold text-slate-300 uppercase tracking-widest italic">No collection history</TableCell></TableRow>
-                   ) : (
-                     payments?.map((p) => (
-                       <TableRow key={p.id} className="hover:bg-slate-50/50 h-14 cursor-pointer" onClick={() => router.push(`/sales/payments/receipt/${p.id}`)}>
-                         <TableCell className="pl-6">
-                            <p className="text-[10px] font-black text-slate-900 uppercase">{p.receiptNumber}</p>
-                            <p className="text-[8px] font-bold text-slate-400 uppercase">{new Date(p.paymentDate).toLocaleDateString()}</p>
-                         </TableCell>
-                         <TableCell className="text-right pr-6">
-                            <span className="text-xs font-black text-emerald-600">৳{p.amount?.toLocaleString()}</span>
-                         </TableCell>
-                       </TableRow>
-                     ))
-                   )}
-                 </TableBody>
-               </Table>
-            </CardContent>
           </Card>
         </div>
       </div>
