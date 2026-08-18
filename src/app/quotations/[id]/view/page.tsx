@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { 
   ArrowLeft, 
   Download, 
@@ -23,6 +23,7 @@ import { useTranslation } from "@/hooks/use-translation"
 export default function ViewQuotationPage() {
   const { id } = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
   const { t } = useTranslation();
@@ -33,6 +34,20 @@ export default function ViewQuotationPage() {
   }, [db, companyId, branchId, id]);
 
   const { data: quote, isLoading } = useDoc(quoteRef);
+
+  // Auto-print effect
+  React.useEffect(() => {
+    if (!isLoading && quote && searchParams.get('print') === 'true') {
+      const timer = setTimeout(() => {
+        window.print();
+      }, 800); 
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, quote, searchParams]);
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   if (isLoading) {
     return (
@@ -59,28 +74,28 @@ export default function ViewQuotationPage() {
   }
 
   return (
-    <div className="max-w-[1000px] mx-auto space-y-6 pb-20">
-      <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b px-4 py-3 flex items-center justify-between no-print mb-6">
+    <div className="max-w-[1000px] mx-auto space-y-6 pb-20 no-scrollbar">
+      <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b px-4 py-3 flex items-center justify-between no-print mb-6 shadow-sm">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.push('/quotations')} className="rounded-full">
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-5 w-5 text-slate-600" />
           </Button>
           <div>
             <h1 className="text-lg font-black font-headline uppercase tracking-tight text-blue-600">{quote.quotationNumber}</h1>
-            <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Proposal Analysis Mode</p>
+            <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Proposal Analysis Mode</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="rounded-full h-10 px-6 font-black text-[10px] uppercase gap-2 border-none ring-1 ring-slate-200 shadow-sm bg-white" onClick={() => window.print()}>
-            <Printer className="h-4 w-4" /> {t('common.print')}
+          <Button variant="outline" className="rounded-full h-10 px-6 font-black text-[10px] uppercase gap-2 border-none ring-1 ring-slate-200 shadow-sm bg-white" onClick={handlePrint}>
+            <Printer className="h-4 w-4 text-blue-600" /> {t('common.print')}
           </Button>
-          <Button className="bg-blue-600 hover:bg-blue-700 rounded-full h-10 px-8 font-black text-[10px] uppercase gap-2 shadow-xl shadow-blue-100" onClick={() => window.print()}>
+          <Button className="bg-blue-600 hover:bg-blue-700 rounded-full h-10 px-8 font-black text-[10px] uppercase gap-2 shadow-xl shadow-blue-100" onClick={handlePrint}>
             <Download className="h-4 w-4" /> Download PDF
           </Button>
         </div>
       </div>
 
-      <div className="bg-white shadow-2xl rounded-none md:rounded-[2.5rem] overflow-hidden border border-slate-100 ring-1 ring-slate-100/50">
+      <div className="bg-white shadow-2xl rounded-2xl overflow-hidden border border-slate-100 ring-1 ring-slate-100/50 document-wrapper">
         <DocumentTemplate
           title={t('nav.quotations')}
           docNumber={quote.quotationNumber}

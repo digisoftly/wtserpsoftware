@@ -65,33 +65,58 @@
   }
 }
 
+/* 
+  ENHANCED PRINT SYSTEM: 
+  Strict A4 output, hiding all UI elements and preserving corporate colors.
+*/
 @media print {
-  .no-print {
+  .no-print, 
+  header, 
+  nav, 
+  aside, 
+  button, 
+  .sidebar-trigger,
+  [data-sidebar="sidebar"],
+  .fixed,
+  .sticky {
     display: none !important;
   }
   
-  body {
+  body, html {
     background: white !important;
     color: black !important;
     padding: 0 !important;
     margin: 0 !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    overflow: visible !important;
   }
 
-  /* Force background colors and colors for ALL elements during print */
-  /* This ensures that all corporate branding colors are preserved correctly */
-  * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    color-adjust: exact !important;
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    overflow: visible !important;
   }
 
   .document-container {
     width: 210mm !important;
     min-height: 297mm !important;
-    padding: 0 !important;
+    padding: 10mm !important; /* Professional margins */
     margin: 0 !important;
     box-shadow: none !important;
     border: none !important;
+    background: white !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+  }
+
+  /* Force background colors and colors for ALL elements during print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
 
   @page {

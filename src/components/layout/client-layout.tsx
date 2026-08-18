@@ -28,11 +28,15 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="flex h-screen w-full overflow-hidden bg-slate-50/30">
-        <AppSidebar />
+        <div className="no-print">
+          <AppSidebar />
+        </div>
         <div className="flex flex-col flex-1 min-w-0 w-full overflow-hidden">
-          <AppHeader />
-          <main className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
-            <div className="max-w-[1600px] mx-auto p-4 md:p-6 lg:p-8">
+          <div className="no-print">
+            <AppHeader />
+          </div>
+          <main className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar print:overflow-visible">
+            <div className="max-w-[1600px] mx-auto p-4 md:p-6 lg:p-8 print:p-0 print:max-w-none">
               {children}
             </div>
           </main>

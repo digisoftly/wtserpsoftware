@@ -25,7 +25,6 @@ import { useTenant } from "@/context/tenant-context"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DocumentTemplate } from "@/components/documents/document-template"
 import { useTranslation } from "@/hooks/use-translation"
 import { cn } from "@/lib/utils"
@@ -46,16 +45,6 @@ export default function ViewInvoicePage() {
 
   const { data: invoice, isLoading } = useDoc(invoiceRef);
 
-  const paymentsQuery = useMemoFirebase(() => {
-    if (!db || !companyId || !branchId || !id) return null;
-    return query(
-      collection(db, "companies", companyId, "branches", branchId, "payments"),
-      where("invoiceId", "==", id),
-      orderBy("createdAt", "desc")
-    );
-  }, [db, companyId, branchId, id]);
-  const { data: payments } = useCollection(paymentsQuery);
-
   // Auto-print effect
   React.useEffect(() => {
     if (!isLoading && invoice && searchParams.get('print') === 'true') {
@@ -70,6 +59,10 @@ export default function ViewInvoicePage() {
     if (!invoice) return;
     const text = `Hello ${invoice.customerName}, your invoice ${invoice.invoiceNumber} has been generated for ৳${invoice.totalAmount?.toLocaleString()}. Status: ${invoice.status?.toUpperCase()}.`;
     window.open(`https://wa.me/${invoice.customerPhone}?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  const handlePrint = () => {
+    window.print();
   };
 
   if (isLoading) {
@@ -112,10 +105,10 @@ export default function ViewInvoicePage() {
           <Button variant="outline" size="sm" className="rounded-full gap-2 border-slate-200 h-10 px-4 font-bold text-[10px] uppercase text-slate-600 bg-white" onClick={handleShareWhatsApp}>
             <MessageSquare className="h-3.5 w-3.5" /> WhatsApp
           </Button>
-          <Button variant="outline" className="rounded-full h-10 px-6 font-black text-[10px] uppercase gap-2 border-none ring-1 ring-slate-200 shadow-sm bg-white" onClick={() => window.print()}>
+          <Button variant="outline" className="rounded-full h-10 px-6 font-black text-[10px] uppercase gap-2 border-none ring-1 ring-slate-200 shadow-sm bg-white" onClick={handlePrint}>
             <Printer className="h-4 w-4 text-blue-600" /> {t('common.print')}
           </Button>
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full h-10 px-8 font-black text-[10px] uppercase gap-2 shadow-xl shadow-blue-100" onClick={() => window.print()}>
+          <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full h-10 px-8 font-black text-[10px] uppercase gap-2 shadow-xl shadow-blue-100" onClick={handlePrint}>
             <Download className="h-4 w-4" /> Download PDF
           </Button>
         </div>
@@ -124,7 +117,7 @@ export default function ViewInvoicePage() {
       <div className="max-w-[1400px] mx-auto w-full p-4 md:p-10 grid grid-cols-1 xl:grid-cols-12 gap-8">
         {/* INVOICE PREVIEW */}
         <div className="xl:col-span-8 space-y-6">
-          <div className="bg-white shadow-2xl rounded-2xl overflow-hidden border border-slate-100 ring-1 ring-slate-100/50 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="bg-white shadow-2xl rounded-2xl overflow-hidden border border-slate-100 ring-1 ring-slate-100/50 animate-in fade-in slide-in-from-bottom-4 duration-700 document-wrapper">
             <DocumentTemplate
               title={t('nav.sales')}
               docNumber={invoice.invoiceNumber}
