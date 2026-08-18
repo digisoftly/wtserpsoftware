@@ -136,15 +136,6 @@ export function WarriorLayout({
                 <td className="border-x border-black p-2 text-right text-[11px] font-normal pr-4">{(item.total || 0).toLocaleString()}</td>
               </tr>
             ))}
-            {/* Filler for layout height stability */}
-            <tr className="h-12">
-               <td className="border-x border-black"></td>
-               <td className="border-x border-black"></td>
-               <td className="border-x border-black"></td>
-               <td className="border-x border-black"></td>
-               <td className="border-x border-black"></td>
-               <td className="border-x border-black"></td>
-            </tr>
             
             {/* SUMMARY MATRIX */}
             <tr className="h-8">
@@ -181,22 +172,19 @@ export function WarriorLayout({
 
       {/* 7. CORPORATE FOOTER & SIGNATURES */}
       <div className="mt-auto pt-4 pb-6 text-center space-y-2 border-t-2 border-[#F57C00] mx-2">
-        {/* Signatures */}
-        <div className="grid grid-cols-4 gap-4 px-4 pt-12 mb-8">
-           <div className="text-center">
-              <div className="border-t border-black pt-1 text-[9px] font-black uppercase">Customer Signature</div>
-           </div>
-           <div className="text-center">
-              <div className="border-t border-black pt-1 text-[9px] font-black uppercase">Prepared By</div>
-           </div>
-           <div className="text-center">
-              <div className="border-t border-black pt-1 text-[9px] font-black uppercase">Checked By</div>
-           </div>
+        <div className="grid grid-cols-4 gap-4 px-4 pt-12 mb-8 relative">
+           <div className="text-center"><div className="border-t border-black pt-1 text-[9px] font-black uppercase">Customer Signature</div></div>
+           <div className="text-center"><div className="border-t border-black pt-1 text-[9px] font-black uppercase">Prepared By</div></div>
+           <div className="text-center"><div className="border-t border-black pt-1 text-[9px] font-black uppercase">Checked By</div></div>
            <div className="text-center relative">
-              <div className="absolute -top-16 left-1/2 -translate-x-1/2 opacity-20 rotate-12">
-                 <div className="w-16 h-16 border-2 border-blue-600 rounded-full flex items-center justify-center text-[8px] font-black text-blue-600 uppercase text-center">
-                   Proprietor<br/>WTS
-                 </div>
+              {/* Authorized Seal and Sign Display */}
+              <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex items-center justify-center h-20 w-40 gap-2">
+                 {settings?.authorizedSeal && (
+                   <img src={settings.authorizedSeal} className="h-20 w-20 object-contain opacity-80" alt="Seal" />
+                 )}
+                 {settings?.authorizedSignature && (
+                   <img src={settings.authorizedSignature} className="h-16 w-32 object-contain absolute bottom-2" alt="Signature" />
+                 )}
               </div>
               <div className="border-t-2 border-blue-700 pt-1 text-[10px] font-black uppercase text-blue-800">Authorized Signature</div>
            </div>
