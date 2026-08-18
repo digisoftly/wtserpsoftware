@@ -25,7 +25,7 @@ export function WarriorLayout({
   notes,
 }: DocumentTemplateProps) {
   const { settings } = useSettings();
-  const { t, formatCurrency, formatDate } = useTranslation();
+  const { t, formatCurrency, formatDate, amountToWords } = useTranslation();
 
   return (
     <div className="flex flex-col min-h-full bg-white text-[#222222] font-sans p-0 select-none border-none leading-tight document-body">
@@ -153,7 +153,7 @@ export function WarriorLayout({
       <div className="px-4 mt-6">
         <p className="text-[10px] font-black uppercase text-slate-400 mb-1">{t('common.amountInWords')}:</p>
         <p className="text-[11px] font-bold text-slate-800 italic border-l-2 border-slate-200 pl-3">
-          {t('common.only')} {formatCurrency(grandTotal || 0).replace('৳', '').replace('BDT', '')} {t('common.bdt')} {t('common.only')}.
+          {amountToWords(grandTotal || 0)}
         </p>
       </div>
 

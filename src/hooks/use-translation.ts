@@ -2,6 +2,7 @@
 
 import { useTenant } from '@/context/tenant-context';
 import { translations } from '@/lib/translations';
+import { numberToWords } from '@/lib/number-to-words';
 
 export function useTranslation() {
   const { language } = useTenant();
@@ -39,7 +40,7 @@ export function useTranslation() {
    * Formats numbers based on locale
    */
   const formatNumber = (num: number): string => {
-    return new Intl.NumberFormat(currentLang === 'BN' ? 'bn-BD' : 'en-US').format(num);
+    return new Intl.NumberFormat(currentLang === 'BN' ? 'bn-BD' : 'en-US').format(num || 0);
   };
 
   /**
@@ -51,7 +52,7 @@ export function useTranslation() {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount || 0);
-    return currentLang === 'BN' ? `${symbol}${formatted}` : `${symbol}${formatted}`;
+    return `${symbol}${formatted}`;
   };
 
   /**
@@ -73,5 +74,12 @@ export function useTranslation() {
     }
   };
 
-  return { t, language: currentLang, formatNumber, formatCurrency, formatDate };
+  /**
+   * Converts numeric amount to words in current language
+   */
+  const amountToWords = (amount: number): string => {
+    return numberToWords(amount || 0, currentLang as 'EN' | 'BN');
+  };
+
+  return { t, language: currentLang, formatNumber, formatCurrency, formatDate, amountToWords };
 }
