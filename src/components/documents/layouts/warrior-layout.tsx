@@ -111,12 +111,24 @@ export function WarriorLayout({
         <table className="w-full border-collapse border border-black table-fixed">
           <thead>
             <tr className="bg-[#F57C00] text-white h-10">
-              <th className="border border-black w-[45px] text-[10px] font-black uppercase">{t('forms.sl')}</th>
-              <th className="border border-black px-4 text-left text-[10px] font-black uppercase">{t('forms.itemName')}</th>
-              <th className="border border-black w-[100px] text-center text-[10px] font-black uppercase">{t('forms.brand')}</th>
-              <th className="border border-black w-[80px] text-center text-[10px] font-black uppercase">{t('forms.qty')}</th>
-              <th className="border border-black w-[100px] text-center text-[10px] font-black uppercase">{t('forms.price')}</th>
-              <th className="border border-black w-[120px] text-right text-[10px] font-black uppercase pr-4">{t('common.amount')}</th>
+              <th className="border border-black w-[45px] text-[10px] font-black uppercase">
+                {settings?.pdfTable_sl || t('forms.sl')}
+              </th>
+              <th className="border border-black px-4 text-left text-[10px] font-black uppercase">
+                {settings?.pdfTable_item || t('forms.itemName')}
+              </th>
+              <th className="border border-black w-[100px] text-center text-[10px] font-black uppercase">
+                {settings?.pdfTable_brand || t('forms.brand')}
+              </th>
+              <th className="border border-black w-[80px] text-center text-[10px] font-black uppercase">
+                {settings?.pdfTable_qty || t('forms.qty')}
+              </th>
+              <th className="border border-black w-[100px] text-center text-[10px] font-black uppercase">
+                {settings?.pdfTable_price || t('forms.price')}
+              </th>
+              <th className="border border-black w-[120px] text-right text-[10px] font-black uppercase pr-4">
+                {settings?.pdfTable_amount || t('common.amount')}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -142,19 +154,27 @@ export function WarriorLayout({
             
             {/* SUMMARY MATRIX */}
             <tr className="h-8">
-               <td colSpan={5} className="bg-[#f8f9fa] border border-black p-1 text-right text-[11px] font-black uppercase pr-4">{t('forms.subtotal')}</td>
+               <td colSpan={5} className="bg-[#f8f9fa] border border-black p-1 text-right text-[11px] font-black uppercase pr-4">
+                 {settings?.pdfTable_subtotal || t('forms.subtotal')}
+               </td>
                <td className="border border-black p-1 text-right text-[11px] font-black pr-4">{(subtotal || 0).toLocaleString()}</td>
             </tr>
             <tr className="h-8">
-               <td colSpan={5} className="bg-red-50 border border-black p-1 text-right text-[11px] font-black uppercase pr-4 text-red-700">{t('forms.discount')}</td>
+               <td colSpan={5} className="bg-red-50 border border-black p-1 text-right text-[11px] font-black uppercase pr-4 text-red-700">
+                 {settings?.pdfTable_discount || t('forms.discount')}
+               </td>
                <td className="border border-black p-1 text-right text-[11px] font-black pr-4 text-red-700">{(discount || 0).toLocaleString()}</td>
             </tr>
             <tr className="h-8">
-               <td colSpan={5} className="bg-[#f8f9fa] border border-black p-1 text-right text-[11px] font-black uppercase pr-4">{t('forms.tax')}</td>
+               <td colSpan={5} className="bg-[#f8f9fa] border border-black p-1 text-right text-[11px] font-black uppercase pr-4">
+                 {settings?.pdfTable_tax || t('forms.tax')}
+               </td>
                <td className="border border-black p-1 text-right text-[11px] font-black pr-4">{(taxAmount || 0).toLocaleString()}</td>
             </tr>
             <tr className="h-10">
-               <td colSpan={5} className="bg-[#F57C00] border border-black p-1 text-right text-[12px] font-black uppercase pr-4 text-white">{t('forms.grandTotal')}</td>
+               <td colSpan={5} className="bg-[#F57C00] border border-black p-1 text-right text-[12px] font-black uppercase pr-4 text-white">
+                 {settings?.pdfTable_grandTotal || t('forms.grandTotal')}
+               </td>
                <td className="bg-[#F57C00] border border-black p-1 text-right text-[14px] font-black pr-4 text-white">{(grandTotal || 0).toLocaleString()}</td>
             </tr>
 
@@ -162,11 +182,15 @@ export function WarriorLayout({
             {type === 'invoice' && (
               <>
                 <tr className="h-8">
-                   <td colSpan={5} className="bg-[#D5F5E3] border border-black p-1 text-right text-[11px] font-black uppercase pr-4 text-[#155724]">Pay (Payment Amount)</td>
+                   <td colSpan={5} className="bg-[#D5F5E3] border border-black p-1 text-right text-[11px] font-black uppercase pr-4 text-[#155724]">
+                     {settings?.pdfTable_paid || "Pay (Payment Amount)"}
+                   </td>
                    <td className="border border-black p-1 text-right text-[11px] font-black pr-4 text-[#155724]">{(paidAmount || 0).toLocaleString()}</td>
                 </tr>
                 <tr className="h-8">
-                   <td colSpan={5} className="bg-red-50 border border-black p-1 text-right text-[11px] font-black uppercase pr-4 text-red-700">Due Payable Amount</td>
+                   <td colSpan={5} className="bg-red-50 border border-black p-1 text-right text-[11px] font-black uppercase pr-4 text-red-700">
+                     {settings?.pdfTable_due || "Due Payable Amount"}
+                   </td>
                    <td className="border border-black p-1 text-right text-[11px] font-black pr-4 text-red-700">{(balanceDue || 0).toLocaleString()}</td>
                 </tr>
               </>

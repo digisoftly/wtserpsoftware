@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -8,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DocumentTemplateProps } from "../document-template"
 import { QrCode, Barcode, ShieldCheck, CheckCircle2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { useTranslation } from "@/hooks/use-translation"
 
 export function ProfessionalLayout({
   title,
@@ -26,6 +26,7 @@ export function ProfessionalLayout({
   type
 }: DocumentTemplateProps) {
   const { currencySymbol, settings } = useSettings()
+  const { t } = useTranslation()
 
   return (
     <div className="flex flex-col min-h-full text-slate-900">
@@ -42,7 +43,7 @@ export function ProfessionalLayout({
             </div>
             <div>
               <h1 className="text-3xl font-black font-headline uppercase tracking-tighter text-primary leading-none">{settings?.companyName || "Warrior Tech System"}</h1>
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] mt-2 italic opacity-60">Innovative Security, Reliable Communication</p>
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] mt-2 italic opacity-60">{settings?.companySlogan || "Innovative Security, Reliable Communication"}</p>
             </div>
           </div>
           
@@ -66,16 +67,16 @@ export function ProfessionalLayout({
             </div>
             <div className="space-y-1.5 mt-4">
               <div className="flex justify-end items-center gap-3">
-                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Invoice No:</span>
+                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No:</span>
                  <span className="text-xs font-black font-mono text-slate-900 tracking-tighter">{docNumber}</span>
               </div>
               <div className="flex justify-end items-center gap-3">
-                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Issue Date:</span>
+                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Date:</span>
                  <span className="text-xs font-black text-slate-900">{new Date(date).toLocaleDateString()}</span>
               </div>
               <div className="flex justify-end items-center gap-3">
                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status:</span>
-                 <Badge className={cn("text-[8px] h-4 uppercase border-none px-2 font-black", status === 'paid' ? 'bg-green-600' : 'bg-orange-500')}>{status}</Badge>
+                 <Badge className={cn("text-[8px] h-4 uppercase border-none px-2 font-black shadow-sm", status === 'paid' ? 'bg-green-600 text-white' : 'bg-orange-500 text-white')}>{status}</Badge>
               </div>
             </div>
           </div>
@@ -121,10 +122,18 @@ export function ProfessionalLayout({
         <Table className="border border-slate-200 rounded-[1.5rem] overflow-hidden shadow-sm">
           <TableHeader className="bg-slate-900 text-white">
             <TableRow className="hover:bg-slate-900 border-none">
-              <TableHead className="text-white font-black uppercase text-[10px] tracking-widest pl-6 py-5">Item Matrix</TableHead>
-              <TableHead className="text-white font-black uppercase text-[10px] tracking-widest text-center w-32">Qty / Unit</TableHead>
-              <TableHead className="text-white font-black uppercase text-[10px] tracking-widest text-right w-36">Rate ({currencySymbol})</TableHead>
-              <TableHead className="text-white font-black uppercase text-[10px] tracking-widest text-right w-40 pr-10">Total ({currencySymbol})</TableHead>
+              <TableHead className="text-white font-black uppercase text-[10px] tracking-widest pl-6 py-5">
+                {settings?.pdfTable_item || t('forms.itemName')}
+              </TableHead>
+              <TableHead className="text-white font-black uppercase text-[10px] tracking-widest text-center w-32">
+                {settings?.pdfTable_qty || t('forms.qty')}
+              </TableHead>
+              <TableHead className="text-white font-black uppercase text-[10px] tracking-widest text-right w-36">
+                {settings?.pdfTable_price || t('forms.price')} ({currencySymbol})
+              </TableHead>
+              <TableHead className="text-white font-black uppercase text-[10px] tracking-widest text-right w-40 pr-10">
+                {settings?.pdfTable_amount || t('common.amount')} ({currencySymbol})
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -157,11 +166,8 @@ export function ProfessionalLayout({
         <div className="flex-1 space-y-8">
            <div>
             <h4 className="text-[10px] font-black uppercase text-slate-400 mb-3 tracking-[0.3em]">Corporate Terms & Conditions</h4>
-            <div className="text-[9px] font-bold text-slate-500 leading-relaxed space-y-1 bg-slate-50 p-6 rounded-2xl border-2 border-dotted border-slate-200">
-              <p>1. Payments are due within 15 days of invoice date unless specified otherwise.</p>
-              <p>2. Equipment remains property of Warrior Tech System until full payment is realized.</p>
-              <p>3. Hardware items are subject to specific manufacturer warranty policies.</p>
-              <p>4. This document is a computer-generated transaction record.</p>
+            <div className="text-[9px] font-bold text-slate-500 leading-relaxed space-y-1 bg-slate-50 p-6 rounded-2xl border-2 border-dotted border-slate-200 whitespace-pre-wrap">
+              {settings?.pdfTerms || "1. Payments are due within 15 days of invoice date unless specified otherwise.\n2. Equipment remains property of Warrior Tech System until full payment is realized.\n3. Hardware items are subject to specific manufacturer warranty policies.\n4. This document is a computer-generated transaction record."}
             </div>
           </div>
           {notes && (
@@ -174,25 +180,27 @@ export function ProfessionalLayout({
 
         <div className="w-96 bg-white p-8 rounded-[2rem] border-4 border-primary/5 shadow-xl space-y-5">
           <div className="flex justify-between text-[11px] font-black text-slate-400 uppercase tracking-widest">
-            <span>Subtotal Gross</span>
+            <span>{settings?.pdfTable_subtotal || t('forms.subtotal')}</span>
             <span className="text-slate-900">{currencySymbol}{(subtotal || 0).toLocaleString()}</span>
           </div>
           {taxRate !== undefined && taxAmount !== undefined && (
             <div className="flex justify-between text-[11px] font-black text-slate-400 uppercase tracking-widest">
-              <span>VAT / Taxes ({taxRate}%)</span>
+              <span>{settings?.pdfTable_tax || t('forms.tax')} ({taxRate}%)</span>
               <span className="text-slate-900">+{currencySymbol}{(taxAmount || 0).toLocaleString()}</span>
             </div>
           )}
           {discount !== undefined && discount > 0 && (
             <div className="flex justify-between text-[11px] font-black text-red-500 uppercase tracking-widest">
-              <span>Discount Net</span>
+              <span>{settings?.pdfTable_discount || t('forms.discount')}</span>
               <span className="font-black">-{currencySymbol}{(discount || 0).toLocaleString()}</span>
             </div>
           )}
           <div className="pt-6 border-t-2 border-slate-100 mt-2">
             <div className="flex justify-between items-end">
               <div className="space-y-1">
-                 <span className="text-xs font-black font-headline uppercase text-primary tracking-widest leading-none">Net Payable</span>
+                 <span className="text-xs font-black font-headline uppercase text-primary tracking-widest leading-none">
+                   {settings?.pdfTable_grandTotal || t('forms.grandTotal')}
+                 </span>
                  <p className="text-[8px] font-bold text-slate-400 uppercase">Inclusive of all duties</p>
               </div>
               <span className="text-3xl font-black font-headline text-primary tracking-tighter leading-none">{currencySymbol}{(grandTotal || 0).toLocaleString()}</span>
@@ -221,7 +229,7 @@ export function ProfessionalLayout({
           
           <div className="text-center flex flex-col items-center gap-3 pb-4">
              <div className="w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center opacity-40 grayscale group-hover:grayscale-0 transition-all duration-700">
-                <img src={settings?.companyLogo || ""} className="w-8 h-8 object-contain" />
+                <img src={settings?.companyLogo || ""} className="w-8 h-8 object-contain" alt="mini-logo" />
              </div>
              <p className="text-[8px] font-black uppercase text-slate-300 tracking-[0.5em] animate-pulse">WARRIOR TECHNOLOGY SYSTEMS</p>
           </div>

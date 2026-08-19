@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -7,6 +6,7 @@ import { cn } from "@/lib/utils"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DocumentTemplateProps } from "../document-template"
 import { Badge } from "@/components/ui/badge"
+import { useTranslation } from "@/hooks/use-translation"
 
 export function ERPProLayout({
   title,
@@ -23,6 +23,7 @@ export function ERPProLayout({
   status,
 }: DocumentTemplateProps) {
   const { currencySymbol, settings } = useSettings()
+  const { t } = useTranslation()
 
   return (
     <div className="flex flex-col min-h-full bg-white text-slate-900 font-sans p-0">
@@ -39,8 +40,8 @@ export function ERPProLayout({
                 )}
               </div>
               <div>
-                <h1 className="text-2xl font-black uppercase tracking-tight leading-none">Warrior Tech System</h1>
-                <p className="text-[10px] font-bold text-blue-100 uppercase tracking-widest mt-1.5 opacity-80">Innovative Security, Reliable Communication</p>
+                <h1 className="text-2xl font-black uppercase tracking-tight leading-none">{settings?.companyName || "Warrior Tech System"}</h1>
+                <p className="text-[10px] font-bold text-blue-100 uppercase tracking-widest mt-1.5 opacity-80">{settings?.companySlogan || "Innovative Security, Reliable Communication"}</p>
               </div>
             </div>
             <div className="text-[10px] font-bold text-blue-50/70 uppercase tracking-tighter">
@@ -71,21 +72,21 @@ export function ERPProLayout({
 
       {/* CUSTOMER SECTION: TWO CARDS */}
       <div className="grid grid-cols-2 gap-6 px-8 mb-8">
-        <Card className="border border-slate-100 shadow-sm p-5 rounded-xl bg-slate-50/50">
+        <div className="border border-slate-100 shadow-sm p-5 rounded-xl bg-slate-50/50">
           <h3 className="text-[10px] font-black text-[#0D6EFD] uppercase tracking-widest mb-3 border-b pb-2">Bill To</h3>
           <p className="text-sm font-black uppercase text-slate-900">{customerName || "Walking Client"}</p>
           <div className="text-[11px] text-slate-600 mt-2 space-y-1">
              <p className="whitespace-pre-wrap leading-relaxed">{customerInfo}</p>
           </div>
-        </Card>
-        <Card className="border border-slate-100 shadow-sm p-5 rounded-xl bg-slate-50/50">
+        </div>
+        <div className="border border-slate-100 shadow-sm p-5 rounded-xl bg-slate-50/50">
           <h3 className="text-[10px] font-black text-[#0D6EFD] uppercase tracking-widest mb-3 border-b pb-2">Ship To / Installation</h3>
           <div className="text-[11px] text-slate-600 space-y-1">
              <p><span className="font-bold uppercase text-[9px] text-slate-400">Site:</span> {customerName}</p>
              <p><span className="font-bold uppercase text-[9px] text-slate-400">Address:</span> {customerInfo?.split('\n')[1] || "Same as Billing"}</p>
              <p><span className="font-bold uppercase text-[9px] text-slate-400">Delivery:</span> {new Date(date).toLocaleDateString()}</p>
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* PRODUCT TABLE: STAR TECH STYLE */}
@@ -94,12 +95,22 @@ export function ERPProLayout({
           <Table>
             <TableHeader className="bg-slate-100">
               <TableRow className="hover:bg-slate-100 border-b border-slate-200">
-                <TableHead className="w-12 text-[10px] font-black uppercase text-slate-500 text-center">SL</TableHead>
-                <TableHead className="text-[10px] font-black uppercase text-slate-500">Product Name / Description</TableHead>
-                <TableHead className="w-24 text-[10px] font-black uppercase text-slate-500 text-center">Qty</TableHead>
-                <TableHead className="w-32 text-[10px] font-black uppercase text-slate-500 text-right">Unit Price</TableHead>
+                <TableHead className="w-12 text-[10px] font-black uppercase text-slate-500 text-center">
+                  {settings?.pdfTable_sl || t('forms.sl')}
+                </TableHead>
+                <TableHead className="text-[10px] font-black uppercase text-slate-500">
+                  {settings?.pdfTable_item || t('forms.itemName')}
+                </TableHead>
+                <TableHead className="w-24 text-[10px] font-black uppercase text-slate-500 text-center">
+                  {settings?.pdfTable_qty || t('forms.qty')}
+                </TableHead>
+                <TableHead className="w-32 text-[10px] font-black uppercase text-slate-500 text-right">
+                  {settings?.pdfTable_price || t('forms.price')}
+                </TableHead>
                 <TableHead className="w-24 text-[10px] font-black uppercase text-slate-500 text-right">Disc</TableHead>
-                <TableHead className="w-32 text-[10px] font-black uppercase text-slate-500 text-right">Total</TableHead>
+                <TableHead className="w-32 text-[10px] font-black uppercase text-slate-500 text-right">
+                  {settings?.pdfTable_amount || t('common.amount')}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -109,8 +120,8 @@ export function ERPProLayout({
                   <TableCell className="py-4">
                     <p className="text-sm font-bold text-slate-900 leading-tight mb-1">{item.name}</p>
                     <div className="flex flex-col gap-0.5">
-                       <span className="text-[9px] font-bold text-slate-400 uppercase">Brand : {item.description?.includes('Brand') ? item.description.split('Brand')[1].trim() : 'Warrior'}</span>
-                       <span className="text-[9px] font-bold text-slate-400 uppercase">Model : {item.description?.includes('SKU') ? item.description.split('SKU:')[1].trim() : 'N/A'}</span>
+                       <span className="text-[9px] font-bold text-slate-400 uppercase">{t('forms.brand')} : {item.brand || 'Warrior'}</span>
+                       <span className="text-[9px] font-bold text-slate-400 uppercase">{t('forms.model')} : {item.model || 'N/A'}</span>
                     </div>
                   </TableCell>
                   <TableCell className="text-center">
@@ -135,7 +146,7 @@ export function ERPProLayout({
       {/* PAYMENT AREA: TWO COLUMNS */}
       <div className="grid grid-cols-2 gap-10 px-8 mb-12">
         <div className="space-y-6">
-          <Card className="border border-slate-100 p-5 rounded-xl shadow-sm">
+          <div className="bg-white border border-slate-100 p-5 rounded-xl shadow-sm">
              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 border-b pb-2">Payment Details</h3>
              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
@@ -147,50 +158,28 @@ export function ERPProLayout({
                    <p className="text-xs font-mono font-bold text-slate-700">{docNumber.slice(-8)}</p>
                 </div>
              </div>
-          </Card>
-          
-          <div className="space-y-3">
-             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Project Identification</h3>
-             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-[10px] space-y-2">
-                <p><span className="font-bold text-slate-400 uppercase">Project:</span> Enterprise Support SLA</p>
-                <p><span className="font-bold text-slate-400 uppercase">Engineer:</span> System Technical Team</p>
-                <p><span className="font-bold text-slate-400 uppercase">Warranty:</span> 12 Months (Exp: 2026)</p>
-             </div>
           </div>
         </div>
 
         <div className="flex flex-col gap-2">
            <div className="flex justify-between px-4 text-xs font-bold text-slate-500 uppercase">
-             <span>Sub Total</span>
+             <span>{settings?.pdfTable_subtotal || t('forms.subtotal')}</span>
              <span>{currencySymbol}{(subtotal || 0).toLocaleString()}</span>
            </div>
            <div className="flex justify-between px-4 text-xs font-bold text-slate-500 uppercase">
-             <span>Discount</span>
+             <span>{settings?.pdfTable_discount || t('forms.discount')}</span>
              <span className="text-[#DC3545]">-{currencySymbol}{(discount || 0).toLocaleString()}</span>
            </div>
            <div className="flex justify-between px-4 text-xs font-bold text-slate-500 uppercase">
-             <span>VAT ({taxRate || 0}%)</span>
+             <span>{settings?.pdfTable_tax || t('forms.tax')} ({taxRate || 0}%)</span>
              <span>+{currencySymbol}{(taxAmount || 0).toLocaleString()}</span>
-           </div>
-           <div className="flex justify-between px-4 text-xs font-bold text-slate-500 uppercase">
-             <span>Transport</span>
-             <span>{currencySymbol}0.00</span>
            </div>
            
            <div className="bg-[#0D6EFD] text-white p-5 rounded-xl shadow-xl flex justify-between items-center mt-4">
-              <span className="text-xs font-black uppercase tracking-[0.2em]">Grand Total</span>
+              <span className="text-xs font-black uppercase tracking-[0.2em]">
+                {settings?.pdfTable_grandTotal || t('forms.grandTotal')}
+              </span>
               <span className="text-2xl font-black">{currencySymbol}{(grandTotal || 0).toLocaleString()}</span>
-           </div>
-
-           <div className="grid grid-cols-2 gap-4 mt-2">
-              <div className="bg-[#198754]/10 p-3 rounded-xl flex flex-col items-center">
-                 <p className="text-[8px] font-black text-[#198754] uppercase tracking-widest mb-1">Paid Amount</p>
-                 <p className="text-sm font-black text-[#198754]">{currencySymbol}{(grandTotal || 0).toLocaleString()}</p>
-              </div>
-              <div className="bg-[#DC3545]/10 p-3 rounded-xl flex flex-col items-center">
-                 <p className="text-[8px] font-black text-[#DC3545] uppercase tracking-widest mb-1">Due Amount</p>
-                 <p className="text-sm font-black text-[#DC3545]">{currencySymbol}0.00</p>
-              </div>
            </div>
         </div>
       </div>
@@ -219,7 +208,9 @@ export function ERPProLayout({
 
       {/* FOOTER */}
       <div className="mt-auto bg-slate-50 p-8 text-center space-y-2 border-t border-slate-100 rounded-b-xl">
-        <p className="text-xs font-black uppercase text-slate-400 tracking-widest">Thank You For Your Business</p>
+        <p className="text-xs font-black uppercase text-slate-400 tracking-widest">
+          {settings?.footerHeartMsg || "Thank You For Your Business"}
+        </p>
         <div className="flex flex-col items-center opacity-40">
            <p className="text-[10px] font-black text-slate-900 uppercase">Warrior Tech System</p>
            <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Innovative Security, Reliable Communication</p>
@@ -227,8 +218,4 @@ export function ERPProLayout({
       </div>
     </div>
   )
-}
-
-function Card({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn("bg-white border rounded-xl", className)}>{children}</div>
 }

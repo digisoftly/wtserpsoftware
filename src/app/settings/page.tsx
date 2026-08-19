@@ -29,7 +29,8 @@ import {
   Globe,
   Mail,
   MapPin,
-  FileBadge
+  FileBadge,
+  LayoutGrid
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -265,46 +266,75 @@ export default function SettingsPage() {
 
           <TabsContent value="documents" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <Card className="lg:col-span-4 border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-8 space-y-6 h-fit">
-                 <div className="space-y-6">
-                    <div className="flex items-center gap-2 border-b pb-2">
-                       <Palette className="h-4 w-4 text-blue-600" />
-                       <h3 className="text-xs font-black uppercase tracking-widest">Visual Styles</h3>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase text-slate-500">Template Engine</Label>
-                      <Select name="defaultTemplate_invoice" defaultValue={settings?.defaultTemplate_invoice || "warrior"} onValueChange={setPreviewLayout}>
-                        <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
-                        <SelectContent>{DOCUMENT_LAYOUTS.map(l => <SelectItem key={l.value} value={l.value}>{l.name}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Primary Color</Label><Input type="color" value={docPrimaryColor} onChange={e => setDocPrimaryColor(e.target.value)} className="h-12 w-full p-1" /></div>
-                      <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Accent Color</Label><Input type="color" value={docAccentColor} onChange={e => setDocAccentColor(e.target.value)} className="h-12 w-full p-1" /></div>
-                    </div>
+              <div className="lg:col-span-5 space-y-6">
+                <Card className="border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-8 space-y-6">
+                  <div className="flex items-center gap-2 border-b pb-2">
+                    <Palette className="h-4 w-4 text-blue-600" />
+                    <h3 className="text-xs font-black uppercase tracking-widest">Visual Styles</h3>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-black uppercase text-slate-500">Template Engine</Label>
+                    <Select name="defaultTemplate_invoice" defaultValue={settings?.defaultTemplate_invoice || "warrior"} onValueChange={setPreviewLayout}>
+                      <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
+                      <SelectContent>{DOCUMENT_LAYOUTS.map(l => <SelectItem key={l.value} value={l.value}>{l.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Primary Color</Label><Input type="color" value={docPrimaryColor} onChange={e => setDocPrimaryColor(e.target.value)} className="h-12 w-full p-1" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Accent Color</Label><Input type="color" value={docAccentColor} onChange={e => setDocAccentColor(e.target.value)} className="h-12 w-full p-1" /></div>
+                  </div>
 
-                    <div className="flex items-center gap-2 border-b pb-2 pt-4">
-                       <FileBadge className="h-4 w-4 text-blue-600" />
-                       <h3 className="text-xs font-black uppercase tracking-widest">Custom PDF Text</h3>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase text-slate-500">Standard Terms & Conditions</Label>
-                      <Textarea name="pdfTerms" defaultValue={settings?.pdfTerms} className="min-h-[120px] rounded-xl text-xs" placeholder="1. Equipment remains property..." />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase text-slate-500">Footer 'Heart' Message</Label>
-                      <Input name="footerHeartMsg" defaultValue={settings?.footerHeartMsg} className="h-11 rounded-xl" placeholder="Thank You For Your Business" />
-                    </div>
-                 </div>
-              </Card>
+                  <div className="flex items-center gap-2 border-b pb-2 pt-4">
+                    <FileBadge className="h-4 w-4 text-blue-600" />
+                    <h3 className="text-xs font-black uppercase tracking-widest">Custom PDF Text</h3>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-black uppercase text-slate-500">Standard Terms & Conditions</Label>
+                    <Textarea name="pdfTerms" defaultValue={settings?.pdfTerms} className="min-h-[100px] rounded-xl text-[10px] font-bold" placeholder="1. Equipment remains property..." />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-black uppercase text-slate-500">Footer 'Heart' Message</Label>
+                    <Input name="footerHeartMsg" defaultValue={settings?.footerHeartMsg} className="h-11 rounded-xl font-bold" placeholder="Thank You For Your Business" />
+                  </div>
+                </Card>
 
-              <div className="lg:col-span-8 space-y-4">
+                {/* New Table Customization Section */}
+                <Card className="border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-8 space-y-6">
+                  <div className="flex items-center gap-2 border-b pb-2">
+                    <TableIcon className="h-4 w-4 text-blue-600" />
+                    <h3 className="text-xs font-black uppercase tracking-widest">Table Header Customization</h3>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-6">
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">SL Header</Label><Input name="pdfTable_sl" defaultValue={settings?.pdfTable_sl} className="h-10 rounded-xl text-xs font-black uppercase" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Item Name Header</Label><Input name="pdfTable_item" defaultValue={settings?.pdfTable_item} className="h-10 rounded-xl text-xs font-black uppercase" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Brand Header</Label><Input name="pdfTable_brand" defaultValue={settings?.pdfTable_brand} className="h-10 rounded-xl text-xs font-black uppercase" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Qty Header</Label><Input name="pdfTable_qty" defaultValue={settings?.pdfTable_qty} className="h-10 rounded-xl text-xs font-black uppercase" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Price Header</Label><Input name="pdfTable_price" defaultValue={settings?.pdfTable_price} className="h-10 rounded-xl text-xs font-black uppercase" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Amount Header</Label><Input name="pdfTable_amount" defaultValue={settings?.pdfTable_amount} className="h-10 rounded-xl text-xs font-black uppercase" /></div>
+                  </div>
+
+                  <div className="flex items-center gap-2 border-b pb-2 pt-4">
+                    <LayoutGrid className="h-4 w-4 text-blue-600" />
+                    <h3 className="text-xs font-black uppercase tracking-widest">Summary Label Overrides</h3>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Subtotal Label</Label><Input name="pdfTable_subtotal" defaultValue={settings?.pdfTable_subtotal} className="h-10 rounded-xl text-xs font-black uppercase" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Discount Label</Label><Input name="pdfTable_discount" defaultValue={settings?.pdfTable_discount} className="h-10 rounded-xl text-xs font-black uppercase" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">VAT Label</Label><Input name="pdfTable_tax" defaultValue={settings?.pdfTable_tax} className="h-10 rounded-xl text-xs font-black uppercase" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Grand Total Label</Label><Input name="pdfTable_grandTotal" defaultValue={settings?.pdfTable_grandTotal} className="h-10 rounded-xl text-xs font-black uppercase" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Paid Amount Label</Label><Input name="pdfTable_paid" defaultValue={settings?.pdfTable_paid} className="h-10 rounded-xl text-xs font-black uppercase" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Balance Due Label</Label><Input name="pdfTable_due" defaultValue={settings?.pdfTable_due} className="h-10 rounded-xl text-xs font-black uppercase" /></div>
+                  </div>
+                </Card>
+              </div>
+
+              <div className="lg:col-span-7 space-y-4">
                  <div className="flex items-center justify-between px-2">
                     <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><Eye className="h-3.5 w-3.5" /> PDF Preview Lab</p>
-                    <Badge variant="outline" className="text-[9px] uppercase font-black px-2 bg-white">Dynamic Scale View</Badge>
+                    <Badge variant="outline" className="text-[9px] font-black px-2 bg-white">Dynamic Scale View</Badge>
                  </div>
                  <div className="bg-white rounded-[2rem] border shadow-2xl p-4 md:p-8 overflow-hidden">
-                    <div className="scale-[0.6] sm:scale-[0.8] origin-top">
+                    <div className="scale-[0.55] sm:scale-[0.7] origin-top">
                        <DocumentTemplate {...mockPreviewData} layoutOverride={previewLayout} />
                     </div>
                  </div>
