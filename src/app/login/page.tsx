@@ -16,12 +16,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { seedMasterData } from '@/lib/seed-data';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
 import { firebaseConfig } from '@/firebase/config';
 import { toast } from '@/hooks/use-toast';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function LoginPage() {
   const auth = useAuth();
@@ -62,11 +60,11 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error: any) {
       setIsLoading(false);
+      let msg = error.message;
       if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-        setAuthError("Credential mismatch. Please run 'System Bootstrap' if this is a new installation.");
-      } else {
-        setAuthError(error.message);
+        msg = "Login Failed: Incorrect email or password.";
       }
+      setAuthError(msg);
     }
   };
 
@@ -76,33 +74,27 @@ export default function LoginPage() {
     setAuthError(null);
 
     try {
-      // 1. Provision Auth Identity
-      const secondaryName = `prod-init-${Date.now()}`;
-      const secondaryApp = initializeApp(firebaseConfig, secondaryName);
-      const secondaryAuth = (await import('firebase/auth')).getAuth(secondaryApp);
+      // 1. Check if identity already exists to prevent duplicate creation errors
+      let uid = auth.currentUser?.uid;
       
-      let uid;
-      try {
-        const cred = await createUserWithEmailAndPassword(secondaryAuth, 'warriortechsystem@gmail.com', 'admin123');
-        uid = cred.user.uid;
-      } catch (e: any) {
-        if (e.code === 'auth/email-already-in-use') {
-          await signInWithEmailAndPassword(auth, 'warriortechsystem@gmail.com', 'admin123');
-          uid = auth.currentUser?.uid;
-        } else throw e;
+      if (!uid) {
+        try {
+          const cred = await createUserWithEmailAndPassword(auth, 'warriortechsystem@gmail.com', 'admin123');
+          uid = cred.user.uid;
+        } catch (e: any) {
+          if (e.code === 'auth/email-already-in-use') {
+            const cred = await signInWithEmailAndPassword(auth, 'warriortechsystem@gmail.com', 'admin123');
+            uid = cred.user.uid;
+          } else throw e;
+        }
       }
 
-      if (!auth.currentUser) {
-        await signInWithEmailAndPassword(auth, 'warriortechsystem@gmail.com', 'admin123');
-        uid = auth.currentUser?.uid;
-      }
+      if (!uid) throw new Error("Authentication synchronization failed.");
 
-      if (!uid) throw new Error("Auth sync failed.");
-
-      // 2. Seed Master Structure
+      // 2. Deploy Master Data Structure
       await seedMasterData(db, companyId);
 
-      // 3. Create Super Admin Profile
+      // 3. Create Root Admin Profile
       const userRef = doc(db, "companies", companyId, "users", uid);
       const profileData = {
         id: uid,
@@ -119,36 +111,24 @@ export default function LoginPage() {
         updatedAt: serverTimestamp()
       };
 
-      await setDoc(userRef, profileData).catch(async (err) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: userRef.path,
-          operation: 'create',
-          requestResourceData: profileData
-        }));
-      });
+      await setDoc(userRef, profileData, { merge: true });
 
-      // 4. Create Initial Branch
+      // 4. Ensure Initial Branch Exists
       const branchRef = doc(db, "companies", companyId, "branches", "dhaka-main");
-      const branchData = {
+      await setDoc(branchRef, {
         id: "dhaka-main",
         branchName: "Head Office (Main)",
         branchCode: "HQ-001",
         status: "active",
         createdAt: serverTimestamp()
-      };
+      }, { merge: true });
 
-      await setDoc(branchRef, branchData).catch(async (err) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: branchRef.path,
-          operation: 'create',
-          requestResourceData: branchData
-        }));
-      });
-
-      toast({ title: "System Ready", description: "Production environment initialized." });
-      router.push('/');
+      toast({ title: "System Ready", description: "Live Environment Initialized." });
+      
+      // Force reload to pick up new profile in context
+      window.location.href = '/';
     } catch (error: any) {
-      setAuthError(`Bootstrap Error: ${error.message}`);
+      setAuthError(`Bootstrap Failed: ${error.code || 'Sync Error'}`);
     } finally {
       setIsBootstrapping(false);
     }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -27,7 +28,6 @@ interface TenantContextType {
   allowedBranches: string[];
 }
 
-// CONSISTENT PRODUCTION ID
 const PRODUCTION_COMPANY_ID = "warrior-tech-system";
 
 const TenantContext = React.createContext<TenantContextType>({
@@ -66,18 +66,18 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (!isUserLoading && user && db) {
-      // 1. Fetch System Assets
+      // 1. Fetch Global Settings
       unsubSettings = onSnapshot(doc(db, "companies", companyId, "system", "config"), (snap) => {
         if (snap.exists()) setSettings(snap.data());
       });
 
-      // 2. Fetch User Authority
+      // 2. Fetch User Profile & Role
       const userRef = doc(db, "companies", companyId, "users", user.uid);
       unsubUser = onSnapshot(userRef, async (snap) => {
         if (snap.exists()) {
           const userData = snap.data();
           
-          if (userData.status !== 'active') {
+          if (userData.status === 'suspended') {
             toast({ variant: "destructive", title: "Access Restricted", description: "Account suspended." });
             signOut(auth);
             return;
@@ -88,7 +88,8 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           setAllowedBranches(userData.allowedBranches || ['dhaka-main']);
 
           // Fetch Attached Role
-          const roleSnap = await getDoc(doc(db, "companies", companyId, "roles", userData.roleId || "default-user"));
+          const roleId = userData.roleId || "default-user";
+          const roleSnap = await getDoc(doc(db, "companies", companyId, "roles", roleId));
           if (roleSnap.exists()) {
             const roleData = roleSnap.data();
             setUserRole({ 
@@ -98,6 +99,8 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
             } as Role);
           }
         }
+        // If profile doesn't exist yet, we don't kick the user out immediately.
+        // This allows time for the Bootstrap process on the login page.
         setIsInitializing(false);
       }, (err) => {
         console.error("Authority fetch failed:", err);

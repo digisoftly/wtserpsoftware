@@ -13,10 +13,6 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid)).data;
     }
 
-    function isAccountActive(companyId) {
-      return getUserData(companyId).status == 'active';
-    }
-
     function isCompanyMember(companyId) {
       return isSignedIn() && exists(/databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid));
     }
@@ -37,11 +33,15 @@ service cloud.firestore {
 
     // --- MODULE RULES ---
 
-    // 1. Audit Logs & History
+    // 1. Audit Logs
     match /companies/{companyId}/audit_logs/{logId} {
       allow read: if isCompanyAdmin(companyId);
-      allow create: if isCompanyMember(companyId);
-      allow update, delete: if false; 
+      allow create: if isSignedIn(); // Allow logging even during bootstrap
+    }
+
+    match /companies/{companyId}/login_history/{id} {
+      allow read: if isCompanyAdmin(companyId);
+      allow create: if isSignedIn();
     }
 
     // 2. User & Role Management
@@ -53,7 +53,7 @@ service cloud.firestore {
     }
 
     match /companies/{companyId}/roles/{roleId} {
-      // Allow reading roles to check existance during bootstrap
+      // Relaxed read for initial load and bootstrap
       allow read: if isSignedIn();
       allow create: if isSignedIn(); 
       allow update, delete: if isSuperAdmin(companyId);
@@ -66,7 +66,7 @@ service cloud.firestore {
 
     // 4. Global Master Data & System Config
     match /companies/{companyId}/{collectionName}/{id} {
-      // Allow reading config for bootstrap state check
+      // Relaxed read for system initialization
       allow read: if isSignedIn();
       
       // Allow first-time setup
