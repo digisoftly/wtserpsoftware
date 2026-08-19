@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -15,22 +16,26 @@ import {
   UserPlus,
   Building,
   User,
-  LayoutGrid
+  LayoutGrid,
+  Search,
+  Scan,
+  Package
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, doc, setDoc, serverTimestamp, query, orderBy } from "firebase/firestore"
+import { collection, doc, setDoc, serverTimestamp, query, orderBy, where, getDocs, limit } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { useTranslation } from "@/hooks/use-translation"
 import { toast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
 
 interface QuoteItem {
   id: string;
@@ -68,6 +73,10 @@ export default function NewQuotationPage() {
   const [notes, setNotes] = React.useState("");
   const [terms, setTerms] = React.useState("");
 
+  // Search State
+  const [productSearch, setProductSearch] = React.useState("");
+  const [isSearchingSN, setIsSearchingSN] = React.useState(false);
+
   // Quick Customer State
   const [isCustomerModalOpen, setIsCustomerModalOpen] = React.useState(false);
   const [isCreatingCustomer, setIsCustomerCreating] = React.useState(false);
@@ -92,14 +101,23 @@ export default function NewQuotationPage() {
   }, [db, companyId]);
   const { data: masterUnits } = useCollection(unitsQuery);
 
+  // Filtered Products for Suggestion
+  const suggestedProducts = React.useMemo(() => {
+    if (!productSearch || productSearch.length < 2 || !products) return [];
+    const search = productSearch.toLowerCase();
+    return products.filter(p => 
+      p.name?.toLowerCase().includes(search) || 
+      p.sku?.toLowerCase().includes(search)
+    ).slice(0, 5);
+  }, [productSearch, products]);
+
   // Calculations
   const subtotal = React.useMemo(() => lineItems.reduce((sum, item) => sum + (item.qty * item.price), 0), [lineItems]);
   const itemDiscounts = lineItems.reduce((sum, item) => sum + (item.qty * item.price * (item.discount / 100)), 0);
   const itemTaxes = lineItems.reduce((sum, item) => sum + ((item.qty * item.price) - (item.qty * item.price * (item.discount / 100))) * (item.tax / 100), 0);
   const grandTotal = subtotal - itemDiscounts + itemTaxes - globalDiscount;
 
-  const handleAddProduct = (productId: string) => {
-    const product = products?.find(p => p.id === productId);
+  const handleAddProduct = (product: any, serialNumber: string = "") => {
     if (!product) return;
 
     const newItem: QuoteItem = {
@@ -111,7 +129,7 @@ export default function NewQuotationPage() {
       model: product.sku || "",
       specs: product.description || "",
       warranty: product.warranty || "1 Year",
-      sn: "",
+      sn: serialNumber,
       qty: 1,
       unit: product.unit || "Pcs",
       price: product.unitPrice || 0,
@@ -120,6 +138,45 @@ export default function NewQuotationPage() {
       total: product.unitPrice || 0,
     };
     setLineItems([...lineItems, newItem]);
+    setProductSearch("");
+  };
+
+  const handleProductSearchKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && productSearch.trim()) {
+      e.preventDefault();
+      setIsSearchingSN(true);
+      
+      try {
+        const snQuery = query(
+          collection(db!, "companies", companyId!, "branches", branchId!, "serial_numbers"),
+          where("serialNumber", "==", productSearch.trim()),
+          limit(1)
+        );
+        const snSnap = await getDocs(snQuery);
+        
+        if (!snSnap.empty) {
+          const snDoc = snSnap.docs[0].data();
+          const product = products?.find(p => p.id === snDoc.productId);
+          if (product) {
+            handleAddProduct(product, snDoc.serialNumber);
+            toast({ title: "Serial Linked", description: `Added: ${product.name}` });
+            return;
+          }
+        }
+
+        const productBySku = products?.find(p => p.sku?.toLowerCase() === productSearch.trim().toLowerCase());
+        if (productBySku) {
+          handleAddProduct(productBySku);
+          return;
+        }
+
+        toast({ variant: "destructive", title: "Notice", description: "Serial number or SKU not matched. Try searching by name." });
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsSearchingSN(false);
+      }
+    }
   };
 
   const addManualRow = () => {
@@ -296,20 +353,54 @@ export default function NewQuotationPage() {
             </CardContent>
           </Card>
 
+          {/* SEARCH & SCAN BAR */}
+          <div className="relative">
+             <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                {isSearchingSN ? <Loader2 className="h-5 w-5 animate-spin text-blue-600" /> : <Scan className="h-5 w-5 text-slate-400" />}
+             </div>
+             <Input 
+                value={productSearch}
+                onChange={e => setProductSearch(e.target.value)}
+                onKeyDown={handleProductSearchKeyDown}
+                className="h-14 pl-12 pr-6 rounded-2xl bg-white border-none ring-2 ring-slate-100 focus:ring-blue-600 shadow-lg text-sm font-bold uppercase"
+                placeholder="Scan S/N or Search Product (Name/Model)..."
+             />
+             
+             {/* Results Dropdown */}
+             {suggestedProducts.length > 0 && (
+                <Card className="absolute top-full left-0 right-0 mt-2 z-[60] border-none shadow-2xl rounded-2xl overflow-hidden bg-white ring-1 ring-slate-100">
+                   <div className="p-2 space-y-1">
+                      {suggestedProducts.map(p => (
+                        <div 
+                           key={p.id} 
+                           className="flex items-center justify-between p-3 hover:bg-blue-50 cursor-pointer rounded-xl group transition-all"
+                           onClick={() => handleAddProduct(p)}
+                        >
+                           <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-600">
+                                 <Package className="h-5 w-5" />
+                              </div>
+                              <div>
+                                 <p className="text-[11px] font-black uppercase text-slate-900">{p.name}</p>
+                                 <p className="text-[9px] font-bold text-slate-400 uppercase">{p.sku}</p>
+                              </div>
+                           </div>
+                           <div className="text-right">
+                              <p className="text-[11px] font-black text-blue-600">৳{p.unitPrice?.toLocaleString()}</p>
+                           </div>
+                        </div>
+                      ))}
+                   </div>
+                </Card>
+             )}
+          </div>
+
           <Card className="border-none shadow-sm ring-1 ring-slate-200 overflow-hidden">
             <div className="p-3 bg-slate-50 border-b flex flex-wrap items-center justify-between gap-2">
               <h3 className="text-[10px] font-black uppercase text-slate-500">{t('common.details')}</h3>
-              <div className="flex gap-2">
-                <Select onValueChange={handleAddProduct}>
-                  <SelectTrigger className="h-8 w-40 sm:w-48 text-[10px] bg-white border-slate-200 font-bold uppercase"><SelectValue placeholder="Import Product" /></SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
-                    {products?.map((p, idx) => <SelectItem key={`pq-${p.id}-${idx}`} value={p.id} className="text-xs font-bold">{p.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                <Button variant="outline" size="sm" className="h-8 rounded-lg gap-2 text-[10px] font-black uppercase" onClick={addManualRow}>
-                  <PlusCircle className="h-3.5 w-3.5" /> {t('common.add')} Generic
-                </Button>
-              </div>
+              <Button variant="outline" size="sm" className="h-8 rounded-lg gap-2 text-[10px] font-black uppercase" onClick={addManualRow}>
+                <PlusCircle className="h-3.5 w-3.5" /> {t('common.add')} Generic
+              </Button>
             </div>
             <div className="overflow-x-auto custom-scrollbar">
               <Table className="min-w-[1000px]">
@@ -339,7 +430,7 @@ export default function NewQuotationPage() {
                           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-1.5">
                              <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.model || ''} onChange={e => updateItem(item.id, 'model', e.target.value)} placeholder={t('forms.model')} />
                              <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.brand || ''} onChange={e => updateItem(item.id, 'brand', e.target.value)} placeholder={t('forms.brand')} />
-                             <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.sn || ''} onChange={e => updateItem(item.id, 'sn', e.target.value)} placeholder={t('forms.sn')} />
+                             <Input className="h-7 text-[9px] font-black text-blue-600 border-blue-100 bg-blue-50/30 rounded-lg uppercase" value={item.sn || ''} onChange={e => updateItem(item.id, 'sn', e.target.value)} placeholder="S/N" />
                              <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.warranty || ''} onChange={e => updateItem(item.id, 'warranty', e.target.value)} placeholder={t('forms.warranty')} />
                           </div>
                           <textarea 

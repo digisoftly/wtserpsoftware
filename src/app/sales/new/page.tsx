@@ -18,7 +18,9 @@ import {
   User,
   LayoutGrid,
   Search,
-  CheckCircle2
+  CheckCircle2,
+  Scan,
+  Package
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,7 +30,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, doc, runTransaction, serverTimestamp, increment, query, orderBy, setDoc } from "firebase/firestore"
+import { collection, doc, runTransaction, serverTimestamp, increment, query, orderBy, setDoc, getDocs, where, limit } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { useTranslation } from "@/hooks/use-translation"
 import { toast } from "@/hooks/use-toast"
@@ -76,6 +78,10 @@ export default function NewInvoicePage() {
   const [notes, setNotes] = React.useState("");
   const [terms, setTerms] = React.useState("");
 
+  // Product Search State
+  const [productSearch, setProductSearch] = React.useState("");
+  const [isSearchingSN, setIsSearchingSN] = React.useState(false);
+
   // New Customer State
   const [isCreatingCustomer, setIsCustomerCreating] = React.useState(false);
   const [quickCustType, setQuickCustType] = React.useState<"individual" | "company">("individual");
@@ -99,6 +105,16 @@ export default function NewInvoicePage() {
   }, [db, companyId]);
   const { data: masterUnits } = useCollection(unitsQuery);
 
+  // Filtered Products for Suggestion
+  const suggestedProducts = React.useMemo(() => {
+    if (!productSearch || productSearch.length < 2 || !products) return [];
+    const search = productSearch.toLowerCase();
+    return products.filter(p => 
+      p.name?.toLowerCase().includes(search) || 
+      p.sku?.toLowerCase().includes(search)
+    ).slice(0, 5);
+  }, [productSearch, products]);
+
   // Calculations
   const subtotal = React.useMemo(() => lineItems.reduce((sum, item) => sum + (item.qty * item.price), 0), [lineItems]);
   const itemDiscounts = lineItems.reduce((sum, item) => sum + (item.qty * item.price * (item.discount / 100)), 0);
@@ -107,8 +123,7 @@ export default function NewInvoicePage() {
   const grandTotal = subtotal - itemDiscounts + itemTaxes - globalDiscount + additionalCharge;
   const balanceDue = grandTotal - paidAmount;
 
-  const handleAddProduct = (productId: string) => {
-    const product = products?.find(p => p.id === productId);
+  const handleAddProduct = (product: any, serialNumber: string = "") => {
     if (!product) return;
 
     const newItem: InvoiceItem = {
@@ -120,7 +135,7 @@ export default function NewInvoicePage() {
       model: product.sku || "",
       specs: product.description || "",
       warranty: product.warranty || "1 Year",
-      sn: "",
+      sn: serialNumber,
       qty: 1,
       unit: product.unit || "Pcs",
       price: product.unitPrice || 0,
@@ -129,6 +144,7 @@ export default function NewInvoicePage() {
       total: product.unitPrice || 0,
     };
     setLineItems([...lineItems, newItem]);
+    setProductSearch("");
   };
 
   const addManualRow = () => {
@@ -204,6 +220,47 @@ export default function NewInvoicePage() {
       toast({ variant: "destructive", title: t('common.error'), description: err.message });
     } finally {
       setIsCustomerCreating(false);
+    }
+  };
+
+  const handleProductSearchKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && productSearch.trim()) {
+      e.preventDefault();
+      setIsSearchingSN(true);
+      
+      try {
+        // 1. Check if it's a Serial Number
+        const snQuery = query(
+          collection(db!, "companies", companyId!, "branches", branchId!, "serial_numbers"),
+          where("serialNumber", "==", productSearch.trim()),
+          limit(1)
+        );
+        const snSnap = await getDocs(snQuery);
+        
+        if (!snSnap.empty) {
+          const snDoc = snSnap.docs[0].data();
+          const product = products?.find(p => p.id === snDoc.productId);
+          if (product) {
+            handleAddProduct(product, snDoc.serialNumber);
+            toast({ title: "Serial Found", description: `Added: ${product.name}` });
+            return;
+          }
+        }
+
+        // 2. Check if it matches a SKU exactly
+        const productBySku = products?.find(p => p.sku?.toLowerCase() === productSearch.trim().toLowerCase());
+        if (productBySku) {
+          handleAddProduct(productBySku);
+          return;
+        }
+
+        // 3. Fallback: Add as custom row if no match found and user pressed enter
+        toast({ variant: "destructive", title: "No Match", description: "Serial or Model not found in active stock." });
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsSearchingSN(false);
+      }
     }
   };
 
@@ -420,6 +477,49 @@ export default function NewInvoicePage() {
             </CardContent>
           </Card>
 
+          {/* PRODUCT SEARCH & SCAN BAR */}
+          <div className="relative group">
+             <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                {isSearchingSN ? <Loader2 className="h-5 w-5 animate-spin text-blue-600" /> : <Scan className="h-5 w-5 text-slate-400 group-focus-within:text-blue-600" />}
+             </div>
+             <Input 
+                value={productSearch}
+                onChange={e => setProductSearch(e.target.value)}
+                onKeyDown={handleProductSearchKeyDown}
+                className="h-16 pl-12 pr-6 rounded-[2rem] bg-white border-none ring-2 ring-slate-100 focus:ring-blue-600 shadow-xl text-sm font-black uppercase tracking-tight"
+                placeholder="Scan Serial Number or Type Product Name/Model..."
+             />
+             
+             {/* Search Suggestions */}
+             {suggestedProducts.length > 0 && (
+                <Card className="absolute top-full left-0 right-0 mt-2 z-[60] border-none shadow-2xl rounded-[1.5rem] overflow-hidden bg-white ring-1 ring-slate-100">
+                   <div className="p-2 space-y-1">
+                      {suggestedProducts.map(p => (
+                        <div 
+                           key={p.id} 
+                           className="flex items-center justify-between p-4 hover:bg-blue-50 cursor-pointer rounded-xl group transition-all"
+                           onClick={() => handleAddProduct(p)}
+                        >
+                           <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-600">
+                                 <Package className="h-5 w-5" />
+                              </div>
+                              <div>
+                                 <p className="text-[11px] font-black uppercase text-slate-900">{p.name}</p>
+                                 <p className="text-[9px] font-bold text-slate-400 uppercase">{p.sku}</p>
+                              </div>
+                           </div>
+                           <div className="text-right">
+                              <p className="text-[11px] font-black text-blue-600">৳{p.unitPrice?.toLocaleString()}</p>
+                              <Badge className="text-[8px] bg-slate-100 text-slate-500 border-none uppercase h-4 px-1.5">{p.currentStock} In Stock</Badge>
+                           </div>
+                        </div>
+                      ))}
+                   </div>
+                </Card>
+             )}
+          </div>
+
           {/* LINE ITEMS MATRIX */}
           <Card className="border-none shadow-sm ring-1 ring-slate-200 overflow-hidden rounded-[2rem] bg-white">
             <div className="p-5 bg-slate-900 text-white border-b flex flex-wrap items-center justify-between gap-4">
@@ -427,21 +527,9 @@ export default function NewInvoicePage() {
                  <LayoutGrid className="h-5 w-5 text-blue-400" />
                  <h3 className="text-xs font-black uppercase tracking-widest">Inventory Manifest</h3>
               </div>
-              <div className="flex gap-2">
-                <Select onValueChange={handleAddProduct}>
-                  <SelectTrigger className="h-10 w-48 md:w-64 text-[10px] bg-white/10 border-white/10 text-white font-black uppercase rounded-xl backdrop-blur-md focus:ring-0">
-                    <SelectValue placeholder="Add from Catalog..." />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px] rounded-xl shadow-2xl border-none ring-1 ring-slate-100">
-                    {products?.map((p, idx) => (
-                      <SelectItem key={`p-${p.id}-${idx}`} value={p.id} className="text-xs font-black uppercase py-2.5">{p.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button variant="outline" size="sm" className="h-10 rounded-xl gap-2 text-[10px] font-black uppercase bg-white/5 border-white/10 text-white hover:bg-white hover:text-slate-900 transition-all" onClick={addManualRow}>
-                  <PlusCircle className="h-4 w-4" /> {t('common.add')} Generic
-                </Button>
-              </div>
+              <Button variant="outline" size="sm" className="h-10 rounded-xl gap-2 text-[10px] font-black uppercase bg-white/5 border-white/10 text-white hover:bg-white hover:text-slate-900 transition-all" onClick={addManualRow}>
+                <PlusCircle className="h-4 w-4" /> {t('common.add')} Generic Row
+              </Button>
             </div>
             
             <div className="overflow-x-auto custom-scrollbar">
@@ -462,8 +550,8 @@ export default function NewInvoicePage() {
                     <TableRow>
                       <TableCell colSpan={7} className="h-64 text-center">
                          <div className="flex flex-col items-center justify-center opacity-20 space-y-4">
-                            <PlusCircle className="h-12 w-12" />
-                            <p className="text-xs font-black uppercase tracking-[0.3em]">No items added to this manifest</p>
+                            <Search className="h-12 w-12" />
+                            <p className="text-xs font-black uppercase tracking-[0.3em]">Scan or Search above to add items</p>
                          </div>
                       </TableCell>
                     </TableRow>
@@ -482,7 +570,7 @@ export default function NewInvoicePage() {
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                                <Input className="h-8 text-[10px] font-bold border-slate-100 bg-white rounded-lg" value={item.model || ''} onChange={e => updateItem(item.id, 'model', e.target.value)} placeholder="Model" />
                                <Input className="h-8 text-[10px] font-bold border-slate-100 bg-white rounded-lg" value={item.brand || ''} onChange={e => updateItem(item.id, 'brand', e.target.value)} placeholder="Brand" />
-                               <Input className="h-8 text-[10px] font-bold border-slate-100 bg-white rounded-lg" value={item.sn || ''} onChange={e => updateItem(item.id, 'sn', e.target.value)} placeholder="S/N" />
+                               <Input className="h-8 text-[10px] font-black text-blue-600 border-blue-100 bg-blue-50/30 rounded-lg uppercase" value={item.sn || ''} onChange={e => updateItem(item.id, 'sn', e.target.value)} placeholder="S/N Number" />
                                <Input className="h-8 text-[10px] font-bold border-slate-100 bg-white rounded-lg" value={item.warranty || ''} onChange={e => updateItem(item.id, 'warranty', e.target.value)} placeholder="Warranty" />
                             </div>
                             <textarea 
@@ -572,7 +660,7 @@ export default function NewInvoicePage() {
                <Textarea className="min-h-[100px] text-[11px] font-bold rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:bg-white transition-all p-4" value={notes || ''} onChange={e => setNotes(e.target.value)} placeholder="Standard terms & conditions apply..." />
             </div>
 
-            <Button className="w-full h-16 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl text-white bg-blue-600 hover:bg-blue-700 transition-all active:scale-95 shadow-blue-200" disabled={isSubmitting || lineItems.length === 0} onClick={handleSaveInvoice}>
+            <Button className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl text-white bg-blue-600 hover:bg-blue-700 transition-all active:scale-95 shadow-blue-200" disabled={isSubmitting || lineItems.length === 0} onClick={handleSaveInvoice}>
               {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <Save className="h-5 w-5" />}
               Post Final Invoice
             </Button>
