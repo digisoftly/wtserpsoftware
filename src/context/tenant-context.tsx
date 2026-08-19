@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -6,8 +5,6 @@ import { useUser, useFirestore, useAuth } from '@/firebase';
 import { doc, getDoc, serverTimestamp, setDoc, onSnapshot } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { Language } from '@/lib/translations';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { toast } from '@/hooks/use-toast';
 
 interface Role {
@@ -19,7 +16,7 @@ interface Role {
 }
 
 interface TenantContextType {
-  companyId: string | null;
+  companyId: string;
   branchId: string | null;
   setBranchId: (id: string) => void;
   userRole: Role | null;
@@ -30,7 +27,7 @@ interface TenantContextType {
   allowedBranches: string[];
 }
 
-// PRODUCTION CONFIG: Changed from demo-corp to tech-system
+// CONSISTENT PRODUCTION ID
 const PRODUCTION_COMPANY_ID = "warrior-tech-system";
 
 const TenantContext = React.createContext<TenantContextType>({
@@ -49,11 +46,12 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const db = useFirestore();
+  
   const [isInitializing, setIsInitializing] = React.useState(true);
   const [userRole, setUserRole] = React.useState<Role | null>(null);
   const [language, setLanguage] = React.useState<Language>('BN');
-  const [branchId, setBranchId] = React.useState<string | null>(null);
-  const [allowedBranches, setAllowedBranches] = React.useState<string[]>([]);
+  const [branchId, setBranchId] = React.useState<string | null>('dhaka-main');
+  const [allowedBranches, setAllowedBranches] = React.useState<string[]>(['dhaka-main']);
   const [settings, setSettings] = React.useState<any>(null);
   
   const companyId = PRODUCTION_COMPANY_ID;
@@ -68,52 +66,41 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (!isUserLoading && user && db) {
-      // Listen to Global Settings
+      // 1. Fetch System Assets
       unsubSettings = onSnapshot(doc(db, "companies", companyId, "system", "config"), (snap) => {
         if (snap.exists()) setSettings(snap.data());
       });
 
-      // Listen to User Identity
-      unsubUser = onSnapshot(doc(db, "companies", companyId, "users", user.uid), async (snap) => {
+      // 2. Fetch User Authority
+      const userRef = doc(db, "companies", companyId, "users", user.uid);
+      unsubUser = onSnapshot(userRef, async (snap) => {
         if (snap.exists()) {
           const userData = snap.data();
           
-          // Access Guard for Suspended Accounts
-          if (userData.status === 'suspended' || userData.status === 'inactive') {
-            toast({ 
-              variant: "destructive", 
-              title: "Terminal Suspended", 
-              description: "Unauthorized access attempt blocked by Security Protocol." 
-            });
+          if (userData.status !== 'active') {
+            toast({ variant: "destructive", title: "Access Restricted", description: "Account suspended." });
             signOut(auth);
             return;
           }
 
           setLanguage(userData.preferredLanguage || 'BN');
           setBranchId(userData.branchId || 'dhaka-main');
-          setAllowedBranches(userData.allowedBranches || []);
+          setAllowedBranches(userData.allowedBranches || ['dhaka-main']);
 
-          // Fetch Role Hierarchy
-          const roleRef = doc(db, "companies", companyId, "roles", userData.roleId || "default-user");
-          const roleSnap = await getDoc(roleRef);
-          
+          // Fetch Attached Role
+          const roleSnap = await getDoc(doc(db, "companies", companyId, "roles", userData.roleId || "default-user"));
           if (roleSnap.exists()) {
             const roleData = roleSnap.data();
-            // Merge Role permissions with direct user overrides
-            const finalPermissions = { 
-              ...(roleData.permissions || {}), 
-              ...(userData.permissionOverrides || {}) 
-            };
             setUserRole({ 
               id: roleSnap.id, 
               ...roleData, 
-              permissions: finalPermissions 
+              permissions: { ...(roleData.permissions || {}), ...(userData.permissionOverrides || {}) } 
             } as Role);
           }
-        } else {
-          // No profile found - possible bootstrap requirement
-          console.warn("No terminal profile found for UID:", user.uid);
         }
+        setIsInitializing(false);
+      }, (err) => {
+        console.error("Authority fetch failed:", err);
         setIsInitializing(false);
       });
     }
@@ -122,15 +109,15 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       unsubUser?.();
       unsubSettings?.();
     };
-  }, [user, isUserLoading, db, auth]);
+  }, [user, isUserLoading, db, auth, companyId]);
 
   const contextValue = React.useMemo(() => ({ 
     companyId, 
-    branchId: branchId || 'dhaka-main', 
-    setBranchId,
+    branchId, 
+    setBranchId: (id: string) => setBranchId(id),
     userRole,
     language,
-    setLanguage,
+    setLanguage: (lang: Language) => setLanguage(lang),
     isLoading: isUserLoading || isInitializing,
     settings,
     allowedBranches
