@@ -43,7 +43,7 @@ const DEFAULT_MENU_ORDER = [
   "inventory", 
   "masterManagement", 
   "serialTracking", 
-  "project-billing", 
+  "project_billing", 
   "contracts", 
   "customers", 
   "suppliers", 
@@ -60,12 +60,12 @@ const DEFAULT_MENU_ORDER = [
 ];
 
 const DOCUMENT_LAYOUTS = [
-  { value: "warrior", name: "Warrior (Official Premium)" },
-  { value: "erppro", name: "ERP Pro (High Density)" },
-  { value: "modern", name: "Modern (Bold Branding)" },
-  { value: "professional", name: "Professional (Standard)" },
-  { value: "minimal", name: "Minimalist (Clean)" },
-  { value: "thermal", name: "Thermal (80mm Receipt)" },
+  { value: "warrior", name: "Warrior Official Premium" },
+  { value: "erppro", name: "ERP Pro High Density" },
+  { value: "modern", name: "Modern Bold Branding" },
+  { value: "professional", name: "Professional Standard" },
+  { value: "minimal", name: "Minimalist Clean" },
+  { value: "thermal", name: "Thermal 80mm Receipt" },
 ];
 
 export default function SettingsPage() {
@@ -148,9 +148,9 @@ export default function SettingsPage() {
 
     try {
       setDocumentNonBlocking(settingsRef, updates, { merge: true });
-      toast({ title: t('common.success') });
+      toast({ title: t('common_success') });
     } catch (err) {
-      toast({ variant: "destructive", title: t('common.error') });
+      toast({ variant: "destructive", title: t('common_error') });
     } finally {
       setIsSaving(false);
     }
@@ -161,7 +161,7 @@ export default function SettingsPage() {
     docNumber: "WTS/INV-2024-001",
     date: new Date().toISOString(),
     customerName: "Global Tech Solutions Ltd",
-    customerInfo: "+880 1700-000000\nUttara, Dhaka-1230",
+    customerInfo: "+880 1700-000000\nUttara Dhaka-1230",
     items: [{ name: "High Speed Camera", quantity: 2, unit: "Pcs", unitPrice: 5000, total: 10000, brand: "Hikvision", model: "DS-2C" }],
     subtotal: 10000,
     grandTotal: 10000,
@@ -181,7 +181,7 @@ export default function SettingsPage() {
             <Settings2 className="h-8 w-8" /> System Configuration
           </h1>
           <Button type="submit" disabled={isSaving} className="bg-blue-600 hover:bg-blue-700 rounded-full px-8 h-12 font-bold shadow-lg">
-            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} {t('common.save')}
+            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} {t('common_save')}
           </Button>
         </div>
 
@@ -189,7 +189,7 @@ export default function SettingsPage() {
           <TabsList className="bg-white border rounded-xl p-1 mb-6 shadow-sm flex overflow-x-auto h-auto no-scrollbar ring-1 ring-slate-100">
             <TabsTrigger value="general" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">Company & Branding</TabsTrigger>
             <TabsTrigger value="documents" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">PDF Design & Text</TabsTrigger>
-            <TabsTrigger value="navigation" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">{t('nav.navigation')}</TabsTrigger>
+            <TabsTrigger value="navigation" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">{t('nav_navigation')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="space-y-6">
@@ -330,7 +330,7 @@ export default function SettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {menuOrder.map((key, index) => (
                   <div key={key} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border group">
-                    <span className="font-black text-[10px] uppercase text-slate-700">{t(`nav.${key}` as any)}</span>
+                    <span className="font-black text-[10px] uppercase text-slate-700">{t(`nav_${key}`)}</span>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100">
                       <Button type="button" variant="ghost" size="icon" onClick={() => moveMenuItem(index, 'up')} disabled={index === 0}><ArrowUp className="h-3 w-3" /></Button>
                       <Button type="button" variant="ghost" size="icon" onClick={() => moveMenuItem(index, 'down')} disabled={index === menuOrder.length - 1}><ArrowDown className="h-3 w-3" /></Button>

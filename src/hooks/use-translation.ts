@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useTenant } from '@/context/tenant-context';
@@ -9,28 +10,30 @@ export function useTranslation() {
   const currentLang = language || 'BN';
 
   /**
-   * Translates a key using dot notation (e.g., 'common.save')
+   * Translates a key. Supports both dot and underscore separators.
    */
   const t = (path: string): string => {
-    const dictionary = translations[currentLang as keyof typeof translations];
-    const keys = path.split('.');
+    const dictionary = translations[currentLang as keyof typeof translations] as any;
     
+    // First try direct lookup (for underscore keys like 'nav_dashboard')
+    if (dictionary[path]) return dictionary[path];
+
+    // Fallback: Try dot notation lookup for legacy compatibility or nested structures
+    const keys = path.split('.');
     let result: any = dictionary;
     for (const key of keys) {
       if (result === undefined || result === null || result[key] === undefined) {
-        // Fallback to English if key missing in current language
+        // Fallback to English dictionary if key missing in current language
         let fallback: any = (translations['EN'] as any);
         for (const fKey of keys) {
           fallback = fallback?.[fKey];
         }
-        // If fallback also fails, return the path
         if (typeof fallback === 'object' || fallback === undefined) return path;
         return fallback;
       }
       result = result[key];
     }
     
-    // Safety check: if result is an object, return the path to prevent React crash
     if (typeof result === 'object' && result !== null) return path;
     
     return result || path;
