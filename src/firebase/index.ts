@@ -1,52 +1,57 @@
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, initializeFirestore, Firestore } from 'firebase/firestore';
 
 /**
+ * Shared instance cache to ensure singletons across the application.
+ * This prevents "Internal Assertion Failed" errors caused by multiple 
+ * initializations during Next.js Hot Module Replacement (HMR).
+ */
+let memoizedSdks: { firebaseApp: FirebaseApp, auth: Auth, firestore: Firestore } | null = null;
+
+/**
  * Robust Firebase initialization for Next.js (Client & Server).
- * Ensures the config object is used to prevent 'app/no-options' errors on Vercel.
- * Prevents multiple Firestore initializations during SSR/Build.
+ * Ensures the config object is used and prevents multiple SDK initializations.
  */
 export function initializeFirebase() {
-  let app: FirebaseApp;
+  // Return cached instances if already initialized in this JS context
+  if (memoizedSdks) return memoizedSdks;
+
+  let firebaseApp: FirebaseApp;
 
   if (getApps().length > 0) {
-    app = getApp();
+    firebaseApp = getApp();
   } else {
     // Explicitly check for config to avoid opaque 'no-options' errors
     if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "undefined") {
       console.warn('Firebase configuration is missing. Ensure NEXT_PUBLIC_FIREBASE_* env vars are set.');
     }
     
-    // Always provide config object. Zero-config initializeApp() is only for Firebase App Hosting.
-    app = initializeApp(firebaseConfig);
+    firebaseApp = initializeApp(firebaseConfig);
   }
 
-  return getSdks(app);
-}
-
-/**
- * Retrieves and configures SDK instances for a given Firebase App.
- */
-export function getSdks(firebaseApp: FirebaseApp) {
+  const auth = getAuth(firebaseApp);
   let firestore: Firestore;
   
   try {
     // Attempt to initialize Firestore with custom settings
+    // This must only be called once per App instance
     firestore = initializeFirestore(firebaseApp, {
       ignoreUndefinedProperties: true
     });
   } catch (e: any) {
-    // Fallback if already initialized (e.g. during Next.js static generation or HMR)
+    // Fallback if already initialized (e.g. during HMR or multiple calls)
     firestore = getFirestore(firebaseApp);
   }
 
-  return {
+  memoizedSdks = {
     firebaseApp,
-    auth: getAuth(firebaseApp),
+    auth,
     firestore
   };
+
+  return memoizedSdks;
 }
 
 export * from './provider';
