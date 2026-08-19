@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -62,8 +63,8 @@ export default function NewProductPage() {
 
   // Computed Hierarchical Lists
   const level1List = React.useMemo(() => allCategories?.filter(c => c.parentId === 'none') || [], [allCategories]);
-  const level2List = React.useMemo(() => allCategories?.filter(c => c.parentId === catLevel1) || [], [allCategories, catLevel1]);
-  const level3List = React.useMemo(() => allCategories?.filter(c => c.parentId === catLevel2) || [], [allCategories, catLevel2]);
+  const level2List = React.useMemo(() => allCategories?.filter(c => c.parentId === catLevel1 && catLevel1 !== "") || [], [allCategories, catLevel1]);
+  const level3List = React.useMemo(() => allCategories?.filter(c => c.parentId === catLevel2 && catLevel2 !== "") || [], [allCategories, catLevel2]);
 
   const uniqueWarrantyTypes = React.useMemo(() => {
     if (!warrantyTypes) return [];
@@ -82,7 +83,7 @@ export default function NewProductPage() {
     const finalCategoryId = catLevel3 || catLevel2 || catLevel1;
 
     if (!finalCategoryId) {
-      toast({ variant: "destructive", title: t('common.error'), description: "Please select a category." });
+      toast({ variant: "destructive", title: t('common.error'), description: "Please select at least a Root Category." });
       return;
     }
 
@@ -199,10 +200,10 @@ export default function NewProductPage() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">{t('nav.categories')}</Label>
+                    <Label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">Root Category *</Label>
                     <Select value={catLevel1} onValueChange={(val) => { setCatLevel1(val); setCatLevel2(""); setCatLevel3(""); }}>
                       <SelectTrigger className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200">
-                        <SelectValue placeholder="Root Category" />
+                        <SelectValue placeholder="Select Category" />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl shadow-2xl">
                         {level1List.map((c, i) => <SelectItem key={`${c.id}-${i}`} value={c.id} className="text-xs font-bold uppercase">{c.name}</SelectItem>)}
@@ -210,33 +211,29 @@ export default function NewProductPage() {
                     </Select>
                   </div>
 
-                  {level2List.length > 0 && (
-                    <div className="space-y-1.5 animate-in fade-in zoom-in-95 duration-200">
-                      <Label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">Sub Category</Label>
-                      <Select value={catLevel2} onValueChange={(val) => { setCatLevel2(val); setCatLevel3(""); }}>
-                        <SelectTrigger className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200">
-                          <SelectValue placeholder="Sub Category" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl shadow-2xl">
-                          {level2List.map((c, i) => <SelectItem key={`${c.id}-${i}`} value={c.id} className="text-xs font-bold uppercase">{c.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
+                  <div className="space-y-1.5">
+                    <Label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">Sub Category</Label>
+                    <Select value={catLevel2} onValueChange={(val) => { setCatLevel2(val); setCatLevel3(""); }} disabled={!catLevel1 || level2List.length === 0}>
+                      <SelectTrigger className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200">
+                        <SelectValue placeholder={level2List.length === 0 ? "No Sub-categories" : "Select Sub-category"} />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl shadow-2xl">
+                        {level2List.map((c, i) => <SelectItem key={`${c.id}-${i}`} value={c.id} className="text-xs font-bold uppercase">{c.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                  {level3List.length > 0 && catLevel2 && (
-                    <div className="space-y-1.5 animate-in fade-in zoom-in-95 duration-200">
-                      <Label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">Child Category</Label>
-                      <Select value={catLevel3} onValueChange={setCatLevel3}>
-                        <SelectTrigger className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200">
-                          <SelectValue placeholder="Child Category" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl shadow-2xl">
-                          {level3List.map((c, i) => <SelectItem key={`${c.id}-${i}`} value={c.id} className="text-xs font-bold uppercase">{c.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
+                  <div className="space-y-1.5">
+                    <Label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">Child Category</Label>
+                    <Select value={catLevel3} onValueChange={setCatLevel3} disabled={!catLevel2 || level3List.length === 0}>
+                      <SelectTrigger className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200">
+                        <SelectValue placeholder={level3List.length === 0 ? "No Child-categories" : "Select Child-category"} />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl shadow-2xl">
+                        {level3List.map((c, i) => <SelectItem key={`${c.id}-${i}`} value={c.id} className="text-xs font-bold uppercase">{c.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 

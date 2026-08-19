@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -53,7 +54,7 @@ export default function BulkInventoryPage() {
   // Fetch Master Data
   const branchesQuery = useMemoFirebase(() => {
     if (!db || !companyId) return null
-    return query(collection(db, "companies", companyId, "branches"), orderBy("name"))
+    return query(collection(db, "companies", companyId, "branches"), orderBy("branchName"))
   }, [db, companyId])
   const { data: branches } = useCollection(branchesQuery)
 
@@ -63,7 +64,6 @@ export default function BulkInventoryPage() {
   }, [db, companyId]);
   const { data: warrantyTypes } = useCollection(warrantyQuery);
 
-  // Filter unique warranty types for dropdown
   const uniqueWarrantyTypes = React.useMemo(() => {
     if (!warrantyTypes) return [];
     const seen = new Set();
@@ -269,7 +269,7 @@ export default function BulkInventoryPage() {
             />
           </div>
           <Button 
-            className="bg-orange-600 hover:bg-orange-700 rounded-full px-8 gap-2 shadow-lg shadow-orange-100"
+            className="bg-orange-600 hover:bg-orange-700 rounded-full px-8 gap-2 shadow-lg shadow-orange-100 transition-all active:scale-95"
             onClick={handleSaveAll}
             disabled={isSubmitting}
           >
@@ -279,25 +279,24 @@ export default function BulkInventoryPage() {
         </div>
       </div>
 
-      <Card className="border-none shadow-sm rounded-xl">
-        <CardHeader className="bg-muted/20 border-b">
+      <Card className="border-none shadow-sm rounded-xl bg-white ring-1 ring-slate-100 overflow-hidden">
+        <CardHeader className="bg-slate-50/50 border-b border-slate-100">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1">
-              <CardTitle className="text-lg font-headline flex items-center gap-2">
-                <FileSpreadsheet className="h-5 w-5 text-orange-600" /> Intake Worksheet
+              <CardTitle className="text-[11px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                <FileSpreadsheet className="h-4 w-4 text-orange-600" /> Intake Worksheet
               </CardTitle>
-              <CardDescription>Fill the grid below including Warranty and Location.</CardDescription>
             </div>
             {userRole?.isSuperAdmin && (
-              <div className="flex items-center gap-3 bg-white p-2 rounded-xl border shadow-sm px-4">
-                <Label className="text-xs font-bold uppercase text-muted-foreground whitespace-nowrap">Target Location</Label>
+              <div className="flex items-center gap-3 bg-white p-1.5 rounded-xl border px-4 shadow-sm">
+                <Label className="text-[10px] font-black uppercase text-slate-400 whitespace-nowrap">Target Location</Label>
                 <Select value={targetBranchId} onValueChange={setTargetBranchId}>
-                  <SelectTrigger className="w-[200px] h-9 border-none font-bold text-orange-700">
+                  <SelectTrigger className="w-[200px] h-8 border-none font-bold text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl shadow-2xl">
                     {branches?.map((b, idx) => (
-                      <SelectItem key={`branch-opt-${b.id}-${idx}`} value={b.id}>{b.name}</SelectItem>
+                      <SelectItem key={`branch-bulk-${b.id}-${idx}`} value={b.id}>{b.branchName}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -306,29 +305,29 @@ export default function BulkInventoryPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto custom-scrollbar">
             <Table>
-              <TableHeader className="bg-muted/30">
+              <TableHeader className="bg-slate-50/30">
                 <TableRow>
-                  <TableHead className="w-[200px]">Product Name</TableHead>
-                  <TableHead className="w-[120px]">Model</TableHead>
-                  <TableHead className="w-[120px]">Warranty</TableHead>
-                  <TableHead className="w-[150px]">Store Loc</TableHead>
-                  <TableHead className="w-[100px]">Qty</TableHead>
-                  <TableHead className="w-[120px]">Cost (৳)</TableHead>
-                  <TableHead className="w-[120px]">Sale (৳)</TableHead>
+                  <TableHead className="w-[250px] text-[10px] font-black uppercase tracking-widest">Product Name</TableHead>
+                  <TableHead className="w-[150px] text-[10px] font-black uppercase tracking-widest">Model/SKU</TableHead>
+                  <TableHead className="w-[150px] text-[10px] font-black uppercase tracking-widest">Warranty</TableHead>
+                  <TableHead className="w-[150px] text-[10px] font-black uppercase tracking-widest">Storage Loc</TableHead>
+                  <TableHead className="w-[100px] text-[10px] font-black uppercase tracking-widest text-center">Qty</TableHead>
+                  <TableHead className="w-[120px] text-[10px] font-black uppercase tracking-widest text-right">Cost (৳)</TableHead>
+                  <TableHead className="w-[120px] text-[10px] font-black uppercase tracking-widest text-right pr-6">Sale (৳)</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {items.map((item) => (
-                  <TableRow key={item.id} className="hover:bg-muted/10">
+                  <TableRow key={item.id} className="hover:bg-slate-50 transition-colors h-14 border-slate-50">
                     <TableCell>
                       <Input 
-                        placeholder="Product Name" 
+                        placeholder="e.g. SONY 4K IP Camera" 
                         value={item.name} 
                         onChange={(e) => handleUpdateItem(item.id, 'name', e.target.value)}
-                        className="h-9 border-transparent focus:border-orange-200 bg-transparent text-sm"
+                        className="h-9 border-none bg-slate-100/50 rounded-lg text-xs font-bold uppercase"
                       />
                     </TableCell>
                     <TableCell>
@@ -336,27 +335,27 @@ export default function BulkInventoryPage() {
                         placeholder="Model" 
                         value={item.sku} 
                         onChange={(e) => handleUpdateItem(item.id, 'sku', e.target.value)}
-                        className="h-9 border-transparent focus:border-orange-200 bg-transparent font-mono text-xs uppercase"
+                        className="h-9 border-none bg-slate-100/50 rounded-lg font-mono text-[10px] uppercase"
                       />
                     </TableCell>
                     <TableCell>
                        <Select value={item.warranty} onValueChange={(val) => handleUpdateItem(item.id, 'warranty', val)}>
-                         <SelectTrigger className="h-9 border-transparent bg-transparent text-[10px] font-bold uppercase">
+                         <SelectTrigger className="h-9 border-none bg-slate-100/50 rounded-lg text-[10px] font-bold uppercase">
                            <SelectValue />
                          </SelectTrigger>
                          <SelectContent className="rounded-xl shadow-2xl">
                            {uniqueWarrantyTypes?.map((w, idx) => (
-                             <SelectItem key={`bulk-warranty-${w.id || idx}-${idx}`} value={w.name}>{w.name}</SelectItem>
+                             <SelectItem key={`bulk-warranty-${w.id || idx}`} value={w.name}>{w.name}</SelectItem>
                            ))}
                          </SelectContent>
                        </Select>
                     </TableCell>
                     <TableCell>
                       <Input 
-                        placeholder="Location" 
+                        placeholder="Shelf A1" 
                         value={item.location} 
                         onChange={(e) => handleUpdateItem(item.id, 'location', e.target.value)}
-                        className="h-9 border-transparent focus:border-orange-200 bg-transparent text-[10px] uppercase font-bold"
+                        className="h-9 border-none bg-slate-100/50 rounded-lg text-[10px] uppercase font-bold"
                       />
                     </TableCell>
                     <TableCell>
@@ -365,7 +364,7 @@ export default function BulkInventoryPage() {
                         disabled={item.isSerialized}
                         value={item.quantity} 
                         onChange={(e) => handleUpdateItem(item.id, 'quantity', Number(e.target.value))}
-                        className="h-9 border-transparent focus:border-orange-200 bg-transparent text-sm text-center"
+                        className="h-9 border-none bg-slate-100/50 rounded-lg text-xs text-center font-black"
                       />
                     </TableCell>
                     <TableCell>
@@ -373,22 +372,22 @@ export default function BulkInventoryPage() {
                         type="number" 
                         value={item.costPrice} 
                         onChange={(e) => handleUpdateItem(item.id, 'costPrice', Number(e.target.value))}
-                        className="h-9 border-transparent focus:border-orange-200 bg-transparent text-sm font-bold"
+                        className="h-9 border-none bg-slate-100/50 rounded-lg text-xs text-right font-black"
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="pr-6">
                       <Input 
                         type="number" 
                         value={item.unitPrice} 
                         onChange={(e) => handleUpdateItem(item.id, 'unitPrice', Number(e.target.value))}
-                        className="h-9 border-transparent focus:border-orange-200 bg-transparent text-sm font-bold"
+                        className="h-9 border-none bg-blue-50 rounded-lg text-xs text-right font-black text-blue-700"
                       />
                     </TableCell>
                     <TableCell>
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-8 w-8 text-muted-foreground hover:text-red-600"
+                        className="h-8 w-8 text-slate-300 hover:text-red-600 rounded-full"
                         onClick={() => handleRemoveRow(item.id)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -399,9 +398,9 @@ export default function BulkInventoryPage() {
               </TableBody>
             </Table>
           </div>
-          <div className="p-4 border-t bg-muted/10">
-            <Button variant="ghost" className="w-full border-2 border-dashed border-muted-foreground/20 rounded-xl h-12 text-muted-foreground hover:bg-white hover:text-orange-600 gap-2" onClick={handleAddRow}>
-              <Plus className="h-4 w-4" /> Add More Rows
+          <div className="p-4 border-t bg-slate-50/50 flex justify-center">
+            <Button variant="ghost" className="w-full max-w-sm border-2 border-dashed border-slate-200 rounded-2xl h-14 text-slate-400 hover:bg-white hover:text-blue-600 hover:border-blue-200 transition-all font-black text-[10px] uppercase tracking-widest gap-2" onClick={handleAddRow}>
+              <Plus className="h-4 w-4" /> Add Next Entry
             </Button>
           </div>
         </CardContent>

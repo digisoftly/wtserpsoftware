@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Search, Loader2, Edit, Trash2, FolderTree, Save, Plus, ChevronRight, Layers } from "lucide-react"
+import { Search, Loader2, Edit, Trash2, Save, Plus, ChevronRight, Layers } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, doc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
@@ -35,7 +35,7 @@ export default function MasterCategoriesPage() {
     e.preventDefault();
     if (!db || !companyId) return;
 
-    const form = e.currentTarget; // FIX: Capture form element
+    const form = e.currentTarget;
     const formData = new FormData(form);
     const name = (formData.get("name") as string).trim();
 
@@ -62,7 +62,7 @@ export default function MasterCategoriesPage() {
       await setDoc(docRef, { ...categoryData, createdAt: selectedRecord?.createdAt || serverTimestamp(), id: docRef.id }, { merge: true });
       toast({ title: t('common.success') });
       setSelectedRecord(null);
-      form.reset(); // FIX: Use captured form element
+      form.reset();
     } catch (err: any) {
       toast({ variant: "destructive", title: t('common.error'), description: err.message });
     } finally {
@@ -70,14 +70,14 @@ export default function MasterCategoriesPage() {
     }
   };
 
-  const filtered = categories?.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
-
   const getLevel = (cat: any, list: any[]): number => {
     if (cat.parentId === 'none') return 1;
     const parent = list.find(c => c.id === cat.parentId);
     if (!parent) return 1;
     return 1 + getLevel(parent, list);
   };
+
+  const filtered = categories?.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
     <div className="space-y-6 pb-10">
@@ -101,7 +101,7 @@ export default function MasterCategoriesPage() {
                 </SelectTrigger>
                 <SelectContent className="rounded-xl shadow-2xl">
                   <SelectItem value="none" className="text-xs font-black text-blue-600 uppercase">-- ROOT CATEGORY --</SelectItem>
-                  {categories?.filter(cat => cat.id !== selectedRecord?.id).map((cat, idx) => (
+                  {categories?.filter(cat => cat.id !== selectedRecord?.id && getLevel(cat, categories) < 3).map((cat, idx) => (
                     <SelectItem key={`${cat.id}-${idx}`} value={cat.id} className="text-xs font-bold uppercase">
                       {getLevel(cat, categories || []) > 1 ? "— ".repeat(getLevel(cat, categories || []) - 1) : ""}{cat.name}
                     </SelectItem>
@@ -166,7 +166,7 @@ export default function MasterCategoriesPage() {
                            level === 1 ? "bg-blue-50 text-blue-700" : 
                            level === 2 ? "bg-purple-50 text-purple-700" : 
                            "bg-slate-100 text-slate-600")}>
-                           L{level}
+                           {level === 1 ? "Main" : level === 2 ? "Sub" : "Child"}
                          </span>
                       </TableCell>
                       <TableCell className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
@@ -174,7 +174,7 @@ export default function MasterCategoriesPage() {
                       </TableCell>
                       <TableCell className="text-right pr-8 sticky right-0 bg-white group-hover:bg-slate-50 transition-colors">
                         <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50 rounded-full" onClick={() => openEdit(c)}><Edit className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50 rounded-full" onClick={() => setSelectedRecord(c)}><Edit className="h-3.5 w-3.5" /></Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:bg-red-50 rounded-full" onClick={() => deleteDoc(doc(db!, "companies", companyId!, "master_categories", c.id))}><Trash2 className="h-3.5 w-3.5" /></Button>
                         </div>
                       </TableCell>
