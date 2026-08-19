@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,13 +5,13 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, AlertCircle } from 'lucide-react';
+import { ShieldAlert, AlertCircle, ZapOff } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
 import { useRouter, usePathname } from 'next/navigation';
 
 /**
- * An intelligent listener that catches Firestore errors and displays a user-friendly modal
- * using simple language strings instead of technical codes.
+ * An intelligent listener that catches Firestore errors and displays a user-friendly modal.
+ * Now handles quota exhaustion (resource-exhausted) specifically.
  */
 export function FirebaseErrorListener() {
   const [error, setError] = useState<FirestorePermissionError | null>(null);
@@ -22,7 +21,6 @@ export function FirebaseErrorListener() {
 
   useEffect(() => {
     const handleError = (error: FirestorePermissionError) => {
-      // SUPPRESS ERRORS ON LOGIN PAGE TO PREVENT REDIRECT LOOPS OR DISTRACTIONS
       if (pathname === '/login' || pathname === '/login/') return;
       setError(error);
     };
@@ -33,10 +31,15 @@ export function FirebaseErrorListener() {
 
   if (!error) return null;
 
+  const isQuotaError = error.message?.toLowerCase().includes('resource-exhausted') || 
+                       error.request?.method === 'resource-exhausted';
+
   /**
    * Maps internal Firestore context to a human-readable translation key.
    */
   const getFriendlyMessageKey = () => {
+    if (isQuotaError) return "systemOverloaded";
+    
     const path = error.request?.path || "";
     const method = error.request?.method || "";
 
@@ -55,31 +58,31 @@ export function FirebaseErrorListener() {
 
   return (
     <Dialog open={!!error} onOpenChange={() => setError(null)}>
-      <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-[2.5rem] bg-white">
-        <DialogHeader className="bg-red-600 p-6 text-white flex-row items-center gap-4 space-y-0">
+      <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-[2rem] bg-white">
+        <DialogHeader className={cn("p-6 text-white flex-row items-center gap-4 space-y-0", isQuotaError ? "bg-amber-600" : "bg-red-600")}>
           <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center shrink-0">
-            <ShieldAlert className="h-6 w-6" />
+            {isQuotaError ? <ZapOff className="h-6 w-6" /> : <ShieldAlert className="h-6 w-6" />}
           </div>
           <div>
             <DialogTitle className="text-xl font-bold font-headline uppercase tracking-tight">
-              {t('errors.accessRestricted')}
+              {isQuotaError ? t('errors.quotaExceeded') : t('errors.accessRestricted')}
             </DialogTitle>
             <p className="text-[10px] font-black uppercase opacity-70 tracking-widest mt-0.5">
-              Terminal Protection Active
+              {isQuotaError ? "Service Limitation Active" : "Terminal Protection Active"}
             </p>
           </div>
         </DialogHeader>
         
         <div className="p-8 space-y-6">
           <div className="text-center space-y-3">
-             <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-2">
+             <div className={cn("w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-2", isQuotaError ? "bg-amber-50 text-amber-500" : "bg-red-50 text-red-500")}>
                <AlertCircle className="h-8 w-8" />
              </div>
              <h3 className="text-sm font-black text-slate-900 leading-tight uppercase px-4">
                {t(`errors.${messageKey}`)}
              </h3>
              <p className="text-xs font-medium text-slate-500">
-               {t('errors.detailsSub')}
+               {isQuotaError ? t('errors.quotaSub') : t('errors.detailsSub')}
              </p>
           </div>
 
@@ -102,4 +105,8 @@ export function FirebaseErrorListener() {
       </DialogContent>
     </Dialog>
   );
+}
+
+function cn(...inputs: any[]) {
+  return inputs.filter(Boolean).join(' ');
 }

@@ -1,62 +1,41 @@
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
-import { getFirestore, initializeFirestore, Firestore, terminate } from 'firebase/firestore';
+import { getFirestore, Firestore, initializeFirestore } from 'firebase/firestore';
 
 /**
- * Global singletons to survive HMR and avoid "INTERNAL ASSERTION FAILED"
+ * WarriorERP - Global Firebase Singleton
+ * Initializing outside the function scope ensures that during Next.js HMR 
+ * (Hot Module Replacement) and Turbopack updates, we don't re-initialize 
+ * the SDK and hit bandwidth/assertion limits.
  */
-let firebaseApp: FirebaseApp | undefined;
-let auth: Auth | undefined;
-let firestore: Firestore | undefined;
+
+// 1. Core App Instance
+const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+
+// 2. Auth Instance
+const auth = getAuth(app);
+
+// 3. Firestore Instance with Production Config
+// We use initializeFirestore once to set critical settings like ignoreUndefinedProperties
+let db: Firestore;
+try {
+  db = getFirestore(app);
+} catch (e) {
+  db = initializeFirestore(app, {
+    ignoreUndefinedProperties: true,
+  });
+}
 
 /**
- * Robust Firebase initialization for Next.js.
- * Ensures services are initialized only once per life-cycle.
+ * Shared entry point for both Client and Server components.
+ * Client components should use this via the FirebaseClientProvider.
  */
 export function initializeFirebase() {
-  if (typeof window !== 'undefined') {
-    // 1. App Initialization
-    if (!firebaseApp) {
-      const apps = getApps();
-      if (apps.length > 0) {
-        firebaseApp = apps[0];
-      } else {
-        firebaseApp = initializeApp(firebaseConfig);
-      }
-    }
-
-    // 2. Auth Initialization
-    if (!auth) {
-      auth = getAuth(firebaseApp);
-    }
-
-    // 3. Firestore Initialization
-    if (!firestore) {
-      try {
-        // Attempt to get existing instance first to avoid multi-init error
-        firestore = getFirestore(firebaseApp);
-      } catch (e) {
-        // Only initialize if it really doesn't exist
-        firestore = initializeFirestore(firebaseApp, {
-          ignoreUndefinedProperties: true,
-        });
-      }
-    }
-  } else {
-    // SSR Fallback (Non-cached for safety in different requests)
-    const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-    return {
-      firebaseApp: app,
-      auth: getAuth(app),
-      firestore: getFirestore(app)
-    };
-  }
-
   return {
-    firebaseApp: firebaseApp!,
-    auth: auth!,
-    firestore: firestore!
+    firebaseApp: app,
+    auth: auth,
+    firestore: db
   };
 }
 
