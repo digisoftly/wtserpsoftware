@@ -30,8 +30,11 @@ interface TenantContextType {
   allowedBranches: string[];
 }
 
+// PRODUCTION CONFIG: Changed from demo-corp to tech-system
+const PRODUCTION_COMPANY_ID = "warrior-tech-system";
+
 const TenantContext = React.createContext<TenantContextType>({
-  companyId: 'warrior-demo-corp',
+  companyId: PRODUCTION_COMPANY_ID,
   branchId: 'dhaka-main',
   setBranchId: () => {},
   userRole: null,
@@ -53,7 +56,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const [allowedBranches, setAllowedBranches] = React.useState<string[]>([]);
   const [settings, setSettings] = React.useState<any>(null);
   
-  const companyId = "warrior-demo-corp";
+  const companyId = PRODUCTION_COMPANY_ID;
 
   React.useEffect(() => {
     let unsubUser: any;
@@ -65,21 +68,22 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (!isUserLoading && user && db) {
+      // Listen to Global Settings
       unsubSettings = onSnapshot(doc(db, "companies", companyId, "system", "config"), (snap) => {
         if (snap.exists()) setSettings(snap.data());
       });
 
+      // Listen to User Identity
       unsubUser = onSnapshot(doc(db, "companies", companyId, "users", user.uid), async (snap) => {
         if (snap.exists()) {
           const userData = snap.data();
           
-          // FIX: Only block if status is EXPLICITLY suspended or inactive.
-          // This prevents lockouts during the transient bootstrap phase.
+          // Access Guard for Suspended Accounts
           if (userData.status === 'suspended' || userData.status === 'inactive') {
             toast({ 
               variant: "destructive", 
-              title: "Access Restricted", 
-              description: "Your terminal has been suspended. Please contact administration." 
+              title: "Terminal Suspended", 
+              description: "Unauthorized access attempt blocked by Security Protocol." 
             });
             signOut(auth);
             return;
@@ -89,15 +93,26 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           setBranchId(userData.branchId || 'dhaka-main');
           setAllowedBranches(userData.allowedBranches || []);
 
+          // Fetch Role Hierarchy
           const roleRef = doc(db, "companies", companyId, "roles", userData.roleId || "default-user");
           const roleSnap = await getDoc(roleRef);
           
           if (roleSnap.exists()) {
             const roleData = roleSnap.data();
-            // Merge static role permissions with user overrides
-            const finalPermissions = { ...(roleData.permissions || {}), ...(userData.permissionOverrides || {}) };
-            setUserRole({ id: roleSnap.id, ...roleData, permissions: finalPermissions } as Role);
+            // Merge Role permissions with direct user overrides
+            const finalPermissions = { 
+              ...(roleData.permissions || {}), 
+              ...(userData.permissionOverrides || {}) 
+            };
+            setUserRole({ 
+              id: roleSnap.id, 
+              ...roleData, 
+              permissions: finalPermissions 
+            } as Role);
           }
+        } else {
+          // No profile found - possible bootstrap requirement
+          console.warn("No terminal profile found for UID:", user.uid);
         }
         setIsInitializing(false);
       });

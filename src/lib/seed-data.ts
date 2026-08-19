@@ -2,9 +2,9 @@
 import { Firestore, collection, doc, writeBatch, serverTimestamp } from "firebase/firestore";
 
 /**
- * Enterprise bootstrap sequence. 
- * Creates the critical super-admin role and system configuration.
- * Ensures all requested 24 modules have full permissions.
+ * PRODUCTION BOOTSTRAP:
+ * Generates the essential Role-Permission Matrix for 24 modules.
+ * This is the foundation of the 'Live' system.
  */
 export async function seedMasterData(db: Firestore, companyId: string) {
   const configRef = doc(db, "companies", companyId, "system", "config");
@@ -48,19 +48,23 @@ export async function seedMasterData(db: Firestore, companyId: string) {
           inventory: "all",
           users: "all",
           "project-billing": "all",
-          contracts: "all"
+          contracts: "all",
+          audit: "all"
         } 
       },
       { 
-        id: "default-user", 
-        name: "Default User", 
+        id: "manager", 
+        name: "Branch Manager", 
         isSuperAdmin: false, 
         permissions: {
           dashboard: ["view"],
-          profile: ["view", "edit"]
+          sales: ["view", "create", "edit"],
+          inventory: ["view", "create"],
+          customers: ["view", "create"]
         }, 
         dataScopes: {
-          dashboard: "own"
+          dashboard: "branch",
+          sales: "branch"
         } 
       }
     ]
@@ -69,27 +73,43 @@ export async function seedMasterData(db: Firestore, companyId: string) {
   try {
     const batch = writeBatch(db);
 
-    // Seed Roles
+    // 1. Initialize Global System Configuration
+    batch.set(configRef, { 
+      isMasterDataSeeded: true, 
+      isInitialized: true,
+      companyName: "Warrior Tech System",
+      companySlogan: "Innovative Security, Reliable Communication",
+      systemDefaultLanguage: "BN",
+      currency: "BDT",
+      taxRate: 15,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+
+    // 2. Deploy Roles
     const rolesCol = collection(db, "companies", companyId, "roles");
     for (const role of SEED_DATA.roles) {
       const d = doc(rolesCol, role.id);
       batch.set(d, { ...role, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
     }
 
-    // Seed Config
-    batch.set(configRef, { 
-      isMasterDataSeeded: true, 
-      updatedAt: serverTimestamp(),
-      companyName: "Warrior Tech System",
-      systemDefaultLanguage: "BN",
-      isInitialized: true
-    }, { merge: true });
+    // 3. Seed Basic Master Data Categories
+    const masterCol = collection(db, "companies", companyId, "master_data");
+    const paymentMethods = ["Cash", "Bank Transfer", "bKash", "Nagad"];
+    paymentMethods.forEach(method => {
+      const d = doc(masterCol);
+      batch.set(d, { 
+        id: d.id, 
+        type: "paymentMethods", 
+        name: method, 
+        isActive: true 
+      });
+    });
 
     await batch.commit();
-    console.log("Master data seeding completed successfully with all requested modules.");
+    console.log("Production bootstrap successful.");
     return { success: true };
   } catch (error) {
-    console.error("Seeding error:", error);
+    console.error("Critical Seeding Failure:", error);
     throw error;
   }
 }
