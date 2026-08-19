@@ -136,6 +136,8 @@ export default function ViewInvoicePage() {
               taxAmount={invoice.taxAmount}
               discount={invoice.discount}
               grandTotal={invoice.totalAmount}
+              paidAmount={invoice.paidAmount}
+              balanceDue={invoice.balanceDue}
               status={invoice.status}
               notes={invoice.notes}
               type="invoice"

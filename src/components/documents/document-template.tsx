@@ -43,6 +43,8 @@ export interface DocumentTemplateProps {
   taxRate?: number;
   discount?: number;
   grandTotal: number;
+  paidAmount?: number;
+  balanceDue?: number;
   status?: string;
   notes?: string;
   type?: 'invoice' | 'po' | 'quotation' | 'agreement';

@@ -22,7 +22,10 @@ export function WarriorLayout({
   taxAmount,
   discount,
   grandTotal,
+  paidAmount,
+  balanceDue,
   notes,
+  type
 }: DocumentTemplateProps) {
   const { settings } = useSettings();
   const { t, formatCurrency, formatDate, amountToWords } = useTranslation();
@@ -142,22 +145,32 @@ export function WarriorLayout({
                <td colSpan={5} className="bg-[#f8f9fa] border border-black p-1 text-right text-[11px] font-black uppercase pr-4">{t('forms.subtotal')}</td>
                <td className="border border-black p-1 text-right text-[11px] font-black pr-4">{(subtotal || 0).toLocaleString()}</td>
             </tr>
-            { (discount || 0) > 0 ? (
-              <tr className="h-8">
-                 <td colSpan={5} className="bg-red-50 border border-black p-1 text-right text-[11px] font-black uppercase pr-4 text-red-700">{t('forms.discount')}</td>
-                 <td className="border border-black p-1 text-right text-[11px] font-black pr-4 text-red-700">-{(discount || 0).toLocaleString()}</td>
-              </tr>
-            ) : null }
-            { (taxAmount || 0) > 0 ? (
-              <tr className="h-8">
-                 <td colSpan={5} className="bg-[#f8f9fa] border border-black p-1 text-right text-[11px] font-black uppercase pr-4">{t('forms.tax')}</td>
-                 <td className="border border-black p-1 text-right text-[11px] font-black pr-4">+{(taxAmount || 0).toLocaleString()}</td>
-              </tr>
-            ) : null }
+            <tr className="h-8">
+               <td colSpan={5} className="bg-red-50 border border-black p-1 text-right text-[11px] font-black uppercase pr-4 text-red-700">{t('forms.discount')}</td>
+               <td className="border border-black p-1 text-right text-[11px] font-black pr-4 text-red-700">{(discount || 0).toLocaleString()}</td>
+            </tr>
+            <tr className="h-8">
+               <td colSpan={5} className="bg-[#f8f9fa] border border-black p-1 text-right text-[11px] font-black uppercase pr-4">{t('forms.tax')}</td>
+               <td className="border border-black p-1 text-right text-[11px] font-black pr-4">{(taxAmount || 0).toLocaleString()}</td>
+            </tr>
             <tr className="h-10">
                <td colSpan={5} className="bg-[#F57C00] border border-black p-1 text-right text-[12px] font-black uppercase pr-4 text-white">{t('forms.grandTotal')}</td>
                <td className="bg-[#F57C00] border border-black p-1 text-right text-[14px] font-black pr-4 text-white">{(grandTotal || 0).toLocaleString()}</td>
             </tr>
+
+            {/* INVOICE ONLY ROWS */}
+            {type === 'invoice' && (
+              <>
+                <tr className="h-8">
+                   <td colSpan={5} className="bg-[#D5F5E3] border border-black p-1 text-right text-[11px] font-black uppercase pr-4 text-[#155724]">Pay (Payment Amount)</td>
+                   <td className="border border-black p-1 text-right text-[11px] font-black pr-4 text-[#155724]">{(paidAmount || 0).toLocaleString()}</td>
+                </tr>
+                <tr className="h-8">
+                   <td colSpan={5} className="bg-red-50 border border-black p-1 text-right text-[11px] font-black uppercase pr-4 text-red-700">Due Payable Amount</td>
+                   <td className="border border-black p-1 text-right text-[11px] font-black pr-4 text-red-700">{(balanceDue || 0).toLocaleString()}</td>
+                </tr>
+              </>
+            )}
           </tbody>
         </table>
       </div>
@@ -170,14 +183,21 @@ export function WarriorLayout({
         </p>
       </div>
 
-      {/* 7. CORPORATE FOOTER & SIGNATURES */}
+      {/* 7. TERMS & CONDITIONS - ADMIN CUSTOMIZABLE */}
+      <div className="px-4 mt-8">
+        <h4 className="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-[0.2em]">Terms & Conditions</h4>
+        <div className="text-[10px] text-slate-600 leading-relaxed whitespace-pre-wrap border border-slate-100 p-4 rounded-xl bg-slate-50/50">
+           {settings?.pdfTerms || "1. Equipment remains property of Warrior Tech System until full payment is realized.\n2. Warranty strictly covers manufacturing defects; physical or electrical damage excluded.\n3. Delivery timelines are subject to site readiness."}
+        </div>
+      </div>
+
+      {/* 8. CORPORATE FOOTER & SIGNATURES */}
       <div className="mt-auto pt-4 pb-6 text-center space-y-2 border-t-2 border-[#F57C00] mx-2">
         <div className="grid grid-cols-4 gap-4 px-4 pt-12 mb-8 relative">
            <div className="text-center"><div className="border-t border-black pt-1 text-[9px] font-black uppercase">Customer Signature</div></div>
            <div className="text-center"><div className="border-t border-black pt-1 text-[9px] font-black uppercase">Prepared By</div></div>
            <div className="text-center"><div className="border-t border-black pt-1 text-[9px] font-black uppercase">Checked By</div></div>
            <div className="text-center relative">
-              {/* Authorized Seal and Sign Display */}
               <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex items-center justify-center h-20 w-40 gap-2">
                  {settings?.authorizedSeal && (
                    <img src={settings.authorizedSeal} className="h-20 w-20 object-contain opacity-80" alt="Seal" />

@@ -24,8 +24,12 @@ import {
   Maximize2,
   FileText,
   Table as TableIcon,
-  Image as ImageIcon,
-  PenTool
+  ImageIcon,
+  PenTool,
+  Globe,
+  Mail,
+  MapPin,
+  FileBadge
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -43,7 +47,6 @@ import { useTranslation } from "@/hooks/use-translation"
 import { cn } from "@/lib/utils"
 import { Textarea } from "@/components/ui/textarea"
 import { DocumentTemplate } from "@/components/documents/document-template"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 
 const DEFAULT_MENU_ORDER = [
   "dashboard", 
@@ -95,8 +98,6 @@ export default function SettingsPage() {
   const [docPrimaryColor, setDocPrimaryColor] = React.useState("#0056B3");
   const [docAccentColor, setDocAccentColor] = React.useState("#F57C00");
   const [docFontSize, setDocFontSize] = React.useState("standard");
-
-  const isSuperAdmin = userRole?.isSuperAdmin === true;
 
   const settingsRef = useMemoFirebase(() => {
     if (!db || !companyId) return null;
@@ -170,7 +171,7 @@ export default function SettingsPage() {
     }
   };
 
-  const mockPreviewData = {
+  const mockPreviewData: any = {
     title: "SAMPLE QUOTATION",
     docNumber: "WTS/INV-2024-001",
     date: new Date().toISOString(),
@@ -179,7 +180,10 @@ export default function SettingsPage() {
     items: [{ name: "High Speed Camera", quantity: 2, unit: "Pcs", unitPrice: 5000, total: 10000, brand: "Hikvision", model: "DS-2C" }],
     subtotal: 10000,
     grandTotal: 10000,
-    status: "paid"
+    status: "paid",
+    paidAmount: 8000,
+    balanceDue: 2000,
+    type: 'invoice'
   };
 
   if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-blue-600" /></div>;
@@ -189,7 +193,7 @@ export default function SettingsPage() {
       <form onSubmit={handleSaveSettings}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <h1 className="text-2xl font-bold font-headline text-blue-600 flex items-center gap-2">
-            <Settings2 className="h-8 w-8" /> System Assets & Assets
+            <Settings2 className="h-8 w-8" /> System Configuration
           </h1>
           <Button type="submit" disabled={isSaving} className="bg-blue-600 hover:bg-blue-700 rounded-full px-8 h-12 font-bold shadow-lg">
             {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} {t('common.save')}
@@ -199,7 +203,7 @@ export default function SettingsPage() {
         <Tabs defaultValue="general" className="w-full">
           <TabsList className="bg-white border rounded-xl p-1 mb-6 shadow-sm flex overflow-x-auto h-auto no-scrollbar ring-1 ring-slate-100">
             <TabsTrigger value="general" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">Company & Branding</TabsTrigger>
-            <TabsTrigger value="documents" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">Document Design</TabsTrigger>
+            <TabsTrigger value="documents" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">PDF Design & Text</TabsTrigger>
             <TabsTrigger value="navigation" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">{t('nav.navigation')}</TabsTrigger>
           </TabsList>
 
@@ -251,8 +255,9 @@ export default function SettingsPage() {
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Slogan</Label><Input name="companySlogan" defaultValue={settings?.companySlogan} className="h-11 rounded-xl" /></div>
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Official Phone</Label><Input name="phone" defaultValue={settings?.phone} className="h-11 rounded-xl" /></div>
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Official Email</Label><Input name="email" defaultValue={settings?.email} className="h-11 rounded-xl" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Website URL</Label><Input name="website" defaultValue={settings?.website} placeholder="www.example.com" className="h-11 rounded-xl" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Official Address</Label><Input name="address" defaultValue={settings?.address} className="h-11 rounded-xl" /></div>
                   </div>
-                  <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Address</Label><Input name="address" defaultValue={settings?.address} className="h-11 rounded-xl" /></div>
                 </CardContent>
               </Card>
             </div>
@@ -260,18 +265,46 @@ export default function SettingsPage() {
 
           <TabsContent value="documents" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <Card className="lg:col-span-4 border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-8 space-y-6">
-                 <div className="space-y-4">
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Template</Label><Select name="defaultTemplate_invoice" defaultValue={settings?.defaultTemplate_invoice || "warrior"} onValueChange={setPreviewLayout}><SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger><SelectContent>{DOCUMENT_LAYOUTS.map(l => <SelectItem key={l.value} value={l.value}>{l.name}</SelectItem>)}</SelectContent></Select></div>
+              <Card className="lg:col-span-4 border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-8 space-y-6 h-fit">
+                 <div className="space-y-6">
+                    <div className="flex items-center gap-2 border-b pb-2">
+                       <Palette className="h-4 w-4 text-blue-600" />
+                       <h3 className="text-xs font-black uppercase tracking-widest">Visual Styles</h3>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-black uppercase text-slate-500">Template Engine</Label>
+                      <Select name="defaultTemplate_invoice" defaultValue={settings?.defaultTemplate_invoice || "warrior"} onValueChange={setPreviewLayout}>
+                        <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
+                        <SelectContent>{DOCUMENT_LAYOUTS.map(l => <SelectItem key={l.value} value={l.value}>{l.name}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Primary Color</Label><Input type="color" value={docPrimaryColor} onChange={e => setDocPrimaryColor(e.target.value)} className="h-12 w-full p-1" /></div>
                       <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Accent Color</Label><Input type="color" value={docAccentColor} onChange={e => setDocAccentColor(e.target.value)} className="h-12 w-full p-1" /></div>
                     </div>
+
+                    <div className="flex items-center gap-2 border-b pb-2 pt-4">
+                       <FileBadge className="h-4 w-4 text-blue-600" />
+                       <h3 className="text-xs font-black uppercase tracking-widest">Custom PDF Text</h3>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-black uppercase text-slate-500">Standard Terms & Conditions</Label>
+                      <Textarea name="pdfTerms" defaultValue={settings?.pdfTerms} className="min-h-[120px] rounded-xl text-xs" placeholder="1. Equipment remains property..." />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-black uppercase text-slate-500">Footer 'Heart' Message</Label>
+                      <Input name="footerHeartMsg" defaultValue={settings?.footerHeartMsg} className="h-11 rounded-xl" placeholder="Thank You For Your Business" />
+                    </div>
                  </div>
               </Card>
-              <div className="lg:col-span-8">
-                 <div className="bg-white rounded-[2rem] border shadow-2xl p-8 overflow-hidden">
-                    <div className="scale-[0.7] origin-top">
+
+              <div className="lg:col-span-8 space-y-4">
+                 <div className="flex items-center justify-between px-2">
+                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><Eye className="h-3.5 w-3.5" /> PDF Preview Lab</p>
+                    <Badge variant="outline" className="text-[9px] uppercase font-black px-2 bg-white">Dynamic Scale View</Badge>
+                 </div>
+                 <div className="bg-white rounded-[2rem] border shadow-2xl p-4 md:p-8 overflow-hidden">
+                    <div className="scale-[0.6] sm:scale-[0.8] origin-top">
                        <DocumentTemplate {...mockPreviewData} layoutOverride={previewLayout} />
                     </div>
                  </div>
@@ -284,7 +317,7 @@ export default function SettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {menuOrder.map((key, index) => (
                   <div key={key} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border group">
-                    <span className="font-black text-[10px] uppercase text-slate-700">{t(key as any)}</span>
+                    <span className="font-black text-[10px] uppercase text-slate-700">{t(`nav.${key}` as any)}</span>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100">
                       <Button type="button" variant="ghost" size="icon" onClick={() => moveMenuItem(index, 'up')} disabled={index === 0}><ArrowUp className="h-3 w-3" /></Button>
                       <Button type="button" variant="ghost" size="icon" onClick={() => moveMenuItem(index, 'down')} disabled={index === menuOrder.length - 1}><ArrowDown className="h-3 w-3" /></Button>
