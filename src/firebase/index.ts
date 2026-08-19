@@ -4,49 +4,58 @@ import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, initializeFirestore, Firestore } from 'firebase/firestore';
 
 /**
+ * Global singleton state to survive Hot Module Replacement (HMR) in Next.js development.
+ * This prevents the "INTERNAL ASSERTION FAILED: Unexpected state" error caused by
+ * multiple Firestore instances competing for the same internal state.
+ */
+let cachedFirebaseApp: FirebaseApp | undefined;
+let cachedAuth: Auth | undefined;
+let cachedFirestore: Firestore | undefined;
+
+/**
  * Robust Firebase initialization for Next.js (Client & Server).
- * Ensures the config object is used and prevents multiple SDK initializations
- * which often lead to "Internal Assertion Failed" errors in development.
+ * Implements a strict singleton pattern to avoid multiple SDK initializations.
  */
 export function initializeFirebase() {
-  let firebaseApp: FirebaseApp;
-
-  if (getApps().length > 0) {
-    firebaseApp = getApp();
-  } else {
-    // Explicitly check for config to avoid opaque 'no-options' errors
-    if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "undefined") {
-      console.warn('Firebase configuration is missing. Ensure NEXT_PUBLIC_FIREBASE_* env vars are set.');
+  // 1. Initialize Firebase App
+  if (!cachedFirebaseApp) {
+    if (getApps().length > 0) {
+      cachedFirebaseApp = getApp();
+    } else {
+      // Explicitly check for config to avoid opaque 'no-options' errors
+      if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "undefined") {
+        console.warn('Firebase configuration is missing. Ensure NEXT_PUBLIC_FIREBASE_* env vars are set.');
+      }
+      cachedFirebaseApp = initializeApp(firebaseConfig);
     }
-    
-    firebaseApp = initializeApp(firebaseConfig);
   }
 
-  const auth = getAuth(firebaseApp);
-  
-  /**
-   * IMPORTANT: We must be extremely careful with initializeFirestore.
-   * Calling it more than once on the same App instance throws an error.
-   * However, in Next.js development (HMR), we might attempt to re-initialize.
-   */
-  let firestore: Firestore;
-  
-  try {
-    // We attempt to initialize with settings.
-    // If it's already initialized, this will throw, and we'll catch it.
-    firestore = initializeFirestore(firebaseApp, {
-      ignoreUndefinedProperties: true,
-      // We explicitly avoid adding persistence settings here to minimize "Unexpected state" errors
-    });
-  } catch (e: any) {
-    // Fallback: get the existing instance if initialization already happened
-    firestore = getFirestore(firebaseApp);
+  // 2. Initialize Auth
+  if (!cachedAuth) {
+    cachedAuth = getAuth(cachedFirebaseApp);
+  }
+
+  // 3. Initialize Firestore
+  if (!cachedFirestore) {
+    try {
+      /**
+       * IMPORTANT: We call initializeFirestore ONLY ONCE. 
+       * Subsequent calls or calls on an already used app instance 
+       * can trigger internal assertion failures.
+       */
+      cachedFirestore = initializeFirestore(cachedFirebaseApp, {
+        ignoreUndefinedProperties: true,
+      });
+    } catch (e: any) {
+      // Fallback: get the existing instance if initialization already happened
+      cachedFirestore = getFirestore(cachedFirebaseApp);
+    }
   }
 
   return {
-    firebaseApp,
-    auth,
-    firestore
+    firebaseApp: cachedFirebaseApp,
+    auth: cachedAuth,
+    firestore: cachedFirestore
   };
 }
 
