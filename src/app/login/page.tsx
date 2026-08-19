@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth, useUser, useFirestore } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { Building2, Lock, Mail, Languages, AlertCircle, Eye, EyeOff, Zap, Loader2, ArrowRight } from 'lucide-react';
+import { Building2, Lock, Mail, Languages, AlertCircle, Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react';
 import { useSettings } from '@/hooks/use-settings';
 import { useTranslation } from '@/hooks/use-translation';
 import { useTenant } from '@/context/tenant-context';
@@ -28,14 +28,12 @@ export default function LoginPage() {
   const { setLanguage, userRole, companyId } = useTenant();
   const router = useRouter();
   
-  // MANUAL LOGIN: State initialized as empty
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [showPassword, setShowPassword] = React.useState(false);
   
   const [isLoading, setIsLoading] = React.useState(false);
   const [isRedirecting, setIsRedirecting] = React.useState(false);
-  const [isBootstrapping, setIsBootstrapping] = React.useState(false);
   const [authError, setAuthError] = React.useState<string | null>(null);
   const [mounted, setMounted] = React.useState(false);
 
@@ -43,7 +41,6 @@ export default function LoginPage() {
     setMounted(true);
   }, []);
 
-  // Only redirect if a valid session is established and profile is loaded
   React.useEffect(() => {
     if (user && userRole && !isRedirecting) {
       setIsRedirecting(true);
@@ -67,66 +64,6 @@ export default function LoginPage() {
         msg = language === 'BN' ? "লগইন ব্যর্থ: সঠিক ইমেইল এবং পাসওয়ার্ড দিন।" : "Login Failed: Incorrect email or password.";
       }
       setAuthError(msg);
-    }
-  };
-
-  const handleBootstrap = async () => {
-    if (!companyId || !db) return;
-    setIsBootstrapping(true);
-    setAuthError(null);
-
-    try {
-      let uid = auth.currentUser?.uid;
-      
-      if (!uid) {
-        try {
-          const cred = await createUserWithEmailAndPassword(auth, 'warriortechsystem@gmail.com', 'admin123');
-          uid = cred.user.uid;
-        } catch (e: any) {
-          if (e.code === 'auth/email-already-in-use') {
-            const cred = await signInWithEmailAndPassword(auth, 'warriortechsystem@gmail.com', 'admin123');
-            uid = cred.user.uid;
-          } else throw e;
-        }
-      }
-
-      if (!uid) throw new Error("Auth sync failed.");
-
-      await seedMasterData(db, companyId);
-
-      const userRef = doc(db, "companies", companyId, "users", uid);
-      const profileData = {
-        id: uid,
-        email: 'warriortechsystem@gmail.com',
-        fullName: 'Warrior System Admin',
-        firstName: 'Warrior',
-        lastName: 'Admin',
-        roleId: 'super-admin',
-        status: 'active',
-        branchId: 'dhaka-main',
-        allowedBranches: ['dhaka-main'],
-        preferredLanguage: 'BN',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      };
-
-      await setDoc(userRef, profileData, { merge: true });
-
-      const branchRef = doc(db, "companies", companyId, "branches", "dhaka-main");
-      await setDoc(branchRef, {
-        id: "dhaka-main",
-        branchName: "Head Office (Main)",
-        branchCode: "HQ-001",
-        status: "active",
-        createdAt: serverTimestamp()
-      }, { merge: true });
-
-      toast({ title: "System Ready", description: "Live Environment Initialized." });
-      window.location.href = '/';
-    } catch (error: any) {
-      setAuthError(`Bootstrap Failed: ${error.code || 'Sync Error'}`);
-    } finally {
-      setIsBootstrapping(false);
     }
   };
 
@@ -205,16 +142,11 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <Button type="submit" disabled={isLoading || isBootstrapping} className="w-full h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95">
+              <Button type="submit" disabled={isLoading} className="w-full h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95">
                 {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><ArrowRight className="h-5 w-5 mr-2" /> Sign-in to Terminal</>}
               </Button>
 
               <div className="pt-6 flex flex-col items-center gap-4 border-t border-slate-50">
-                <Button variant="ghost" type="button" onClick={handleBootstrap} disabled={isBootstrapping || isLoading} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-blue-600 gap-2">
-                  {isBootstrapping ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
-                  Synchronize System Bootstrap
-                </Button>
-                
                 <Button variant="ghost" size="sm" type="button" className="rounded-full gap-2 text-slate-400" onClick={() => setLanguage(language === 'EN' ? 'BN' : 'EN')}>
                   <Languages className="h-4 w-4" />
                   <span className="text-[10px] font-bold uppercase">{language === 'EN' ? 'বাংলা' : 'English'}</span>
