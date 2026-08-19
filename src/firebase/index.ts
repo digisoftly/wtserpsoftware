@@ -4,20 +4,11 @@ import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, initializeFirestore, Firestore } from 'firebase/firestore';
 
 /**
- * Shared instance cache to ensure singletons across the application.
- * This prevents "Internal Assertion Failed" errors caused by multiple 
- * initializations during Next.js Hot Module Replacement (HMR).
- */
-let memoizedSdks: { firebaseApp: FirebaseApp, auth: Auth, firestore: Firestore } | null = null;
-
-/**
  * Robust Firebase initialization for Next.js (Client & Server).
- * Ensures the config object is used and prevents multiple SDK initializations.
+ * Ensures the config object is used and prevents multiple SDK initializations
+ * which often lead to "Internal Assertion Failed" errors in development.
  */
 export function initializeFirebase() {
-  // Return cached instances if already initialized in this JS context
-  if (memoizedSdks) return memoizedSdks;
-
   let firebaseApp: FirebaseApp;
 
   if (getApps().length > 0) {
@@ -32,26 +23,31 @@ export function initializeFirebase() {
   }
 
   const auth = getAuth(firebaseApp);
+  
+  /**
+   * IMPORTANT: We must be extremely careful with initializeFirestore.
+   * Calling it more than once on the same App instance throws an error.
+   * However, in Next.js development (HMR), we might attempt to re-initialize.
+   */
   let firestore: Firestore;
   
   try {
-    // Attempt to initialize Firestore with custom settings
-    // This must only be called once per App instance
+    // We attempt to initialize with settings.
+    // If it's already initialized, this will throw, and we'll catch it.
     firestore = initializeFirestore(firebaseApp, {
-      ignoreUndefinedProperties: true
+      ignoreUndefinedProperties: true,
+      // We explicitly avoid adding persistence settings here to minimize "Unexpected state" errors
     });
   } catch (e: any) {
-    // Fallback if already initialized (e.g. during HMR or multiple calls)
+    // Fallback: get the existing instance if initialization already happened
     firestore = getFirestore(firebaseApp);
   }
 
-  memoizedSdks = {
+  return {
     firebaseApp,
     auth,
     firestore
   };
-
-  return memoizedSdks;
 }
 
 export * from './provider';

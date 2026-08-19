@@ -13,8 +13,11 @@ interface FirebaseClientProviderProps {
  * It wraps the core FirebaseProvider with stable SDK instances.
  */
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
-  // Use useState with a factory function to ensure initializeFirebase is called 
-  // exactly once during the initial mount of the provider.
+  /**
+   * We use a lazy initialization pattern within useState.
+   * This guarantees that initializeFirebase is called exactly once 
+   * for the lifetime of this component's mount.
+   */
   const [firebaseServices] = useState(() => initializeFirebase());
 
   return (
