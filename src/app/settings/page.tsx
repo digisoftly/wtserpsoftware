@@ -35,7 +35,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useFirestore, useDoc, useMemoFirebase } from "@/firebase"
@@ -47,6 +46,7 @@ import { useTranslation } from "@/hooks/use-translation"
 import { cn } from "@/lib/utils"
 import { Textarea } from "@/components/ui/textarea"
 import { DocumentTemplate } from "@/components/documents/document-template"
+import { Badge } from "@/components/ui/badge"
 
 const DEFAULT_MENU_ORDER = [
   "dashboard", 
@@ -273,6 +273,7 @@ export default function SettingsPage() {
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-black uppercase text-slate-500">Template Engine</Label>
+                      < Marquess />
                       <Select name="defaultTemplate_invoice" defaultValue={settings?.defaultTemplate_invoice || "warrior"} onValueChange={setPreviewLayout}>
                         <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
                         <SelectContent>{DOCUMENT_LAYOUTS.map(l => <SelectItem key={l.value} value={l.value}>{l.name}</SelectItem>)}</SelectContent>
