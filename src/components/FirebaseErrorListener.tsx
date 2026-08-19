@@ -6,9 +6,9 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, ArrowLeft, Home, AlertCircle, Info } from 'lucide-react';
+import { ShieldAlert, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 /**
  * An intelligent listener that catches Firestore errors and displays a user-friendly modal
@@ -18,15 +18,18 @@ export function FirebaseErrorListener() {
   const [error, setError] = useState<FirestorePermissionError | null>(null);
   const { t } = useTranslation();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const handleError = (error: FirestorePermissionError) => {
+      // SUPPRESS ERRORS ON LOGIN PAGE TO PREVENT REDIRECT LOOPS OR DISTRACTIONS
+      if (pathname === '/login' || pathname === '/login/') return;
       setError(error);
     };
 
     errorEmitter.on('permission-error', handleError);
     return () => errorEmitter.off('permission-error', handleError);
-  }, []);
+  }, [pathname]);
 
   if (!error) return null;
 

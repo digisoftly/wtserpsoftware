@@ -16,9 +16,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { seedMasterData } from '@/lib/seed-data';
-import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
-import { initializeApp } from 'firebase/app';
-import { firebaseConfig } from '@/firebase/config';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
@@ -30,8 +28,9 @@ export default function LoginPage() {
   const { setLanguage, userRole, companyId } = useTenant();
   const router = useRouter();
   
-  const [email, setEmail] = React.useState('warriortechsystem@gmail.com');
-  const [password, setPassword] = React.useState('admin123');
+  // MANUAL LOGIN: State initialized as empty
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
   const [showPassword, setShowPassword] = React.useState(false);
   
   const [isLoading, setIsLoading] = React.useState(false);
@@ -44,15 +43,18 @@ export default function LoginPage() {
     setMounted(true);
   }, []);
 
+  // Only redirect if a valid session is established and profile is loaded
   React.useEffect(() => {
-    if (user && userRole) {
+    if (user && userRole && !isRedirecting) {
       setIsRedirecting(true);
       router.push('/');
     }
-  }, [user, userRole, router]);
+  }, [user, userRole, router, isRedirecting]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email || !password) return;
+    
     setIsLoading(true);
     setAuthError(null);
 
@@ -61,8 +63,8 @@ export default function LoginPage() {
     } catch (error: any) {
       setIsLoading(false);
       let msg = error.message;
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-        msg = "Login Failed: Incorrect email or password.";
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-email') {
+        msg = language === 'BN' ? "লগইন ব্যর্থ: সঠিক ইমেইল এবং পাসওয়ার্ড দিন।" : "Login Failed: Incorrect email or password.";
       }
       setAuthError(msg);
     }
@@ -74,7 +76,6 @@ export default function LoginPage() {
     setAuthError(null);
 
     try {
-      // 1. Check if identity already exists to prevent duplicate creation errors
       let uid = auth.currentUser?.uid;
       
       if (!uid) {
@@ -89,12 +90,10 @@ export default function LoginPage() {
         }
       }
 
-      if (!uid) throw new Error("Authentication synchronization failed.");
+      if (!uid) throw new Error("Auth sync failed.");
 
-      // 2. Deploy Master Data Structure
       await seedMasterData(db, companyId);
 
-      // 3. Create Root Admin Profile
       const userRef = doc(db, "companies", companyId, "users", uid);
       const profileData = {
         id: uid,
@@ -113,7 +112,6 @@ export default function LoginPage() {
 
       await setDoc(userRef, profileData, { merge: true });
 
-      // 4. Ensure Initial Branch Exists
       const branchRef = doc(db, "companies", companyId, "branches", "dhaka-main");
       await setDoc(branchRef, {
         id: "dhaka-main",
@@ -124,8 +122,6 @@ export default function LoginPage() {
       }, { merge: true });
 
       toast({ title: "System Ready", description: "Live Environment Initialized." });
-      
-      // Force reload to pick up new profile in context
       window.location.href = '/';
     } catch (error: any) {
       setAuthError(`Bootstrap Failed: ${error.code || 'Sync Error'}`);
@@ -180,14 +176,28 @@ export default function LoginPage() {
                   <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Email Address</Label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-14 pl-12 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 font-bold focus:ring-2 focus:ring-blue-600" required />
+                    <Input 
+                      type="email" 
+                      value={email} 
+                      onChange={(e) => setEmail(e.target.value)} 
+                      className="h-14 pl-12 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 font-bold focus:ring-2 focus:ring-blue-600" 
+                      placeholder="admin@warrior.com"
+                      required 
+                    />
                   </div>
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Password</Label>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} className="h-14 pl-12 pr-12 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 font-bold focus:ring-2 focus:ring-blue-600" required />
+                    <Input 
+                      type={showPassword ? "text" : "password"} 
+                      value={password} 
+                      onChange={(e) => setPassword(e.target.value)} 
+                      className="h-14 pl-12 pr-12 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 font-bold focus:ring-2 focus:ring-blue-600" 
+                      placeholder="••••••••"
+                      required 
+                    />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 hover:text-blue-600">
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>

@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { useUser, useFirestore, useAuth } from '@/firebase';
-import { doc, getDoc, serverTimestamp, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { Language } from '@/lib/translations';
 import { toast } from '@/hooks/use-toast';
@@ -61,11 +61,17 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     let unsubSettings: any;
 
     if (!isUserLoading && !user) {
+      // CLEAR ALL STATE ON LOGOUT
+      setUserRole(null);
+      setSettings(null);
+      setBranchId('dhaka-main');
       setIsInitializing(false);
       return;
     }
 
     if (!isUserLoading && user && db) {
+      setIsInitializing(true);
+
       // 1. Fetch Global Settings
       unsubSettings = onSnapshot(doc(db, "companies", companyId, "system", "config"), (snap) => {
         if (snap.exists()) setSettings(snap.data());
@@ -87,7 +93,6 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           setBranchId(userData.branchId || 'dhaka-main');
           setAllowedBranches(userData.allowedBranches || ['dhaka-main']);
 
-          // Fetch Attached Role
           const roleId = userData.roleId || "default-user";
           const roleSnap = await getDoc(doc(db, "companies", companyId, "roles", roleId));
           if (roleSnap.exists()) {
@@ -98,10 +103,11 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
               permissions: { ...(roleData.permissions || {}), ...(userData.permissionOverrides || {}) } 
             } as Role);
           }
+          setIsInitializing(false);
+        } else {
+          // Profile might not exist yet during bootstrap
+          setIsInitializing(false);
         }
-        // If profile doesn't exist yet, we don't kick the user out immediately.
-        // This allows time for the Bootstrap process on the login page.
-        setIsInitializing(false);
       }, (err) => {
         console.error("Authority fetch failed:", err);
         setIsInitializing(false);
