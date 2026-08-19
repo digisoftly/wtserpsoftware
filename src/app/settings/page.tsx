@@ -273,7 +273,6 @@ export default function SettingsPage() {
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-black uppercase text-slate-500">Template Engine</Label>
-                      < Marquess />
                       <Select name="defaultTemplate_invoice" defaultValue={settings?.defaultTemplate_invoice || "warrior"} onValueChange={setPreviewLayout}>
                         <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
                         <SelectContent>{DOCUMENT_LAYOUTS.map(l => <SelectItem key={l.value} value={l.value}>{l.name}</SelectItem>)}</SelectContent>
