@@ -75,11 +75,11 @@ export default function MasterCategoriesPage() {
     try {
       const docRef = selectedRecord ? doc(db, "companies", companyId, "master_categories", selectedRecord.id) : doc(collection(db, "companies", companyId, "master_categories"));
       await setDoc(docRef, { ...categoryData, createdAt: selectedRecord?.createdAt || serverTimestamp(), id: docRef.id }, { merge: true });
-      toast({ title: t('common.success') });
+      toast({ title: t('common_success') });
       setSelectedRecord(null);
       form.reset();
     } catch (err: any) {
-      toast({ variant: "destructive", title: t('common.error'), description: err.message });
+      toast({ variant: "destructive", title: t('common_error'), description: err.message });
     } finally {
       setIsSubmitting(false);
     }
@@ -95,12 +95,12 @@ export default function MasterCategoriesPage() {
       <div className="flex items-center gap-3 border-b pb-4">
         {level === 'main' ? <ListTree className="h-5 w-5 text-blue-600" /> : level === 'sub' ? <FolderTree className="h-5 w-5 text-purple-600" /> : <Network className="h-5 w-5 text-pink-600" />}
         <h2 className="text-xs font-black uppercase text-slate-900 tracking-widest">
-          {selectedRecord ? t('common.edit') : (level === 'main' ? "Add Main Category" : level === 'sub' ? "Add Sub Category" : "Add Child Category")}
+          {selectedRecord ? t('common_edit') : (level === 'main' ? "Add Main Category" : level === 'sub' ? "Add Sub Category" : "Add Child Category")}
         </h2>
       </div>
       <form onSubmit={handleSave} className="space-y-6">
         <div className="space-y-2">
-          <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('common.label')} *</Label>
+          <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('common_label')} *</Label>
           <Input name="name" defaultValue={selectedRecord?.name} required className="h-12 rounded-xl border-none ring-1 ring-slate-200 font-bold text-xs" placeholder={level === 'main' ? "e.g. Security Systems" : "e.g. IP Cameras"} />
         </div>
         
@@ -127,18 +127,18 @@ export default function MasterCategoriesPage() {
         {level === 'main' && <input type="hidden" name="parentId" value="none" />}
 
         <div className="space-y-2">
-          <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('common.details')}</Label>
+          <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('common_details')}</Label>
           <Input name="description" defaultValue={selectedRecord?.description} className="h-12 rounded-xl border-none ring-1 ring-slate-200" placeholder="Optional notes..." />
         </div>
 
         <div className="pt-4 flex flex-col gap-3">
           <Button type="submit" disabled={isSubmitting} className={cn("w-full h-12 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl", 
             level === 'main' ? "bg-blue-600 hover:bg-blue-700 shadow-blue-100" : level === 'sub' ? "bg-purple-600 hover:bg-purple-700 shadow-purple-100" : "bg-pink-600 hover:bg-pink-700 shadow-pink-100")}>
-            {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />} {t('common.save')}
+            {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />} {t('common_save')}
           </Button>
           {selectedRecord && (
             <Button type="button" variant="ghost" onClick={() => setSelectedRecord(null)} className="h-12 rounded-2xl text-[10px] font-black uppercase tracking-widest">
-              {t('common.cancel')}
+              {t('common_cancel')}
             </Button>
           )}
         </div>
@@ -151,7 +151,7 @@ export default function MasterCategoriesPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl md:text-2xl font-black font-headline text-blue-600 uppercase tracking-tight flex items-center gap-2">
-            <Layers className="h-6 w-6" /> {t('nav.categories')}
+            <Layers className="h-6 w-6" /> {t('categories')}
           </h1>
           <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1">Hierarchical Asset Classification</p>
         </div>
@@ -181,7 +181,7 @@ export default function MasterCategoriesPage() {
                 <div className="relative w-full max-w-xs">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                   <Input 
-                    placeholder={t('common.search')} 
+                    placeholder={t('common_search')} 
                     className="pl-9 h-10 border-none bg-white ring-1 ring-slate-200 text-xs font-bold rounded-xl outline-none" 
                     value={searchTerm} 
                     onChange={(e) => setSearchTerm(e.target.value)} 

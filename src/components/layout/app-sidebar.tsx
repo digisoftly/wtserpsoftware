@@ -58,30 +58,30 @@ import { useSettings } from "@/hooks/use-settings"
 import { useTranslation } from "@/hooks/use-translation"
 import { cn } from "@/lib/utils"
 
-// Comprehensive menu list as requested
+// Removed 'nav.' prefix from name fields
 const MAIN_MODULES = [
-  { name: "nav.dashboard", key: "dashboard", icon: LayoutDashboard, path: "/", color: "text-blue-500" },
-  { name: "nav.sales", key: "sales", icon: ShoppingCart, path: "/sales", color: "text-green-500" },
-  { name: "nav.payments", key: "payments", icon: CreditCard, path: "/payments", color: "text-emerald-500" },
-  { name: "nav.quotations", key: "quotations", icon: FileText, path: "/quotations", color: "text-amber-500" },
-  { name: "nav.dispatch", key: "dispatch", icon: Truck, path: "/challans", color: "text-cyan-500" },
-  { name: "nav.purchases", key: "purchases", icon: Package, path: "/purchases", color: "text-orange-500" },
-  { name: "nav.returns", key: "returns", icon: RotateCcw, path: "/returns", color: "text-red-500" },
-  { name: "nav.inventory", key: "inventory", icon: Boxes, path: "/inventory", color: "text-sky-500" },
-  { name: "nav.serialTracking", key: "serialTracking", icon: Scan, path: "/serial-inventory", color: "text-purple-500" },
-  { name: "nav.projectBilling", key: "project-billing", icon: ClipboardList, path: "/projects", color: "text-teal-500" },
-  { name: "nav.contracts", key: "contracts", icon: Wrench, path: "/contracts", color: "text-indigo-500" },
-  { name: "nav.customers", key: "customers", icon: Users, path: "/customers", color: "text-blue-400" },
-  { name: "nav.suppliers", key: "suppliers", icon: Truck, path: "/suppliers", color: "text-rose-500" },
-  { name: "nav.accounts", key: "accounts", icon: Wallet, path: "/accounts", color: "text-yellow-500" },
-  { name: "nav.expenses", key: "expenses", icon: Receipt, path: "/expenses", color: "text-red-400" },
-  { name: "nav.support", key: "support", icon: GitPullRequest, path: "/support", color: "text-indigo-400" },
-  { name: "nav.crm", key: "crm", icon: Target, path: "/crm", color: "text-rose-600" },
-  { name: "nav.hrm", key: "hrm", icon: Briefcase, path: "/hrm", color: "text-purple-400" },
-  { name: "nav.branches", key: "branches", icon: Building2, path: "/branches", color: "text-slate-500" },
-  { name: "nav.reports", key: "reports", icon: BarChart3, path: "/reports", color: "text-blue-600" },
-  { name: "nav.ai", key: "ai", icon: BrainCircuit, path: "/ai-forecasting", color: "text-violet-600" },
-  { name: "nav.users", key: "users", icon: UserRoundCog, path: "/users", color: "text-violet-500" },
+  { name: "dashboard", key: "dashboard", icon: LayoutDashboard, path: "/", color: "text-blue-500" },
+  { name: "sales", key: "sales", icon: ShoppingCart, path: "/sales", color: "text-green-500" },
+  { name: "payments", key: "payments", icon: CreditCard, path: "/payments", color: "text-emerald-500" },
+  { name: "quotations", key: "quotations", icon: FileText, path: "/quotations", color: "text-amber-500" },
+  { name: "dispatch", key: "dispatch", icon: Truck, path: "/challans", color: "text-cyan-500" },
+  { name: "purchases", key: "purchases", icon: Package, path: "/purchases", color: "text-orange-500" },
+  { name: "returns", key: "returns", icon: RotateCcw, path: "/returns", color: "text-red-500" },
+  { name: "inventory", key: "inventory", icon: Boxes, path: "/inventory", color: "text-sky-500" },
+  { name: "serialTracking", key: "serialTracking", icon: Scan, path: "/serial-inventory", color: "text-purple-500" },
+  { name: "projectBilling", key: "project-billing", icon: ClipboardList, path: "/projects", color: "text-teal-500" },
+  { name: "contracts", key: "contracts", icon: Wrench, path: "/contracts", color: "text-indigo-500" },
+  { name: "customers", key: "customers", icon: Users, path: "/customers", color: "text-blue-400" },
+  { name: "suppliers", key: "suppliers", icon: Truck, path: "/suppliers", color: "text-rose-500" },
+  { name: "accounts", key: "accounts", icon: Wallet, path: "/accounts", color: "text-yellow-500" },
+  { name: "expenses", key: "expenses", icon: Receipt, path: "/expenses", color: "text-red-400" },
+  { name: "support", key: "support", icon: GitPullRequest, path: "/support", color: "text-indigo-400" },
+  { name: "crm", key: "crm", icon: Target, path: "/crm", color: "text-rose-600" },
+  { name: "hrm", key: "hrm", icon: Briefcase, path: "/hrm", color: "text-purple-400" },
+  { name: "branches", key: "branches", icon: Building2, path: "/branches", color: "text-slate-500" },
+  { name: "reports", key: "reports", icon: BarChart3, path: "/reports", color: "text-blue-600" },
+  { name: "ai", key: "ai", icon: BrainCircuit, path: "/ai-forecasting", color: "text-violet-600" },
+  { name: "users", key: "users", icon: UserRoundCog, path: "/users", color: "text-violet-500" },
 ]
 
 const MASTER_DATA_ITEMS = [
@@ -159,14 +159,14 @@ export function AppSidebar() {
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton 
                       isActive={isMasterActive}
-                      tooltip={t('nav.master')}
+                      tooltip={t('master')}
                       className={cn(
                         "h-8 px-2.5 transition-all hover:bg-white/5",
                         isMasterActive ? "bg-primary/10 text-primary" : "text-slate-400"
                       )}
                     >
                       <Database className={cn("h-4 w-4 shrink-0", isMasterActive ? "text-primary" : "text-orange-500")} />
-                      <span className="text-[12px] font-medium">{t('nav.master')}</span>
+                      <span className="text-[12px] font-medium">{t('master')}</span>
                       <ChevronRight className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
@@ -183,7 +183,7 @@ export function AppSidebar() {
                             )}
                           >
                             <Link href={sub.path}>
-                              <span className="text-[11px]">{t(`nav.${sub.name}`)}</span>
+                              <span className="text-[11px]">{t(sub.name)}</span>
                             </Link>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
@@ -201,14 +201,14 @@ export function AppSidebar() {
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton 
                       isActive={isAdminActive}
-                      tooltip={t('nav.administration')}
+                      tooltip={t('administration')}
                       className={cn(
                         "h-8 px-2.5 transition-all hover:bg-white/5",
                         isAdminActive ? "bg-primary/10 text-primary" : "text-slate-400"
                       )}
                     >
                       <Lock className={cn("h-4 w-4 shrink-0", isAdminActive ? "text-primary" : "text-red-500")} />
-                      <span className="text-[12px] font-medium">{t('nav.administration')}</span>
+                      <span className="text-[12px] font-medium">{t('administration')}</span>
                       <ChevronRight className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
@@ -226,7 +226,7 @@ export function AppSidebar() {
                           >
                             <Link href={sub.path} className="flex items-center gap-2">
                               <sub.icon className="h-3.5 w-3.5" />
-                              <span className="text-[11px]">{t(`nav.${sub.name}`)}</span>
+                              <span className="text-[11px]">{t(sub.name)}</span>
                             </Link>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
@@ -244,10 +244,10 @@ export function AppSidebar() {
         <SidebarMenu className="px-2">
           {can('settings', 'view') && (
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip={t('nav.settings')} isActive={pathname.startsWith('/settings')} className="text-slate-400 hover:bg-white/5 h-8 px-2.5">
+              <SidebarMenuButton asChild tooltip={t('settings')} isActive={pathname.startsWith('/settings')} className="text-slate-400 hover:bg-white/5 h-8 px-2.5">
                 <Link href="/settings" className="flex items-center gap-3">
                   <Settings className="h-4 w-4 text-slate-400" />
-                  <span className="text-[12px] font-medium">{t('nav.settings')}</span>
+                  <span className="text-[12px] font-medium">{t('settings')}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

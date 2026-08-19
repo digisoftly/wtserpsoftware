@@ -86,8 +86,8 @@ export default function ChallansPage() {
     <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold font-headline text-amber-600 uppercase tracking-tight">{t('nav.dispatch')}</h1>
-          <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{t('dashboard.happeningToday')}</p>
+          <h1 className="text-xl font-bold font-headline text-amber-600 uppercase tracking-tight">{t('dispatch')}</h1>
+          <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{t('dashboard_happeningToday')}</p>
         </div>
         <Button className="rounded-full gap-2 h-10 px-8 bg-amber-600 hover:bg-amber-700 font-bold text-[10px] uppercase shadow-xl shadow-amber-100 transition-all active:scale-95 w-full md:w-auto" asChild>
           <Link href="/challans/new">
@@ -106,7 +106,7 @@ export default function ChallansPage() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <input 
-            placeholder={t('common.search')} 
+            placeholder={t('common_search')} 
             className="pl-9 h-10 w-full rounded-xl bg-slate-50/50 border-none text-xs focus:ring-2 focus:ring-amber-500 transition-all outline-none" 
             value={searchTerm} 
             onChange={e => setSearchTerm(e.target.value)} 
@@ -123,10 +123,10 @@ export default function ChallansPage() {
               <TableHeader className="bg-muted/10">
                 <TableRow>
                   <TableHead className="h-10 text-[10px] uppercase font-black pl-6">ID</TableHead>
-                  <TableHead className="h-10 text-[10px] uppercase font-black">{t('forms.customer')}</TableHead>
-                  <TableHead className="h-10 text-[10px] uppercase font-black">{t('common.date')}</TableHead>
-                  <TableHead className="h-10 text-[10px] uppercase font-black text-center">{t('common.status')}</TableHead>
-                  <TableHead className="h-10 text-right pr-6 sticky right-0 bg-white/95 backdrop-blur-sm z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">{t('common.actions')}</TableHead>
+                  <TableHead className="h-10 text-[10px] uppercase font-black">{t('forms_customer')}</TableHead>
+                  <TableHead className="h-10 text-[10px] uppercase font-black">{t('common_date')}</TableHead>
+                  <TableHead className="h-10 text-[10px] uppercase font-black text-center">{t('common_status')}</TableHead>
+                  <TableHead className="h-10 text-right pr-6 sticky right-0 bg-white/95 backdrop-blur-sm z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">{t('common_actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -151,9 +151,9 @@ export default function ChallansPage() {
                             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-400"><MoreVertical className="h-4 w-4" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl">
-                            <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedRecord(c); setIsViewModalOpen(true); }}><Printer className="mr-2 h-3.5 w-3.5" /> {t('common.print')}</DropdownMenuItem>
+                            <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedRecord(c); setIsViewModalOpen(true); }}><Printer className="mr-2 h-3.5 w-3.5" /> {t('common_print')}</DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(c); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('common.delete')}</DropdownMenuItem>
+                            <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(c); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('common_delete')}</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -206,12 +206,12 @@ export default function ChallansPage() {
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tight text-slate-900">{t('common.confirmDelete')}?</AlertDialogTitle>
+            <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tight text-slate-900">{t('common_confirmDelete')}?</AlertDialogTitle>
             <AlertDialogDescription className="text-xs font-medium leading-relaxed">This record will be permanently removed.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-8 gap-3">
-            <AlertDialogCancel className="rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest">{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700 rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest" onClick={() => { if(selectedRecord) deleteDocumentNonBlocking(doc(db!, "companies", companyId!, "branches", branchId!, "delivery_challans", selectedRecord.id)); setIsDeleteAlertOpen(false); toast({ title: t('common.success') }); }}>{t('common.delete')}</AlertDialogAction>
+            <AlertDialogCancel className="rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest">{t('common_cancel')}</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest" onClick={() => { if(selectedRecord) deleteDocumentNonBlocking(doc(db!, "companies", companyId!, "branches", branchId!, "delivery_challans", selectedRecord.id)); setIsDeleteAlertOpen(false); toast({ title: t('common_success') }); }}>{t('common_delete')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -91,12 +92,12 @@ export default function MasterServiceTypesPage() {
     try {
       const docRef = selectedRecord ? doc(db, "companies", companyId, collectionName, selectedRecord.id) : doc(collection(db, "companies", companyId, collectionName));
       await setDoc(docRef, { ...data, createdAt: selectedRecord?.createdAt || serverTimestamp(), id: docRef.id }, { merge: true });
-      toast({ title: t('common.success') });
+      toast({ title: t('common_success') });
       setIsModalOpen(false);
       setSelectedRecord(null);
       form.reset();
     } catch (err: any) {
-      toast({ variant: "destructive", title: t('common.error'), description: err.message });
+      toast({ variant: "destructive", title: t('common_error'), description: err.message });
     } finally {
       setIsSubmitting(false);
     }
@@ -114,14 +115,14 @@ export default function MasterServiceTypesPage() {
             batch.delete(doc(db, "companies", companyId, collectionName, id));
           });
           await batch.commit();
-          toast({ title: t('common.success'), description: `${selectedIds.length} items removed.` });
+          toast({ title: t('common_success'), description: `${selectedIds.length} items removed.` });
           clearSelection();
         } catch (e) {
           errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: `companies/${companyId}/${collectionName}/...`,
             operation: 'delete'
           }));
-          toast({ variant: "destructive", title: t('common.error') });
+          toast({ variant: "destructive", title: t('common_error') });
         } finally {
           setIsSubmitting(false);
         }
@@ -135,22 +136,22 @@ export default function MasterServiceTypesPage() {
     <div className="space-y-4 pb-10">
       <div className="flex items-center justify-between border-b pb-4">
         <div>
-          <h1 className="text-lg font-bold text-slate-900 tracking-tight">{t('nav.serviceTypes')}</h1>
+          <h1 className="text-lg font-bold text-slate-900 tracking-tight">{t('serviceTypes')}</h1>
           <nav className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Master Data / SLA Support Types</nav>
         </div>
         <Button size="sm" className="bg-blue-600 hover:bg-blue-700 gap-2 h-9 rounded-md px-4 font-bold text-xs shadow-sm" onClick={() => { setSelectedRecord(null); setIsModalOpen(true); }}>
-          <Plus className="h-4 w-4" /> {t('nav.addServiceType')}
+          <Plus className="h-4 w-4" /> {t('addServiceType')}
         </Button>
       </div>
 
       <div className="flex gap-4">
-        <KPICard title={t('nav.serviceTypes')} value={records?.length || 0} icon={Wrench} colorClass="bg-emerald-600" />
+        <KPICard title={t('serviceTypes')} value={records?.length || 0} icon={Wrench} colorClass="bg-emerald-600" />
       </div>
 
       <div className="bg-white p-3 rounded-md border border-slate-200 shadow-sm flex items-center justify-between">
         <div className="relative w-full max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-          <input placeholder={t('common.search')} className="pl-9 h-8 w-full border border-slate-200 bg-slate-50/50 rounded-md text-xs font-medium focus:ring-1 focus:ring-blue-500 outline-none" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          <input placeholder={t('common_search')} className="pl-9 h-8 w-full border border-slate-200 bg-slate-50/50 rounded-md text-xs font-medium focus:ring-1 focus:ring-blue-500 outline-none" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
       </div>
 
@@ -161,8 +162,8 @@ export default function MasterServiceTypesPage() {
               <TableHead className="w-10 pl-6 h-10">
                 <Checkbox checked={isAllSelected} onCheckedChange={toggleSelectAll} />
               </TableHead>
-              <TableHead className="h-10 text-[10px] uppercase font-bold text-slate-500">{t('common.label')}</TableHead>
-              <TableHead className="h-10 text-[10px] uppercase font-bold text-slate-500">{t('common.details')}</TableHead>
+              <TableHead className="h-10 text-[10px] uppercase font-bold text-slate-500">{t('common_label')}</TableHead>
+              <TableHead className="h-10 text-[10px] uppercase font-bold text-slate-500">{t('common_details')}</TableHead>
               <TableHead className="text-right h-10 pr-6 sticky right-0 bg-slate-50 w-24">Action</TableHead>
             </TableRow>
           </TableHeader>
@@ -195,14 +196,14 @@ export default function MasterServiceTypesPage() {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="max-w-md rounded-lg p-0 overflow-hidden border-none shadow-2xl bg-white">
           <DialogHeader className="bg-slate-900 p-4 text-white">
-            <DialogTitle className="text-sm font-bold uppercase tracking-widest">{selectedRecord ? t('common.edit') : t('nav.addServiceType')}</DialogTitle>
+            <DialogTitle className="text-sm font-bold uppercase tracking-widest">{selectedRecord ? t('common_edit') : t('addServiceType')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSave} className="p-6 space-y-4">
-            <div className="space-y-1.5"><Label className="text-[10px] font-bold uppercase text-slate-500">{t('common.label')} *</Label><Input name="name" defaultValue={selectedRecord?.name} required className="h-10 text-sm font-medium" /></div>
-            <div className="space-y-1.5"><Label className="text-[10px] font-bold uppercase text-slate-500">{t('common.details')}</Label><Input name="description" defaultValue={selectedRecord?.description} className="h-10 text-sm font-medium" /></div>
+            <div className="space-y-1.5"><Label className="text-[10px] font-bold uppercase text-slate-500">{t('common_label')} *</Label><Input name="name" defaultValue={selectedRecord?.name} required className="h-10 text-sm font-medium" /></div>
+            <div className="space-y-1.5"><Label className="text-[10px] font-bold uppercase text-slate-500">{t('common_details')}</Label><Input name="description" defaultValue={selectedRecord?.description} className="h-10 text-sm font-medium" /></div>
             <DialogFooter className="pt-4 border-t gap-2">
-              <Button type="button" variant="ghost" size="sm" onClick={() => setIsModalOpen(false)} className="text-xs font-bold">{t('common.cancel')}</Button>
-              <Button type="submit" disabled={isSubmitting} size="sm" className="bg-blue-600 hover:bg-blue-700 text-xs font-bold px-6">{isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : t('common.save')}</Button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setIsModalOpen(false)} className="text-xs font-bold">{t('common_cancel')}</Button>
+              <Button type="submit" disabled={isSubmitting} size="sm" className="bg-blue-600 hover:bg-blue-700 text-xs font-bold px-6">{isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : t('common_save')}</Button>
             </DialogFooter>
           </form>
         </DialogContent>

@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -60,11 +61,11 @@ export default function MasterUnitsPage() {
     try {
       const docRef = selectedRecord ? doc(db, "companies", companyId, "master_units", selectedRecord.id) : doc(collection(db, "companies", companyId, "master_units"));
       await setDoc(docRef, { ...unitData, createdAt: selectedRecord?.createdAt || serverTimestamp(), id: docRef.id }, { merge: true });
-      toast({ title: t('common.success') });
+      toast({ title: t('common_success') });
       setSelectedRecord(null);
       form.reset();
     } catch (err: any) {
-      toast({ variant: "destructive", title: t('common.error'), description: err.message });
+      toast({ variant: "destructive", title: t('common_error'), description: err.message });
     } finally {
       setIsSubmitting(false);
     }
@@ -74,14 +75,14 @@ export default function MasterUnitsPage() {
 
   return (
     <div className="space-y-6 pb-10">
-      <h1 className="text-xl font-black font-headline text-blue-600 uppercase tracking-tight">{t('nav.units')}</h1>
+      <h1 className="text-xl font-black font-headline text-blue-600 uppercase tracking-tight">{t('units')}</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <Card className="p-8 h-fit rounded-[2rem] border-none ring-1 ring-slate-100 shadow-sm bg-white space-y-6">
-          <h2 className="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-widest">{selectedRecord ? t('common.edit') : t('nav.addUnit')}</h2>
+          <h2 className="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-widest">{selectedRecord ? t('common_edit') : t('addUnit')}</h2>
           <form onSubmit={handleSave} className="space-y-6">
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('common.label')} *</Label>
+              <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('common_label')} *</Label>
               <Input name="name" defaultValue={selectedRecord?.name} required className="h-12 rounded-xl border-none ring-1 ring-slate-200 font-bold text-xs" placeholder="e.g. Piece" />
             </div>
             <div className="space-y-2">
@@ -94,11 +95,11 @@ export default function MasterUnitsPage() {
             </div>
             <div className="pt-4 flex flex-col gap-3">
               <Button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 hover:bg-blue-700 h-12 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-100">
-                {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />} {t('common.save')}
+                {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />} {t('common_save')}
               </Button>
               {selectedRecord && (
                 <Button type="button" variant="ghost" onClick={() => setSelectedRecord(null)} className="h-12 rounded-2xl text-[10px] font-black uppercase tracking-widest">
-                  {t('common.cancel')}
+                  {t('common_cancel')}
                 </Button>
               )}
             </div>
@@ -109,15 +110,15 @@ export default function MasterUnitsPage() {
           <div className="p-5 border-b bg-slate-50/30 flex items-center justify-between">
             <div className="relative w-full max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input placeholder={t('common.search')} className="pl-9 h-10 border-none bg-white ring-1 ring-slate-200 text-xs font-bold rounded-xl" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+              <Input placeholder={t('common_search')} className="pl-9 h-10 border-none bg-white ring-1 ring-slate-200 text-xs font-bold rounded-xl" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
             </div>
           </div>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader className="bg-slate-50/50">
                 <TableRow>
-                  <TableHead className="h-12 text-[10px] uppercase font-black pl-8">{t('common.label')}</TableHead>
-                  <TableHead className="h-12 text-[10px] uppercase font-black">Symbol</TableHead>
+                  <TableHead className="h-12 text-[10px] font-black uppercase pl-8">{t('common_label')}</TableHead>
+                  <TableHead className="h-12 text-[10px] font-black uppercase">Symbol</TableHead>
                   <TableHead className="text-right h-12 pr-8 sticky right-0 bg-white/95 w-24">Action</TableHead>
                 </TableRow>
               </TableHeader>

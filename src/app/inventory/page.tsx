@@ -52,39 +52,39 @@ export default function InventoryPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl md:text-2xl font-black font-headline text-blue-600 uppercase tracking-tight">{t('nav.inventory')}</h1>
+          <h1 className="text-xl md:text-2xl font-black font-headline text-blue-600 uppercase tracking-tight">{t('inventory')}</h1>
           <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">Global Asset Control Terminal</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" className="h-10 rounded-full gap-2 text-[10px] font-black uppercase border-slate-200 px-6 shadow-sm bg-white" asChild>
-            <Link href="/inventory/bulk-add"><Upload className="h-4 w-4" /> {t('inventory.importCsv')}</Link>
+            <Link href="/inventory/bulk-add"><Upload className="h-4 w-4" /> {t('inventory_importCsv')}</Link>
           </Button>
           <Button className="h-10 rounded-full gap-2 px-8 font-black text-[10px] uppercase bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-100" asChild>
             <Link href="/inventory/new">
-              <Plus className="h-4 w-4" /> {t('inventory.addProduct')}
+              <Plus className="h-4 w-4" /> {t('inventory_addProduct')}
             </Link>
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <KPICard title={t('inventory.totalProducts')} value={products?.length || 0} icon={Boxes} colorClass="bg-blue-600" />
-        <KPICard title={t('inventory.lowStockCount')} value={products?.filter(p => (p.currentStock || 0) <= 5).length || 0} icon={AlertCircle} colorClass="bg-red-600" />
-        <KPICard title={t('inventory.stockValue')} value={`৳0`} icon={DollarSign} colorClass="bg-green-600" />
+        <KPICard title={t('inventory_totalProducts')} value={products?.length || 0} icon={Boxes} colorClass="bg-blue-600" />
+        <KPICard title={t('inventory_lowStockCount')} value={products?.filter(p => (p.currentStock || 0) <= 5).length || 0} icon={AlertCircle} colorClass="bg-red-600" />
+        <KPICard title={t('inventory_stockValue')} value={`৳0`} icon={DollarSign} colorClass="bg-green-600" />
       </div>
 
       <div className="bg-white p-3 rounded-2xl border ring-1 ring-slate-100 flex flex-col sm:flex-row gap-3 items-center justify-between">
         <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-300" />
           <input 
-            placeholder={t('common.search')} 
+            placeholder={t('common_search')} 
             className="pl-9 h-10 w-full rounded-xl bg-slate-50/50 border-none text-xs font-bold focus:ring-1 focus:ring-blue-500 outline-none transition-all" 
             value={searchTerm} 
             onChange={e => setSearchTerm(e.target.value)} 
           />
         </div>
         <Button variant="ghost" size="sm" className="h-10 px-4 gap-2 text-[10px] font-black uppercase text-slate-500">
-          <Filter className="h-3.5 w-3.5" /> {t('common.actions')}
+          <Filter className="h-3.5 w-3.5" /> {t('common_actions')}
         </Button>
       </div>
 
@@ -96,18 +96,18 @@ export default function InventoryPage() {
                 <TableHead className="w-10 pl-8 h-12">
                   <Checkbox checked={isAllSelected} onCheckedChange={toggleSelectAll} className="h-4 w-4" />
                 </TableHead>
-                <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12">{t('forms.itemName')} / {t('inventory.sku')}</TableHead>
-                <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12 text-center">{t('inventory.inStock')}</TableHead>
-                <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12">{t('forms.warranty')} & {t('forms.location')}</TableHead>
-                <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12 text-right">{t('forms.price')}</TableHead>
-                <TableHead className="text-[10px] uppercase font-black text-slate-500 text-right pr-8 sticky right-0 bg-white/95 h-12 w-24">{t('common.actions')}</TableHead>
+                <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12">{t('forms_itemName')} / {t('inventory_sku')}</TableHead>
+                <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12 text-center">{t('inventory_inStock')}</TableHead>
+                <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12">{t('forms_warranty')} & {t('forms_location')}</TableHead>
+                <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12 text-right">{t('forms_price')}</TableHead>
+                <TableHead className="text-[10px] uppercase font-black text-slate-500 text-right pr-8 sticky right-0 bg-white/95 h-12 w-24">{t('common_actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow><TableCell colSpan={6} className="h-40 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto text-blue-200" /></TableCell></TableRow>
               ) : filtered?.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="h-64 text-center text-slate-300 text-[10px] font-black uppercase tracking-[0.2em] italic">{t('common.noData')}</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="h-64 text-center text-slate-300 text-[10px] font-black uppercase tracking-[0.2em] italic">{t('common_noData')}</TableCell></TableRow>
               ) : (
                 filtered?.map((p) => (
                   <TableRow key={p.id} className={cn("h-16 hover:bg-muted/5 transition-colors group border-slate-50", selectedIds.includes(p.id) && "bg-blue-50/30")}>

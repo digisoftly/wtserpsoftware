@@ -41,9 +41,9 @@ const DEFAULT_MENU_ORDER = [
   "purchases", 
   "returns", 
   "inventory", 
-  "masterManagement", 
+  "master", 
   "serialTracking", 
-  "project_billing", 
+  "projectBilling", 
   "contracts", 
   "customers", 
   "suppliers", 
@@ -189,7 +189,7 @@ export default function SettingsPage() {
           <TabsList className="bg-white border rounded-xl p-1 mb-6 shadow-sm flex overflow-x-auto h-auto no-scrollbar ring-1 ring-slate-100">
             <TabsTrigger value="general" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">Company & Branding</TabsTrigger>
             <TabsTrigger value="documents" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">PDF Design & Text</TabsTrigger>
-            <TabsTrigger value="navigation" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">{t('nav_navigation')}</TabsTrigger>
+            <TabsTrigger value="navigation" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">{t('navigation')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="space-y-6">
@@ -330,7 +330,7 @@ export default function SettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {menuOrder.map((key, index) => (
                   <div key={key} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border group">
-                    <span className="font-black text-[10px] uppercase text-slate-700">{t(`nav_${key}`)}</span>
+                    <span className="font-black text-[10px] uppercase text-slate-700">{t(key)}</span>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100">
                       <Button type="button" variant="ghost" size="icon" onClick={() => moveMenuItem(index, 'up')} disabled={index === 0}><ArrowUp className="h-3 w-3" /></Button>
                       <Button type="button" variant="ghost" size="icon" onClick={() => moveMenuItem(index, 'down')} disabled={index === menuOrder.length - 1}><ArrowDown className="h-3 w-3" /></Button>
