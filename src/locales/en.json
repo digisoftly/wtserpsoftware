@@ -18,6 +18,7 @@
     "amount": "Amount",
     "total": "Total",
     "details": "Details",
+    "label": "Label",
     "success": "Success",
     "error": "Error",
     "loading": "Loading...",
@@ -96,7 +97,15 @@
     "users": "Users & Roles",
     "administration": "Administration",
     "auditLogs": "Audit Logs",
-    "loginHistory": "Login History"
+    "loginHistory": "Login History",
+    "addBrand": "Add Brand",
+    "addCategory": "Add Category",
+    "addUnit": "Add Unit",
+    "addModel": "Add Model",
+    "addProductType": "Add Product Type",
+    "addServiceType": "Add Service Type",
+    "addWarrantyType": "Add Warranty Type",
+    "addCustomField": "Add Custom Field"
   },
   "dashboard": {
     "totalRevenue": "Total Revenue",

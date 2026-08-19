@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -36,7 +35,7 @@ export default function MasterUnitsPage() {
     e.preventDefault();
     if (!db || !companyId) return;
 
-    const form = e.currentTarget; // FIX: Capture form element
+    const form = e.currentTarget;
     const formData = new FormData(form);
     const name = (formData.get("name") as string).trim();
     
@@ -63,7 +62,7 @@ export default function MasterUnitsPage() {
       await setDoc(docRef, { ...unitData, createdAt: selectedRecord?.createdAt || serverTimestamp(), id: docRef.id }, { merge: true });
       toast({ title: t('common.success') });
       setSelectedRecord(null);
-      form.reset(); // FIX: Use captured form element
+      form.reset();
     } catch (err: any) {
       toast({ variant: "destructive", title: t('common.error'), description: err.message });
     } finally {
@@ -79,7 +78,7 @@ export default function MasterUnitsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <Card className="p-8 h-fit rounded-[2rem] border-none ring-1 ring-slate-100 shadow-sm bg-white space-y-6">
-          <h2 className="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-widest">{selectedRecord ? t('common.edit') : t('common.add')}</h2>
+          <h2 className="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-widest">{selectedRecord ? t('common.edit') : t('nav.addUnit')}</h2>
           <form onSubmit={handleSave} className="space-y-6">
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('common.label')} *</Label>
