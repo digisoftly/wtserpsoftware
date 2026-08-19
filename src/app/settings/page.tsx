@@ -177,7 +177,7 @@ export default function SettingsPage() {
     title: "SAMPLE QUOTATION",
     docNumber: "WTS/INV-2024-001",
     date: new Date().toISOString(),
-    customerName: "Global Tech Solutions Ltd.",
+    customerName: "Global Tech Solutions Ltd",
     customerInfo: "+880 1700-000000\nUttara, Dhaka-1230",
     items: [{ name: "High Speed Camera", quantity: 2, unit: "Pcs", unitPrice: 5000, total: 10000, brand: "Hikvision", model: "DS-2C" }],
     subtotal: 10000,
@@ -234,7 +234,7 @@ export default function SettingsPage() {
                   )}
                   <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => handleFileChange(e, setSealPreview)} />
                 </div>
-                <p className="text-[9px] text-slate-400">Blue/Round Seal Image</p>
+                <p className="text-[9px] text-slate-400">Blue Round Seal Image</p>
               </Card>
 
               <Card className="border-none shadow-sm rounded-2xl flex flex-col items-center justify-center p-6 text-center bg-white ring-1 ring-slate-100">
@@ -257,7 +257,7 @@ export default function SettingsPage() {
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Slogan</Label><Input name="companySlogan" defaultValue={settings?.companySlogan} className="h-11 rounded-xl" /></div>
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Official Phone</Label><Input name="phone" defaultValue={settings?.phone} className="h-11 rounded-xl" /></div>
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Official Email</Label><Input name="email" defaultValue={settings?.email} className="h-11 rounded-xl" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Website URL</Label><Input name="website" defaultValue={settings?.website} placeholder="www.example.com" className="h-11 rounded-xl" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Website URL</Label><Input name="website" defaultValue={settings?.website} placeholder="www example com" className="h-11 rounded-xl" /></div>
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Official Address</Label><Input name="address" defaultValue={settings?.address} className="h-11 rounded-xl" /></div>
                   </div>
                 </CardContent>
@@ -291,27 +291,26 @@ export default function SettingsPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-slate-500">Standard Terms & Conditions</Label>
-                    <Textarea name="pdfTerms" defaultValue={settings?.pdfTerms} className="min-h-[100px] rounded-xl text-[10px] font-bold" placeholder="1. Equipment remains property..." />
+                    <Textarea name="pdfTerms" defaultValue={settings?.pdfTerms} className="min-h-[100px] rounded-xl text-[10px] font-bold" placeholder="1 Equipment remains property" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-[10px] font-black uppercase text-slate-500">Footer 'Heart' Message</Label>
+                    <Label className="text-[10px] font-black uppercase text-slate-500">Footer Heart Message</Label>
                     <Input name="footerHeartMsg" defaultValue={settings?.footerHeartMsg} className="h-11 rounded-xl font-bold" placeholder="Thank You For Your Business" />
                   </div>
                 </Card>
 
-                {/* Table Header Customization */}
                 <Card className="border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-8 space-y-6">
                   <div className="flex items-center gap-2 border-b pb-2">
                     <TableIcon className="h-4 w-4 text-blue-600" />
                     <h3 className="text-xs font-black uppercase tracking-widest">Table Column Labels</h3>
                   </div>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-6">
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">SL Header (e.g. ক্র:নং)</Label><Input name="pdfTable_sl" defaultValue={settings?.pdfTable_sl} className="h-10 rounded-xl text-xs font-black uppercase" placeholder="SL" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Item Header (e.g. পণ্যের নাম)</Label><Input name="pdfTable_item" defaultValue={settings?.pdfTable_item} className="h-10 rounded-xl text-xs font-black uppercase" placeholder="Item Name" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">SL Header</Label><Input name="pdfTable_sl" defaultValue={settings?.pdfTable_sl} className="h-10 rounded-xl text-xs font-black uppercase" placeholder="SL" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Item Header</Label><Input name="pdfTable_item" defaultValue={settings?.pdfTable_item} className="h-10 rounded-xl text-xs font-black uppercase" placeholder="Item Name" /></div>
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Brand Header</Label><Input name="pdfTable_brand" defaultValue={settings?.pdfTable_brand} className="h-10 rounded-xl text-xs font-black uppercase" placeholder="Brand" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Qty Header (e.g. পরিমাণ)</Label><Input name="pdfTable_qty" defaultValue={settings?.pdfTable_qty} className="h-10 rounded-xl text-xs font-black uppercase" placeholder="Qty" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Price Header (e.g. দর)</Label><Input name="pdfTable_price" defaultValue={settings?.pdfTable_price} className="h-10 rounded-xl text-xs font-black uppercase" placeholder="Unit Price" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Amount Header (e.g. টাকা)</Label><Input name="pdfTable_amount" defaultValue={settings?.pdfTable_amount} className="h-10 rounded-xl text-xs font-black uppercase" placeholder="Amount" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Qty Header</Label><Input name="pdfTable_qty" defaultValue={settings?.pdfTable_qty} className="h-10 rounded-xl text-xs font-black uppercase" placeholder="Qty" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Price Header</Label><Input name="pdfTable_price" defaultValue={settings?.pdfTable_price} className="h-10 rounded-xl text-xs font-black uppercase" placeholder="Unit Price" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Amount Header</Label><Input name="pdfTable_amount" defaultValue={settings?.pdfTable_amount} className="h-10 rounded-xl text-xs font-black uppercase" placeholder="Amount" /></div>
                   </div>
 
                   <div className="flex items-center gap-2 border-b pb-2 pt-4">
@@ -323,8 +322,8 @@ export default function SettingsPage() {
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Discount Label</Label><Input name="pdfTable_discount" defaultValue={settings?.pdfTable_discount} className="h-10 rounded-xl text-xs font-black uppercase" /></div>
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">VAT Label</Label><Input name="pdfTable_tax" defaultValue={settings?.pdfTable_tax} className="h-10 rounded-xl text-xs font-black uppercase" /></div>
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Grand Total Label</Label><Input name="pdfTable_grandTotal" defaultValue={settings?.pdfTable_grandTotal} className="h-10 rounded-xl text-xs font-black uppercase" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Paid Label (জমা)</Label><Input name="pdfTable_paid" defaultValue={settings?.pdfTable_paid} className="h-10 rounded-xl text-xs font-black uppercase" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Due Label (বকেয়া)</Label><Input name="pdfTable_due" defaultValue={settings?.pdfTable_due} className="h-10 rounded-xl text-xs font-black uppercase" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Paid Label</Label><Input name="pdfTable_paid" defaultValue={settings?.pdfTable_paid} className="h-10 rounded-xl text-xs font-black uppercase" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Due Label</Label><Input name="pdfTable_due" defaultValue={settings?.pdfTable_due} className="h-10 rounded-xl text-xs font-black uppercase" /></div>
                   </div>
                 </Card>
               </div>

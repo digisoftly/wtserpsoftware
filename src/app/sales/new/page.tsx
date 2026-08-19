@@ -215,7 +215,7 @@ export default function NewInvoicePage() {
       
       setSelectedCustomerId(newDocRef.id);
       setIsNewCustomerMode(false);
-      toast({ title: t('common.success'), description: "New customer added and selected." });
+      toast({ title: t('common.success'), description: "New customer added and selected" });
     } catch (err: any) {
       toast({ variant: "destructive", title: t('common.error'), description: err.message });
     } finally {
@@ -241,7 +241,7 @@ export default function NewInvoicePage() {
           const product = products?.find(p => p.id === snDoc.productId);
           if (product) {
             handleAddProduct(product, snDoc.serialNumber);
-            toast({ title: "Serial Found", description: `Added: ${product.name}` });
+            toast({ title: "Serial Found", description: `Added ${product.name}` });
             return;
           }
         }
@@ -252,7 +252,7 @@ export default function NewInvoicePage() {
           return;
         }
 
-        toast({ variant: "destructive", title: "No Match", description: "Serial or Model not found in active stock." });
+        toast({ variant: "destructive", title: "No Match", description: "Serial or Model not found in active stock" });
       } catch (err) {
         console.error(err);
       } finally {
@@ -263,7 +263,7 @@ export default function NewInvoicePage() {
 
   const handleSaveInvoice = async () => {
     if (!selectedCustomerId || lineItems.length === 0 || isSubmitting) {
-      toast({ variant: "destructive", title: "Action Required", description: "Select a customer and add at least one item." });
+      toast({ variant: "destructive", title: "Action Required", description: "Select a customer and add at least one item" });
       return;
     }
     setIsSubmitting(true);
@@ -372,7 +372,7 @@ export default function NewInvoicePage() {
                         <Label className="text-[10px] font-black uppercase text-slate-400">Select Client Account</Label>
                         <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
                           <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold text-xs">
-                            <SelectValue placeholder="Search or select from directory..." />
+                            <SelectValue placeholder="Search or select from directory" />
                           </SelectTrigger>
                           <SelectContent className="max-h-[300px] rounded-xl shadow-2xl border-none ring-1 ring-slate-100">
                             {customers?.map((c, idx) => (
@@ -388,7 +388,7 @@ export default function NewInvoicePage() {
                            <LayoutGrid className="h-5 w-5" />
                         </div>
                         <div className="text-[10px] font-bold text-blue-700 uppercase leading-relaxed">
-                           Quick registration available for walk-in clients. Use the button above to switch modes.
+                           Quick registration available for walk-in clients Use the button above to switch modes
                         </div>
                      </div>
                   </div>
@@ -403,7 +403,7 @@ export default function NewInvoicePage() {
                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {quickCustType === 'company' && (
                         <div className="space-y-1.5 lg:col-span-3">
-                          <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Company / Farm Name *</Label>
+                          <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Company Farm Name *</Label>
                           <Input name="companyName" required className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold" />
                         </div>
                       )}
@@ -416,12 +416,12 @@ export default function NewInvoicePage() {
                         <Input name="lastName" required className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200" />
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Mobile / WhatsApp *</Label>
-                        <Input name="phoneNumber" required className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200" placeholder="+880..." />
+                        <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Mobile WhatsApp *</Label>
+                        <Input name="phoneNumber" required className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200" placeholder="+880" />
                       </div>
                       <div className="space-y-1.5">
                         <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Email Address</Label>
-                        <Input name="email" type="email" className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200" placeholder="client@example.com" />
+                        <Input name="email" type="email" className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200" placeholder="client@example com" />
                       </div>
                       <div className="space-y-1.5 lg:col-span-2">
                         <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Full Billing Address</Label>
@@ -453,11 +453,11 @@ export default function NewInvoicePage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-slate-400">Target Project</Label>
-                  <Input value={projectName} onChange={e => setProjectName(e.target.value)} className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold text-xs" placeholder="e.g. CCTV Implementation" />
+                  <Input value={projectName} onChange={e => setProjectName(e.target.value)} className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold text-xs" placeholder="e.g CCTV Implementation" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-slate-400">Site Location</Label>
-                  <Input value={projectLocation} onChange={e => setProjectLocation(e.target.value)} className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold text-xs" placeholder="e.g. Banani, Dhaka" />
+                  <Input value={projectLocation} onChange={e => setProjectLocation(e.target.value)} className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold text-xs" placeholder="e.g Banani Dhaka" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-slate-400">Invoice Date</Label>
@@ -480,7 +480,7 @@ export default function NewInvoicePage() {
                 onChange={e => setProductSearch(e.target.value)}
                 onKeyDown={handleProductSearchKeyDown}
                 className="h-16 pl-12 pr-6 rounded-[2rem] bg-white border-none ring-2 ring-slate-100 focus:ring-blue-600 shadow-xl text-sm font-black uppercase tracking-tight"
-                placeholder="Scan Serial Number or Type Product Name/Model..."
+                placeholder="Scan Serial Number or Type Product Name Model"
              />
              
              {suggestedProducts.length > 0 && (
@@ -527,7 +527,7 @@ export default function NewInvoicePage() {
               <Table className="min-w-[1000px]">
                 <TableHeader className="bg-slate-50/50 border-b">
                   <TableRow className="hover:bg-transparent h-14">
-                    <TableHead className="w-12 text-center text-[10px] font-black uppercase pl-6">Sl.</TableHead>
+                    <TableHead className="w-12 text-center text-[10px] font-black uppercase pl-6">Sl</TableHead>
                     <TableHead className="min-w-[400px] text-[10px] font-black uppercase">Item Details & Attributes</TableHead>
                     <TableHead className="w-24 text-[10px] font-black uppercase text-center">Unit</TableHead>
                     <TableHead className="w-24 text-[10px] font-black uppercase text-center">Qty</TableHead>
@@ -548,7 +548,7 @@ export default function NewInvoicePage() {
                     </TableRow>
                   ) : (
                     lineItems.map((item, idx) => (
-                      <TableRow key={item.id} className="group hover:bg-slate-50/50 border-b border-slate-50 align-top transition-colors">
+                      <TableRow key={item.id} className="group hover:bg-slate-50/50 border-b border-slate-100 align-top transition-colors">
                         <TableCell className="text-center text-[11px] font-black text-slate-300 py-6 pl-6">{(idx + 1).toString().padStart(2, '0')}</TableCell>
                         <TableCell className="py-6 px-2">
                           <div className="space-y-3">
@@ -565,10 +565,10 @@ export default function NewInvoicePage() {
                                <Input className="h-8 text-[10px] font-bold border-slate-100 bg-white rounded-lg" value={item.warranty || ''} onChange={e => updateItem(item.id, 'warranty', e.target.value)} placeholder="Warranty" />
                             </div>
                             <textarea 
-                              className="w-full text-[10px] font-medium bg-slate-50 border border-slate-100 rounded-xl p-3 min-h-[60px] resize-none outline-none focus:bg-white focus:ring-1 focus:ring-blue-500 transition-all" 
+                              className="w-full text-[10px] font-medium bg-slate-50 border border-slate-200 rounded-xl p-3 min-h-[60px] resize-none outline-none focus:bg-white focus:ring-1 focus:ring-blue-500 transition-all" 
                               value={item.specs || ''} 
                               onChange={e => updateItem(item.id, 'specs', e.target.value)} 
-                              placeholder="Full Technical Specification / Details..." 
+                              placeholder="Full Technical Specification Details" 
                             />
                           </div>
                         </TableCell>
@@ -585,7 +585,7 @@ export default function NewInvoicePage() {
                           <Input type="number" className="h-10 text-center font-black text-xs rounded-xl w-16 bg-slate-100 border-none mx-auto focus:ring-1 focus:ring-blue-500" value={item.qty || ''} onChange={e => updateItem(item.id, 'qty', Number(e.target.value))} />
                         </TableCell>
                         <TableCell className="py-6 text-right">
-                          <Input type="number" className="h-10 text-right font-black text-xs rounded-xl w-24 bg-slate-100 border-none ml-auto focus:ring-1 focus:ring-blue-500" value={item.price || ''} onChange={e => updateItem(item.id, 'price', Number(e.target.value))} />
+                          <Input type="number" className="h-10 text-right font-black text-xs rounded-xl w-24 bg-slate-100 border-none ml-auto focus:ring-1 focus:ring-blue-500 rounded-xl" value={item.price || ''} onChange={e => updateItem(item.id, 'price', Number(e.target.value))} />
                         </TableCell>
                         <TableCell className="py-6 text-right pr-10 font-black text-xs text-slate-900 tabular-nums">৳{(item.total || 0).toLocaleString()}</TableCell>
                         <TableCell className="py-6 pr-4">
@@ -608,11 +608,11 @@ export default function NewInvoicePage() {
              </div>
              <div className="pt-6 space-y-3 border-t border-slate-100 text-[10px] font-black uppercase tracking-widest text-left">
                 <div className="flex justify-between items-center text-slate-500">
-                   <span>{t('forms.subtotal')}</span>
+                   <span>Subtotal</span>
                    <span className="text-slate-900">৳{(subtotal || 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center text-slate-500 bg-slate-50 p-2.5 rounded-xl">
-                   <span>Accrued VAT (15%)</span>
+                   <span>Accrued VAT 15%</span>
                    <span className="text-blue-600">+৳{(itemTaxes || 0).toLocaleString()}</span>
                 </div>
              </div>
@@ -622,21 +622,21 @@ export default function NewInvoicePage() {
             <div className="space-y-4">
               <div className="space-y-1.5 p-4 bg-slate-50/80 rounded-3xl border border-slate-100">
                 <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
-                   <Calculator className="h-3.5 w-3.5 text-red-500" /> Extra Discount (৳)
+                   <Calculator className="h-3.5 w-3.5 text-red-500" /> Extra Discount ৳
                 </Label>
                 <Input type="number" className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200 font-black text-sm text-red-600" value={globalDiscount || ''} onChange={e => setGlobalDiscount(Number(e.target.value))} />
               </div>
               
               <div className="space-y-1.5 p-4 bg-slate-50/80 rounded-3xl border border-slate-100">
                 <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
-                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Cash Collected (৳)
+                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Cash Collected ৳
                 </Label>
                 <Input type="number" className="h-12 rounded-xl bg-white border-none ring-1 ring-slate-200 font-black text-emerald-700 text-lg shadow-inner" value={paidAmount || ''} onChange={e => setPaidAmount(Number(e.target.value))} />
               </div>
 
               <div className={cn("p-5 rounded-[2rem] flex justify-between items-center transition-all duration-500", balanceDue > 0 ? "bg-red-50 ring-1 ring-red-100" : "bg-emerald-50 ring-1 ring-emerald-100")}>
                  <div className="space-y-0.5">
-                    <span className="text-[9px] font-black uppercase text-slate-400">{t('forms.balanceDue')}</span>
+                    <span className="text-[9px] font-black uppercase text-slate-400">Balance Due</span>
                     <p className={cn("text-xl font-black tabular-nums leading-none", balanceDue > 0 ? "text-red-600" : "text-emerald-700")}>
                       ৳{Math.abs(balanceDue).toLocaleString()}
                     </p>
@@ -647,7 +647,7 @@ export default function NewInvoicePage() {
             
             <div className="space-y-2 pt-2">
                <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Internal Billing Notes</Label>
-               <Textarea className="min-h-[100px] text-[11px] font-bold rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:bg-white transition-all p-4" value={notes || ''} onChange={e => setNotes(e.target.value)} placeholder="Standard terms & conditions apply..." />
+               <Textarea className="min-h-[100px] text-[11px] font-bold rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:bg-white transition-all p-4" value={notes || ''} onChange={e => setNotes(e.target.value)} placeholder="Standard terms & conditions apply" />
             </div>
 
             <Button className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl text-white bg-blue-600 hover:bg-blue-700 transition-all active:scale-95 shadow-blue-200" disabled={isSubmitting || lineItems.length === 0} onClick={handleSaveInvoice}>

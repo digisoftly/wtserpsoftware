@@ -1,3 +1,4 @@
+
 {
   "common": {
     "save": "Save",
@@ -11,7 +12,7 @@
     "print": "Print",
     "download": "Download",
     "share": "Share",
-    "search": "Search...",
+    "search": "Search",
     "actions": "Actions",
     "status": "Status",
     "date": "Date",
@@ -21,7 +22,7 @@
     "label": "Label",
     "success": "Success",
     "error": "Error",
-    "loading": "Loading...",
+    "loading": "Loading",
     "noData": "No records found",
     "confirmDelete": "Are you sure you want to delete this?",
     "itemsSelected": "Items Selected",
@@ -29,7 +30,7 @@
     "all": "All",
     "allHealthy": "All Healthy",
     "goDashboard": "Go to Dashboard",
-    "searchPlaceholder": "Search...",
+    "searchPlaceholder": "Search",
     "partA": "Part-A",
     "partB": "Part-B",
     "docNo": "DOC NO",
@@ -45,21 +46,21 @@
     "password": "Password",
     "signInTerminal": "Sign-in to Terminal",
     "establishingSession": "Establishing Secure Session",
-    "loginFailed": "Login Failed: Incorrect email or password."
+    "loginFailed": "Login Failed Incorrect email or password"
   },
   "errors": {
     "accessRestricted": "Access Restricted",
     "quotaExceeded": "System Quota Exceeded",
-    "systemOverloaded": "System Overloaded, please try again in a few minutes",
-    "quotaSub": "The database has exceeded write bandwidth. Please wait for a few moments or upgrade your quota.",
-    "identitySync": "User profile is syncing, please wait",
+    "systemOverloaded": "System Overloaded please try again in a few minutes",
+    "quotaSub": "The database has exceeded write bandwidth Please wait for a few moments or upgrade your quota",
+    "identitySync": "User profile is syncing please wait",
     "systemConfig": "No permission to change system settings",
     "roleAuthority": "Insufficient authority for this action",
     "createRestricted": "Permission denied to add new data",
     "updateRestricted": "Modifying records is not allowed",
     "deleteRestricted": "Deleting records is restricted",
     "genericBlocked": "The system blocked this request",
-    "detailsSub": "Please contact administrator or try again."
+    "detailsSub": "Please contact administrator or try again"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -145,7 +146,7 @@
     "balanceDue": "Balance Due",
     "subtotal": "Subtotal",
     "grandTotal": "Grand Total",
-    "sl": "Sl.",
+    "sl": "Sl",
     "unit": "Unit"
   },
   "inventory": {
@@ -156,13 +157,13 @@
     "importCsv": "Import CSV",
     "sku": "SKU/Model",
     "inStock": "In Stock",
-    "minStock": "Min. Stock"
+    "minStock": "Min Stock"
   },
   "messages": {
     "saved": "Data saved successfully",
     "deleted": "Record removed successfully",
     "authFailed": "Authentication failed",
     "accessDenied": "Access Restricted",
-    "accessDeniedMsg": "You don't have permission to access this module."
+    "accessDeniedMsg": "You don't have permission to access this module"
   }
 }
