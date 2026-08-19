@@ -131,5 +131,17 @@
     "authFailed": "লগইন ব্যর্থ হয়েছে",
     "accessDenied": "প্রবেশাধিকার সীমিত",
     "accessDeniedMsg": "আপনার এই মডিউলে প্রবেশের অনুমতি নেই।"
-  }
+  },
+  "projectAndBilling": "প্রকল্প ও বিলিং সিস্টেম",
+  "running": "চলমান প্রকল্প",
+  "totalBilling": "মোট বিলিং",
+  "paidAmount": "পরিশোধিত",
+  "profit": "নিট আয়",
+  "project": "প্রকল্প",
+  "billingAndInvoices": "বিলিং ও ইনভয়েস",
+  "receiveCombined": "একত্রিত পেমেন্ট গ্রহণ",
+  "addProject": "নতুন প্রকল্প",
+  "budget": "বাজেট",
+  "projectArchived": "প্রকল্পটি সফলভাবে আর্কাইভ করা হয়েছে।",
+  "happeningToday": "আজকের আপডেট"
 }
