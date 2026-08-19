@@ -37,48 +37,42 @@ service cloud.firestore {
 
     // --- MODULE RULES ---
 
-    // 1. Audit Logs & History (Restricted)
+    // 1. Audit Logs & History
     match /companies/{companyId}/audit_logs/{logId} {
       allow read: if isCompanyAdmin(companyId);
-      allow create: if isCompanyMember(companyId) && isAccountActive(companyId);
+      allow create: if isCompanyMember(companyId);
       allow update, delete: if false; 
     }
 
-    // 2. User & Role Management (Super Protected)
+    // 2. User & Role Management
     match /companies/{companyId}/users/{userId} {
-      // Self-read always allowed for identity bootstrap
       allow read: if isSignedIn() && (request.auth.uid == userId || isCompanyAdmin(companyId));
-      // Allow self-provisioning during bootstrap (can only create own profile)
       allow create: if isSignedIn() && request.auth.uid == userId;
-      // Only admins can modify user records (Roles, Status, Branches)
-      allow write: if isCompanyAdmin(companyId);
-      // Allow self-update for basic profile fields only
-      allow update: if isSignedIn() && request.auth.uid == userId && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['roleId', 'status', 'allowedBranches', 'permissionOverrides']);
+      allow update: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if isCompanyAdmin(companyId);
     }
 
     match /companies/{companyId}/roles/{roleId} {
-      allow read: if isCompanyMember(companyId);
-      // Allow creation of the first super-admin role if it doesn't exist
-      allow create: if isSignedIn() && (!exists(/databases/$(database)/documents/companies/$(companyId)/roles/super-admin) || isSuperAdmin(companyId));
+      // Allow reading roles to check existance during bootstrap
+      allow read: if isSignedIn();
+      allow create: if isSignedIn(); 
       allow update, delete: if isSuperAdmin(companyId);
     }
 
     // 3. Branch Specific Data
     match /companies/{companyId}/branches/{branchId}/{allPaths=**} {
-      allow read, write: if isCompanyMember(companyId) && isAccountActive(companyId) && hasBranchAccess(companyId, branchId);
+      allow read, write: if isCompanyMember(companyId) && hasBranchAccess(companyId, branchId);
     }
 
-    // 4. Global Master Data
+    // 4. Global Master Data & System Config
     match /companies/{companyId}/{collectionName}/{id} {
-      allow read: if isCompanyMember(companyId);
-      // Allow creation of first config
-      allow create: if isSignedIn() && (collectionName == 'system' || isCompanyAdmin(companyId));
-      allow write: if isCompanyAdmin(companyId) && isAccountActive(companyId);
+      // Allow reading config for bootstrap state check
+      allow read: if isSignedIn();
       
-      // Explicitly allow master data collections
-      match collectionName in ['master_units', 'master_categories', 'master_brands', 'master_models', 'master_custom_fields', 'master_data'] {
-        allow read: if isCompanyMember(companyId);
-      }
+      // Allow first-time setup
+      allow create: if isSignedIn() && (collectionName == 'system' || collectionName == 'master_data');
+      
+      allow write: if isCompanyAdmin(companyId);
     }
 
     // 5. Default Deny
