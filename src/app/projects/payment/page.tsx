@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -232,7 +233,6 @@ export default function CombinedPaymentPage() {
               </div>
             </div>
 
-            {/* PROJECT SELECTION TABLE */}
             <div className="space-y-4">
                <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Select Projects for Allocation</h3>
                <div className="rounded-[2rem] border shadow-sm overflow-hidden flex flex-col min-h-[400px]">
@@ -283,15 +283,15 @@ export default function CombinedPaymentPage() {
 
         {/* RIGHT COLUMN: ALLOCATION SUMMARY */}
         <div className="lg:col-span-4 space-y-6">
-          <Card className="p-8 rounded-[2.5rem] shadow-2xl space-y-6 text-center text-white bg-indigo-600 ring-4 ring-indigo-500/20 border-none">
-             <p className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em]">Validated Transaction Total</p>
-             <h2 className="text-4xl md:text-5xl font-headline font-black tracking-tighter">৳{allocatedTotal.toLocaleString()}</h2>
-             <div className="pt-6 space-y-3 border-t border-white/10 text-[10px] font-bold uppercase tracking-widest text-left">
-                <div className="flex justify-between items-center opacity-70">
+          <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-6 text-center animate-in fade-in zoom-in-95 duration-500">
+             <p className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em] text-slate-400">Validated Transaction Total</p>
+             <h2 className="text-4xl md:text-5xl font-headline font-black tracking-tighter text-indigo-600">৳{allocatedTotal.toLocaleString()}</h2>
+             <div className="pt-6 space-y-3 border-t border-slate-100 text-[10px] font-bold uppercase tracking-widest text-left">
+                <div className="flex justify-between items-center text-slate-400">
                    <span>Gross Cash Received</span>
-                   <span>৳{totalPaymentAmount.toLocaleString()}</span>
+                   <span className="text-slate-900">৳{totalPaymentAmount.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between items-center text-indigo-100 bg-white/10 p-2 rounded-xl">
+                <div className="flex justify-between items-center text-indigo-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                    <span>Remaining Surplus</span>
                    <span className="font-black">৳{Math.max(0, totalPaymentAmount - allocatedTotal).toLocaleString()}</span>
                 </div>

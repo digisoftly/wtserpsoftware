@@ -80,8 +80,8 @@ export default function NewPurchasePage() {
 
   // Calculations
   const subtotal = React.useMemo(() => lineItems.reduce((sum, item) => sum + (item.qty * item.price), 0), [lineItems]);
-  const itemDiscounts = React.useMemo(() => lineItems.reduce((sum, item) => sum + (item.qty * item.price * (item.discount / 100)), 0), [lineItems]);
-  const itemTaxes = React.useMemo(() => lineItems.reduce((sum, item) => sum + ((item.qty * item.price) - (item.qty * item.price * (item.discount / 100))) * (item.tax / 100), 0), [lineItems]);
+  const itemDiscounts = lineItems.reduce((sum, item) => sum + (item.qty * item.price * (item.discount / 100)), 0), [lineItems]);
+  const itemTaxes = lineItems.reduce((sum, item) => sum + ((item.qty * item.price) - (item.qty * item.price * (item.discount / 100))) * (item.tax / 100), 0), [lineItems]);
   const grandTotal = React.useMemo(() => subtotal - itemDiscounts + itemTaxes - globalDiscount + additionalCharge, [subtotal, itemDiscounts, itemTaxes, globalDiscount, additionalCharge]);
   const balanceDue = React.useMemo(() => grandTotal - paidAmount, [grandTotal, paidAmount]);
 
@@ -201,14 +201,14 @@ export default function NewPurchasePage() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="font-bold text-xs" onClick={() => router.back()}>{t('cancel')}</Button>
-          <Button size="sm" className="font-bold text-xs gap-2" disabled={isSubmitting} onClick={handleSave}>
+          <Button size="sm" className="font-bold text-xs gap-2 px-6 h-9 rounded-lg" disabled={isSubmitting} onClick={handleSave}>
             {isSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
             {t('save')}
           </Button>
         </div>
       </div>
 
-      <Card className="border-none shadow-sm ring-1 ring-slate-200">
+      <Card className="border-none shadow-sm ring-1 ring-slate-200 rounded-[2rem] bg-white">
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <div className="space-y-1.5">
@@ -236,12 +236,12 @@ export default function NewPurchasePage() {
         </CardContent>
       </Card>
 
-      <Card className="border-none shadow-sm ring-1 ring-slate-200 overflow-hidden">
-        <div className="p-4 bg-slate-50/50 border-b flex items-center justify-between">
+      <Card className="border-none shadow-sm ring-1 ring-slate-200 overflow-hidden rounded-[2rem] bg-white">
+        <div className="p-4 bg-white border-b flex items-center justify-between">
           <h3 className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('itemDescription')}</h3>
           <div className="flex gap-2">
             <Select onValueChange={handleAddProduct}>
-              <SelectTrigger className="h-8 w-64 text-[10px] bg-white border-slate-200 font-bold uppercase"><SelectValue placeholder="Add From Catalog" /></SelectTrigger>
+              <SelectTrigger className="h-8 w-64 text-[10px] bg-slate-50 border-slate-200 font-bold uppercase"><SelectValue placeholder="Add From Catalog" /></SelectTrigger>
               <SelectContent className="max-h-[300px]">
                 {products?.map(p => <SelectItem key={p.id} value={p.id} className="text-xs">{p.name}</SelectItem>)}
               </SelectContent>
@@ -253,7 +253,7 @@ export default function NewPurchasePage() {
         </div>
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader className="bg-white border-b">
+            <TableHeader className="bg-slate-50/50 border-b">
               <TableRow className="hover:bg-transparent">
                 <TableHead className="w-12 text-center text-[10px] font-black uppercase tracking-tighter">SL</TableHead>
                 <TableHead className="min-w-[200px] text-[10px] font-black uppercase tracking-tighter">Item</TableHead>
@@ -325,7 +325,7 @@ export default function NewPurchasePage() {
         </div>
 
         <div className="flex flex-col items-end">
-          <Card className="w-full max-w-md border-none shadow-sm ring-1 ring-slate-200 bg-white">
+          <Card className="w-full max-w-md border-none shadow-sm ring-1 ring-slate-200 bg-white rounded-[2rem]">
             <CardContent className="p-8 space-y-4">
               <div className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-tight">
                 <span>Subtotal Gross</span>

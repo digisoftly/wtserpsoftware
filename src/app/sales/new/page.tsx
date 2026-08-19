@@ -229,7 +229,6 @@ export default function NewInvoicePage() {
       setIsSearchingSN(true);
       
       try {
-        // 1. Check if it's a Serial Number
         const snQuery = query(
           collection(db!, "companies", companyId!, "branches", branchId!, "serial_numbers"),
           where("serialNumber", "==", productSearch.trim()),
@@ -247,14 +246,12 @@ export default function NewInvoicePage() {
           }
         }
 
-        // 2. Check if it matches a SKU exactly
         const productBySku = products?.find(p => p.sku?.toLowerCase() === productSearch.trim().toLowerCase());
         if (productBySku) {
           handleAddProduct(productBySku);
           return;
         }
 
-        // 3. Fallback: Add as custom row if no match found and user pressed enter
         toast({ variant: "destructive", title: "No Match", description: "Serial or Model not found in active stock." });
       } catch (err) {
         console.error(err);
@@ -323,7 +320,6 @@ export default function NewInvoicePage() {
 
   return (
     <div className="max-w-full mx-auto space-y-6 pb-20 overflow-x-hidden">
-      {/* GLOBAL ACTION BAR */}
       <div className="flex items-center justify-between border-b pb-4 bg-white/80 backdrop-blur-md sticky top-0 z-50 px-2 sm:px-4">
         <div className="flex items-center gap-3 md:gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full h-8 w-8 md:h-10 md:w-10">
@@ -347,7 +343,6 @@ export default function NewInvoicePage() {
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         <div className="xl:col-span-9 space-y-6">
           
-          {/* CUSTOMER SELECTION & QUICK REGISTRATION */}
           <Card className="border-none shadow-sm ring-1 ring-slate-200 bg-white overflow-hidden rounded-[2rem]">
             <CardHeader className="bg-slate-50/50 px-6 py-4 border-b">
                <div className="flex items-center justify-between flex-wrap gap-4">
@@ -445,7 +440,6 @@ export default function NewInvoicePage() {
             </CardContent>
           </Card>
 
-          {/* PROJECT & LOGISTICS METADATA */}
           <Card className="border-none shadow-sm ring-1 ring-slate-200 bg-white rounded-[2rem] overflow-hidden">
             <CardHeader className="bg-slate-50/50 px-6 py-4 border-b">
                <div className="flex items-center gap-2">
@@ -477,7 +471,6 @@ export default function NewInvoicePage() {
             </CardContent>
           </Card>
 
-          {/* PRODUCT SEARCH & SCAN BAR */}
           <div className="relative group">
              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                 {isSearchingSN ? <Loader2 className="h-5 w-5 animate-spin text-blue-600" /> : <Scan className="h-5 w-5 text-slate-400 group-focus-within:text-blue-600" />}
@@ -490,7 +483,6 @@ export default function NewInvoicePage() {
                 placeholder="Scan Serial Number or Type Product Name/Model..."
              />
              
-             {/* Search Suggestions */}
              {suggestedProducts.length > 0 && (
                 <Card className="absolute top-full left-0 right-0 mt-2 z-[60] border-none shadow-2xl rounded-[1.5rem] overflow-hidden bg-white ring-1 ring-slate-100">
                    <div className="p-2 space-y-1">
@@ -520,21 +512,20 @@ export default function NewInvoicePage() {
              )}
           </div>
 
-          {/* LINE ITEMS MATRIX */}
           <Card className="border-none shadow-sm ring-1 ring-slate-200 overflow-hidden rounded-[2rem] bg-white">
-            <div className="p-5 bg-slate-900 text-white border-b flex flex-wrap items-center justify-between gap-4">
+            <div className="p-5 bg-white border-b flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                 <LayoutGrid className="h-5 w-5 text-blue-400" />
-                 <h3 className="text-xs font-black uppercase tracking-widest">Inventory Manifest</h3>
+                 <LayoutGrid className="h-5 w-5 text-blue-600" />
+                 <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-900">Inventory Manifest</h3>
               </div>
-              <Button variant="outline" size="sm" className="h-10 rounded-xl gap-2 text-[10px] font-black uppercase bg-white/5 border-white/10 text-white hover:bg-white hover:text-slate-900 transition-all" onClick={addManualRow}>
+              <Button variant="outline" size="sm" className="h-10 rounded-xl gap-2 text-[10px] font-black uppercase border-slate-200 text-slate-900 hover:bg-slate-50 transition-all" onClick={addManualRow}>
                 <PlusCircle className="h-4 w-4" /> {t('common.add')} Generic Row
               </Button>
             </div>
             
             <div className="overflow-x-auto custom-scrollbar">
               <Table className="min-w-[1000px]">
-                <TableHeader className="bg-slate-50/80 border-b">
+                <TableHeader className="bg-slate-50/50 border-b">
                   <TableRow className="hover:bg-transparent h-14">
                     <TableHead className="w-12 text-center text-[10px] font-black uppercase pl-6">Sl.</TableHead>
                     <TableHead className="min-w-[400px] text-[10px] font-black uppercase">Item Details & Attributes</TableHead>
@@ -609,42 +600,41 @@ export default function NewInvoicePage() {
           </Card>
         </div>
 
-        {/* FINANCIAL SUMMARY SIDEBAR */}
         <div className="xl:col-span-3 space-y-6">
-          <Card className="p-8 rounded-[2.5rem] shadow-2xl space-y-6 text-center text-white bg-blue-600 ring-4 ring-blue-500/10 border-none animate-in fade-in zoom-in-95 duration-500">
+          <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-6 text-center animate-in fade-in zoom-in-95 duration-500">
              <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase opacity-60 tracking-[0.3em]">Gross Net Total</p>
-                <h2 className="text-4xl md:text-5xl font-headline font-black tracking-tighter tabular-nums">৳{(grandTotal || 0).toLocaleString()}</h2>
+                <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em]">Gross Net Total</p>
+                <h2 className="text-4xl md:text-5xl font-headline font-black tracking-tighter tabular-nums text-blue-600">৳{(grandTotal || 0).toLocaleString()}</h2>
              </div>
-             <div className="pt-6 space-y-3 border-t border-white/10 text-[10px] font-black uppercase tracking-widest text-left">
-                <div className="flex justify-between items-center opacity-70">
+             <div className="pt-6 space-y-3 border-t border-slate-100 text-[10px] font-black uppercase tracking-widest text-left">
+                <div className="flex justify-between items-center text-slate-500">
                    <span>{t('forms.subtotal')}</span>
-                   <span>৳{(subtotal || 0).toLocaleString()}</span>
+                   <span className="text-slate-900">৳{(subtotal || 0).toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between items-center text-blue-100 bg-white/10 p-2.5 rounded-xl">
+                <div className="flex justify-between items-center text-slate-500 bg-slate-50 p-2.5 rounded-xl">
                    <span>Accrued VAT (15%)</span>
-                   <span>+৳{(itemTaxes || 0).toLocaleString()}</span>
+                   <span className="text-blue-600">+৳{(itemTaxes || 0).toLocaleString()}</span>
                 </div>
              </div>
           </Card>
 
           <Card className="p-6 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-6">
             <div className="space-y-4">
-              <div className="space-y-1.5 p-4 bg-red-50/50 rounded-3xl border border-red-50">
-                <Label className="text-[10px] font-black uppercase text-red-400 tracking-widest flex items-center gap-2">
-                   <Calculator className="h-3.5 w-3.5" /> Extra Discount (৳)
+              <div className="space-y-1.5 p-4 bg-slate-50/80 rounded-3xl border border-slate-100">
+                <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
+                   <Calculator className="h-3.5 w-3.5 text-red-500" /> Extra Discount (৳)
                 </Label>
-                <Input type="number" className="h-10 rounded-xl bg-white border-none ring-1 ring-red-100 font-black text-sm text-red-600" value={globalDiscount || ''} onChange={e => setGlobalDiscount(Number(e.target.value))} />
+                <Input type="number" className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200 font-black text-sm text-red-600" value={globalDiscount || ''} onChange={e => setGlobalDiscount(Number(e.target.value))} />
               </div>
               
-              <div className="space-y-1.5 p-4 bg-emerald-50/50 rounded-3xl border border-emerald-50">
-                <Label className="text-[10px] font-black uppercase text-emerald-600 tracking-widest flex items-center gap-2">
-                   <CheckCircle2 className="h-3.5 w-3.5" /> Cash Collected (৳)
+              <div className="space-y-1.5 p-4 bg-slate-50/80 rounded-3xl border border-slate-100">
+                <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
+                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Cash Collected (৳)
                 </Label>
-                <Input type="number" className="h-12 rounded-xl bg-white border-none ring-1 ring-emerald-100 font-black text-emerald-700 text-lg shadow-inner" value={paidAmount || ''} onChange={e => setPaidAmount(Number(e.target.value))} />
+                <Input type="number" className="h-12 rounded-xl bg-white border-none ring-1 ring-slate-200 font-black text-emerald-700 text-lg shadow-inner" value={paidAmount || ''} onChange={e => setPaidAmount(Number(e.target.value))} />
               </div>
 
-              <div className={cn("p-5 rounded-[2rem] flex justify-between items-center transition-all duration-500", balanceDue > 0 ? "bg-red-100/30 ring-1 ring-red-100" : "bg-emerald-100/30 ring-1 ring-emerald-100")}>
+              <div className={cn("p-5 rounded-[2rem] flex justify-between items-center transition-all duration-500", balanceDue > 0 ? "bg-red-50 ring-1 ring-red-100" : "bg-emerald-50 ring-1 ring-emerald-100")}>
                  <div className="space-y-0.5">
                     <span className="text-[9px] font-black uppercase text-slate-400">{t('forms.balanceDue')}</span>
                     <p className={cn("text-xl font-black tabular-nums leading-none", balanceDue > 0 ? "text-red-600" : "text-emerald-700")}>
@@ -660,7 +650,7 @@ export default function NewInvoicePage() {
                <Textarea className="min-h-[100px] text-[11px] font-bold rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:bg-white transition-all p-4" value={notes || ''} onChange={e => setNotes(e.target.value)} placeholder="Standard terms & conditions apply..." />
             </div>
 
-            <Button className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl text-white bg-blue-600 hover:bg-blue-700 transition-all active:scale-95 shadow-blue-200" disabled={isSubmitting || lineItems.length === 0} onClick={handleSaveInvoice}>
+            <Button className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl text-white bg-blue-600 hover:bg-blue-700 transition-all active:scale-95 shadow-blue-200" disabled={isSubmitting || lineItems.length === 0} onClick={handleSaveInvoice}>
               {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <Save className="h-5 w-5" />}
               Post Final Invoice
             </Button>
