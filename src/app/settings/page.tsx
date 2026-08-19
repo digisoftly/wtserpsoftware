@@ -5,35 +5,19 @@ import * as React from "react"
 import { 
   Settings2,
   CheckCircle2,
-  Warehouse,
-  Upload,
   ShieldCheck,
-  Languages,
   Loader2,
   ArrowUp,
   ArrowDown,
-  Clock,
-  ShieldAlert,
-  MonitorPlay,
-  RotateCcw,
-  MessageSquareWarning,
-  AlertCircle,
-  Layout,
   Palette,
-  Type,
   Eye,
-  Maximize2,
-  FileText,
   Table as TableIcon,
   ImageIcon,
   PenTool,
-  Globe,
-  Mail,
-  MapPin,
   FileBadge,
   LayoutGrid
 } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -45,7 +29,6 @@ import { useTenant } from "@/context/tenant-context"
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { toast } from "@/hooks/use-toast"
 import { useTranslation } from "@/hooks/use-translation"
-import { cn } from "@/lib/utils"
 import { Textarea } from "@/components/ui/textarea"
 import { DocumentTemplate } from "@/components/documents/document-template"
 import { Badge } from "@/components/ui/badge"
@@ -86,7 +69,7 @@ const DOCUMENT_LAYOUTS = [
 ];
 
 export default function SettingsPage() {
-  const { companyId, userRole } = useTenant();
+  const { companyId } = useTenant();
   const db = useFirestore();
   const { t } = useTranslation();
   const [isSaving, setIsSaving] = React.useState(false);

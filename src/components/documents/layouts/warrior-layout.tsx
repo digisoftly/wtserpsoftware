@@ -52,7 +52,7 @@ export function WarriorLayout({
             <span className="text-[#F57C00] ml-2">SYSTEM</span>
           </h1>
           <p className="text-[16px] font-bold text-[#F57C00] uppercase tracking-[0.2em] italic leading-none mt-1">
-            {settings?.companySlogan || "Innovative Security, Reliable Communication"}
+            {settings?.companySlogan || "Innovative Security Reliable Communication"}
           </p>
           
           {/* Contact Details Grid */}
@@ -64,13 +64,13 @@ export function WarriorLayout({
               <span className="text-[#F57C00]">📧</span> {settings?.email || "warriortechsystem@gmail.com"}
             </span>
             <span className="flex items-center gap-2">
-              <span className="text-[#0056B3]">🌐</span> {settings?.website || "www.warriortechsystem.com"}
+              <span className="text-[#0056B3]">🌐</span> {settings?.website || "www warriortechsystem com"}
             </span>
           </div>
           
           {/* Address */}
           <p className="text-[11px] font-bold text-[#444444] flex items-center justify-center gap-2 mt-1 max-w-2xl">
-            <span className="text-[#0056B3]">📍</span> {settings?.address || "GP.Ja-66/2, Gojnabi Rd, Wireless Gate, Mohakhali, Gulshan, Dhaka-1212."}
+            <span className="text-[#0056B3]">📍</span> {settings?.address || "GP Ja-66/2 Gojnabi Rd Wireless Gate Mohakhali Gulshan Dhaka-1212"}
           </p>
         </div>
       </div>
@@ -212,7 +212,7 @@ export function WarriorLayout({
       <div className="px-4 mt-8">
         <h4 className="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-[0.2em]">Terms & Conditions</h4>
         <div className="text-[10px] text-slate-600 leading-relaxed whitespace-pre-wrap border border-slate-100 p-4 rounded-xl bg-slate-50/50">
-           {settings?.pdfTerms || "1. Equipment remains property of Warrior Tech System until full payment is realized.\n2. Warranty strictly covers manufacturing defects; physical or electrical damage excluded.\n3. Delivery timelines are subject to site readiness."}
+           {settings?.pdfTerms || "1 Equipment remains property of Warrior Tech System until full payment is realized\n2 Warranty strictly covers manufacturing defects physical or electrical damage excluded\n3 Delivery timelines are subject to site readiness"}
         </div>
       </div>
 

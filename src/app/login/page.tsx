@@ -5,7 +5,7 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth, useUser, useFirestore } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { Building2, Lock, Mail, Languages, AlertCircle, Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react';
@@ -116,7 +116,7 @@ export default function LoginPage() {
                       value={email} 
                       onChange={(e) => setEmail(e.target.value)} 
                       className="h-14 pl-12 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 font-bold focus:ring-2 focus:ring-blue-600" 
-                      placeholder="admin@warrior.com"
+                      placeholder="admin@warrior com"
                       required 
                     />
                   </div>
