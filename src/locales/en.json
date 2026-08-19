@@ -1,3 +1,4 @@
+
 {
   "common": {
     "save": "Save",
@@ -35,6 +36,17 @@
     "amountInWords": "Amount In Words",
     "only": "Only",
     "bdt": "BDT"
+  },
+  "errors": {
+    "accessRestricted": "Access Restricted",
+    "identitySync": "User profile is syncing, please wait",
+    "systemConfig": "No permission to change system settings",
+    "roleAuthority": "Insufficient authority for this action",
+    "createRestricted": "Permission denied to add new data",
+    "updateRestricted": "Modifying records is not allowed",
+    "deleteRestricted": "Deleting records is restricted",
+    "genericBlocked": "The system blocked this request",
+    "detailsSub": "Please contact administrator or try again."
   },
   "nav": {
     "dashboard": "Dashboard",

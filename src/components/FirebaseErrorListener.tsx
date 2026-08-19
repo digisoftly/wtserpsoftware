@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 
 /**
  * An intelligent listener that catches Firestore errors and displays a user-friendly modal
- * with short technical explanations.
+ * using simple language strings instead of technical codes.
  */
 export function FirebaseErrorListener() {
   const [error, setError] = useState<FirestorePermissionError | null>(null);
@@ -30,20 +30,25 @@ export function FirebaseErrorListener() {
 
   if (!error) return null;
 
-  // Logic to generate short version error explanations
-  const getShortError = () => {
+  /**
+   * Maps internal Firestore context to a human-readable translation key.
+   */
+  const getFriendlyMessageKey = () => {
     const path = error.request?.path || "";
     const method = error.request?.method || "";
 
-    if (path.includes('users')) return "Identity Sync Error";
-    if (path.includes('config')) return "System Config Blocked";
-    if (path.includes('roles')) return "Authority Matrix Error";
-    if (method === 'create') return "New Record Restricted";
-    if (method === 'update') return "Modification Denied";
-    if (method === 'delete') return "Removal Restricted";
+    if (path.includes('users')) return "identitySync";
+    if (path.includes('config')) return "systemConfig";
+    if (path.includes('roles')) return "roleAuthority";
     
-    return "Operation Blocked";
+    if (method === 'create') return "createRestricted";
+    if (method === 'update') return "updateRestricted";
+    if (method === 'delete') return "deleteRestricted";
+    
+    return "genericBlocked";
   };
+
+  const messageKey = getFriendlyMessageKey();
 
   return (
     <Dialog open={!!error} onOpenChange={() => setError(null)}>
@@ -53,41 +58,41 @@ export function FirebaseErrorListener() {
             <ShieldAlert className="h-6 w-6" />
           </div>
           <div>
-            <DialogTitle className="text-xl font-bold font-headline uppercase tracking-tight">Access Restricted</DialogTitle>
-            <p className="text-[10px] font-black uppercase opacity-70 tracking-widest mt-0.5">{getShortError()}</p>
+            <DialogTitle className="text-xl font-bold font-headline uppercase tracking-tight">
+              {t('errors.accessRestricted')}
+            </DialogTitle>
+            <p className="text-[10px] font-black uppercase opacity-70 tracking-widest mt-0.5">
+              Terminal Protection Active
+            </p>
           </div>
         </DialogHeader>
         
         <div className="p-8 space-y-6">
-          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex gap-3">
-             <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
-             <p className="text-xs font-bold text-slate-600 leading-relaxed">
-               The terminal rejected this request due to insufficient authority or missing system setup.
+          <div className="text-center space-y-3">
+             <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-2">
+               <AlertCircle className="h-8 w-8" />
+             </div>
+             <h3 className="text-sm font-black text-slate-900 leading-tight uppercase px-4">
+               {t(`errors.${messageKey}`)}
+             </h3>
+             <p className="text-xs font-medium text-slate-500">
+               {t('errors.detailsSub')}
              </p>
           </div>
 
-          <div className="p-4 bg-slate-900 rounded-2xl space-y-2 overflow-hidden">
-             <div className="flex items-center gap-2 text-white/40 mb-2">
-                <Info className="h-3 w-3" />
-                <span className="text-[8px] font-black uppercase tracking-widest">Technical Log</span>
-             </div>
-             <p className="text-[10px] font-mono text-emerald-400 truncate">PATH: {error.request?.path || '---'}</p>
-             <p className="text-[10px] font-mono text-blue-400 uppercase">ACTION: {error.request?.method || '---'}</p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 pt-2">
+          <div className="grid grid-cols-2 gap-3 pt-4 border-t">
             <Button 
               variant="outline"
               onClick={() => { setError(null); router.back(); }} 
               className="h-12 rounded-2xl font-black uppercase text-[10px] tracking-widest border-slate-200"
             >
-              Go Back
+              {t('common.back')}
             </Button>
             <Button 
               onClick={() => { setError(null); router.push('/'); }} 
               className="bg-blue-600 hover:bg-blue-700 h-12 rounded-2xl font-black uppercase text-[10px] tracking-widest text-white shadow-xl shadow-blue-100"
             >
-              Dashboard
+              {t('common.goDashboard')}
             </Button>
           </div>
         </div>
