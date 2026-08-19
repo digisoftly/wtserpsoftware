@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Search, Loader2, Edit, Trash2, Save, Layers, ChevronRight, ListTree, FolderTree, Network } from "lucide-react"
+import { Search, Loader2, Edit, Trash2, Save, Layers, ListTree, FolderTree, Network } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, doc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useTranslation } from "@/hooks/use-translation"
 import { toast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
 
 export default function MasterCategoriesPage() {
   const { companyId } = useTenant();
@@ -32,14 +33,6 @@ export default function MasterCategoriesPage() {
   }, [db, companyId]);
 
   const { data: categories, isLoading } = useCollection(categoriesQuery);
-
-  // Helper to determine the level of a category
-  const getCategoryLevel = React.useCallback((cat: any, allCats: any[]): number => {
-    if (!cat || cat.parentId === 'none') return 1;
-    const parent = allCats.find(c => c.id === cat.parentId);
-    if (!parent) return 1;
-    return 2 + (allCats.find(c => c.id === parent.parentId) ? 1 : 0);
-  }, []);
 
   // Categorize data for the three blocks
   const mainCategories = React.useMemo(() => categories?.filter(c => c.parentId === 'none') || [], [categories]);
