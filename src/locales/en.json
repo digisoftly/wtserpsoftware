@@ -37,6 +37,16 @@
     "only": "Only",
     "bdt": "BDT"
   },
+  "auth": {
+    "login": "Login",
+    "systemLogin": "System Login",
+    "authorizedAccess": "Authorized Access Point",
+    "email": "Email Address",
+    "password": "Password",
+    "signInTerminal": "Sign-in to Terminal",
+    "establishingSession": "Establishing Secure Session",
+    "loginFailed": "Login Failed: Incorrect email or password."
+  },
   "errors": {
     "accessRestricted": "Access Restricted",
     "identitySync": "User profile is syncing, please wait",

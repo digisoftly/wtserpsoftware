@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -19,7 +20,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
   if (!showShell) {
     return (
-      <div className="h-screen w-full overflow-hidden bg-white">
+      <div className="min-h-screen w-full overflow-y-auto bg-white">
         {children}
       </div>
     );
