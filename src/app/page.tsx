@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -20,24 +21,35 @@ export default function Dashboard() {
   const db = useFirestore();
   const { t } = useTranslation();
 
+  // Fetch Recent Invoices
   const invoicesQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
     return query(collection(db, "companies", companyId, "branches", branchId, "sales_invoices"), orderBy("createdAt", "desc"), limit(10));
   }, [db, companyId, branchId]);
   const { data: recentInvoices, isLoading: invoicesLoading } = useCollection(invoicesQuery);
 
+  // Fetch Products for Stock Alerts
   const productsQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
     return query(collection(db, "companies", companyId, "branches", branchId, "products"), limit(100));
   }, [db, companyId, branchId]);
   const { data: products } = useCollection(productsQuery);
 
+  // Fetch Actual Customer Count
+  const customersQuery = useMemoFirebase(() => {
+    if (!db || !companyId || !branchId) return null;
+    return collection(db, "companies", companyId, "branches", branchId, "customers");
+  }, [db, companyId, branchId]);
+  const { data: customers } = useCollection(customersQuery);
+
+  // Calculate Dynamic Stats
   const stats = React.useMemo(() => {
     const totalSales = recentInvoices?.reduce((sum, inv) => sum + (inv.totalAmount || 0), 0) || 0;
     const dues = recentInvoices?.filter(i => i.status !== 'paid').reduce((sum, inv) => sum + (inv.totalAmount || 0), 0) || 0;
     const lowStockCount = products?.filter(p => (p.currentStock || 0) <= (p.minStockLevel || 5)).length || 0;
-    return { totalSales, dues, lowStockCount };
-  }, [recentInvoices, products]);
+    const activeCustomers = customers?.length || 0;
+    return { totalSales, dues, lowStockCount, activeCustomers };
+  }, [recentInvoices, products, customers]);
 
   return (
     <div className="space-y-6">
@@ -63,10 +75,10 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title={t('dashboard.totalRevenue')} value={`৳${stats.totalSales.toLocaleString()}`} icon={TrendingUp} colorClass="bg-blue-600" trend={{ value: 12, isPositive: true }} />
+        <KPICard title={t('dashboard.totalRevenue')} value={`৳${stats.totalSales.toLocaleString()}`} icon={TrendingUp} colorClass="bg-blue-600" trend={{ value: 0, isPositive: true }} />
         <KPICard title={t('dashboard.totalOrders')} value={recentInvoices?.length || 0} icon={ShoppingCart} colorClass="bg-indigo-600" />
         <KPICard title={t('dashboard.pendingInvoices')} value={`৳${stats.dues.toLocaleString()}`} icon={Clock} colorClass="bg-orange-600" />
-        <KPICard title={t('dashboard.activeCustomers')} value="428" icon={Target} colorClass="bg-purple-600" />
+        <KPICard title={t('dashboard.activeCustomers')} value={stats.activeCustomers} icon={Target} colorClass="bg-purple-600" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -145,7 +157,7 @@ export default function Dashboard() {
             <div className="text-3xl font-black tracking-tighter">৳{stats.totalSales.toLocaleString()}</div>
             <div className="mt-6 flex items-center gap-2 text-[10px] font-black bg-white/10 w-fit px-3 py-1 rounded-full">
               <TrendingUp className="h-3 w-3" />
-              <span>+8.4% {t('dashboard.growth')}</span>
+              <span>{t('dashboard.growth')}</span>
             </div>
           </Card>
         </div>
