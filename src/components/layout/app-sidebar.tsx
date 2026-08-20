@@ -30,7 +30,14 @@ import {
   BrainCircuit,
   UserRoundCog,
   Briefcase,
-  GitPullRequest
+  GitPullRequest,
+  Plus,
+  LayoutGrid,
+  FileBadge,
+  Archive,
+  Tool,
+  HardHat,
+  Monitor
 } from "lucide-react"
 
 import { 
@@ -58,13 +65,10 @@ import { useSettings } from "@/hooks/use-settings"
 import { useTranslation } from "@/hooks/use-translation"
 import { cn } from "@/lib/utils"
 
-// Removed 'nav.' prefix from name fields
 const MAIN_MODULES = [
   { name: "dashboard", key: "dashboard", icon: LayoutDashboard, path: "/", color: "text-blue-500" },
   { name: "sales", key: "sales", icon: ShoppingCart, path: "/sales", color: "text-green-500" },
-  { name: "payments", key: "payments", icon: CreditCard, path: "/payments", color: "text-emerald-500" },
   { name: "quotations", key: "quotations", icon: FileText, path: "/quotations", color: "text-amber-500" },
-  { name: "dispatch", key: "dispatch", icon: Truck, path: "/challans", color: "text-cyan-500" },
   { name: "purchases", key: "purchases", icon: Package, path: "/purchases", color: "text-orange-500" },
   { name: "returns", key: "returns", icon: RotateCcw, path: "/returns", color: "text-red-500" },
   { name: "inventory", key: "inventory", icon: Boxes, path: "/inventory", color: "text-sky-500" },
@@ -100,6 +104,12 @@ const ADMIN_ITEMS = [
   { name: "loginHistory", key: "audit", icon: History, path: "/administration/login-history" },
 ]
 
+/**
+ * Redesigned Sidebar:
+ * - White background (#FFFFFF)
+ * - Light blue active state
+ * - Clean icons matching image
+ */
 export function AppSidebar() {
   const pathname = usePathname()
   const { state } = useSidebar()
@@ -118,21 +128,24 @@ export function AppSidebar() {
   const isAdminActive = pathname.startsWith('/administration')
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-white/5 bg-[#111827]">
-      <SidebarHeader className="h-[58px] flex items-center px-4 border-b border-white/5">
+    <Sidebar collapsible="icon" className="border-r border-slate-100 bg-white shadow-sm">
+      <SidebarHeader className="h-[64px] flex items-center px-4 border-b border-slate-50">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center text-white font-bold text-sm shadow-md shrink-0">
-            {settings?.companyLogo ? <img src={settings.companyLogo} className="w-full h-full object-contain" alt="Logo" /> : "W"}
+          <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-lg shadow-lg shrink-0">
+            {settings?.companyLogo ? <img src={settings.companyLogo} className="w-full h-full object-contain p-1.5" alt="Logo" /> : "W"}
           </div>
           {state === "expanded" && (
-            <span className="font-bold text-white text-[13px] tracking-tight truncate">Warrior ERP</span>
+            <div className="flex flex-col">
+              <span className="font-black text-slate-900 text-[14px] tracking-tight leading-none uppercase">Warrior Tech</span>
+              <span className="text-[10px] font-bold text-slate-400 tracking-widest mt-1 uppercase">ERP System</span>
+            </div>
           )}
         </div>
       </SidebarHeader>
       
-      <SidebarContent className="py-2 custom-scrollbar">
+      <SidebarContent className="py-4 custom-scrollbar bg-white">
         <SidebarGroup className="p-0">
-          <SidebarMenu className="gap-0.5 px-2">
+          <SidebarMenu className="gap-1 px-3">
             {MAIN_MODULES.filter(m => can(m.key, 'view')).map((item) => (
               <SidebarMenuItem key={item.key}>
                 <SidebarMenuButton 
@@ -140,13 +153,15 @@ export function AppSidebar() {
                   isActive={pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))} 
                   tooltip={t(item.name)} 
                   className={cn(
-                    "h-8 px-2.5 transition-all hover:bg-white/5",
-                    (pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))) ? "bg-primary text-white hover:bg-primary" : "text-slate-400"
+                    "h-10 px-3 transition-all rounded-xl",
+                    (pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))) 
+                      ? "bg-blue-50 text-blue-600" 
+                      : "text-slate-500 hover:bg-slate-50"
                   )}
                 >
                   <Link href={item.path} className="flex items-center gap-3">
-                    <item.icon className={cn("h-4 w-4 shrink-0", (pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))) ? "text-white" : item.color)} />
-                    <span className="text-[12px] font-medium">{t(item.name)}</span>
+                    <item.icon className={cn("h-4.5 w-4.5 shrink-0", (pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))) ? "text-blue-600" : item.color)} />
+                    <span className="text-[12px] font-bold uppercase tracking-tight">{t(item.name)}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -161,72 +176,29 @@ export function AppSidebar() {
                       isActive={isMasterActive}
                       tooltip={t('master')}
                       className={cn(
-                        "h-8 px-2.5 transition-all hover:bg-white/5",
-                        isMasterActive ? "bg-primary/10 text-primary" : "text-slate-400"
+                        "h-10 px-3 transition-all rounded-xl",
+                        isMasterActive ? "bg-blue-50 text-blue-600" : "text-slate-500 hover:bg-slate-50"
                       )}
                     >
-                      <Database className={cn("h-4 w-4 shrink-0", isMasterActive ? "text-primary" : "text-orange-500")} />
-                      <span className="text-[12px] font-medium">{t('master')}</span>
+                      <Database className={cn("h-4.5 w-4.5 shrink-0", isMasterActive ? "text-blue-600" : "text-orange-500")} />
+                      <span className="text-[12px] font-bold uppercase tracking-tight">{t('master')}</span>
                       <ChevronRight className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <SidebarMenu className="mt-0.5 ml-3 border-l border-white/5 gap-0.5">
+                    <SidebarMenu className="mt-1 ml-4 border-l border-slate-100 gap-0.5">
                       {MASTER_DATA_ITEMS.map((sub) => (
                         <SidebarMenuItem key={sub.path}>
                           <SidebarMenuButton 
                             asChild 
                             isActive={pathname === sub.path}
                             className={cn(
-                              "h-7 px-4 text-slate-400 hover:text-white hover:bg-white/5",
-                              pathname === sub.path && "text-white bg-white/5 font-bold"
+                              "h-8 px-4 rounded-lg",
+                              pathname === sub.path ? "text-blue-600 font-bold bg-blue-50/50" : "text-slate-400 hover:text-slate-600"
                             )}
                           >
                             <Link href={sub.path}>
-                              <span className="text-[11px]">{t(sub.name)}</span>
-                            </Link>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      ))}
-                    </SidebarMenu>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
-            )}
-
-            {/* Administration Group */}
-            {can('audit', 'view') && (
-              <Collapsible defaultOpen={isAdminActive} className="group/collapsible">
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton 
-                      isActive={isAdminActive}
-                      tooltip={t('administration')}
-                      className={cn(
-                        "h-8 px-2.5 transition-all hover:bg-white/5",
-                        isAdminActive ? "bg-primary/10 text-primary" : "text-slate-400"
-                      )}
-                    >
-                      <Lock className={cn("h-4 w-4 shrink-0", isAdminActive ? "text-primary" : "text-red-500")} />
-                      <span className="text-[12px] font-medium">{t('administration')}</span>
-                      <ChevronRight className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenu className="mt-0.5 ml-3 border-l border-white/5 gap-0.5">
-                      {ADMIN_ITEMS.map((sub) => (
-                        <SidebarMenuItem key={sub.path}>
-                          <SidebarMenuButton 
-                            asChild 
-                            isActive={pathname === sub.path}
-                            className={cn(
-                              "h-7 px-4 text-slate-400 hover:text-white hover:bg-white/5",
-                              pathname === sub.path && "text-white bg-white/5 font-bold"
-                            )}
-                          >
-                            <Link href={sub.path} className="flex items-center gap-2">
-                              <sub.icon className="h-3.5 w-3.5" />
-                              <span className="text-[11px]">{t(sub.name)}</span>
+                              <span className="text-[11px] font-bold">{t(sub.name)}</span>
                             </Link>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
@@ -240,22 +212,12 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-white/5 p-2">
+      <SidebarFooter className="border-t border-slate-50 p-2 bg-white">
         <SidebarMenu className="px-2">
-          {can('settings', 'view') && (
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip={t('settings')} isActive={pathname.startsWith('/settings')} className="text-slate-400 hover:bg-white/5 h-8 px-2.5">
-                <Link href="/settings" className="flex items-center gap-3">
-                  <Settings className="h-4 w-4 text-slate-400" />
-                  <span className="text-[12px] font-medium">{t('settings')}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          )}
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout} className="text-slate-400 hover:text-red-400 hover:bg-red-500/10 h-8 px-2.5">
-              <LogOut className="h-4 w-4 text-red-500" />
-              <span className="text-[12px] font-medium">Logout</span>
+            <SidebarMenuButton onClick={handleLogout} className="text-slate-400 hover:text-red-500 hover:bg-red-50 h-10 px-3 rounded-xl">
+              <LogOut className="h-4.5 w-4.5 text-red-500" />
+              <span className="text-[12px] font-bold uppercase tracking-tight">Logout</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
