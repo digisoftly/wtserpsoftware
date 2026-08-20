@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -22,7 +21,9 @@ import {
   ClipboardList,
   FolderOpen,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  Truck,
+  Receipt
 } from "lucide-react"
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
