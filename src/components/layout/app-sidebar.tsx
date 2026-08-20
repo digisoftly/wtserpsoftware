@@ -65,27 +65,38 @@ import { useSettings } from "@/hooks/use-settings"
 import { useTranslation } from "@/hooks/use-translation"
 import { cn } from "@/lib/utils"
 
-const MAIN_MODULES = [
-  { name: "dashboard", key: "dashboard", icon: LayoutDashboard, path: "/", color: "text-blue-500" },
-  { name: "sales", key: "sales", icon: ShoppingCart, path: "/sales", color: "text-green-500" },
-  { name: "quotations", key: "quotations", icon: FileText, path: "/quotations", color: "text-amber-500" },
-  { name: "purchases", key: "purchases", icon: Package, path: "/purchases", color: "text-orange-500" },
-  { name: "returns", key: "returns", icon: RotateCcw, path: "/returns", color: "text-red-500" },
-  { name: "inventory", key: "inventory", icon: Boxes, path: "/inventory", color: "text-sky-500" },
-  { name: "serialTracking", key: "serialTracking", icon: Scan, path: "/serial-inventory", color: "text-purple-500" },
-  { name: "projectBilling", key: "project-billing", icon: ClipboardList, path: "/projects", color: "text-teal-500" },
-  { name: "contracts", key: "contracts", icon: Wrench, path: "/contracts", color: "text-indigo-500" },
-  { name: "customers", key: "customers", icon: Users, path: "/customers", color: "text-blue-400" },
-  { name: "suppliers", key: "suppliers", icon: Truck, path: "/suppliers", color: "text-rose-500" },
-  { name: "accounts", key: "accounts", icon: Wallet, path: "/accounts", color: "text-yellow-500" },
-  { name: "expenses", key: "expenses", icon: Receipt, path: "/expenses", color: "text-red-400" },
-  { name: "support", key: "support", icon: GitPullRequest, path: "/support", color: "text-indigo-400" },
-  { name: "crm", key: "crm", icon: Target, path: "/crm", color: "text-rose-600" },
-  { name: "hrm", key: "hrm", icon: Briefcase, path: "/hrm", color: "text-purple-400" },
-  { name: "branches", key: "branches", icon: Building2, path: "/branches", color: "text-slate-500" },
-  { name: "reports", key: "reports", icon: BarChart3, path: "/reports", color: "text-blue-600" },
-  { name: "ai", key: "ai", icon: BrainCircuit, path: "/ai-forecasting", color: "text-violet-600" },
-  { name: "users", key: "users", icon: UserRoundCog, path: "/users", color: "text-violet-500" },
+interface NavItem {
+  name: string
+  key: string
+  icon: any
+  path: string
+  color: string
+  hoverBg: string
+  activeText: string
+}
+
+const MAIN_MODULES: NavItem[] = [
+  { name: "dashboard", key: "dashboard", icon: LayoutDashboard, path: "/", color: "text-blue-500", hoverBg: "hover:bg-blue-50", activeText: "text-blue-600" },
+  { name: "sales", key: "sales", icon: ShoppingCart, path: "/sales", color: "text-green-500", hoverBg: "hover:bg-green-50", activeText: "text-green-600" },
+  { name: "quotations", key: "quotations", icon: FileText, path: "/quotations", color: "text-amber-500", hoverBg: "hover:bg-amber-50", activeText: "text-amber-600" },
+  { name: "dispatch", key: "dispatch", icon: Truck, path: "/challans", color: "text-orange-500", hoverBg: "hover:bg-orange-50", activeText: "text-orange-600" },
+  { name: "purchases", key: "purchases", icon: Package, path: "/purchases", color: "text-orange-600", hoverBg: "hover:bg-orange-50", activeText: "text-orange-700" },
+  { name: "returns", key: "returns", icon: RotateCcw, path: "/returns", color: "text-red-500", hoverBg: "hover:bg-red-50", activeText: "text-red-600" },
+  { name: "inventory", key: "inventory", icon: Boxes, path: "/inventory", color: "text-sky-500", hoverBg: "hover:bg-sky-50", activeText: "text-sky-600" },
+  { name: "serialTracking", key: "serialTracking", icon: Scan, path: "/serial-inventory", color: "text-purple-500", hoverBg: "hover:bg-purple-50", activeText: "text-purple-600" },
+  { name: "projectBilling", key: "project-billing", icon: ClipboardList, path: "/projects", color: "text-teal-500", hoverBg: "hover:bg-teal-50", activeText: "text-teal-600" },
+  { name: "contracts", key: "contracts", icon: Wrench, path: "/contracts", color: "text-indigo-500", hoverBg: "hover:bg-indigo-50", activeText: "text-indigo-600" },
+  { name: "customers", key: "customers", icon: Users, path: "/customers", color: "text-blue-400", hoverBg: "hover:bg-blue-50", activeText: "text-blue-500" },
+  { name: "suppliers", key: "suppliers", icon: Truck, path: "/suppliers", color: "text-rose-500", hoverBg: "hover:bg-rose-50", activeText: "text-rose-600" },
+  { name: "accounts", key: "accounts", icon: Wallet, path: "/accounts", color: "text-yellow-600", hoverBg: "hover:bg-yellow-50", activeText: "text-yellow-700" },
+  { name: "expenses", key: "expenses", icon: Receipt, path: "/expenses", color: "text-red-400", hoverBg: "hover:bg-red-50", activeText: "text-red-500" },
+  { name: "support", key: "support", icon: GitPullRequest, path: "/support", color: "text-indigo-400", hoverBg: "hover:bg-indigo-50", activeText: "text-indigo-500" },
+  { name: "crm", key: "crm", icon: Target, path: "/crm", color: "text-rose-600", hoverBg: "hover:bg-rose-50", activeText: "text-rose-700" },
+  { name: "hrm", key: "hrm", icon: Briefcase, path: "/hrm", color: "text-purple-400", hoverBg: "hover:bg-purple-50", activeText: "text-purple-500" },
+  { name: "branches", key: "branches", icon: Building2, path: "/branches", color: "text-slate-500", hoverBg: "hover:bg-slate-50", activeText: "text-slate-700" },
+  { name: "reports", key: "reports", icon: BarChart3, path: "/reports", color: "text-blue-600", hoverBg: "hover:bg-blue-50", activeText: "text-blue-700" },
+  { name: "ai", key: "ai", icon: BrainCircuit, path: "/ai-forecasting", color: "text-violet-600", hoverBg: "hover:bg-violet-50", activeText: "text-violet-700" },
+  { name: "users", key: "users", icon: UserRoundCog, path: "/users", color: "text-violet-500", hoverBg: "hover:bg-violet-50", activeText: "text-violet-600" },
 ]
 
 const MASTER_DATA_ITEMS = [
@@ -99,17 +110,6 @@ const MASTER_DATA_ITEMS = [
   { name: "customFields", path: "/master/custom-fields" },
 ]
 
-const ADMIN_ITEMS = [
-  { name: "auditLogs", key: "audit", icon: ShieldAlert, path: "/administration/audit-logs" },
-  { name: "loginHistory", key: "audit", icon: History, path: "/administration/login-history" },
-]
-
-/**
- * Redesigned Sidebar:
- * - White background (#FFFFFF)
- * - Light blue active state
- * - Clean icons matching image
- */
 export function AppSidebar() {
   const pathname = usePathname()
   const { state } = useSidebar()
@@ -125,11 +125,10 @@ export function AppSidebar() {
   }
 
   const isMasterActive = pathname.startsWith('/master')
-  const isAdminActive = pathname.startsWith('/administration')
 
   return (
     <Sidebar collapsible="icon" className="border-r border-slate-100 bg-white shadow-sm">
-      <SidebarHeader className="h-[64px] flex items-center px-4 border-b border-slate-50">
+      <SidebarHeader className="h-[64px] flex items-center px-4 border-b border-slate-50 bg-white">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-lg shadow-lg shrink-0">
             {settings?.companyLogo ? <img src={settings.companyLogo} className="w-full h-full object-contain p-1.5" alt="Logo" /> : "W"}
@@ -146,26 +145,31 @@ export function AppSidebar() {
       <SidebarContent className="py-4 custom-scrollbar bg-white">
         <SidebarGroup className="p-0">
           <SidebarMenu className="gap-1 px-3">
-            {MAIN_MODULES.filter(m => can(m.key, 'view')).map((item) => (
-              <SidebarMenuItem key={item.key}>
-                <SidebarMenuButton 
-                  asChild 
-                  isActive={pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))} 
-                  tooltip={t(item.name)} 
-                  className={cn(
-                    "h-10 px-3 transition-all rounded-xl",
-                    (pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))) 
-                      ? "bg-blue-50 text-blue-600" 
-                      : "text-slate-500 hover:bg-slate-50"
-                  )}
-                >
-                  <Link href={item.path} className="flex items-center gap-3">
-                    <item.icon className={cn("h-4.5 w-4.5 shrink-0", (pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))) ? "text-blue-600" : item.color)} />
-                    <span className="text-[12px] font-bold uppercase tracking-tight">{t(item.name)}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
+            {MAIN_MODULES.filter(m => can(m.key, 'view')).map((item) => {
+              const isActive = pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path));
+              const activeBgClass = item.hoverBg.replace('hover:', '');
+              
+              return (
+                <SidebarMenuItem key={item.key}>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={isActive} 
+                    tooltip={t(item.name)} 
+                    className={cn(
+                      "h-10 px-3 transition-all rounded-xl",
+                      isActive 
+                        ? cn(activeBgClass, item.activeText) 
+                        : cn("text-slate-500", item.hoverBg, "hover:text-slate-900")
+                    )}
+                  >
+                    <Link href={item.path} className="flex items-center gap-3">
+                      <item.icon className={cn("h-4.5 w-4.5 shrink-0", isActive ? item.activeText : item.color)} />
+                      <span className="text-[12px] font-bold uppercase tracking-tight">{t(item.name)}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            })}
 
             {/* Master Management Group */}
             {can('masterManagement', 'view') && (
@@ -177,10 +181,10 @@ export function AppSidebar() {
                       tooltip={t('master')}
                       className={cn(
                         "h-10 px-3 transition-all rounded-xl",
-                        isMasterActive ? "bg-blue-50 text-blue-600" : "text-slate-500 hover:bg-slate-50"
+                        isMasterActive ? "bg-orange-50 text-orange-600" : "text-slate-500 hover:bg-slate-50"
                       )}
                     >
-                      <Database className={cn("h-4.5 w-4.5 shrink-0", isMasterActive ? "text-blue-600" : "text-orange-500")} />
+                      <Database className={cn("h-4.5 w-4.5 shrink-0", isMasterActive ? "text-orange-600" : "text-orange-500")} />
                       <span className="text-[12px] font-bold uppercase tracking-tight">{t('master')}</span>
                       <ChevronRight className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                     </SidebarMenuButton>
@@ -215,7 +219,7 @@ export function AppSidebar() {
       <SidebarFooter className="border-t border-slate-50 p-2 bg-white">
         <SidebarMenu className="px-2">
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout} className="text-slate-400 hover:text-red-500 hover:bg-red-50 h-10 px-3 rounded-xl">
+            <SidebarMenuButton onClick={handleLogout} className="text-slate-400 hover:text-red-500 hover:bg-red-50 h-10 px-3 rounded-xl transition-colors">
               <LogOut className="h-4.5 w-4.5 text-red-500" />
               <span className="text-[12px] font-bold uppercase tracking-tight">Logout</span>
             </SidebarMenuButton>
