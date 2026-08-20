@@ -101,7 +101,7 @@ export default function MasterCategoriesPage() {
       <form onSubmit={handleSave} className="space-y-6">
         <div className="space-y-2">
           <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('common_label')} *</Label>
-          <Input name="name" defaultValue={selectedRecord?.name} required className="h-12 rounded-xl border-none ring-1 ring-slate-200 font-bold text-xs" placeholder={level === 'main' ? "e.g. Security Systems" : "e.g. IP Cameras"} />
+          <Input name="name" defaultValue={selectedRecord?.name} required className="h-12 rounded-xl border-none ring-1 ring-slate-200 font-bold text-xs" placeholder={level === 'main' ? "e.g Security Systems" : "e.g IP Cameras"} />
         </div>
         
         {level !== 'main' && (
@@ -111,7 +111,7 @@ export default function MasterCategoriesPage() {
             </Label>
             <Select name="parentId" defaultValue={selectedRecord?.parentId} required>
               <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold text-xs">
-                <SelectValue placeholder="Select Parent..." />
+                <SelectValue placeholder="Select Parent" />
               </SelectTrigger>
               <SelectContent className="rounded-xl shadow-2xl">
                 {(level === 'sub' ? mainCategories : subCategories).map((cat, idx) => (
@@ -128,7 +128,7 @@ export default function MasterCategoriesPage() {
 
         <div className="space-y-2">
           <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('common_details')}</Label>
-          <Input name="description" defaultValue={selectedRecord?.description} className="h-12 rounded-xl border-none ring-1 ring-slate-200" placeholder="Optional notes..." />
+          <Input name="description" defaultValue={selectedRecord?.description} className="h-12 rounded-xl border-none ring-1 ring-slate-200" placeholder="Optional notes" />
         </div>
 
         <div className="pt-4 flex flex-col gap-3">
@@ -225,7 +225,7 @@ export default function MasterCategoriesPage() {
                           {c.description || "---"}
                         </TableCell>
                         <TableCell className="text-right pr-8 sticky right-0 bg-white group-hover:bg-slate-50 transition-colors">
-                          <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                          <div className="flex justify-end gap-1">
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50 rounded-full" onClick={() => setSelectedRecord(c)}><Edit className="h-3.5 w-3.5" /></Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:bg-red-50 rounded-full" onClick={() => deleteDoc(doc(db!, "companies", companyId!, "master_categories", c.id))}><Trash2 className="h-3.5 w-3.5" /></Button>
                           </div>

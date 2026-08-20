@@ -80,11 +80,11 @@ export default function MasterBrandsPage() {
           <form onSubmit={handleSave} className="space-y-6">
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('common_label')} *</Label>
-              <Input name="name" defaultValue={selectedRecord?.name} required className="h-12 rounded-xl border-none ring-1 ring-slate-200 font-bold" placeholder="e.g. Sony" />
+              <Input name="name" defaultValue={selectedRecord?.name} required className="h-12 rounded-xl border-none ring-1 ring-slate-200 font-bold" placeholder="e.g Sony" />
             </div>
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('common_details')}</Label>
-              <Input name="description" defaultValue={selectedRecord?.description} className="h-12 rounded-xl border-none ring-1 ring-slate-200" placeholder="Optional details..." />
+              <Input name="description" defaultValue={selectedRecord?.description} className="h-12 rounded-xl border-none ring-1 ring-slate-200" placeholder="Optional details" />
             </div>
             <div className="pt-4 flex flex-col gap-3">
               <Button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 hover:bg-blue-700 h-12 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-100">
@@ -125,7 +125,7 @@ export default function MasterBrandsPage() {
                     <TableCell className="pl-8 font-black text-xs uppercase text-slate-900">{b.name}</TableCell>
                     <TableCell className="text-[10px] font-bold text-slate-400 uppercase">{b.description || "---"}</TableCell>
                     <TableCell className="text-right pr-8 sticky right-0 bg-white group-hover:bg-slate-50 transition-colors">
-                      <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex justify-end gap-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50 rounded-full" onClick={() => setSelectedRecord(b)}><Edit className="h-3.5 w-3.5" /></Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:bg-red-50 rounded-full" onClick={() => deleteDoc(doc(db!, "companies", companyId!, "master_brands", b.id))}><Trash2 className="h-3.5 w-3.5" /></Button>
                       </div>

@@ -83,7 +83,7 @@ export default function MasterUnitsPage() {
           <form onSubmit={handleSave} className="space-y-6">
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t('common_label')} *</Label>
-              <Input name="name" defaultValue={selectedRecord?.name} required className="h-12 rounded-xl border-none ring-1 ring-slate-200 font-bold text-xs" placeholder="e.g. Piece" />
+              <Input name="name" defaultValue={selectedRecord?.name} required className="h-12 rounded-xl border-none ring-1 ring-slate-200 font-bold text-xs" placeholder="e.g Piece" />
             </div>
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Symbol / Short Name *</Label>
@@ -134,7 +134,7 @@ export default function MasterUnitsPage() {
                     </TableCell>
                     <TableCell className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{u.shortName}</TableCell>
                     <TableCell className="text-right pr-8 sticky right-0 bg-white group-hover:bg-slate-50 transition-colors">
-                      <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex justify-end gap-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50 rounded-full" onClick={() => setSelectedRecord(u)}><Edit className="h-3.5 w-3.5" /></Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:bg-red-50 rounded-full" onClick={() => deleteDoc(doc(db!, "companies", companyId!, "master_units", u.id))}><Trash2 className="h-3.5 w-3.5" /></Button>
                       </div>
