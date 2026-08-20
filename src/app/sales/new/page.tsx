@@ -20,7 +20,8 @@ import {
   Search,
   CheckCircle2,
   Scan,
-  Package
+  Package,
+  ArrowRight
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -215,9 +216,9 @@ export default function NewInvoicePage() {
       
       setSelectedCustomerId(newDocRef.id);
       setIsNewCustomerMode(false);
-      toast({ title: t('common.success'), description: "New customer added and selected" });
+      toast({ title: t('common_success'), description: "New customer added and selected" });
     } catch (err: any) {
-      toast({ variant: "destructive", title: t('common.error'), description: err.message });
+      toast({ variant: "destructive", title: t('common_error'), description: err.message });
     } finally {
       setIsCustomerCreating(false);
     }
@@ -310,10 +311,10 @@ export default function NewInvoicePage() {
         }
       });
 
-      toast({ title: t('common.success') });
+      toast({ title: t('common_success') });
       router.push("/sales");
     } catch (e: any) {
-      toast({ variant: "destructive", title: t('common.error'), description: e.message });
+      toast({ variant: "destructive", title: t('common_error'), description: e.message });
       setIsSubmitting(false);
     }
   };
@@ -331,10 +332,10 @@ export default function NewInvoicePage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="hidden sm:inline-flex font-bold text-xs" onClick={() => router.back()}>{t('common.cancel')}</Button>
+          <Button variant="ghost" size="sm" className="hidden sm:inline-flex font-bold text-xs" onClick={() => router.back()}>{t('common_cancel')}</Button>
           <Button size="sm" className="font-bold text-[10px] md:text-xs gap-2 px-4 md:px-8 h-9 md:h-11 rounded-full bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-100" disabled={isSubmitting} onClick={handleSaveInvoice}>
             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            <span className="hidden xs:inline">{t('common.save')} Invoice</span>
+            <span className="hidden xs:inline">{t('common_save')} Invoice</span>
             <span className="xs:hidden">Save</span>
           </Button>
         </div>
@@ -343,8 +344,8 @@ export default function NewInvoicePage() {
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         <div className="xl:col-span-9 space-y-6">
           
-          <Card className="border-none shadow-sm ring-1 ring-slate-200 bg-white overflow-hidden rounded-[2rem]">
-            <CardHeader className="bg-slate-50/50 px-6 py-4 border-b">
+          <Card className="border-none shadow-sm ring-1 ring-slate-100 bg-white overflow-hidden rounded-[2rem]">
+            <CardHeader className="bg-slate-50/50 px-6 py-4 border-b border-slate-100">
                <div className="flex items-center justify-between flex-wrap gap-4">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
@@ -352,26 +353,36 @@ export default function NewInvoicePage() {
                     </div>
                     <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-500">Customer Identity</CardTitle>
                   </div>
-                  <Button 
-                    type="button" 
-                    variant={isNewCustomerMode ? "default" : "outline"} 
-                    size="sm" 
-                    className={cn("h-8 rounded-full text-[10px] font-black uppercase gap-2 transition-all", isNewCustomerMode ? "bg-blue-600" : "text-blue-600 border-blue-200")}
-                    onClick={() => setIsNewCustomerMode(!isNewCustomerMode)}
-                  >
-                    {isNewCustomerMode ? <Search className="h-3 w-3" /> : <UserPlus className="h-3 w-3" />}
-                    {isNewCustomerMode ? "Select Existing" : "Register New Client"}
-                  </Button>
+                  <div className="flex gap-2 p-1 bg-white rounded-full border border-slate-200">
+                    <Button 
+                      type="button" 
+                      variant="ghost"
+                      size="sm" 
+                      className={cn("h-8 rounded-full text-[10px] font-black uppercase gap-2 transition-all px-4", !isNewCustomerMode ? "bg-blue-600 text-white shadow-lg" : "text-slate-400 hover:text-blue-600")}
+                      onClick={() => setIsNewCustomerMode(false)}
+                    >
+                      <Search className="h-3 w-3" /> Select Existing
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="ghost"
+                      size="sm" 
+                      className={cn("h-8 rounded-full text-[10px] font-black uppercase gap-2 transition-all px-4", isNewCustomerMode ? "bg-blue-600 text-white shadow-lg" : "text-slate-400 hover:text-blue-600")}
+                      onClick={() => setIsNewCustomerMode(true)}
+                    >
+                      <UserPlus className="h-3 w-3" /> New Registration
+                    </Button>
+                  </div>
                </div>
             </CardHeader>
             <CardContent className="p-6">
               {!isNewCustomerMode ? (
                 <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
                      <div className="space-y-1.5">
-                        <Label className="text-[10px] font-black uppercase text-slate-400">Select Client Account</Label>
+                        <Label className="text-[10px] font-black uppercase text-slate-400">Search Client Account</Label>
                         <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                          <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold text-xs">
+                          <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold text-xs focus:ring-2 focus:ring-blue-600">
                             <SelectValue placeholder="Search or select from directory" />
                           </SelectTrigger>
                           <SelectContent className="max-h-[300px] rounded-xl shadow-2xl border-none ring-1 ring-slate-100">
@@ -383,56 +394,60 @@ export default function NewInvoicePage() {
                           </SelectContent>
                         </Select>
                      </div>
-                     <div className="flex items-center gap-4 bg-blue-50/50 p-4 rounded-2xl ring-1 ring-blue-100 border-none">
-                        <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center text-blue-600 shadow-sm shrink-0">
-                           <LayoutGrid className="h-5 w-5" />
+                     <div className="bg-blue-50/50 p-4 rounded-2xl ring-1 ring-blue-100 border-none flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center text-blue-600 shadow-sm shrink-0">
+                           <CheckCircle2 className="h-4 w-4" />
                         </div>
-                        <div className="text-[10px] font-bold text-blue-700 uppercase leading-relaxed">
-                           Quick registration available for walk-in clients Use the button above to switch modes
-                        </div>
+                        <p className="text-[9px] font-bold text-blue-700 uppercase tracking-tighter">
+                          Client details will be automatically loaded into the final invoice once selected
+                        </p>
                      </div>
                   </div>
                 </div>
               ) : (
-                <form onSubmit={handleQuickCustomerCreate} className="animate-in fade-in slide-in-from-top-2 duration-400 space-y-6">
-                   <div className="flex gap-4 p-1 bg-slate-100 rounded-xl w-fit mb-6">
-                      <Button type="button" variant={quickCustType === 'individual' ? 'white' : 'ghost'} className={cn("h-8 px-6 rounded-lg text-[9px] font-black uppercase shadow-none", quickCustType === 'individual' && "bg-white shadow-sm text-blue-600")} onClick={() => setQuickCustType('individual')}>Individual</Button>
-                      <Button type="button" variant={quickCustType === 'company' ? 'white' : 'ghost'} className={cn("h-8 px-6 rounded-lg text-[9px] font-black uppercase shadow-none", quickCustType === 'company' && "bg-white shadow-sm text-blue-600")} onClick={() => setQuickCustType('company')}>Organization</Button>
-                   </div>
-
+                <form onSubmit={handleQuickCustomerCreate} className="animate-in fade-in slide-in-from-top-2 duration-400 space-y-8">
                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <div className="space-y-4">
+                        <Label className="text-[10px] font-black uppercase text-slate-400">Identity Type</Label>
+                        <div className="flex gap-2">
+                           <Button type="button" variant={quickCustType === 'individual' ? 'default' : 'outline'} className="flex-1 h-10 rounded-xl text-[9px] font-black uppercase" onClick={() => setQuickCustType('individual')}>Individual</Button>
+                           <Button type="button" variant={quickCustType === 'company' ? 'default' : 'outline'} className="flex-1 h-10 rounded-xl text-[9px] font-black uppercase" onClick={() => setQuickCustType('company')}>Company</Button>
+                        </div>
+                      </div>
+                      
                       {quickCustType === 'company' && (
-                        <div className="space-y-1.5 lg:col-span-3">
-                          <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Company Farm Name *</Label>
-                          <Input name="companyName" required className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold" />
+                        <div className="space-y-1.5 md:col-span-2">
+                          <Label className="text-[10px] font-black uppercase text-slate-500">Legal Company Name *</Label>
+                          <Input name="companyName" required className="h-10 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold" />
                         </div>
                       )}
+                      
                       <div className="space-y-1.5">
-                        <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">First Name *</Label>
-                        <Input name="firstName" required className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200" />
+                        <Label className="text-[10px] font-black uppercase text-slate-500">First Name *</Label>
+                        <Input name="firstName" required className="h-10 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200" />
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Last Name *</Label>
-                        <Input name="lastName" required className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200" />
+                        <Label className="text-[10px] font-black uppercase text-slate-500">Last Name *</Label>
+                        <Input name="lastName" required className="h-10 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200" />
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Mobile WhatsApp *</Label>
-                        <Input name="phoneNumber" required className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200" placeholder="+880" />
+                        <Label className="text-[10px] font-black uppercase text-slate-500">Mobile / Whatsapp *</Label>
+                        <Input name="phoneNumber" required className="h-10 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200" placeholder="+880" />
                       </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Email Address</Label>
-                        <Input name="email" type="email" className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200" placeholder="client@example com" />
+                      <div className="space-y-1.5 lg:col-span-1">
+                        <Label className="text-[10px] font-black uppercase text-slate-500">Official Email</Label>
+                        <Input name="email" type="email" className="h-10 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200" />
                       </div>
                       <div className="space-y-1.5 lg:col-span-2">
-                        <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Full Billing Address</Label>
-                        <Input name="address" className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200" />
+                        <Label className="text-[10px] font-black uppercase text-slate-500">Billing Address</Label>
+                        <Input name="address" className="h-10 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200" />
                       </div>
                    </div>
 
-                   <div className="flex justify-end pt-4">
-                      <Button type="submit" disabled={isCreatingCustomer} className="bg-blue-600 hover:bg-blue-700 h-12 px-10 rounded-xl text-[10px] font-black uppercase tracking-[0.1em] gap-2 shadow-xl shadow-blue-100 transition-all active:scale-95">
-                        {isCreatingCustomer ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                        Save & Select Customer
+                   <div className="flex justify-end border-t pt-6">
+                      <Button type="submit" disabled={isCreatingCustomer} className="bg-blue-600 hover:bg-blue-700 h-11 px-8 rounded-xl text-[10px] font-black uppercase tracking-widest gap-2 shadow-xl shadow-blue-100">
+                        {isCreatingCustomer ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        Save & Apply Client
                       </Button>
                    </div>
                 </form>
@@ -440,13 +455,13 @@ export default function NewInvoicePage() {
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-sm ring-1 ring-slate-200 bg-white rounded-[2rem] overflow-hidden">
-            <CardHeader className="bg-slate-50/50 px-6 py-4 border-b">
+          <Card className="border-none shadow-sm ring-1 ring-slate-100 bg-white rounded-[2rem] overflow-hidden">
+            <CardHeader className="bg-slate-50/50 px-6 py-4 border-b border-slate-100">
                <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600">
                      <Building className="h-4 w-4" />
                   </div>
-                  <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-500">Project & Logistics Details</CardTitle>
+                  <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-500">Project & Logistics</CardTitle>
                </div>
             </CardHeader>
             <CardContent className="p-6">
@@ -512,20 +527,20 @@ export default function NewInvoicePage() {
              )}
           </div>
 
-          <Card className="border-none shadow-sm ring-1 ring-slate-200 overflow-hidden rounded-[2rem] bg-white">
-            <div className="p-5 bg-white border-b flex flex-wrap items-center justify-between gap-4">
+          <Card className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden rounded-[2rem] bg-white">
+            <div className="p-5 bg-white border-b border-slate-100 flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                  <LayoutGrid className="h-5 w-5 text-blue-600" />
                  <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-900">Inventory Manifest</h3>
               </div>
               <Button variant="outline" size="sm" className="h-10 rounded-xl gap-2 text-[10px] font-black uppercase border-slate-200 text-slate-900 hover:bg-slate-50 transition-all" onClick={addManualRow}>
-                <PlusCircle className="h-4 w-4" /> {t('common.add')} Generic Row
+                <PlusCircle className="h-4 w-4" /> {t('common_add')} Generic Row
               </Button>
             </div>
             
             <div className="overflow-x-auto custom-scrollbar">
               <Table className="min-w-[1000px]">
-                <TableHeader className="bg-slate-50/50 border-b">
+                <TableHeader className="bg-slate-50/50 border-b border-slate-100">
                   <TableRow className="hover:bg-transparent h-14">
                     <TableHead className="w-12 text-center text-[10px] font-black uppercase pl-6">Sl</TableHead>
                     <TableHead className="min-w-[400px] text-[10px] font-black uppercase">Item Details & Attributes</TableHead>
@@ -548,7 +563,7 @@ export default function NewInvoicePage() {
                     </TableRow>
                   ) : (
                     lineItems.map((item, idx) => (
-                      <TableRow key={item.id} className="group hover:bg-slate-50/50 border-b border-slate-100 align-top transition-colors">
+                      <TableRow key={item.id} className="group hover:bg-slate-50/50 border-b border-slate-50 align-top transition-colors">
                         <TableCell className="text-center text-[11px] font-black text-slate-300 py-6 pl-6">{(idx + 1).toString().padStart(2, '0')}</TableCell>
                         <TableCell className="py-6 px-2">
                           <div className="space-y-3">
