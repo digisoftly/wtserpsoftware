@@ -83,7 +83,7 @@ export default function NewProductPage() {
     const finalCategoryId = catLevel3 || catLevel2 || catLevel1;
 
     if (!finalCategoryId) {
-      toast({ variant: "destructive", title: t('common.error'), description: "Please select at least a Root Category." });
+      toast({ variant: "destructive", title: t('error'), description: "Please select at least a Root Category" });
       return;
     }
 
@@ -140,10 +140,10 @@ export default function NewProductPage() {
       }
 
       await batch.commit();
-      toast({ title: t('common.success') });
+      toast({ title: t('success') });
       router.push("/inventory");
     } catch (err: any) {
-      toast({ variant: "destructive", title: t('common.error'), description: err.message });
+      toast({ variant: "destructive", title: t('error'), description: err.message });
       setIsSubmitting(false);
     }
   };
@@ -156,17 +156,17 @@ export default function NewProductPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-lg font-black font-headline uppercase tracking-tight text-blue-600">{t('inventory.addProduct')}</h1>
+            <h1 className="text-lg font-black font-headline uppercase tracking-tight text-blue-600">{t('inventory_addProduct')}</h1>
             <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Catalog Definition Terminal</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="ghost" className="rounded-full text-[10px] font-black uppercase tracking-widest px-6" onClick={() => router.back()}>
-            {t('common.cancel')}
+            {t('cancel')}
           </Button>
           <Button type="submit" form="product-form" className="bg-blue-600 hover:bg-blue-700 rounded-full px-8 h-10 text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-100 gap-2" disabled={isSubmitting}>
             {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />}
-            {t('common.save')}
+            {t('save')}
           </Button>
         </div>
       </div>
@@ -177,11 +177,11 @@ export default function NewProductPage() {
             <CardContent className="p-0 space-y-10">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('forms.itemName')} *</Label>
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('itemName')} *</Label>
                   <Input name="name" required className="h-12 rounded-xl" placeholder="e.g. Sony 4K IP Camera Pro" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('forms.brand')}</Label>
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('brand')}</Label>
                   <Select name="brandId" onValueChange={setSelectedBrandId} required>
                     <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Select Brand" /></SelectTrigger>
                     <SelectContent className="rounded-xl shadow-2xl">
@@ -239,11 +239,11 @@ export default function NewProductPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('forms.model')}</Label>
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('model')}</Label>
                   <Input name="modelId" className="h-12 rounded-xl font-mono uppercase" placeholder="e.g. SNC-VB770" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('forms.price')} (৳)</Label>
+                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('price')} (৳)</Label>
                   <Input name="unitPrice" type="number" required className="h-12 rounded-xl text-blue-600 font-black text-lg" />
                 </div>
                 <div className="space-y-1.5">
@@ -259,7 +259,7 @@ export default function NewProductPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1">
-                    <ShieldCheck className="h-3 w-3 text-emerald-500" /> {t('forms.warranty')}
+                    <ShieldCheck className="h-3 w-3 text-emerald-500" /> {t('warranty')}
                   </Label>
                   <Select name="warranty" defaultValue="1 Year">
                     <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue /></SelectTrigger>
@@ -279,7 +279,7 @@ export default function NewProductPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('common.details')}</Label>
+                <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('details')}</Label>
                 <Textarea name="description" className="min-h-[100px] rounded-2xl border-slate-200" placeholder="Technical specifications..." />
               </div>
 

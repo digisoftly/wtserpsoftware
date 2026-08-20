@@ -10,20 +10,20 @@ export function useTranslation() {
   const currentLang = language || 'BN';
 
   /**
-   * Translates a key. Supports both dot and underscore separators.
+   * Translates a key. Supports flat lookup and fallback.
    */
   const t = (path: string): string => {
     const dictionary = translations[currentLang as keyof typeof translations] as any;
     
-    // First try direct lookup (for underscore keys like 'nav_dashboard')
+    // 1. Direct key lookup (Standard)
     if (dictionary[path]) return dictionary[path];
 
-    // Fallback: Try dot notation lookup for legacy compatibility or nested structures
+    // 2. Dot notation fallback (for errors.xxx)
     const keys = path.split('.');
     let result: any = dictionary;
     for (const key of keys) {
       if (result === undefined || result === null || result[key] === undefined) {
-        // Fallback to English dictionary if key missing in current language
+        // Fallback to English
         let fallback: any = (translations['EN'] as any);
         for (const fKey of keys) {
           fallback = fallback?.[fKey];

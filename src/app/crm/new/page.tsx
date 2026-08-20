@@ -45,7 +45,7 @@ export default function NewLeadPage() {
     
     addDocumentNonBlocking(colRef, leadData)
       .then(() => {
-        toast({ title: t('common.success') });
+        toast({ title: t('success') });
         router.push("/crm");
       })
       .catch(() => {
@@ -88,7 +88,7 @@ export default function NewLeadPage() {
           <div className="pt-6">
             <Button type="submit" disabled={isSubmitting} className="w-full bg-rose-500 hover:bg-rose-600 h-14 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-rose-100">
               {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <Save className="h-5 w-5" />}
-              {t('common.save')} Prospect
+              {t('save')} Prospect
             </Button>
           </div>
         </form>
