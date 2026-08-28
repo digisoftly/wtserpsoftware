@@ -271,7 +271,7 @@ export default function BranchesPage() {
                 {isEditModalOpen ? t('editBranch') : t('newLocation')}
               </DialogTitle>
               <DialogDescription className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em] mt-0.5">
-                Physical Node Terminal Configuration
+                Physical Node Terminal Configuration for Organizational Logistics
               </DialogDescription>
             </div>
           </DialogHeader>
@@ -346,11 +346,11 @@ export default function BranchesPage() {
                 <Input name="city" defaultValue={selectedRecord?.city} className="h-11 rounded-xl" placeholder="Dhaka" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">District</Label>
+                <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">District</Label>
                 <Input name="district" defaultValue={selectedRecord?.district} className="h-11 rounded-xl" placeholder="Dhaka" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Country</Label>
+                <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Country</Label>
                 <Input name="country" defaultValue={selectedRecord?.country || "Bangladesh"} className="h-11 rounded-xl" />
               </div>
             </div>

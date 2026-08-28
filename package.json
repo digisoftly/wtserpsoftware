@@ -11,6 +11,12 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },
+  "trustedDependencies": [
+    "@firebase/util",
+    "esbuild",
+    "protobufjs",
+    "sharp"
+  ],
   "dependencies": {
     "@genkit-ai/google-genai": "^1.28.0",
     "@hookform/resolvers": "^4.1.3",

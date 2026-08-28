@@ -197,7 +197,7 @@ export default function MasterProductTypesPage() {
           <DialogHeader className="bg-slate-900 p-4 text-white">
             <DialogTitle className="text-sm font-bold uppercase tracking-widest">{selectedRecord ? t('common_edit') : t('addProductType')}</DialogTitle>
             <DialogDescription className="text-[10px] text-white/50 uppercase tracking-tighter">
-              Categorize inventory assets by their fundamental physical or technical type.
+              Categorize inventory assets by their fundamental physical characteristics or technical utility types.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSave} className="p-6 space-y-4">

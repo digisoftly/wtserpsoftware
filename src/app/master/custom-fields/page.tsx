@@ -177,7 +177,7 @@ export default function MasterCustomFieldsPage() {
           <DialogHeader className="bg-pink-600 p-6 text-white">
             <DialogTitle className="text-xl font-bold font-headline uppercase">{selectedRecord ? t('edit') : t('addCustomField')}</DialogTitle>
             <DialogDescription className="text-xs font-medium text-white/70">
-              Define dynamic data attributes for system entities to extend core schemas.
+              Define dynamic data attributes for system entities to extend core schemas and metadata.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSave} className="p-6 space-y-4 bg-slate-50">

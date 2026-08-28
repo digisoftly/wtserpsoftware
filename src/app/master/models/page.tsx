@@ -189,7 +189,7 @@ export default function MasterModelsPage() {
           <DialogHeader className="bg-pink-600 p-6 text-white">
             <DialogTitle className="text-xl font-bold font-headline uppercase">{selectedRecord ? t('edit') : t('addModel')}</DialogTitle>
             <DialogDescription className="text-xs font-medium text-white/70">
-              Manage product model variations and link them to respective hardware brands.
+              Manage and link specific product model variations to their respective hardware manufacturers.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSave} className="p-6 space-y-4 bg-slate-50">

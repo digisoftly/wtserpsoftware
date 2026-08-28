@@ -197,7 +197,7 @@ export default function MasterWarrantyTypesPage() {
           <DialogHeader className="bg-slate-900 p-4 text-white">
             <DialogTitle className="text-sm font-bold uppercase tracking-widest">{selectedRecord ? t('common_edit') : t('addWarrantyType')}</DialogTitle>
             <DialogDescription className="text-[10px] text-white/50 uppercase tracking-tighter">
-              Configure product coverage durations and policy terms for hardware support.
+              Configure standardized product coverage durations and specific policy terms for organizational hardware support.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSave} className="p-6 space-y-4">
