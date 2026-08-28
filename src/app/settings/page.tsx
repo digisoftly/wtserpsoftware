@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -82,7 +83,7 @@ export default function SettingsPage() {
   // UI Colors
   const [sidebarBgColor, setSidebarBgColor] = React.useState("#FFFFFF");
   const [sidebarHoverColor, setSidebarHoverColor] = React.useState("#F1F5F9");
-  const [sidebarTextColor, setSidebarTextColor] = React.useState("#000000");
+  const [sidebarTextColor, setSidebarTextColor] = React.useState("#111827");
 
   // Design Lab State
   const [previewLayout, setPreviewLayout] = React.useState<any>("warrior");
@@ -252,7 +253,7 @@ export default function SettingsPage() {
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Slogan</Label><Input name="companySlogan" defaultValue={settings?.companySlogan} className="h-11 rounded-xl" /></div>
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Official Phone</Label><Input name="phone" defaultValue={settings?.phone} className="h-11 rounded-xl" /></div>
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Official Email</Label><Input name="email" defaultValue={settings?.email} className="h-11 rounded-xl" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Website URL</Label><Input name="website" defaultValue={settings?.website} placeholder="www example com" className="h-11 rounded-xl" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Website URL</Label><Input name="website" defaultValue={settings?.website} placeholder="www.example.com" className="h-11 rounded-xl" /></div>
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Official Address</Label><Input name="address" defaultValue={settings?.address} className="h-11 rounded-xl" /></div>
                   </div>
                 </CardContent>
@@ -305,7 +306,6 @@ export default function SettingsPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-slate-500">Template Engine</Label>
-                    <span className="text-[9px] text-slate-400 block mb-1">Choose layout for PDF export</span>
                     <Select name="defaultTemplate_invoice" defaultValue={settings?.defaultTemplate_invoice || "warrior"} onValueChange={setPreviewLayout}>
                       <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
                       <SelectContent>{DOCUMENT_LAYOUTS.map(l => <SelectItem key={l.value} value={l.value}>{l.name}</SelectItem>)}</SelectContent>
@@ -322,39 +322,11 @@ export default function SettingsPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-slate-500">Standard Terms & Conditions</Label>
-                    <Textarea name="pdfTerms" defaultValue={settings?.pdfTerms} className="min-h-[100px] rounded-xl text-[10px] font-bold" placeholder="1 Equipment remains property" />
+                    <Textarea name="pdfTerms" defaultValue={settings?.pdfTerms} className="min-h-[100px] rounded-xl text-[10px] font-bold" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-slate-500">Footer Heart Message</Label>
-                    <Input name="footerHeartMsg" defaultValue={settings?.footerHeartMsg} className="h-11 rounded-xl font-bold" placeholder="Thank You For Your Business" />
-                  </div>
-                </Card>
-
-                <Card className="border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-8 space-y-6">
-                  <div className="flex items-center gap-2 border-b pb-2">
-                    <TableIcon className="h-4 w-4 text-blue-600" />
-                    <h3 className="text-xs font-black uppercase tracking-widest">Table Column Labels</h3>
-                  </div>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-6">
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">SL Header</Label><Input name="pdfTable_sl" defaultValue={settings?.pdfTable_sl} className="h-10 rounded-xl text-xs font-black uppercase" placeholder="SL" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Item Header</Label><Input name="pdfTable_item" defaultValue={settings?.pdfTable_item} className="h-10 rounded-xl text-xs font-black uppercase" placeholder="Item Name" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Brand Header</Label><Input name="pdfTable_brand" defaultValue={settings?.pdfTable_brand} className="h-10 rounded-xl text-xs font-black uppercase" placeholder="Brand" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Qty Header</Label><Input name="pdfTable_qty" defaultValue={settings?.pdfTable_qty} className="h-10 rounded-xl text-xs font-black uppercase" placeholder="Qty" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Price Header</Label><Input name="pdfTable_price" defaultValue={settings?.pdfTable_price} className="h-10 rounded-xl text-xs font-black uppercase" placeholder="Unit Price" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Amount Header</Label><Input name="pdfTable_amount" defaultValue={settings?.pdfTable_amount} className="h-10 rounded-xl text-xs font-black uppercase" placeholder="Amount" /></div>
-                  </div>
-
-                  <div className="flex items-center gap-2 border-b pb-2 pt-4">
-                    <LayoutGrid className="h-4 w-4 text-blue-600" />
-                    <h3 className="text-xs font-black uppercase tracking-widest">Summary Label Overrides</h3>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Subtotal Label</Label><Input name="pdfTable_subtotal" defaultValue={settings?.pdfTable_subtotal} className="h-10 rounded-xl text-xs font-black uppercase" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Discount Label</Label><Input name="pdfTable_discount" defaultValue={settings?.pdfTable_discount} className="h-10 rounded-xl text-xs font-black uppercase" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">VAT Label</Label><Input name="pdfTable_tax" defaultValue={settings?.pdfTable_tax} className="h-10 rounded-xl text-xs font-black uppercase" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Grand Total Label</Label><Input name="pdfTable_grandTotal" defaultValue={settings?.pdfTable_grandTotal} className="h-10 rounded-xl text-xs font-black uppercase" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Paid Label</Label><Input name="pdfTable_paid" defaultValue={settings?.pdfTable_paid} className="h-10 rounded-xl text-xs font-black uppercase" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Due Label</Label><Input name="pdfTable_due" defaultValue={settings?.pdfTable_due} className="h-10 rounded-xl text-xs font-black uppercase" /></div>
+                    <Input name="footerHeartMsg" defaultValue={settings?.footerHeartMsg} className="h-11 rounded-xl font-bold" />
                   </div>
                 </Card>
               </div>

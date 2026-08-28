@@ -32,7 +32,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, query, orderBy, limit } from "firebase/firestore"
+import { collection } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { useTranslation } from "@/hooks/use-translation"
 import Link from "next/link"
@@ -40,8 +40,7 @@ import { cn } from "@/lib/utils"
 
 /**
  * WarriorERP - High Fidelity Dashboard
- * Matches the reference image layout and colorful KPI card system.
- * Includes the new Floating Action Button (FAB) menu.
+ * Features colorful KPI cards and a responsive Floating Action Button (FAB).
  */
 export default function Dashboard() {
   const { branchId, companyId } = useTenant();
@@ -151,7 +150,7 @@ export default function Dashboard() {
     { label: "New Purchase", icon: Package, color: "bg-[#F97316]", path: "/purchases/new" },
     { label: "New Quotation", icon: FileText, color: "bg-[#A855F7]", path: "/quotations/new" },
     { label: "New Customer", icon: UserPlus, color: "bg-[#06B6D4]", path: "/customers/new" },
-    { label: "New Supplier", icon: Truck, color: "bg-[#F59E0B]", path: "/suppliers/new" },
+    { label: "New Supplier", icon: Truck, color: "bg-[#F59E0B]", path: "/suppliers" },
     { label: "New Project", icon: Briefcase, color: "bg-[#14B8A6]", path: "/projects/new" },
     { label: "New Payment", icon: CreditCard, color: "bg-[#6366F1]", path: "/payments/new" },
   ];
@@ -161,7 +160,7 @@ export default function Dashboard() {
       {/* 3. PAGE HEADER */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight leading-none">Dashboard</h1>
+          <h1 className="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tight leading-none">Dashboard</h1>
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Enterprise Resource Analysis Terminal</p>
         </div>
         <Button variant="outline" size="sm" className="h-10 rounded-full gap-2 font-black text-[10px] uppercase tracking-widest bg-white shadow-sm hover:bg-slate-50" onClick={() => window.location.reload()}>
@@ -199,11 +198,11 @@ export default function Dashboard() {
           <CardContent className="p-8 flex items-center justify-between">
             <div className="space-y-1">
               <p className="text-[11px] font-black uppercase text-slate-400 tracking-widest">Customer Due</p>
-              <h2 className="text-4xl font-black text-slate-900 tracking-tighter">৳{stats.customerDue.toLocaleString()}</h2>
+              <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter">৳{stats.customerDue.toLocaleString()}</h2>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{stats.dueCustomersCount} Customers</p>
             </div>
-            <div className="w-16 h-16 rounded-[1.5rem] bg-red-500 text-white flex items-center justify-center shadow-2xl shadow-red-200">
-               <ArrowDownRight className="h-8 w-8" />
+            <div className="w-14 h-14 md:w-16 md:h-16 rounded-[1.5rem] bg-red-500 text-white flex items-center justify-center shadow-2xl shadow-red-200 shrink-0">
+               <ArrowDownRight className="h-6 w-6 md:h-8 md:w-8" />
             </div>
           </CardContent>
         </Card>
@@ -211,11 +210,11 @@ export default function Dashboard() {
           <CardContent className="p-8 flex items-center justify-between">
             <div className="space-y-1">
               <p className="text-[11px] font-black uppercase text-slate-400 tracking-widest">Supplier Due</p>
-              <h2 className="text-4xl font-black text-slate-900 tracking-tighter">৳{stats.supplierDue.toLocaleString()}</h2>
+              <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter">৳{stats.supplierDue.toLocaleString()}</h2>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{stats.dueSuppliersCount} Suppliers</p>
             </div>
-            <div className="w-16 h-16 rounded-[1.5rem] bg-orange-600 text-white flex items-center justify-center shadow-2xl shadow-orange-200">
-               <ArrowUpRight className="h-8 w-8" />
+            <div className="w-14 h-14 md:w-16 md:h-16 rounded-[1.5rem] bg-orange-600 text-white flex items-center justify-center shadow-2xl shadow-orange-200 shrink-0">
+               <ArrowUpRight className="h-6 w-6 md:h-8 md:w-8" />
             </div>
           </CardContent>
         </Card>
@@ -228,7 +227,7 @@ export default function Dashboard() {
            <FolderOpen className="h-5 w-5 text-teal-600" />
            <h3 className="text-sm font-black uppercase text-slate-700 tracking-widest">Project Billing Summary</h3>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <KPICard title="Total Project Bill" value={`৳${stats.projectBill.toLocaleString()}`} subtext={`${projects?.length || 0} Projects`} icon={Receipt} colorClass="bg-teal-600" />
           <KPICard title="Total Project Paid" value={`৳${stats.projectPaid.toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-600" />
           <KPICard title="Project Due" value={`৳${stats.projectDue.toLocaleString()}`} subtext={`${stats.pendingProjects} Pending`} icon={AlertCircle} colorClass="bg-red-500" />
@@ -243,20 +242,20 @@ export default function Dashboard() {
            <h3 className="text-sm font-black uppercase text-slate-700 tracking-widest">Low Stock Alert</h3>
         </div>
         <Card className="border-none shadow-sm rounded-[2.5rem] bg-[#FFEBEE]/30 ring-1 ring-red-100 overflow-hidden">
-           <CardContent className="p-6 space-y-3">
+           <CardContent className="p-4 md:p-6 space-y-3">
               {stats.lowStockItems.length > 0 ? (
                 stats.lowStockItems.slice(0, 5).map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-5 bg-white rounded-3xl border border-red-50 shadow-sm group hover:scale-[1.01] transition-transform">
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-xl bg-red-50 flex items-center justify-center text-red-600">
-                         <Box className="h-5 w-5" />
+                  <div key={idx} className="flex items-center justify-between p-4 md:p-5 bg-white rounded-3xl border border-red-50 shadow-sm group hover:scale-[1.01] transition-transform">
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <div className="h-9 w-9 md:h-10 md:w-10 rounded-xl bg-red-50 flex items-center justify-center text-red-600">
+                         <Box className="h-4 w-4 md:h-5 md:w-5" />
                       </div>
-                      <div>
-                        <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{item.name}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">Model: {item.sku || 'N/A'}</p>
+                      <div className="min-w-0">
+                        <p className="text-xs md:text-sm font-black text-slate-900 uppercase tracking-tight truncate max-w-[150px] md:max-w-none">{item.name}</p>
+                        <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase mt-0.5">Model: {item.sku || 'N/A'}</p>
                       </div>
                     </div>
-                    <Badge variant="destructive" className="h-8 rounded-xl font-black text-[11px] px-4 shadow-lg shadow-red-100">
+                    <Badge variant="destructive" className="h-7 md:h-8 rounded-xl font-black text-[9px] md:text-[11px] px-3 md:px-4 shadow-lg shadow-red-100 shrink-0">
                       {item.currentStock} {item.unit || 'Pcs'}
                     </Badge>
                   </div>
@@ -272,7 +271,7 @@ export default function Dashboard() {
       </div>
 
       {/* 10. FLOATING ACTION BUTTON (FAB) MENU */}
-      <div className="fixed bottom-10 right-10 z-[100] flex flex-col items-end gap-4">
+      <div className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-[100] flex flex-col items-end gap-4">
         {/* Backdrop for open menu */}
         {isFabOpen && (
           <div 
@@ -294,10 +293,10 @@ export default function Dashboard() {
               className="flex items-center gap-3 transition-all hover:scale-105 active:scale-95 group"
               style={{ transitionDelay: `${isFabOpen ? (QUICK_ACTIONS.length - i) * 50 : 0}ms` }}
             >
-              <div className="bg-white pl-6 pr-2 py-2 rounded-2xl shadow-[0_10px_40px_-5px_rgba(0,0,0,0.15)] border border-slate-100 flex items-center gap-5 min-w-[180px] justify-between">
-                <span className="text-[12px] font-black text-slate-600 uppercase tracking-tight">{action.label}</span>
-                <div className={cn("w-10 h-10 rounded-xl text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform", action.color)}>
-                  <action.icon className="h-5 w-5" />
+              <div className="bg-white pl-4 md:pl-6 pr-2 py-2 rounded-2xl shadow-[0_10px_40px_-5px_rgba(0,0,0,0.15)] border border-slate-100 flex items-center gap-3 md:gap-5 min-w-[160px] md:min-w-[180px] justify-between">
+                <span className="text-[11px] md:text-[12px] font-black text-slate-600 uppercase tracking-tight">{action.label}</span>
+                <div className={cn("w-9 h-9 md:w-10 md:h-10 rounded-xl text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform", action.color)}>
+                  <action.icon className="h-4 w-4 md:h-5 md:w-5" />
                 </div>
               </div>
             </Link>
@@ -308,14 +307,14 @@ export default function Dashboard() {
         <Button 
           onClick={() => setIsFabOpen(!isFabOpen)}
           className={cn(
-            "w-16 h-16 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-none p-0 flex items-center justify-center transition-all duration-500 active:scale-90",
+            "w-14 h-14 md:w-16 md:h-16 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-none p-0 flex items-center justify-center transition-all duration-500 active:scale-90",
             isFabOpen ? "bg-slate-900 rotate-90" : "bg-[#EF4444] hover:bg-[#DC2626]"
           )}
         >
           {isFabOpen ? (
-            <Plus className="h-8 w-8 text-white rotate-45 transition-transform" />
+            <Plus className="h-7 w-7 md:h-8 md:w-8 text-white rotate-45 transition-transform" />
           ) : (
-            <Plus className="h-8 w-8 text-white rotate-0 transition-transform" />
+            <Plus className="h-7 w-7 md:h-8 md:w-8 text-white rotate-0 transition-transform" />
           )}
         </Button>
       </div>
