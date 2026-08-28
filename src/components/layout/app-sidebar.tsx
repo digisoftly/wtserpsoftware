@@ -71,7 +71,7 @@ const NAV_ITEMS_MAP: Record<string, NavItem> = {
   returns: { name: "returns", key: "returns", icon: RotateCcw, path: "/returns", color: "text-red-600" },
   inventory: { name: "inventory", key: "inventory", icon: Boxes, path: "/inventory", color: "text-sky-600" },
   serialTracking: { name: "serialTracking", key: "serialTracking", icon: Scan, path: "/serial-inventory", color: "text-purple-600" },
-  projectBilling: { name: "projectBilling", key: "project-billing", icon: ClipboardList, path: "/projects", color: "text-teal-600" },
+  projectBilling: { name: "projectBilling", key: "projectBilling", icon: ClipboardList, path: "/projects", color: "text-teal-600" },
   contracts: { name: "contracts", key: "contracts", icon: Wrench, path: "/contracts", color: "text-indigo-600" },
   customers: { name: "customers", key: "customers", icon: Users, path: "/customers", color: "text-blue-500" },
   suppliers: { name: "suppliers", key: "suppliers", icon: Truck, path: "/suppliers", color: "text-rose-600" },

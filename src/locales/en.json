@@ -21,7 +21,7 @@
   "label": "Label",
   "success": "Success",
   "error": "Error",
-  "loading": "Loading",
+  "loading": "Loading...!",
   "noData": "No records found",
   "confirmDelete": "Are you sure you want to delete this?",
   "itemsSelected": "Items Selected",
@@ -251,5 +251,18 @@
   "quotationNumber": "Quotation Number",
   "quotationDate": "Quotation Date",
   "expiryDate": "Expiry Date",
-  "addQuotation": "Add Quotation"
+  "addQuotation": "Add Quotation",
+  "sessionExpired": "Session Expired",
+  "sessionExpiredSub": "Please login again to continue.",
+  "sessionExpiring": "Session Expiring",
+  "sessionExpiringSub": "Your session is about to expire due to inactivity.",
+  "continueSession": "Continue Session",
+  "logoutNow": "Logout Now",
+  "totalLogs": "Total Logs",
+  "systemHealth": "System Health",
+  "active_status": "Active",
+  "totalFields": "Total Fields",
+  "totalModels": "Total Models",
+  "activeBranches": "Active Branches",
+  "totalBranches": "Total Branches"
 }
