@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -16,7 +15,8 @@ import {
   PenTool,
   FileBadge,
   LayoutGrid,
-  Monitor
+  Monitor,
+  Type
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -82,6 +82,7 @@ export default function SettingsPage() {
   // UI Colors
   const [sidebarBgColor, setSidebarBgColor] = React.useState("#FFFFFF");
   const [sidebarHoverColor, setSidebarHoverColor] = React.useState("#F1F5F9");
+  const [sidebarTextColor, setSidebarTextColor] = React.useState("#000000");
 
   // Design Lab State
   const [previewLayout, setPreviewLayout] = React.useState<any>("warrior");
@@ -108,6 +109,7 @@ export default function SettingsPage() {
       if (settings.docFontSize) setDocFontSize(settings.docFontSize);
       if (settings.sidebarBgColor) setSidebarBgColor(settings.sidebarBgColor);
       if (settings.sidebarHoverColor) setSidebarHoverColor(settings.sidebarHoverColor);
+      if (settings.sidebarTextColor) setSidebarTextColor(settings.sidebarTextColor);
     }
   }, [settings]);
 
@@ -147,10 +149,11 @@ export default function SettingsPage() {
       docFontSize: docFontSize,
       sidebarBgColor: sidebarBgColor,
       sidebarHoverColor: sidebarHoverColor,
+      sidebarTextColor: sidebarTextColor,
     };
 
     formData.forEach((value, key) => {
-      if (!["companyLogo", "authorizedSeal", "authorizedSignature", "sidebarMenuOrder"].includes(key)) {
+      if (!["companyLogo", "authorizedSeal", "authorizedSignature", "sidebarMenuOrder", "sidebarBgColor", "sidebarHoverColor", "sidebarTextColor"].includes(key)) {
         updates[key] = value;
       }
     });
@@ -257,17 +260,30 @@ export default function SettingsPage() {
 
               <Card className="md:col-span-3 border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100">
                 <CardHeader><CardTitle className="text-sm font-black uppercase tracking-widest text-slate-500">Sidebar UI Customization</CardTitle></CardHeader>
-                <CardContent className="p-8 space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <CardContent className="p-8 space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase text-slate-500">Sidebar Background Color</Label>
+                      <Label className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-2">
+                         <Monitor className="h-3 w-3" /> Background Color
+                      </Label>
                       <div className="flex gap-2">
                          <Input type="color" value={sidebarBgColor} onChange={e => setSidebarBgColor(e.target.value)} className="h-11 w-16 p-1 rounded-lg" />
                          <Input value={sidebarBgColor} onChange={e => setSidebarBgColor(e.target.value)} className="h-11 flex-1 rounded-xl font-mono uppercase" />
                       </div>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase text-slate-500">Sub-menu Default Hover Color</Label>
+                      <Label className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-2">
+                         <Type className="h-3 w-3" /> Text Color
+                      </Label>
+                      <div className="flex gap-2">
+                         <Input type="color" value={sidebarTextColor} onChange={e => setSidebarTextColor(e.target.value)} className="h-11 w-16 p-1 rounded-lg" />
+                         <Input value={sidebarTextColor} onChange={e => setSidebarTextColor(e.target.value)} className="h-11 flex-1 rounded-xl font-mono uppercase" />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-2">
+                         <LayoutGrid className="h-3 w-3" /> Sub-menu Hover Color
+                      </Label>
                       <div className="flex gap-2">
                          <Input type="color" value={sidebarHoverColor} onChange={e => setSidebarHoverColor(e.target.value)} className="h-11 w-16 p-1 rounded-lg" />
                          <Input value={sidebarHoverColor} onChange={e => setSidebarHoverColor(e.target.value)} className="h-11 flex-1 rounded-xl font-mono uppercase" />
@@ -289,6 +305,7 @@ export default function SettingsPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-slate-500">Template Engine</Label>
+                    <span className="text-[9px] text-slate-400 block mb-1">Choose layout for PDF export</span>
                     <Select name="defaultTemplate_invoice" defaultValue={settings?.defaultTemplate_invoice || "warrior"} onValueChange={setPreviewLayout}>
                       <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
                       <SelectContent>{DOCUMENT_LAYOUTS.map(l => <SelectItem key={l.value} value={l.value}>{l.name}</SelectItem>)}</SelectContent>
@@ -362,7 +379,7 @@ export default function SettingsPage() {
                 {menuOrder.map((key, index) => (
                   <div key={key} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border group">
                     <span className="font-black text-[10px] uppercase text-slate-700">{t(key)}</span>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100">
+                    <div className="flex gap-1 opacity-100">
                       <Button type="button" variant="ghost" size="icon" onClick={() => moveMenuItem(index, 'up')} disabled={index === 0}><ArrowUp className="h-3 w-3" /></Button>
                       <Button type="button" variant="ghost" size="icon" onClick={() => moveMenuItem(index, 'down')} disabled={index === menuOrder.length - 1}><ArrowDown className="h-3 w-3" /></Button>
                     </div>

@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -70,33 +69,33 @@ interface NavItem {
   icon: any
   path: string
   color: string
-  hoverBg: string // CSS class for hover background
+  hoverBg: string // Predefined hover class
 }
 
-const MAIN_MODULES: NavItem[] = [
-  { name: "dashboard", key: "dashboard", icon: LayoutDashboard, path: "/", color: "text-blue-600", hoverBg: "hover:bg-blue-50" },
-  { name: "sales", key: "sales", icon: ShoppingCart, path: "/sales", color: "text-green-600", hoverBg: "hover:bg-green-50" },
-  { name: "quotations", key: "quotations", icon: FileText, path: "/quotations", color: "text-amber-600", hoverBg: "hover:bg-amber-50" },
-  { name: "dispatch", key: "dispatch", icon: Truck, path: "/challans", color: "text-orange-600", hoverBg: "hover:bg-orange-50" },
-  { name: "purchases", key: "purchases", icon: Package, path: "/purchases", color: "text-orange-700", hoverBg: "hover:bg-orange-100/50" },
-  { name: "returns", key: "returns", icon: RotateCcw, path: "/returns", color: "text-red-600", hoverBg: "hover:bg-red-50" },
-  { name: "inventory", key: "inventory", icon: Boxes, path: "/inventory", color: "text-sky-600", hoverBg: "hover:bg-sky-50" },
-  { name: "serialTracking", key: "serialTracking", icon: Scan, path: "/serial-inventory", color: "text-purple-600", hoverBg: "hover:bg-purple-50" },
-  { name: "projectBilling", key: "project-billing", icon: ClipboardList, path: "/projects", color: "text-teal-600", hoverBg: "hover:bg-teal-50" },
-  { name: "contracts", key: "contracts", icon: Wrench, path: "/contracts", color: "text-indigo-600", hoverBg: "hover:bg-indigo-50" },
-  { name: "customers", key: "customers", icon: Users, path: "/customers", color: "text-blue-500", hoverBg: "hover:bg-blue-50" },
-  { name: "suppliers", key: "suppliers", icon: Truck, path: "/suppliers", color: "text-rose-600", hoverBg: "hover:bg-rose-50" },
-  { name: "accounts", key: "accounts", icon: Wallet, path: "/accounts", color: "text-yellow-700", hoverBg: "hover:bg-yellow-50" },
-  { name: "expenses", key: "expenses", icon: Receipt, path: "/expenses", color: "text-red-500", hoverBg: "hover:bg-red-50" },
-  { name: "support", key: "support", icon: GitPullRequest, path: "/support", color: "text-indigo-500", hoverBg: "hover:bg-indigo-50" },
-  { name: "crm", key: "crm", icon: Target, path: "/crm", color: "text-rose-700", hoverBg: "hover:bg-rose-50" },
-  { name: "hrm", key: "hrm", icon: Briefcase, path: "/hrm", color: "text-purple-500", hoverBg: "hover:bg-purple-50" },
-  { name: "branches", key: "branches", icon: Building2, path: "/branches", color: "text-slate-700", hoverBg: "hover:bg-slate-100" },
-  { name: "reports", key: "reports", icon: BarChart3, path: "/reports", color: "text-blue-700", hoverBg: "hover:bg-blue-50" },
-  { name: "ai", key: "ai", icon: BrainCircuit, path: "/ai-forecasting", color: "text-violet-700", hoverBg: "hover:bg-violet-50" },
-  { name: "users", key: "users", icon: UserRoundCog, path: "/users", color: "text-violet-600", hoverBg: "hover:bg-violet-50" },
-  { name: "settings", key: "settings", icon: Settings, path: "/settings", color: "text-slate-600", hoverBg: "hover:bg-slate-100" },
-]
+const NAV_ITEMS_MAP: Record<string, NavItem> = {
+  dashboard: { name: "dashboard", key: "dashboard", icon: LayoutDashboard, path: "/", color: "text-blue-600", hoverBg: "hover:bg-black" },
+  sales: { name: "sales", key: "sales", icon: ShoppingCart, path: "/sales", color: "text-green-600", hoverBg: "hover:bg-black" },
+  quotations: { name: "quotations", key: "quotations", icon: FileText, path: "/quotations", color: "text-amber-600", hoverBg: "hover:bg-black" },
+  dispatch: { name: "dispatch", key: "dispatch", icon: Truck, path: "/challans", color: "text-orange-600", hoverBg: "hover:bg-black" },
+  purchases: { name: "purchases", key: "purchases", icon: Package, path: "/purchases", color: "text-orange-700", hoverBg: "hover:bg-black" },
+  returns: { name: "returns", key: "returns", icon: RotateCcw, path: "/returns", color: "text-red-600", hoverBg: "hover:bg-black" },
+  inventory: { name: "inventory", key: "inventory", icon: Boxes, path: "/inventory", color: "text-sky-600", hoverBg: "hover:bg-black" },
+  serialTracking: { name: "serialTracking", key: "serialTracking", icon: Scan, path: "/serial-inventory", color: "text-purple-600", hoverBg: "hover:bg-black" },
+  projectBilling: { name: "projectBilling", key: "project-billing", icon: ClipboardList, path: "/projects", color: "text-teal-600", hoverBg: "hover:bg-black" },
+  contracts: { name: "contracts", key: "contracts", icon: Wrench, path: "/contracts", color: "text-indigo-600", hoverBg: "hover:bg-black" },
+  customers: { name: "customers", key: "customers", icon: Users, path: "/customers", color: "text-blue-500", hoverBg: "hover:bg-black" },
+  suppliers: { name: "suppliers", key: "suppliers", icon: Truck, path: "/suppliers", color: "text-rose-600", hoverBg: "hover:bg-black" },
+  accounts: { name: "accounts", key: "accounts", icon: Wallet, path: "/accounts", color: "text-yellow-700", hoverBg: "hover:bg-black" },
+  expenses: { name: "expenses", key: "expenses", icon: Receipt, path: "/expenses", color: "text-red-500", hoverBg: "hover:bg-black" },
+  support: { name: "support", key: "support", icon: GitPullRequest, path: "/support", color: "text-indigo-500", hoverBg: "hover:bg-black" },
+  crm: { name: "crm", key: "crm", icon: Target, path: "/crm", color: "text-rose-700", hoverBg: "hover:bg-black" },
+  hrm: { name: "hrm", key: "hrm", icon: Briefcase, path: "/hrm", color: "text-purple-500", hoverBg: "hover:bg-black" },
+  branches: { name: "branches", key: "branches", icon: Building2, path: "/branches", color: "text-slate-700", hoverBg: "hover:bg-black" },
+  reports: { name: "reports", key: "reports", icon: BarChart3, path: "/reports", color: "text-blue-700", hoverBg: "hover:bg-black" },
+  ai: { name: "ai", key: "ai", icon: BrainCircuit, path: "/ai-forecasting", color: "text-violet-700", hoverBg: "hover:bg-black" },
+  users: { name: "users", key: "users", icon: UserRoundCog, path: "/users", color: "text-violet-600", hoverBg: "hover:bg-black" },
+  settings: { name: "settings", key: "settings", icon: Settings, path: "/settings", color: "text-slate-600", hoverBg: "hover:bg-black" },
+};
 
 const MASTER_DATA_ITEMS = [
   { name: "units", path: "/master/units" },
@@ -119,7 +118,8 @@ export function AppSidebar() {
   const { t } = useTranslation()
 
   const sidebarBg = settings?.sidebarBgColor || "#FFFFFF"
-  const defaultHoverBg = settings?.sidebarHoverColor || "#F1F5F9"
+  const sidebarText = settings?.sidebarTextColor || "#000000"
+  const defaultHoverBg = settings?.sidebarHoverColor || "#000000"
 
   const handleLogout = async () => {
     await signOut(auth)
@@ -127,6 +127,7 @@ export function AppSidebar() {
   }
 
   const isMasterActive = pathname.startsWith('/master')
+  const menuOrder = settings?.sidebarMenuOrder || Object.keys(NAV_ITEMS_MAP);
 
   return (
     <Sidebar 
@@ -157,7 +158,10 @@ export function AppSidebar() {
       >
         <SidebarGroup className="p-0">
           <SidebarMenu className="gap-1 px-3">
-            {MAIN_MODULES.filter(m => can(m.key, 'view')).map((item) => {
+            {menuOrder.map((key) => {
+              const item = NAV_ITEMS_MAP[key];
+              if (!item || !can(item.key, 'view')) return null;
+
               const isActive = pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path));
               
               return (
@@ -169,10 +173,15 @@ export function AppSidebar() {
                     className={cn(
                       "h-10 px-3 transition-all rounded-xl group",
                       isActive 
-                        ? "bg-slate-100 text-black border-l-4 border-blue-600" 
-                        : "text-black",
-                      item.hoverBg
+                        ? "bg-slate-100 border-l-4 border-blue-600" 
+                        : "hover:bg-black hover:text-white"
                     )}
+                    style={{ 
+                      color: isActive ? "#000000" : sidebarText,
+                      // @ts-ignore
+                      '--sidebar-hover-bg': "black",
+                      '--sidebar-hover-text': "white",
+                    } as React.CSSProperties}
                   >
                     <Link 
                       href={item.path} 
@@ -180,7 +189,8 @@ export function AppSidebar() {
                     >
                       <item.icon className={cn(
                         "h-4.5 w-4.5 shrink-0 transition-colors", 
-                        isActive ? "text-blue-600" : item.color
+                        isActive ? "text-blue-600" : item.color,
+                        "group-hover:text-white"
                       )} />
                       <span className="text-[12px] font-black uppercase tracking-tight">{t(item.name)}</span>
                     </Link>
@@ -198,14 +208,16 @@ export function AppSidebar() {
                       isActive={isMasterActive}
                       tooltip={t('master')}
                       className={cn(
-                        "h-10 px-3 transition-all rounded-xl group hover:bg-orange-50",
-                        isMasterActive ? "bg-slate-100 text-black border-l-4 border-orange-600" : "text-black"
+                        "h-10 px-3 transition-all rounded-xl group hover:bg-black hover:text-white",
+                        isMasterActive ? "bg-slate-100 border-l-4 border-orange-600" : ""
                       )}
+                      style={{ color: isMasterActive ? "#000000" : sidebarText } as React.CSSProperties}
                     >
                       <div className="flex items-center gap-3 w-full h-full rounded-xl">
                         <Database className={cn(
                           "h-4.5 w-4.5 shrink-0 transition-colors", 
-                          isMasterActive ? "text-orange-600" : "text-orange-500"
+                          isMasterActive ? "text-orange-600" : "text-orange-500",
+                          "group-hover:text-white"
                         )} />
                         <span className="text-[12px] font-black uppercase tracking-tight">{t('master')}</span>
                         <ChevronRight className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
@@ -223,9 +235,10 @@ export function AppSidebar() {
                               "h-8 px-4 rounded-lg transition-all",
                               pathname === sub.path 
                                 ? "text-blue-600 font-black bg-blue-50/50" 
-                                : "text-slate-600 font-bold hover:bg-slate-100"
+                                : "hover:text-white"
                             )}
                             style={{ 
+                               color: pathname === sub.path ? "blue" : sidebarText,
                                // @ts-ignore
                                '--sub-hover-bg': defaultHoverBg,
                             } as React.CSSProperties}
@@ -253,7 +266,8 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton 
               onClick={handleLogout} 
-              className="text-black font-black h-10 px-3 rounded-xl transition-all hover:bg-red-50 group/logout"
+              className="font-black h-10 px-3 rounded-xl transition-all hover:bg-red-50 group/logout"
+              style={{ color: sidebarText } as React.CSSProperties}
             >
               <div className="flex items-center gap-3 w-full h-full rounded-xl">
                 <LogOut className="h-4.5 w-4.5 text-red-500 transition-transform group-hover/logout:scale-110" />
