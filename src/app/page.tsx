@@ -160,7 +160,7 @@ export default function Dashboard() {
       {/* 3. PAGE HEADER */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tight leading-none">Dashboard</h1>
+          <h1 className="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tight leading-none">{t('dashboard')}</h1>
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Enterprise Resource Analysis Terminal</p>
         </div>
         <Button variant="outline" size="sm" className="h-10 rounded-full gap-2 font-black text-[10px] uppercase tracking-widest bg-white shadow-sm hover:bg-slate-50" onClick={() => window.location.reload()}>
@@ -170,18 +170,18 @@ export default function Dashboard() {
 
       {/* 4. PRIMARY KPI GRID (ROW 1) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KPICard title="Total Sales" value={`৳${stats.totalSales.toLocaleString()}`} icon={ShoppingCart} colorClass="bg-green-600" />
+        <KPICard title={t('sales')} value={`৳${stats.totalSales.toLocaleString()}`} icon={ShoppingCart} colorClass="bg-green-600" />
         <KPICard title="Today Sales" value={`৳${stats.todaySales.toLocaleString()}`} subtext={stats.formattedToday} icon={DollarSign} colorClass="bg-blue-600" />
-        <KPICard title="Total Purchase" value={`৳${stats.totalPurchase.toLocaleString()}`} icon={Package} colorClass="bg-orange-600" />
+        <KPICard title={t('totalOrders')} value={`৳${stats.totalPurchase.toLocaleString()}`} icon={Package} colorClass="bg-orange-600" />
         <KPICard title="Net Profit" value={`৳${stats.netProfit.toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-500" />
       </div>
 
       {/* 5. SECONDARY KPI GRID (ROW 2) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard title="Monthly Sales" value={`৳${stats.monthlySales.toLocaleString()}`} subtext={stats.monthName} icon={Clock} colorClass="bg-purple-600" />
-        <KPICard title="Total Expense" value={`৳${stats.totalExpense.toLocaleString()}`} icon={Wallet} colorClass="bg-red-500" />
-        <KPICard title="Total Customers" value={stats.totalCustomers} icon={Users} colorClass="bg-cyan-600" />
-        <KPICard title="Total Suppliers" value={stats.totalSuppliers} icon={Truck} colorClass="bg-orange-500" />
+        <KPICard title={t('expenses')} value={`৳${stats.totalExpense.toLocaleString()}`} icon={Wallet} colorClass="bg-red-500" />
+        <KPICard title={t('activeCustomers')} value={stats.totalCustomers} icon={Users} colorClass="bg-cyan-600" />
+        <KPICard title={t('suppliers')} value={stats.totalSuppliers} icon={Truck} colorClass="bg-orange-500" />
       </div>
 
       {/* 6. STATUS KPI GRID (ROW 3) */}
@@ -197,9 +197,9 @@ export default function Dashboard() {
         <Card className="border-none shadow-sm rounded-[2rem] bg-[#FFEBEE]/40 ring-1 ring-red-100/50">
           <CardContent className="p-8 flex items-center justify-between">
             <div className="space-y-1">
-              <p className="text-[11px] font-black uppercase text-slate-400 tracking-widest">Customer Due</p>
+              <p className="text-[11px] font-black uppercase text-slate-400 tracking-widest">{t('customer')} Due</p>
               <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter">৳{stats.customerDue.toLocaleString()}</h2>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{stats.dueCustomersCount} Customers</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{stats.dueCustomersCount} {t('customers')}</p>
             </div>
             <div className="w-14 h-14 md:w-16 md:h-16 rounded-[1.5rem] bg-red-500 text-white flex items-center justify-center shadow-2xl shadow-red-200 shrink-0">
                <ArrowDownRight className="h-6 w-6 md:h-8 md:w-8" />
@@ -209,9 +209,9 @@ export default function Dashboard() {
         <Card className="border-none shadow-sm rounded-[2rem] bg-[#FFF3E0]/40 ring-1 ring-orange-100/50">
           <CardContent className="p-8 flex items-center justify-between">
             <div className="space-y-1">
-              <p className="text-[11px] font-black uppercase text-slate-400 tracking-widest">Supplier Due</p>
+              <p className="text-[11px] font-black uppercase text-slate-400 tracking-widest">{t('suppliers')} Due</p>
               <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter">৳{stats.supplierDue.toLocaleString()}</h2>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{stats.dueSuppliersCount} Suppliers</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{stats.dueSuppliersCount} {t('suppliers')}</p>
             </div>
             <div className="w-14 h-14 md:w-16 md:h-16 rounded-[1.5rem] bg-orange-600 text-white flex items-center justify-center shadow-2xl shadow-orange-200 shrink-0">
                <ArrowUpRight className="h-6 w-6 md:h-8 md:w-8" />
@@ -239,7 +239,7 @@ export default function Dashboard() {
         <div className="flex items-center gap-3 px-2">
            <div className="h-6 w-1 bg-red-500 rounded-full" />
            <AlertCircle className="h-5 w-5 text-red-600" />
-           <h3 className="text-sm font-black uppercase text-slate-700 tracking-widest">Low Stock Alert</h3>
+           <h3 className="text-sm font-black uppercase text-slate-700 tracking-widest">{t('stockAlerts')}</h3>
         </div>
         <Card className="border-none shadow-sm rounded-[2.5rem] bg-[#FFEBEE]/30 ring-1 ring-red-100 overflow-hidden">
            <CardContent className="p-4 md:p-6 space-y-3">

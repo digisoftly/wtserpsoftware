@@ -216,9 +216,9 @@ export default function NewInvoicePage() {
       
       setSelectedCustomerId(newDocRef.id);
       setIsNewCustomerMode(false);
-      toast({ title: t('common_success'), description: "New customer added and selected" });
+      toast({ title: t('success'), description: "New customer added and selected" });
     } catch (err: any) {
-      toast({ variant: "destructive", title: t('common_error'), description: err.message });
+      toast({ variant: "destructive", title: t('error'), description: err.message });
     } finally {
       setIsCustomerCreating(false);
     }
@@ -311,10 +311,10 @@ export default function NewInvoicePage() {
         }
       });
 
-      toast({ title: t('common_success') });
+      toast({ title: t('success') });
       router.push("/sales");
     } catch (e: any) {
-      toast({ variant: "destructive", title: t('common_error'), description: e.message });
+      toast({ variant: "destructive", title: t('error'), description: e.message });
       setIsSubmitting(false);
     }
   };
@@ -332,10 +332,10 @@ export default function NewInvoicePage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="hidden sm:inline-flex font-bold text-xs" onClick={() => router.back()}>{t('common_cancel')}</Button>
+          <Button variant="ghost" size="sm" className="hidden sm:inline-flex font-bold text-xs" onClick={() => router.back()}>{t('cancel')}</Button>
           <Button size="sm" className="font-bold text-[10px] md:text-xs gap-2 px-4 md:px-8 h-9 md:h-11 rounded-full bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-100" disabled={isSubmitting} onClick={handleSaveInvoice}>
             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            <span className="hidden xs:inline">{t('common_save')} Invoice</span>
+            <span className="hidden xs:inline">{t('save')} Invoice</span>
             <span className="xs:hidden">Save</span>
           </Button>
         </div>
@@ -534,7 +534,7 @@ export default function NewInvoicePage() {
                  <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-900">Inventory Manifest</h3>
               </div>
               <Button variant="outline" size="sm" className="h-10 rounded-xl gap-2 text-[10px] font-black uppercase border-slate-200 text-slate-900 hover:bg-slate-50 transition-all" onClick={addManualRow}>
-                <PlusCircle className="h-4 w-4" /> {t('common_add')} Generic Row
+                <PlusCircle className="h-4 w-4" /> {t('add')} Generic Row
               </Button>
             </div>
             
@@ -543,7 +543,7 @@ export default function NewInvoicePage() {
                 <TableHeader className="bg-slate-50/50 border-b border-slate-100">
                   <TableRow className="hover:bg-transparent h-14">
                     <TableHead className="w-12 text-center text-[10px] font-black uppercase pl-6">Sl</TableHead>
-                    <TableHead className="min-w-[400px] text-[10px] font-black uppercase">Item Details & Attributes</TableHead>
+                    <TableHead className="min-w-[400px] text-[10px] font-black uppercase">Item Details & Specs</TableHead>
                     <TableHead className="w-24 text-[10px] font-black uppercase text-center">Unit</TableHead>
                     <TableHead className="w-24 text-[10px] font-black uppercase text-center">Qty</TableHead>
                     <TableHead className="w-32 text-[10px] font-black uppercase text-right">Unit Price</TableHead>
@@ -619,15 +619,15 @@ export default function NewInvoicePage() {
           <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-6 text-center animate-in fade-in zoom-in-95 duration-500">
              <div className="space-y-1">
                 <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em]">Gross Net Total</p>
-                <h2 className="text-4xl md:text-5xl font-headline font-black tracking-tighter tabular-nums text-blue-600">৳{(grandTotal || 0).toLocaleString()}</h2>
+                <h2 className="text-3xl md:text-4xl font-headline font-black tracking-tighter tabular-nums text-blue-600">৳{(grandTotal || 0).toLocaleString()}</h2>
              </div>
              <div className="pt-6 space-y-3 border-t border-slate-100 text-[10px] font-black uppercase tracking-widest text-left">
                 <div className="flex justify-between items-center text-slate-500">
-                   <span>Subtotal</span>
+                   <span>{t('subtotal')}</span>
                    <span className="text-slate-900">৳{(subtotal || 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center text-slate-500 bg-slate-50 p-2.5 rounded-xl">
-                   <span>Accrued VAT 15%</span>
+                   <span>Accrued {t('tax')} 15%</span>
                    <span className="text-blue-600">+৳{(itemTaxes || 0).toLocaleString()}</span>
                 </div>
              </div>
@@ -637,21 +637,21 @@ export default function NewInvoicePage() {
             <div className="space-y-4">
               <div className="space-y-1.5 p-4 bg-slate-50/80 rounded-3xl border border-slate-100">
                 <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
-                   <Calculator className="h-3.5 w-3.5 text-red-500" /> Extra Discount ৳
+                   <Calculator className="h-3.5 w-3.5 text-red-500" /> {t('discount')} ৳
                 </Label>
                 <Input type="number" className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200 font-black text-sm text-red-600" value={globalDiscount || ''} onChange={e => setGlobalDiscount(Number(e.target.value))} />
               </div>
               
               <div className="space-y-1.5 p-4 bg-slate-50/80 rounded-3xl border border-slate-100">
                 <Label className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
-                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Cash Collected ৳
+                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> {t('paidAmount')} ৳
                 </Label>
                 <Input type="number" className="h-12 rounded-xl bg-white border-none ring-1 ring-slate-200 font-black text-emerald-700 text-lg shadow-inner" value={paidAmount || ''} onChange={e => setPaidAmount(Number(e.target.value))} />
               </div>
 
               <div className={cn("p-5 rounded-[2rem] flex justify-between items-center transition-all duration-500", balanceDue > 0 ? "bg-red-50 ring-1 ring-red-100" : "bg-emerald-50 ring-1 ring-emerald-100")}>
                  <div className="space-y-0.5">
-                    <span className="text-[9px] font-black uppercase text-slate-400">Balance Due</span>
+                    <span className="text-[9px] font-black uppercase text-slate-400">{t('balanceDue')}</span>
                     <p className={cn("text-xl font-black tabular-nums leading-none", balanceDue > 0 ? "text-red-600" : "text-emerald-700")}>
                       ৳{Math.abs(balanceDue).toLocaleString()}
                     </p>
@@ -661,7 +661,7 @@ export default function NewInvoicePage() {
             </div>
             
             <div className="space-y-2 pt-2">
-               <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Internal Billing Notes</Label>
+               <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">{t('notes')}</Label>
                <Textarea className="min-h-[100px] text-[11px] font-bold rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 focus:bg-white transition-all p-4" value={notes || ''} onChange={e => setNotes(e.target.value)} placeholder="Standard terms & conditions apply" />
             </div>
 

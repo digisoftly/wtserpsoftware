@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,7 +12,6 @@ import { useRouter, usePathname } from 'next/navigation';
 
 /**
  * An intelligent listener that catches Firestore errors and displays a user-friendly modal.
- * Now handles quota exhaustion (resource-exhausted) specifically.
  */
 export function FirebaseErrorListener() {
   const [error, setError] = useState<FirestorePermissionError | null>(null);
@@ -34,9 +34,6 @@ export function FirebaseErrorListener() {
   const isQuotaError = error.message?.toLowerCase().includes('resource-exhausted') || 
                        error.request?.method === 'resource-exhausted';
 
-  /**
-   * Maps internal Firestore context to a human-readable translation key.
-   */
   const getFriendlyMessageKey = () => {
     if (isQuotaError) return "systemOverloaded";
     
@@ -65,7 +62,7 @@ export function FirebaseErrorListener() {
           </div>
           <div>
             <DialogTitle className="text-xl font-bold font-headline uppercase tracking-tight">
-              {isQuotaError ? t('errors.quotaExceeded') : t('errors.accessRestricted')}
+              {isQuotaError ? t('quotaExceeded') : t('accessRestricted')}
             </DialogTitle>
             <DialogDescription className="text-[10px] font-black uppercase opacity-70 tracking-widest mt-0.5">
               {isQuotaError ? "Service Limitation Active" : "Terminal Protection Active"}
@@ -79,10 +76,10 @@ export function FirebaseErrorListener() {
                <AlertCircle className="h-8 w-8" />
              </div>
              <h3 className="text-sm font-black text-slate-900 leading-tight uppercase px-4">
-               {t(`errors.${messageKey}`)}
+               {t(messageKey)}
              </h3>
              <p className="text-xs font-medium text-slate-500">
-               {isQuotaError ? t('errors.quotaSub') : t('errors.detailsSub')}
+               {isQuotaError ? t('quotaSub') : t('detailsSub')}
              </p>
           </div>
 
@@ -92,13 +89,13 @@ export function FirebaseErrorListener() {
               onClick={() => { setError(null); router.back(); }} 
               className="h-12 rounded-2xl font-black uppercase text-[10px] tracking-widest border-slate-200"
             >
-              {t('common.back')}
+              {t('back')}
             </Button>
             <Button 
               onClick={() => { setError(null); router.push('/'); }} 
               className="bg-blue-600 hover:bg-blue-700 h-12 rounded-2xl font-black uppercase text-[10px] tracking-widest text-white shadow-xl shadow-blue-100"
             >
-              {t('common.goDashboard')}
+              {t('goDashboard')}
             </Button>
           </div>
         </div>

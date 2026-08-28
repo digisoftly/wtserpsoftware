@@ -80,7 +80,7 @@ export default function SalesPage() {
           </Button>
           <Button size="sm" className="h-9 rounded-lg gap-2 px-6 font-black text-[11px] uppercase tracking-widest bg-blue-600 hover:bg-blue-700" asChild>
             <Link href="/sales/new">
-              <Plus className="h-4 w-4" /> {t('newInvoice')}
+              <Plus className="h-4 w-4" /> {t('add')} {t('sales')}
             </Link>
           </Button>
         </div>
@@ -97,14 +97,14 @@ export default function SalesPage() {
         <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
           <input 
-            placeholder="Search invoice or customer..." 
+            placeholder={t('search')} 
             className="pl-10 h-10 w-full rounded-lg bg-slate-50/50 border-none text-xs font-bold focus:ring-1 focus:ring-blue-600 outline-none transition-all" 
             value={searchTerm} 
             onChange={e => setSearchTerm(e.target.value)} 
           />
         </div>
         <Button variant="ghost" size="sm" className="h-10 px-4 gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50">
-          <Filter className="h-3.5 w-3.5" /> {t('filter')}
+          <Filter className="h-3.5 w-3.5" /> {t('actions')}
         </Button>
       </div>
 
@@ -112,7 +112,7 @@ export default function SalesPage() {
         <div className="overflow-x-auto">
           <Table>
             <TableHeader className="bg-slate-50/50">
-              <TableRow className="hover:bg-transparent">
+              <TableRow>
                 <TableHead className="w-10 pl-6 h-12">
                   <Checkbox checked={isAllSelected} onCheckedChange={toggleSelectAll} />
                 </TableHead>
@@ -128,7 +128,7 @@ export default function SalesPage() {
               {isLoading ? (
                 <TableRow><TableCell colSpan={7} className="h-40 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto text-slate-200" /></TableCell></TableRow>
               ) : filteredInvoices?.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="h-40 text-center text-slate-300 text-[10px] font-black uppercase tracking-[0.2em] italic">{t('noSales')}</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="h-40 text-center text-slate-300 text-[10px] font-black uppercase tracking-[0.2em] italic">{t('noData')}</TableCell></TableRow>
               ) : (
                 filteredInvoices?.map((inv) => (
                   <TableRow key={inv.id} className={cn("h-20 hover:bg-muted/5 transition-colors group", selectedIds.includes(inv.id) && "bg-blue-50/30")}>
@@ -182,12 +182,12 @@ export default function SalesPage() {
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl max-w-sm">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-black uppercase tracking-tight text-slate-900">Delete Record?</AlertDialogTitle>
+            <AlertDialogTitle className="text-xl font-black uppercase tracking-tight text-slate-900">{t('confirmDelete')}?</AlertDialogTitle>
             <AlertDialogDescription className="text-xs font-bold text-slate-500">This action is permanent and will remove all linked payment data.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 mt-6">
-            <AlertDialogCancel className="h-12 rounded-2xl font-black uppercase text-[10px] tracking-widest border-slate-200">Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700 h-12 rounded-2xl font-black uppercase text-[10px] tracking-widest" onClick={handleDelete}>Delete</AlertDialogAction>
+            <AlertDialogCancel className="h-12 rounded-2xl font-black uppercase text-[10px] tracking-widest border-slate-200">{t('cancel')}</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 h-12 rounded-2xl font-black uppercase text-[10px] tracking-widest" onClick={handleDelete}>{t('delete')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

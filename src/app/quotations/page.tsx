@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -86,9 +87,9 @@ export default function QuotationsPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title={t('totalQuotations')} value={stats.total} icon={FileText} colorClass="bg-blue-600" />
-        <KPICard title={t('pendingQuotes')} value={stats.draft} icon={Clock} colorClass="bg-orange-600" />
-        <KPICard title={t('approvedQuotes')} value={stats.approved} icon={CheckCircle2} colorClass="bg-green-600" />
+        <KPICard title="Total Quotations" value={stats.total} icon={FileText} colorClass="bg-blue-600" />
+        <KPICard title="Pending Quotes" value={stats.draft} icon={Clock} colorClass="bg-orange-600" />
+        <KPICard title="Approved Quotes" value={stats.approved} icon={CheckCircle2} colorClass="bg-green-600" />
         <KPICard title="Expired" value={stats.expired} icon={X} colorClass="bg-red-600" />
       </div>
 
@@ -112,7 +113,7 @@ export default function QuotationsPage() {
             <Table>
               <TableHeader className="bg-slate-50/50">
                 <TableRow>
-                  <TableHead className="h-12 text-[10px] uppercase font-black pl-8">{t('quoteNumber')}</TableHead>
+                  <TableHead className="h-12 text-[10px] uppercase font-black pl-8">Quote #</TableHead>
                   <TableHead className="h-12 text-[10px] uppercase font-black">{t('customer')}</TableHead>
                   <TableHead className="h-12 text-[10px] uppercase font-black">{t('amount')}</TableHead>
                   <TableHead className="h-12 text-[10px] uppercase font-black text-center">{t('status')}</TableHead>
@@ -170,7 +171,7 @@ export default function QuotationsPage() {
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tight text-slate-900">{t('delete')}?</AlertDialogTitle>
+            <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tight text-slate-900">{t('confirmDelete')}?</AlertDialogTitle>
             <AlertDialogDescription className="text-xs font-medium leading-relaxed">This will permanently remove the proposal record. This action cannot be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-8 gap-3">

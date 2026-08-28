@@ -78,7 +78,7 @@ export default function NewPurchasePage() {
   }, [db, companyId]);
   const { data: masterUnits } = useCollection(unitsQuery);
 
-  // Calculations - FIXED SYNTAX
+  // Calculations
   const subtotal = React.useMemo(() => lineItems.reduce((sum, item) => sum + (item.qty * item.price), 0), [lineItems]);
   const itemDiscounts = React.useMemo(() => lineItems.reduce((sum, item) => sum + (item.qty * item.price * (item.discount / 100)), 0), [lineItems]);
   const itemTaxes = React.useMemo(() => lineItems.reduce((sum, item) => sum + ((item.qty * item.price) - (item.qty * item.price * (item.discount / 100))) * (item.tax / 100), 0), [lineItems]);
@@ -196,7 +196,7 @@ export default function NewPurchasePage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-lg font-bold text-slate-900 tracking-tight">{t('receiveStock')}</h1>
+            <h1 className="text-lg font-bold text-slate-900 tracking-tight">Receive Stock</h1>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -212,7 +212,7 @@ export default function NewPurchasePage() {
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('supplier')}</Label>
+              <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('suppliers')}</Label>
               <Select value={selectedSupplierId} onValueChange={setSelectedSupplierId}>
                 <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select Vendor" /></SelectTrigger>
                 <SelectContent className="max-h-[300px]">
@@ -225,7 +225,7 @@ export default function NewPurchasePage() {
               <Input type="date" value={orderDate} onChange={e => setOrderDate(e.target.value)} className="h-9 text-xs font-bold" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('paymentTerms')}</Label>
+              <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">Payment Terms</Label>
               <Input value={paymentTerms} onChange={e => setPaymentTerms(e.target.value)} className="h-9 text-xs" placeholder="e.g. Net 30" />
             </div>
             <div className="space-y-1.5">
@@ -238,7 +238,7 @@ export default function NewPurchasePage() {
 
       <Card className="border-none shadow-sm ring-1 ring-slate-200 overflow-hidden rounded-[2rem] bg-white">
         <div className="p-4 bg-white border-b flex items-center justify-between">
-          <h3 className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('itemDescription')}</h3>
+          <h3 className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">Item Description</h3>
           <div className="flex gap-2">
             <Select onValueChange={handleAddProduct}>
               <SelectTrigger className="h-8 w-64 text-[10px] bg-slate-50 border-slate-200 font-bold uppercase"><SelectValue placeholder="Add From Catalog" /></SelectTrigger>
@@ -247,7 +247,7 @@ export default function NewPurchasePage() {
               </SelectContent>
             </Select>
             <Button variant="outline" size="sm" className="h-8 rounded-md gap-2 text-[10px] font-bold uppercase" onClick={addManualRow}>
-              <PlusCircle className="h-3.5 w-3.5" /> {t('addGeneric')}
+              <PlusCircle className="h-3.5 w-3.5" /> {t('add')} Generic
             </Button>
           </div>
         </div>
@@ -319,7 +319,7 @@ export default function NewPurchasePage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('internalNotes')}</Label>
+            <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('notes')}</Label>
             <Textarea className="h-24 text-xs font-medium bg-white rounded-xl border-slate-200" placeholder="Internal purchase remarks..." value={notes} onChange={e => setNotes(e.target.value)} />
           </div>
         </div>
@@ -332,21 +332,21 @@ export default function NewPurchasePage() {
                 <span className="text-slate-900">৳{subtotal.toLocaleString()}</span>
               </div>
               <div className="flex justify-between items-center text-xs font-bold text-red-500 uppercase tracking-tight">
-                <span>Discounts</span>
+                <span>{t('discount')}</span>
                 <span>-৳{itemDiscounts.toLocaleString()}</span>
               </div>
               <div className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-tight">
-                <span>VAT / Tax</span>
+                <span>{t('tax')}</span>
                 <span className="text-slate-900">+৳{itemTaxes.toLocaleString()}</span>
               </div>
               
               <div className="pt-6 border-t mt-4 flex justify-between items-end">
                 <div className="space-y-1">
-                  <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Gross Total</p>
+                  <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('grandTotal')}</p>
                   <h2 className="text-3xl font-black text-blue-600 tracking-tighter">৳{grandTotal.toLocaleString()}</h2>
                 </div>
                 <div className="text-right space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-blue-600 tracking-widest">{t('paid')}</Label>
+                  <Label className="text-[10px] font-black uppercase text-blue-600 tracking-widest">{t('paidAmount')}</Label>
                   <Input type="number" className="h-10 w-32 text-right text-base font-black border-2 border-blue-50 bg-blue-50/20 text-blue-700" value={paidAmount || ''} onChange={e => setPaidAmount(Number(e.target.value))} />
                 </div>
               </div>
