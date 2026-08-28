@@ -78,7 +78,7 @@ export default function NewPurchasePage() {
   }, [db, companyId]);
   const { data: masterUnits } = useCollection(unitsQuery);
 
-  // Calculations
+  // Calculations - FIXED SYNTAX
   const subtotal = React.useMemo(() => lineItems.reduce((sum, item) => sum + (item.qty * item.price), 0), [lineItems]);
   const itemDiscounts = React.useMemo(() => lineItems.reduce((sum, item) => sum + (item.qty * item.price * (item.discount / 100)), 0), [lineItems]);
   const itemTaxes = React.useMemo(() => lineItems.reduce((sum, item) => sum + ((item.qty * item.price) - (item.qty * item.price * (item.discount / 100))) * (item.tax / 100), 0), [lineItems]);
