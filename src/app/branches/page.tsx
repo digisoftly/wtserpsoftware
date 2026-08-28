@@ -29,7 +29,7 @@ import { setDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/no
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { toast } from "@/hooks/use-toast"
@@ -270,7 +270,9 @@ export default function BranchesPage() {
               <DialogTitle className="text-xl font-bold font-headline uppercase tracking-tight">
                 {isEditModalOpen ? t('editBranch') : t('newLocation')}
               </DialogTitle>
-              <p className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em] mt-0.5">Physical Node Terminal</p>
+              <DialogDescription className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em] mt-0.5">
+                Physical Node Terminal Configuration
+              </DialogDescription>
             </div>
           </DialogHeader>
           
@@ -368,7 +370,7 @@ export default function BranchesPage() {
         <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tight text-slate-900">{t('delete')}?</AlertDialogTitle>
-            <AlertDialogDescription className="text-xs font-medium leading-relaxed">{t('errorSub')}</AlertDialogDescription>
+            <AlertDialogDescription className="text-xs font-medium leading-relaxed">This record and all associated branch data will be permanently archived and cannot be recovered.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-8 gap-3">
             <AlertDialogCancel className="rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest">{t('cancel')}</AlertDialogCancel>

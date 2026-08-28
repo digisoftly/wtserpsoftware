@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
@@ -176,6 +176,9 @@ export default function MasterCustomFieldsPage() {
         <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-[2rem]">
           <DialogHeader className="bg-pink-600 p-6 text-white">
             <DialogTitle className="text-xl font-bold font-headline uppercase">{selectedRecord ? t('edit') : t('addCustomField')}</DialogTitle>
+            <DialogDescription className="text-xs font-medium text-white/70">
+              Define dynamic data attributes for system entities to extend core schemas.
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSave} className="p-6 space-y-4 bg-slate-50">
             <div className="space-y-1"><Label className="text-[10px] font-bold uppercase">{t('label')}</Label><Input name="label" defaultValue={selectedRecord?.label} required className="h-10 text-xs rounded-xl" /></div>

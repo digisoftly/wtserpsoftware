@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -10,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { useTranslation } from "@/hooks/use-translation"
 import { toast } from "@/hooks/use-toast"
@@ -197,6 +196,9 @@ export default function MasterWarrantyTypesPage() {
         <DialogContent className="max-w-md rounded-lg p-0 overflow-hidden border-none shadow-2xl bg-white">
           <DialogHeader className="bg-slate-900 p-4 text-white">
             <DialogTitle className="text-sm font-bold uppercase tracking-widest">{selectedRecord ? t('common_edit') : t('addWarrantyType')}</DialogTitle>
+            <DialogDescription className="text-[10px] text-white/50 uppercase tracking-tighter">
+              Configure product coverage durations and policy terms for hardware support.
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSave} className="p-6 space-y-4">
             <div className="space-y-1.5"><Label className="text-[10px] font-bold uppercase text-slate-500">{t('common_label')} *</Label><Input name="name" defaultValue={selectedRecord?.name} required className="h-10 text-sm font-medium" /></div>

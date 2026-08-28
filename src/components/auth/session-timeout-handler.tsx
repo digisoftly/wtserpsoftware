@@ -1,10 +1,9 @@
-
 'use client';
 
 import * as React from 'react';
 import { useSessionTimeout } from '@/hooks/use-session-timeout';
 import { useTranslation } from '@/hooks/use-translation';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Clock, AlertTriangle, LogOut, PlayCircle } from 'lucide-react';
 
@@ -22,9 +21,14 @@ export function SessionTimeoutHandler() {
           <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
             <Clock className="h-6 w-6" />
           </div>
-          <DialogTitle className="text-xl font-bold font-headline uppercase tracking-tight">
-            {t('sessionExpiring')}
-          </DialogTitle>
+          <div>
+            <DialogTitle className="text-xl font-bold font-headline uppercase tracking-tight">
+              {t('sessionExpiring')}
+            </DialogTitle>
+            <DialogDescription className="text-[10px] font-black uppercase opacity-70 tracking-widest mt-0.5">
+              Identity Security Verification
+            </DialogDescription>
+          </div>
         </DialogHeader>
         
         <div className="p-8 text-center space-y-6 bg-slate-50">

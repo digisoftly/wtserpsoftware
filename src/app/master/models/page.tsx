@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -10,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useTranslation } from "@/hooks/use-translation"
@@ -173,15 +172,10 @@ export default function MasterModelsPage() {
                     {brands?.find(b => b.id === m.brandId)?.name || "Unknown"}
                   </TableCell>
                   <TableCell className="text-right pr-6">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-pink-600"><MoreVertical className="h-3.5 w-3.5" /></Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-32">
-                        <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedRecord(m); setIsModalOpen(true); }}><Edit className="mr-2 h-3.5 w-3.5" /> {t('edit')}</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600 text-xs font-bold" onClick={() => deleteDoc(doc(db!, "companies", companyId!, "master_models", m.id))}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex justify-end gap-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50 rounded-full" onClick={() => { setSelectedRecord(m); setIsModalOpen(true); }}><Edit className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:bg-red-50 rounded-full" onClick={() => deleteDoc(doc(db!, "companies", companyId!, "master_models", m.id))}><Trash2 className="h-3.5 w-3.5" /></Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -194,6 +188,9 @@ export default function MasterModelsPage() {
         <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-[2rem]">
           <DialogHeader className="bg-pink-600 p-6 text-white">
             <DialogTitle className="text-xl font-bold font-headline uppercase">{selectedRecord ? t('edit') : t('addModel')}</DialogTitle>
+            <DialogDescription className="text-xs font-medium text-white/70">
+              Manage product model variations and link them to respective hardware brands.
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSave} className="p-6 space-y-4 bg-slate-50">
             <div className="space-y-1">

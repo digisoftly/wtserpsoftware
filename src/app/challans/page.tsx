@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -35,7 +34,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, doc, deleteDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
@@ -171,6 +170,7 @@ export default function ChallansPage() {
         <DialogContent className="max-w-[21cm] w-[95vw] p-0 border-none bg-transparent shadow-none overflow-y-auto max-h-[95vh] rounded-none">
           <DialogHeader className="sr-only">
             <DialogTitle>View Delivery Challan</DialogTitle>
+            <DialogDescription>Full document preview for shipping and logistics verification.</DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-3 mb-4 no-print fixed top-4 right-4 md:top-6 md:right-6 z-[100]">
              <Button onClick={() => window.print()} className="bg-white text-amber-600 hover:bg-amber-50 shadow-2xl rounded-full font-black text-[10px] uppercase h-10 px-6 gap-2 border-none ring-1 ring-amber-100">
@@ -207,7 +207,7 @@ export default function ChallansPage() {
         <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tight text-slate-900">{t('common_confirmDelete')}?</AlertDialogTitle>
-            <AlertDialogDescription className="text-xs font-medium leading-relaxed">This record will be permanently removed.</AlertDialogDescription>
+            <AlertDialogDescription className="text-sm font-medium leading-relaxed">This dispatch record will be permanently removed from the system audit trail.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-8 gap-3">
             <AlertDialogCancel className="rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest">{t('common_cancel')}</AlertDialogCancel>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ShieldAlert, AlertCircle, ZapOff } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
@@ -67,9 +67,9 @@ export function FirebaseErrorListener() {
             <DialogTitle className="text-xl font-bold font-headline uppercase tracking-tight">
               {isQuotaError ? t('errors.quotaExceeded') : t('errors.accessRestricted')}
             </DialogTitle>
-            <p className="text-[10px] font-black uppercase opacity-70 tracking-widest mt-0.5">
+            <DialogDescription className="text-[10px] font-black uppercase opacity-70 tracking-widest mt-0.5">
               {isQuotaError ? "Service Limitation Active" : "Terminal Protection Active"}
-            </p>
+            </DialogDescription>
           </div>
         </DialogHeader>
         
