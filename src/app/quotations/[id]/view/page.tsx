@@ -19,6 +19,7 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { DocumentTemplate } from "@/components/documents/document-template"
 import { useTranslation } from "@/hooks/use-translation"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 
 export default function ViewQuotationPage() {
   const { id } = useParams();
@@ -27,6 +28,8 @@ export default function ViewQuotationPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
   const { t } = useTranslation();
+
+  const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
 
   const quoteRef = useMemoFirebase(() => {
     if (!db || !companyId || !branchId || !id) return null;
@@ -64,10 +67,10 @@ export default function ViewQuotationPage() {
     return (
       <div className="p-16 text-center bg-white rounded-[3rem] border border-dashed m-10">
         <AlertCircle className="h-12 w-12 text-red-200 mx-auto mb-6" />
-        <h2 className="text-xl font-bold font-headline uppercase text-slate-900">{t('common.noData')}</h2>
+        <h2 className="text-xl font-bold font-headline uppercase text-slate-900">{t('noData')}</h2>
         <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mt-2">Proposal terminal could not locate record</p>
         <Button variant="outline" className="mt-8 rounded-full h-10 px-8 font-black text-[10px] uppercase" onClick={() => router.push('/quotations')}>
-          <ArrowLeft className="h-3.5 w-3.5 mr-2" /> {t('common.back')}
+          <ArrowLeft className="h-3.5 w-3.5 mr-2" /> {t('back')}
         </Button>
       </div>
     );
@@ -87,17 +90,17 @@ export default function ViewQuotationPage() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" className="rounded-full h-10 px-6 font-black text-[10px] uppercase gap-2 border-none ring-1 ring-slate-200 shadow-sm bg-white" onClick={handlePrint}>
-            <Printer className="h-4 w-4 text-blue-600" /> {t('common.print')}
+            <Printer className="h-4 w-4 text-blue-600" /> {t('print')}
           </Button>
-          <Button className="bg-blue-600 hover:bg-blue-700 rounded-full h-10 px-8 font-black text-[10px] uppercase gap-2 shadow-xl shadow-blue-100" onClick={handlePrint}>
-            <Download className="h-4 w-4" /> Download PDF
+          <Button className="bg-blue-600 hover:bg-blue-700 rounded-full h-10 px-8 font-black text-[10px] uppercase gap-2 shadow-xl shadow-blue-100" onClick={() => setIsViewModalOpen(true)}>
+            <Download className="h-4 w-4" /> Full View
           </Button>
         </div>
       </div>
 
       <div className="bg-white shadow-2xl rounded-2xl overflow-hidden border border-slate-100 ring-1 ring-slate-100/50 document-wrapper">
         <DocumentTemplate
-          title={t('nav.quotations')}
+          title={t('quotations')}
           docNumber={quote.quotationNumber}
           date={quote.quotationDate}
           customerName={quote.customerName}
@@ -146,6 +149,49 @@ export default function ViewQuotationPage() {
           <FileText className="h-4 w-4 mr-2" /> Modify Proposal
         </Button>
       </div>
+
+      {/* VIEW DOCUMENT MODAL */}
+      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+        <DialogContent className="max-w-[21cm] w-[95vw] p-0 border-none bg-transparent shadow-none overflow-y-auto max-h-[95vh] rounded-none">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Quotation Preview</DialogTitle>
+            <DialogDescription>Full document preview for customized proposal analysis and client verification.</DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 mb-4 no-print fixed top-4 right-4 md:top-6 md:right-6 z-[100]">
+            <Button onClick={() => window.print()} className="bg-white text-blue-600 hover:bg-blue-50 shadow-2xl rounded-full font-black text-[10px] uppercase h-10 px-6 gap-2 border-none ring-1 ring-blue-100">
+              <Printer className="h-4 w-4" /> {t('print')}
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => setIsViewModalOpen(false)} className="bg-white/80 backdrop-blur-md rounded-full hover:bg-white text-slate-900 shadow-xl">
+               <XCircle className="h-6 w-6" />
+            </Button>
+          </div>
+          <div className="bg-white shadow-2xl rounded-none md:rounded-[2rem] overflow-hidden">
+            <DocumentTemplate
+              title={t('quotations')}
+              docNumber={quote.quotationNumber}
+              date={quote.quotationDate}
+              customerName={quote.customerName}
+              customerInfo={`Phone: ${quote.customerPhone || 'N/A'}\nAddress: ${quote.customerAddress || 'Interested Prospect'}`}
+              projectName={quote.projectName}
+              projectLocation={quote.projectLocation}
+              items={(quote.items || []).map((i: any) => ({
+                ...i,
+                quantity: i.qty || i.quantity,
+                unitPrice: i.price || i.unitPrice,
+                total: i.total
+              }))}
+              subtotal={quote.subtotal}
+              taxAmount={quote.taxAmount}
+              discount={quote.discount}
+              grandTotal={quote.totalAmount}
+              status={quote.status}
+              notes={quote.notes}
+              type="quotation"
+              layoutOverride="warrior"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

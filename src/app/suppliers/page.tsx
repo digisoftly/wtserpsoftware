@@ -6,7 +6,7 @@ import { Truck, Plus, Search, Loader2, MoreVertical, Mail, Phone, Edit, Trash2, 
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, doc } from "firebase/firestore"
@@ -120,9 +120,12 @@ export default function SuppliersPage() {
 
       <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) { setIsAddModalOpen(false); setIsEditModalOpen(false); setSelectedRecord(null); } }}>
         <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-[2rem]">
-          <DialogHeader className="bg-amber-700 p-6 text-white flex-row items-center gap-3">
+          <DialogHeader className="bg-amber-700 p-6 text-white flex-row items-center gap-3 space-y-0">
             <Truck className="h-6 w-6" />
-            <DialogTitle className="text-xl font-bold font-headline uppercase">{isEditModalOpen ? t('edit') : t('addSupplier')}</DialogTitle>
+            <div>
+              <DialogTitle className="text-xl font-bold font-headline uppercase">{isEditModalOpen ? t('edit') : t('addSupplier')}</DialogTitle>
+              <DialogDescription className="sr-only">Supplier profile management terminal</DialogDescription>
+            </div>
           </DialogHeader>
           <div className="p-6 bg-slate-50 italic text-[10px] uppercase font-bold tracking-widest text-center py-20 text-muted-foreground">
             {t('locationSetup')}
@@ -132,7 +135,10 @@ export default function SuppliersPage() {
 
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent className="rounded-[2rem]">
-          <AlertDialogHeader><AlertDialogTitle className="font-headline uppercase">{t('delete')}?</AlertDialogTitle><AlertDialogDescription className="text-xs font-bold text-muted-foreground">{t('errorSub')}</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-headline uppercase">{t('delete')}?</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs font-bold text-muted-foreground">This action will permanently remove the supplier record from the system.</AlertDialogDescription>
+          </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-full text-[10px] uppercase font-bold h-9">{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction className="bg-red-600 rounded-full text-[10px] uppercase font-bold h-9" onClick={handleDeleteSupplier}>{t('delete')}</AlertDialogAction>
