@@ -79,9 +79,19 @@ export default function NewPurchasePage() {
   const { data: masterUnits } = useCollection(unitsQuery);
 
   // Calculations
-  const subtotal = React.useMemo(() => lineItems.reduce((sum, item) => sum + (item.qty * item.price), 0), [lineItems]);
-  const itemDiscounts = React.useMemo(() => lineItems.reduce((sum, item) => sum + (item.qty * item.price * (item.discount / 100)), 0), [lineItems]);
-  const itemTaxes = React.useMemo(() => lineItems.reduce((sum, item) => sum + ((item.qty * item.price) - (item.qty * item.price * (item.discount / 100))) * (item.tax / 100), 0), [lineItems]);
+  const subtotal = React.useMemo(() => lineItems.reduce((sum, item) => sum + (Number(item.qty || 0) * Number(item.price || 0)), 0), [lineItems]);
+  
+  const itemDiscounts = React.useMemo(() => lineItems.reduce((sum, item) => {
+    const base = Number(item.qty || 0) * Number(item.price || 0);
+    return sum + (base * (Number(item.discount || 0) / 100));
+  }, 0), [lineItems]);
+
+  const itemTaxes = React.useMemo(() => lineItems.reduce((sum, item) => {
+    const base = Number(item.qty || 0) * Number(item.price || 0);
+    const disc = base * (Number(item.discount || 0) / 100);
+    return sum + ((base - disc) * (Number(item.tax || 0) / 100));
+  }, 0), [lineItems]);
+
   const grandTotal = React.useMemo(() => subtotal - itemDiscounts + itemTaxes - globalDiscount + additionalCharge, [subtotal, itemDiscounts, itemTaxes, globalDiscount, additionalCharge]);
   const balanceDue = React.useMemo(() => grandTotal - paidAmount, [grandTotal, paidAmount]);
 

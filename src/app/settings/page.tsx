@@ -80,7 +80,7 @@ export default function SettingsPage() {
   const [menuOrder, setMenuOrder] = React.useState<string[]>(DEFAULT_MENU_ORDER);
 
   const [sidebarBgColor, setSidebarBgColor] = React.useState("#FFFFFF");
-  const [sidebarHoverColor, setSidebarHoverColor] = React.useState("#E5E7EB");
+  const [sidebarHoverColor, setSidebarHoverColor] = React.useState("#000000");
   const [sidebarActiveColor, setSidebarActiveColor] = React.useState("#E5E7EB");
   const [sidebarTextColor, setSidebarTextColor] = React.useState("#000000");
 
