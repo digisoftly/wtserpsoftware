@@ -43,7 +43,6 @@ const DEFAULT_MENU_ORDER = [
   "purchases", 
   "returns", 
   "inventory", 
-  "master", 
   "serialTracking", 
   "projectBilling", 
   "contracts", 
@@ -57,8 +56,8 @@ const DEFAULT_MENU_ORDER = [
   "branches", 
   "reports", 
   "ai", 
-  "settings", 
-  "users"
+  "users",
+  "settings"
 ];
 
 const DOCUMENT_LAYOUTS = [
@@ -104,6 +103,8 @@ export default function SettingsPage() {
       setSealPreview(settings.authorizedSeal || null);
       setSignPreview(settings.authorizedSignature || null);
       if (settings.sidebarMenuOrder) setMenuOrder(settings.sidebarMenuOrder);
+      else setMenuOrder(DEFAULT_MENU_ORDER);
+      
       if (settings.defaultTemplate_invoice) setPreviewLayout(settings.defaultTemplate_invoice);
       if (settings.docPrimaryColor) setDocPrimaryColor(settings.docPrimaryColor);
       if (settings.docAccentColor) setDocAccentColor(settings.docAccentColor);
@@ -357,6 +358,12 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+              <div className="mt-8 p-4 bg-blue-50 border-2 border-dashed border-blue-200 rounded-2xl flex items-center gap-4">
+                 <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm"><LayoutGrid className="h-5 w-5" /></div>
+                 <p className="text-[10px] font-bold text-blue-700 uppercase leading-relaxed">
+                   Rearrange your terminal's sidebar layout. Changes will be synchronized across all branch terminals after saving.
+                 </p>
               </div>
             </Card>
           </TabsContent>

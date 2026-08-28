@@ -36,7 +36,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
             <Loader2 className="absolute -bottom-1 -right-1 h-6 w-6 animate-spin text-blue-600 bg-slate-50 rounded-full p-0.5" />
           </div>
           <p className="text-[10px] uppercase font-black tracking-[0.3em] text-blue-600 animate-pulse">
-            {t('auth.establishingSession')}
+            {t('loading')}
           </p>
         </div>
       </div>
