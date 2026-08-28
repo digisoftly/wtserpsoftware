@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -38,10 +37,6 @@ import { useTranslation } from "@/hooks/use-translation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 
-/**
- * WarriorERP - High Fidelity Dashboard
- * Features colorful KPI cards and a responsive Floating Action Button (FAB).
- */
 export default function Dashboard() {
   const { branchId, companyId } = useTenant();
   const db = useFirestore();
@@ -146,18 +141,17 @@ export default function Dashboard() {
   }, [invoices, purchases, expenses, customers, suppliers, products, projects, staff]);
 
   const QUICK_ACTIONS = [
-    { label: "New Sale", icon: ShoppingCart, color: "bg-[#22C55E]", path: "/sales/new" },
-    { label: "New Purchase", icon: Package, color: "bg-[#F97316]", path: "/purchases/new" },
-    { label: "New Quotation", icon: FileText, color: "bg-[#A855F7]", path: "/quotations/new" },
-    { label: "New Customer", icon: UserPlus, color: "bg-[#06B6D4]", path: "/customers/new" },
-    { label: "New Supplier", icon: Truck, color: "bg-[#F59E0B]", path: "/suppliers" },
-    { label: "New Project", icon: Briefcase, color: "bg-[#14B8A6]", path: "/projects/new" },
-    { label: "New Payment", icon: CreditCard, color: "bg-[#6366F1]", path: "/payments/new" },
+    { label: t('sales'), icon: ShoppingCart, color: "bg-[#22C55E]", path: "/sales/new" },
+    { label: t('purchases'), icon: Package, color: "bg-[#F97316]", path: "/purchases/new" },
+    { label: t('quotations'), icon: FileText, color: "bg-[#A855F7]", path: "/quotations/new" },
+    { label: t('customers'), icon: UserPlus, color: "bg-[#06B6D4]", path: "/customers/new" },
+    { label: t('suppliers'), icon: Truck, color: "bg-[#F59E0B]", path: "/suppliers" },
+    { label: t('projectBilling'), icon: Briefcase, color: "bg-[#14B8A6]", path: "/projects/new" },
+    { label: t('payments'), icon: CreditCard, color: "bg-[#6366F1]", path: "/payments/new" },
   ];
 
   return (
     <div className="relative space-y-8 pb-20">
-      {/* 3. PAGE HEADER */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tight leading-none">{t('dashboard')}</h1>
@@ -168,7 +162,6 @@ export default function Dashboard() {
         </Button>
       </div>
 
-      {/* 4. PRIMARY KPI GRID (ROW 1) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard title={t('sales')} value={`৳${stats.totalSales.toLocaleString()}`} icon={ShoppingCart} colorClass="bg-green-600" />
         <KPICard title="Today Sales" value={`৳${stats.todaySales.toLocaleString()}`} subtext={stats.formattedToday} icon={DollarSign} colorClass="bg-blue-600" />
@@ -176,7 +169,6 @@ export default function Dashboard() {
         <KPICard title="Net Profit" value={`৳${stats.netProfit.toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-500" />
       </div>
 
-      {/* 5. SECONDARY KPI GRID (ROW 2) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard title="Monthly Sales" value={`৳${stats.monthlySales.toLocaleString()}`} subtext={stats.monthName} icon={Clock} colorClass="bg-purple-600" />
         <KPICard title={t('expenses')} value={`৳${stats.totalExpense.toLocaleString()}`} icon={Wallet} colorClass="bg-red-500" />
@@ -184,7 +176,6 @@ export default function Dashboard() {
         <KPICard title={t('suppliers')} value={stats.totalSuppliers} icon={Truck} colorClass="bg-orange-500" />
       </div>
 
-      {/* 6. STATUS KPI GRID (ROW 3) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard title="Low Stock Items" value={stats.lowStockCount} icon={AlertCircle} colorClass="bg-red-600" />
         <KPICard title="Pending Projects" value={stats.pendingProjects} icon={ClipboardList} colorClass="bg-teal-600" />
@@ -192,7 +183,6 @@ export default function Dashboard() {
         <KPICard title="Absent Today" value={0} icon={UserX} colorClass="bg-red-500" />
       </div>
 
-      {/* 7. DUES ANALYSIS SECTION */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-none shadow-sm rounded-[2rem] bg-[#FFEBEE]/40 ring-1 ring-red-100/50">
           <CardContent className="p-8 flex items-center justify-between">
@@ -220,7 +210,6 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* 8. PROJECT BILLING SUMMARY */}
       <div className="space-y-6">
         <div className="flex items-center gap-3 px-2">
            <div className="h-6 w-1 bg-teal-500 rounded-full" />
@@ -234,7 +223,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 9. LOW STOCK ALERT SECTION */}
       <div className="space-y-6">
         <div className="flex items-center gap-3 px-2">
            <div className="h-6 w-1 bg-red-500 rounded-full" />
@@ -270,9 +258,7 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* 10. FLOATING ACTION BUTTON (FAB) MENU */}
       <div className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-[100] flex flex-col items-end gap-4">
-        {/* Backdrop for open menu */}
         {isFabOpen && (
           <div 
             className="fixed inset-0 bg-black/10 backdrop-blur-[2px] z-[-1] pointer-events-auto transition-all"
@@ -280,7 +266,6 @@ export default function Dashboard() {
           />
         )}
 
-        {/* Quick Actions List */}
         <div className={cn(
           "flex flex-col items-end gap-3 transition-all duration-300 transform origin-bottom mb-2",
           isFabOpen ? "scale-100 opacity-100 translate-y-0" : "scale-75 opacity-0 translate-y-10 pointer-events-none"
@@ -303,7 +288,6 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Main Floating Toggle Button */}
         <Button 
           onClick={() => setIsFabOpen(!isFabOpen)}
           className={cn(

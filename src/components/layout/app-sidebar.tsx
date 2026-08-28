@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -60,32 +59,31 @@ interface NavItem {
   icon: any
   path: string
   color: string
-  hoverBg: string
 }
 
 const NAV_ITEMS_MAP: Record<string, NavItem> = {
-  dashboard: { name: "dashboard", key: "dashboard", icon: LayoutDashboard, path: "/", color: "text-blue-600", hoverBg: "hover:bg-blue-50" },
-  sales: { name: "sales", key: "sales", icon: ShoppingCart, path: "/sales", color: "text-green-600", hoverBg: "hover:bg-green-50" },
-  quotations: { name: "quotations", key: "quotations", icon: FileText, path: "/quotations", color: "text-amber-600", hoverBg: "hover:bg-amber-50" },
-  dispatch: { name: "dispatch", key: "dispatch", icon: Truck, path: "/challans", color: "text-orange-600", hoverBg: "hover:bg-orange-50" },
-  purchases: { name: "purchases", key: "purchases", icon: Package, path: "/purchases", color: "text-orange-700", hoverBg: "hover:bg-orange-100" },
-  returns: { name: "returns", key: "returns", icon: RotateCcw, path: "/returns", color: "text-red-600", hoverBg: "hover:bg-red-50" },
-  inventory: { name: "inventory", key: "inventory", icon: Boxes, path: "/inventory", color: "text-sky-600", hoverBg: "hover:bg-sky-50" },
-  serialTracking: { name: "serialTracking", key: "serialTracking", icon: Scan, path: "/serial-inventory", color: "text-purple-600", hoverBg: "hover:bg-purple-50" },
-  projectBilling: { name: "projectBilling", key: "projectBilling", icon: ClipboardList, path: "/projects", color: "text-teal-600", hoverBg: "hover:bg-teal-50" },
-  contracts: { name: "contracts", key: "contracts", icon: Wrench, path: "/contracts", color: "text-indigo-600", hoverBg: "hover:bg-indigo-50" },
-  customers: { name: "customers", key: "customers", icon: Users, path: "/customers", color: "text-blue-50", hoverBg: "hover:bg-blue-100" },
-  suppliers: { name: "suppliers", key: "suppliers", icon: Truck, path: "/suppliers", color: "text-rose-600", hoverBg: "hover:bg-rose-50" },
-  accounts: { name: "accounts", key: "accounts", icon: Wallet, path: "/accounts", color: "text-yellow-700", hoverBg: "hover:bg-yellow-50" },
-  expenses: { name: "expenses", key: "expenses", icon: Receipt, path: "/expenses", color: "text-red-500", hoverBg: "hover:bg-red-50" },
-  support: { name: "support", key: "support", icon: GitPullRequest, path: "/support", color: "text-indigo-500", hoverBg: "hover:bg-indigo-50" },
-  crm: { name: "crm", key: "crm", icon: Target, path: "/crm", color: "text-rose-700", hoverBg: "hover:bg-rose-100" },
-  hrm: { name: "hrm", key: "hrm", icon: Briefcase, path: "/hrm", color: "text-purple-500", hoverBg: "hover:bg-purple-50" },
-  branches: { name: "branches", key: "branches", icon: Building2, path: "/branches", color: "text-slate-700", hoverBg: "hover:bg-slate-100" },
-  reports: { name: "reports", key: "reports", icon: BarChart3, path: "/reports", color: "text-blue-700", hoverBg: "hover:bg-blue-50" },
-  ai: { name: "ai", key: "ai", icon: BrainCircuit, path: "/ai-forecasting", color: "text-violet-700", hoverBg: "hover:bg-violet-50" },
-  users: { name: "users", key: "users", icon: UserRoundCog, path: "/users", color: "text-violet-600", hoverBg: "hover:bg-violet-100" },
-  settings: { name: "settings", key: "settings", icon: Settings, path: "/settings", color: "text-slate-600", hoverBg: "hover:bg-slate-100" },
+  dashboard: { name: "dashboard", key: "dashboard", icon: LayoutDashboard, path: "/", color: "text-blue-600" },
+  sales: { name: "sales", key: "sales", icon: ShoppingCart, path: "/sales", color: "text-green-600" },
+  quotations: { name: "quotations", key: "quotations", icon: FileText, path: "/quotations", color: "text-amber-600" },
+  dispatch: { name: "dispatch", key: "dispatch", icon: Truck, path: "/challans", color: "text-orange-600" },
+  purchases: { name: "purchases", key: "purchases", icon: Package, path: "/purchases", color: "text-orange-700" },
+  returns: { name: "returns", key: "returns", icon: RotateCcw, path: "/returns", color: "text-red-600" },
+  inventory: { name: "inventory", key: "inventory", icon: Boxes, path: "/inventory", color: "text-sky-600" },
+  serialTracking: { name: "serialTracking", key: "serialTracking", icon: Scan, path: "/serial-inventory", color: "text-purple-600" },
+  projectBilling: { name: "projectBilling", key: "projectBilling", icon: ClipboardList, path: "/projects", color: "text-teal-600" },
+  contracts: { name: "contracts", key: "contracts", icon: Wrench, path: "/contracts", color: "text-indigo-600" },
+  customers: { name: "customers", key: "customers", icon: Users, path: "/customers", color: "text-blue-500" },
+  suppliers: { name: "suppliers", key: "suppliers", icon: Truck, path: "/suppliers", color: "text-rose-600" },
+  accounts: { name: "accounts", key: "accounts", icon: Wallet, path: "/accounts", color: "text-yellow-700" },
+  expenses: { name: "expenses", key: "expenses", icon: Receipt, path: "/expenses", color: "text-red-500" },
+  support: { name: "support", key: "support", icon: GitPullRequest, path: "/support", color: "text-indigo-500" },
+  crm: { name: "crm", key: "crm", icon: Target, path: "/crm", color: "text-rose-700" },
+  hrm: { name: "hrm", key: "hrm", icon: Briefcase, path: "/hrm", color: "text-purple-500" },
+  branches: { name: "branches", key: "branches", icon: Building2, path: "/branches", color: "text-slate-700" },
+  reports: { name: "reports", key: "reports", icon: BarChart3, path: "/reports", color: "text-blue-700" },
+  ai: { name: "ai", key: "ai", icon: BrainCircuit, path: "/ai-forecasting", color: "text-violet-700" },
+  users: { name: "users", key: "users", icon: UserRoundCog, path: "/users", color: "text-violet-600" },
+  settings: { name: "settings", key: "settings", icon: Settings, path: "/settings", color: "text-slate-600" },
 };
 
 const MASTER_DATA_ITEMS = [
@@ -165,8 +163,8 @@ export function AppSidebar() {
                     className={cn(
                       "h-11 px-3 transition-all rounded-xl group relative overflow-hidden",
                       isActive 
-                        ? "border-l-4 border-blue-600 font-bold" 
-                        : "hover:bg-black hover:text-white"
+                        ? "font-bold" 
+                        : "hover:bg-slate-200"
                     )}
                     style={{ 
                       color: isActive ? "#000000" : sidebarText,
@@ -179,15 +177,13 @@ export function AppSidebar() {
                     >
                       <item.icon className={cn(
                         "h-5 w-5 shrink-0 transition-colors", 
-                        isActive ? "text-blue-600" : item.color,
-                        "group-hover:text-white" 
+                        item.color,
+                        isActive && "text-blue-600"
                       )} />
-                      <span className={cn(
-                        "text-[12px] font-black uppercase tracking-tight transition-colors",
-                        "group-hover:text-white" 
-                      )}>
+                      <span className="text-[12px] font-black uppercase tracking-tight">
                         {t(item.name)}
                       </span>
+                      {isActive && <div className="absolute left-0 top-2 bottom-2 w-1 bg-blue-600 rounded-r-full" />}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -203,7 +199,7 @@ export function AppSidebar() {
                       tooltip={t('master')}
                       className={cn(
                         "h-11 px-3 transition-all rounded-xl group",
-                        isMasterActive ? "border-l-4 border-orange-600" : "hover:bg-black hover:text-white"
+                        isMasterActive ? "font-bold" : "hover:bg-slate-200"
                       )}
                       style={{ 
                         color: isMasterActive ? "#000000" : sidebarText,
@@ -213,11 +209,12 @@ export function AppSidebar() {
                       <div className="flex items-center gap-3 w-full h-full rounded-xl">
                         <Database className={cn(
                           "h-5 w-5 shrink-0 transition-colors", 
-                          isMasterActive ? "text-orange-600" : "text-orange-500",
-                          "group-hover:text-white"
+                          "text-orange-500",
+                          isMasterActive && "text-orange-600"
                         )} />
-                        <span className="text-[12px] font-black uppercase tracking-tight group-hover:text-white">{t('master')}</span>
-                        <ChevronRight className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-hover:text-white" />
+                        <span className="text-[12px] font-black uppercase tracking-tight">{t('master')}</span>
+                        <ChevronRight className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                        {isMasterActive && <div className="absolute left-0 top-2 bottom-2 w-1 bg-orange-600 rounded-r-full" />}
                       </div>
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
@@ -232,7 +229,7 @@ export function AppSidebar() {
                               "h-8 px-4 rounded-lg transition-all",
                               pathname === sub.path 
                                 ? "text-blue-600 font-black" 
-                                : "hover:bg-black hover:text-white"
+                                : "hover:bg-slate-200"
                             )}
                             style={{ 
                               color: pathname === sub.path ? "blue" : sidebarText,
@@ -240,7 +237,7 @@ export function AppSidebar() {
                             } as React.CSSProperties}
                           >
                             <Link href={sub.path}>
-                              <span className="text-[11px] uppercase tracking-tighter group-hover:text-white">{t(sub.name)}</span>
+                              <span className="text-[11px] uppercase tracking-tighter">{t(sub.name)}</span>
                             </Link>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
@@ -263,9 +260,7 @@ export function AppSidebar() {
             <SidebarMenuButton 
               onClick={handleLogout} 
               className="font-black h-10 px-3 rounded-xl transition-all group/logout hover:bg-red-600 hover:text-white"
-              style={{ 
-                color: sidebarText,
-              } as React.CSSProperties}
+              style={{ color: sidebarText } as React.CSSProperties}
             >
               <div className="flex items-center gap-3 w-full h-full rounded-xl">
                 <LogOut className="h-5 w-5 text-red-500 transition-transform group-hover/logout:scale-110 group-hover:text-white" />

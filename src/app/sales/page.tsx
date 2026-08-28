@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -108,74 +107,76 @@ export default function SalesPage() {
         </Button>
       </div>
 
-      <Card className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white ring-1 ring-slate-100">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader className="bg-slate-50/50">
-              <TableRow>
-                <TableHead className="w-10 pl-6 h-12">
-                  <Checkbox checked={isAllSelected} onCheckedChange={toggleSelectAll} />
-                </TableHead>
-                <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12 pl-4">Ref #</TableHead>
-                <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12">Customer</TableHead>
-                <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12 text-right">Invoice Total</TableHead>
-                <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12 text-right">Balance Due</TableHead>
-                <TableHead className="text-[10px] uppercase font-black text-slate-500 text-center h-12">Payment</TableHead>
-                <TableHead className="text-[10px] uppercase font-black text-slate-500 text-right pr-6 sticky right-0 bg-white/95 h-12 w-24">Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow><TableCell colSpan={7} className="h-40 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto text-slate-200" /></TableCell></TableRow>
-              ) : filteredInvoices?.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="h-40 text-center text-slate-300 text-[10px] font-black uppercase tracking-[0.2em] italic">{t('noData')}</TableCell></TableRow>
-              ) : (
-                filteredInvoices?.map((inv) => (
-                  <TableRow key={inv.id} className={cn("h-20 hover:bg-muted/5 transition-colors group", selectedIds.includes(inv.id) && "bg-blue-50/30")}>
-                    <TableCell className="pl-6 py-3">
-                      <Checkbox checked={selectedIds.includes(inv.id)} onCheckedChange={() => toggleSelect(inv.id)} />
-                    </TableCell>
-                    <TableCell className="pl-4">
-                       <span className="text-xs font-black text-blue-600 uppercase">{inv.invoiceNumber}</span>
-                       <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase">{new Date(inv.invoiceDate).toLocaleDateString()}</p>
-                    </TableCell>
-                    <TableCell className="text-xs font-bold text-slate-700 truncate max-w-[180px] uppercase">{inv.customerName}</TableCell>
-                    <TableCell className="text-right text-xs font-black text-slate-900">৳{inv.totalAmount?.toLocaleString()}</TableCell>
-                    <TableCell className="text-right text-xs font-black text-red-600">৳{(inv.balanceDue || 0).toLocaleString()}</TableCell>
-                    <TableCell className="text-center">
-                      <Badge className={cn(
-                        "text-[9px] uppercase font-black px-2 h-5 border-none",
-                        inv.status === 'paid' ? "bg-green-50 text-green-700" : inv.status === 'partial' ? "bg-orange-50 text-orange-700" : "bg-red-50 text-red-700"
-                      )}>
-                        {inv.status || 'UNPAID'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right pr-6 sticky right-0 bg-white group-hover:bg-slate-50/90 transition-colors shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-blue-600 hover:bg-blue-50" onClick={() => router.push(`/sales/${inv.id}/view`)}><Eye className="h-4 w-4" /></Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-400"><MoreVertical className="h-4 w-4" /></Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-56 rounded-2xl shadow-2xl p-2 border-slate-100">
-                            <DropdownMenuItem onClick={() => router.push(`/sales/payments/collect/${inv.id}`)} className="rounded-xl h-10 text-xs font-bold py-1.5 text-green-600 focus:bg-green-50 focus:text-green-700"><CreditCard className="mr-2 h-4 w-4" /> Collect Payment</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => router.push(`/sales/payments/history/${inv.id}`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><History className="mr-2 h-4 w-4" /> Payment History</DropdownMenuItem>
-                            <DropdownMenuSeparator className="my-1 bg-slate-50" />
-                            <DropdownMenuItem onClick={() => router.push(`/sales/${inv.id}/edit`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><Edit className="mr-2 h-4 w-4" /> Edit Invoice</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => router.push(`/sales/${inv.id}/view?print=true`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><Printer className="mr-2 h-4 w-4" /> Print</DropdownMenuItem>
-                            <DropdownMenuSeparator className="my-1 bg-slate-50" />
-                            <DropdownMenuItem onClick={() => { setSelectedRecord(inv); setIsDeleteAlertOpen(true); }} className="rounded-xl h-10 text-red-600 text-xs font-bold py-1.5 focus:bg-red-50 focus:text-red-700"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </Card>
+      {isLoading ? (
+        <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-slate-200" /></div>
+      ) : (
+        <Card className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white ring-1 ring-slate-100">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-slate-50/50">
+                <TableRow>
+                  <TableHead className="w-10 pl-6 h-12">
+                    <Checkbox checked={isAllSelected} onCheckedChange={toggleSelectAll} />
+                  </TableHead>
+                  <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12 pl-4">Ref #</TableHead>
+                  <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12">Customer</TableHead>
+                  <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12 text-right">Invoice Total</TableHead>
+                  <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12 text-right">Balance Due</TableHead>
+                  <TableHead className="text-[10px] uppercase font-black text-slate-500 text-center h-12">Payment</TableHead>
+                  <TableHead className="text-[10px] uppercase font-black text-slate-500 text-right pr-8 sticky right-0 bg-white/95 h-12 w-24">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredInvoices?.length === 0 ? (
+                  <TableRow><TableCell colSpan={7} className="h-40 text-center text-slate-300 text-[10px] font-black uppercase tracking-[0.2em] italic">{t('noData')}</TableCell></TableRow>
+                ) : (
+                  filteredInvoices?.map((inv) => (
+                    <TableRow key={inv.id} className={cn("h-20 hover:bg-muted/5 transition-colors group", selectedIds.includes(inv.id) && "bg-blue-50/30")}>
+                      <TableCell className="pl-6 py-3">
+                        <Checkbox checked={selectedIds.includes(inv.id)} onCheckedChange={() => toggleSelect(inv.id)} />
+                      </TableCell>
+                      <TableCell className="pl-4">
+                        <span className="text-xs font-black text-blue-600 uppercase">{inv.invoiceNumber}</span>
+                        <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase">{new Date(inv.invoiceDate).toLocaleDateString()}</p>
+                      </TableCell>
+                      <TableCell className="text-xs font-bold text-slate-700 truncate max-w-[180px] uppercase">{inv.customerName}</TableCell>
+                      <TableCell className="text-right text-xs font-black text-slate-900">৳{inv.totalAmount?.toLocaleString()}</TableCell>
+                      <TableCell className="text-right text-xs font-black text-red-600">৳{(inv.balanceDue || 0).toLocaleString()}</TableCell>
+                      <TableCell className="text-center">
+                        <Badge className={cn(
+                          "text-[9px] uppercase font-black px-2 h-5 border-none",
+                          inv.status === 'paid' ? "bg-green-50 text-green-700" : inv.status === 'partial' ? "bg-orange-50 text-orange-700" : "bg-red-50 text-red-700"
+                        )}>
+                          {inv.status || 'UNPAID'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right pr-6 sticky right-0 bg-white group-hover:bg-slate-50/90 transition-colors shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-blue-600 hover:bg-blue-50" onClick={() => router.push(`/sales/${inv.id}/view`)}><Eye className="h-4 w-4" /></Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-400"><MoreVertical className="h-4 w-4" /></Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-56 rounded-2xl shadow-2xl p-2 border-slate-100">
+                              <DropdownMenuItem onClick={() => router.push(`/sales/payments/collect/${inv.id}`)} className="rounded-xl h-10 text-xs font-bold py-1.5 text-green-600 focus:bg-green-50 focus:text-green-700"><CreditCard className="mr-2 h-4 w-4" /> Collect Payment</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => router.push(`/sales/payments/history/${inv.id}`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><History className="mr-2 h-4 w-4" /> Payment History</DropdownMenuItem>
+                              <DropdownMenuSeparator className="my-1 bg-slate-50" />
+                              <DropdownMenuItem onClick={() => router.push(`/sales/${inv.id}/edit`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><Edit className="mr-2 h-4 w-4" /> Edit Invoice</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => router.push(`/sales/${inv.id}/view?print=true`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><Printer className="mr-2 h-4 w-4" /> Print</DropdownMenuItem>
+                              <DropdownMenuSeparator className="my-1 bg-slate-50" />
+                              <DropdownMenuItem onClick={() => { setSelectedRecord(inv); setIsDeleteAlertOpen(true); }} className="rounded-xl h-10 text-red-600 text-xs font-bold py-1.5 focus:bg-red-50 focus:text-red-700"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </Card>
+      )}
 
       <BulkActionToolbar selectedCount={selectedCount} onClear={clearSelection} onAction={() => {}} />
 

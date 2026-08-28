@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -7,9 +6,6 @@ import { useRouter, usePathname } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
 
-/**
- * AuthGate protects authenticated routes and handles redirection to login.
- */
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
