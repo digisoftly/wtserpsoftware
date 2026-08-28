@@ -17,7 +17,9 @@ import {
   FileBadge,
   LayoutGrid,
   Monitor,
-  Type
+  Type,
+  MousePointer2,
+  Activity
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -79,9 +81,10 @@ export default function SettingsPage() {
   const [signPreview, setSignPreview] = React.useState<string | null>(null);
   const [menuOrder, setMenuOrder] = React.useState<string[]>(DEFAULT_MENU_ORDER);
 
-  // UI Colors
+  // UI Colors State
   const [sidebarBgColor, setSidebarBgColor] = React.useState("#FFFFFF");
-  const [sidebarHoverColor, setSidebarHoverColor] = React.useState("#F1F5F9");
+  const [sidebarHoverColor, setSidebarHoverColor] = React.useState("#F3F4F6");
+  const [sidebarActiveColor, setSidebarActiveColor] = React.useState("#E5E7EB");
   const [sidebarTextColor, setSidebarTextColor] = React.useState("#111827");
 
   // Design Lab State
@@ -109,8 +112,11 @@ export default function SettingsPage() {
       if (settings.docPrimaryColor) setDocPrimaryColor(settings.docPrimaryColor);
       if (settings.docAccentColor) setDocAccentColor(settings.docAccentColor);
       if (settings.docFontSize) setDocFontSize(settings.docFontSize);
+      
+      // Load UI Colors
       if (settings.sidebarBgColor) setSidebarBgColor(settings.sidebarBgColor);
       if (settings.sidebarHoverColor) setSidebarHoverColor(settings.sidebarHoverColor);
+      if (settings.sidebarActiveColor) setSidebarActiveColor(settings.sidebarActiveColor);
       if (settings.sidebarTextColor) setSidebarTextColor(settings.sidebarTextColor);
     }
   }, [settings]);
@@ -151,11 +157,12 @@ export default function SettingsPage() {
       docFontSize: docFontSize,
       sidebarBgColor: sidebarBgColor,
       sidebarHoverColor: sidebarHoverColor,
+      sidebarActiveColor: sidebarActiveColor,
       sidebarTextColor: sidebarTextColor,
     };
 
     formData.forEach((value, key) => {
-      if (!["companyLogo", "authorizedSeal", "authorizedSignature", "sidebarMenuOrder", "sidebarBgColor", "sidebarHoverColor", "sidebarTextColor"].includes(key)) {
+      if (!["companyLogo", "authorizedSeal", "authorizedSignature", "sidebarMenuOrder", "sidebarBgColor", "sidebarHoverColor", "sidebarActiveColor", "sidebarTextColor"].includes(key)) {
         updates[key] = value;
       }
     });
@@ -191,25 +198,29 @@ export default function SettingsPage() {
     <div className="space-y-6 pb-10">
       <form onSubmit={handleSaveSettings}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <h1 className="text-2xl font-bold font-headline text-blue-600 flex items-center gap-2">
-            <Settings2 className="h-8 w-8" /> System Configuration
-          </h1>
-          <Button type="submit" disabled={isSaving} className="bg-blue-600 hover:bg-blue-700 rounded-full px-8 h-12 font-bold shadow-lg">
+          <div>
+            <h1 className="text-2xl font-bold font-headline text-blue-600 flex items-center gap-2">
+              <Settings2 className="h-8 w-8" /> System Configuration
+            </h1>
+            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mt-1">Enterprise UI & Branding Terminal</p>
+          </div>
+          <Button type="submit" disabled={isSaving} className="bg-blue-600 hover:bg-blue-700 rounded-full px-12 h-12 font-bold shadow-xl shadow-blue-100 transition-all active:scale-95">
             {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} {t('save')}
           </Button>
         </div>
 
         <Tabs defaultValue="general" className="w-full">
           <TabsList className="bg-white border rounded-xl p-1 mb-6 shadow-sm flex overflow-x-auto h-auto no-scrollbar ring-1 ring-slate-100">
-            <TabsTrigger value="general" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">Company & Branding</TabsTrigger>
-            <TabsTrigger value="documents" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">PDF Design & Text</TabsTrigger>
-            <TabsTrigger value="navigation" className="rounded-lg gap-2 flex-1 min-w-[120px] py-3 text-[10px] font-black uppercase tracking-widest">{t('navigation')}</TabsTrigger>
+            <TabsTrigger value="general" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Company & UI Style</TabsTrigger>
+            <TabsTrigger value="documents" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">PDF Design Lab</TabsTrigger>
+            <TabsTrigger value="navigation" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">{t('navigation')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* BRANDING ASSETS */}
               <Card className="border-none shadow-sm rounded-2xl flex flex-col items-center justify-center p-6 text-center bg-white ring-1 ring-slate-100">
-                <Label className="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest">Main Company Logo</Label>
+                <Label className="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest">Company Logo</Label>
                 <div className="w-24 h-24 mb-4 relative group">
                   {logoPreview ? (
                     <img src={logoPreview} className="w-full h-full object-contain rounded-xl border p-2" />
@@ -218,7 +229,7 @@ export default function SettingsPage() {
                   )}
                   <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => handleFileChange(e, setLogoPreview)} />
                 </div>
-                <p className="text-[9px] text-slate-400">Click image to upload</p>
+                <p className="text-[9px] text-slate-400 uppercase font-bold">Standard Branding</p>
               </Card>
 
               <Card className="border-none shadow-sm rounded-2xl flex flex-col items-center justify-center p-6 text-center bg-white ring-1 ring-slate-100">
@@ -231,11 +242,11 @@ export default function SettingsPage() {
                   )}
                   <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => handleFileChange(e, setSealPreview)} />
                 </div>
-                <p className="text-[9px] text-slate-400">Blue Round Seal Image</p>
+                <p className="text-[9px] text-slate-400 uppercase font-bold">Verification Stamp</p>
               </Card>
 
               <Card className="border-none shadow-sm rounded-2xl flex flex-col items-center justify-center p-6 text-center bg-white ring-1 ring-slate-100">
-                <Label className="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest">Official Signature</Label>
+                <Label className="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest">Proprietor Sign</Label>
                 <div className="w-24 h-24 mb-4 relative group">
                   {signPreview ? (
                     <img src={signPreview} className="w-full h-full object-contain rounded-xl border p-2" />
@@ -244,51 +255,64 @@ export default function SettingsPage() {
                   )}
                   <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => handleFileChange(e, setSignPreview)} />
                 </div>
-                <p className="text-[9px] text-slate-400">Transparent PNG preferred</p>
+                <p className="text-[9px] text-slate-400 uppercase font-bold">E-Signature</p>
               </Card>
 
+              {/* CORPORATE DATA */}
               <Card className="md:col-span-3 border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100">
+                <CardHeader><CardTitle className="text-xs font-black uppercase tracking-widest text-slate-500">Corporate Identity Matrix</CardTitle></CardHeader>
                 <CardContent className="p-8 space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Company Name</Label><Input name="companyName" defaultValue={settings?.companyName} className="h-11 rounded-xl" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Slogan</Label><Input name="companySlogan" defaultValue={settings?.companySlogan} className="h-11 rounded-xl" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Official Phone</Label><Input name="phone" defaultValue={settings?.phone} className="h-11 rounded-xl" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Company Legal Name</Label><Input name="companyName" defaultValue={settings?.companyName} className="h-11 rounded-xl font-bold" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Brand Slogan</Label><Input name="companySlogan" defaultValue={settings?.companySlogan} className="h-11 rounded-xl" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Primary Phone</Label><Input name="phone" defaultValue={settings?.phone} className="h-11 rounded-xl font-bold" /></div>
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Official Email</Label><Input name="email" defaultValue={settings?.email} className="h-11 rounded-xl" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Website URL</Label><Input name="website" defaultValue={settings?.website} placeholder="www.example.com" className="h-11 rounded-xl" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Official Address</Label><Input name="address" defaultValue={settings?.address} className="h-11 rounded-xl" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Website URL</Label><Input name="website" defaultValue={settings?.website} placeholder="www.warrior.com" className="h-11 rounded-xl font-bold" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Registered Address</Label><Input name="address" defaultValue={settings?.address} className="h-11 rounded-xl" /></div>
                   </div>
                 </CardContent>
               </Card>
 
+              {/* SIDEBAR UI CUSTOMIZATION */}
               <Card className="md:col-span-3 border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100">
-                <CardHeader><CardTitle className="text-sm font-black uppercase tracking-widest text-slate-500">Sidebar UI Customization</CardTitle></CardHeader>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Monitor className="h-4 w-4 text-blue-600" />
+                    <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-500">Sidebar Theme Controller</CardTitle>
+                  </div>
+                </CardHeader>
                 <CardContent className="p-8 space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-2">
-                         <Monitor className="h-3 w-3" /> Background Color
-                      </Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase text-slate-400">Background Color</Label>
                       <div className="flex gap-2">
-                         <Input type="color" value={sidebarBgColor} onChange={e => setSidebarBgColor(e.target.value)} className="h-11 w-16 p-1 rounded-lg" />
-                         <Input value={sidebarBgColor} onChange={e => setSidebarBgColor(e.target.value)} className="h-11 flex-1 rounded-xl font-mono uppercase" />
+                         <Input type="color" value={sidebarBgColor} onChange={e => setSidebarBgColor(e.target.value)} className="h-10 w-12 p-1 rounded-lg border-none" />
+                         <Input value={sidebarBgColor} onChange={e => setSidebarBgColor(e.target.value)} className="h-10 flex-1 rounded-xl font-mono uppercase text-xs" />
                       </div>
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-2">
-                         <Type className="h-3 w-3" /> Text Color
-                      </Label>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase text-slate-400">Text & Icon Color</Label>
                       <div className="flex gap-2">
-                         <Input type="color" value={sidebarTextColor} onChange={e => setSidebarTextColor(e.target.value)} className="h-11 w-16 p-1 rounded-lg" />
-                         <Input value={sidebarTextColor} onChange={e => setSidebarTextColor(e.target.value)} className="h-11 flex-1 rounded-xl font-mono uppercase" />
+                         <Input type="color" value={sidebarTextColor} onChange={e => setSidebarTextColor(e.target.value)} className="h-10 w-12 p-1 rounded-lg border-none" />
+                         <Input value={sidebarTextColor} onChange={e => setSidebarTextColor(e.target.value)} className="h-10 flex-1 rounded-xl font-mono uppercase text-xs" />
                       </div>
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-2">
-                         <LayoutGrid className="h-3 w-3" /> Sub-menu Hover Color
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1.5">
+                         <MousePointer2 className="h-3 w-3" /> Hover State Color
                       </Label>
                       <div className="flex gap-2">
-                         <Input type="color" value={sidebarHoverColor} onChange={e => setSidebarHoverColor(e.target.value)} className="h-11 w-16 p-1 rounded-lg" />
-                         <Input value={sidebarHoverColor} onChange={e => setSidebarHoverColor(e.target.value)} className="h-11 flex-1 rounded-xl font-mono uppercase" />
+                         <Input type="color" value={sidebarHoverColor} onChange={e => setSidebarHoverColor(e.target.value)} className="h-10 w-12 p-1 rounded-lg border-none" />
+                         <Input value={sidebarHoverColor} onChange={e => setSidebarHoverColor(e.target.value)} className="h-10 flex-1 rounded-xl font-mono uppercase text-xs" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1.5">
+                         <Activity className="h-3 w-3" /> Active Menu Color
+                      </Label>
+                      <div className="flex gap-2">
+                         <Input type="color" value={sidebarActiveColor} onChange={e => setSidebarActiveColor(e.target.value)} className="h-10 w-12 p-1 rounded-lg border-none" />
+                         <Input value={sidebarActiveColor} onChange={e => setSidebarActiveColor(e.target.value)} className="h-10 flex-1 rounded-xl font-mono uppercase text-xs" />
                       </div>
                     </div>
                   </div>
@@ -303,30 +327,30 @@ export default function SettingsPage() {
                 <Card className="border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-8 space-y-6">
                   <div className="flex items-center gap-2 border-b pb-2">
                     <Palette className="h-4 w-4 text-blue-600" />
-                    <h3 className="text-xs font-black uppercase tracking-widest">Visual Styles</h3>
+                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-900">Document Visuals</h3>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-[10px] font-black uppercase text-slate-500">Template Engine</Label>
+                    <Label className="text-[10px] font-black uppercase text-slate-500">PDF Template Engine</Label>
                     <Select name="defaultTemplate_invoice" defaultValue={settings?.defaultTemplate_invoice || "warrior"} onValueChange={setPreviewLayout}>
-                      <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
-                      <SelectContent>{DOCUMENT_LAYOUTS.map(l => <SelectItem key={l.value} value={l.value}>{l.name}</SelectItem>)}</SelectContent>
+                      <SelectTrigger className="h-11 rounded-xl font-bold"><SelectValue /></SelectTrigger>
+                      <SelectContent className="rounded-xl shadow-2xl">{DOCUMENT_LAYOUTS.map(l => <SelectItem key={l.value} value={l.value} className="text-xs font-bold">{l.name}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Primary Color</Label><Input type="color" value={docPrimaryColor} onChange={e => setDocPrimaryColor(e.target.value)} className="h-12 w-full p-1" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Accent Color</Label><Input type="color" value={docAccentColor} onChange={e => setDocAccentColor(e.target.value)} className="h-12 w-full p-1" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Primary Theme Color</Label><Input type="color" value={docPrimaryColor} onChange={e => setDocPrimaryColor(e.target.value)} className="h-12 w-full p-1 rounded-lg border-none" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Accent Detail Color</Label><Input type="color" value={docAccentColor} onChange={e => setDocAccentColor(e.target.value)} className="h-12 w-full p-1 rounded-lg border-none" /></div>
                   </div>
 
                   <div className="flex items-center gap-2 border-b pb-2 pt-4">
                     <FileBadge className="h-4 w-4 text-blue-600" />
-                    <h3 className="text-xs font-black uppercase tracking-widest">Custom PDF Text</h3>
+                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-900">Standard Text Logic</h3>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-[10px] font-black uppercase text-slate-500">Standard Terms & Conditions</Label>
-                    <Textarea name="pdfTerms" defaultValue={settings?.pdfTerms} className="min-h-[100px] rounded-xl text-[10px] font-bold" />
+                    <Label className="text-[10px] font-black uppercase text-slate-500">Global Terms & Conditions</Label>
+                    <Textarea name="pdfTerms" defaultValue={settings?.pdfTerms} className="min-h-[120px] rounded-2xl text-[10px] font-bold p-4 bg-slate-50" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-[10px] font-black uppercase text-slate-500">Footer Heart Message</Label>
+                    <Label className="text-[10px] font-black uppercase text-slate-500">Footer Greeting Message</Label>
                     <Input name="footerHeartMsg" defaultValue={settings?.footerHeartMsg} className="h-11 rounded-xl font-bold" />
                   </div>
                 </Card>
@@ -334,11 +358,11 @@ export default function SettingsPage() {
 
               <div className="lg:col-span-7 space-y-4">
                  <div className="flex items-center justify-between px-2">
-                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><Eye className="h-3.5 w-3.5" /> PDF Preview Lab</p>
-                    <Badge variant="outline" className="text-[9px] font-black px-2 bg-white">Dynamic Scale View</Badge>
+                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><Eye className="h-3.5 w-3.5" /> Live Render Preview</p>
+                    <Badge variant="outline" className="text-[8px] font-black px-3 bg-white h-6">A4 Scaled View</Badge>
                  </div>
-                 <div className="bg-white rounded-[2rem] border shadow-2xl p-4 md:p-8 overflow-hidden">
-                    <div className="scale-[0.55] sm:scale-[0.7] origin-top">
+                 <div className="bg-white rounded-[3rem] border-8 border-slate-100 shadow-2xl overflow-hidden p-0 relative min-h-[700px]">
+                    <div className="scale-[0.5] sm:scale-[0.65] origin-top transition-transform duration-500 absolute left-0 right-0 top-0">
                        <DocumentTemplate {...mockPreviewData} layoutOverride={previewLayout} />
                     </div>
                  </div>
@@ -348,22 +372,25 @@ export default function SettingsPage() {
 
           <TabsContent value="navigation" className="space-y-6">
             <Card className="border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                 {menuOrder.map((key, index) => (
-                  <div key={key} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border group">
-                    <span className="font-black text-[10px] uppercase text-slate-700">{t(key)}</span>
-                    <div className="flex gap-1 opacity-100">
-                      <Button type="button" variant="ghost" size="icon" onClick={() => moveMenuItem(index, 'up')} disabled={index === 0}><ArrowUp className="h-3 w-3" /></Button>
-                      <Button type="button" variant="ghost" size="icon" onClick={() => moveMenuItem(index, 'down')} disabled={index === menuOrder.length - 1}><ArrowDown className="h-3 w-3" /></Button>
+                  <div key={key} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:bg-white hover:border-blue-200 transition-all">
+                    <span className="font-black text-[10px] uppercase text-slate-600 tracking-tight">{t(key)}</span>
+                    <div className="flex gap-1">
+                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => moveMenuItem(index, 'up')} disabled={index === 0}><ArrowUp className="h-3.5 w-3.5" /></Button>
+                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => moveMenuItem(index, 'down')} disabled={index === menuOrder.length - 1}><ArrowDown className="h-3.5 w-3.5" /></Button>
                     </div>
                   </div>
                 ))}
               </div>
-              <div className="mt-8 p-4 bg-blue-50 border-2 border-dashed border-blue-200 rounded-2xl flex items-center gap-4">
-                 <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm"><LayoutGrid className="h-5 w-5" /></div>
-                 <p className="text-[10px] font-bold text-blue-700 uppercase leading-relaxed">
-                   Rearrange your terminal's sidebar layout. Changes will be synchronized across all branch terminals after saving.
-                 </p>
+              <div className="mt-8 p-6 bg-blue-50 border-2 border-dashed border-blue-100 rounded-[2rem] flex items-center gap-5">
+                 <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center text-blue-600 shadow-sm shrink-0"><LayoutGrid className="h-6 w-6" /></div>
+                 <div>
+                    <p className="text-xs font-black uppercase text-blue-900 mb-1">Navigation Synchronization</p>
+                    <p className="text-[10px] font-bold text-blue-600 uppercase leading-relaxed max-w-2xl">
+                      Reorder your ERP terminal's sidebar layout. These changes are applied globally to all provisioned user terminals for your organization.
+                    </p>
+                 </div>
               </div>
             </Card>
           </TabsContent>

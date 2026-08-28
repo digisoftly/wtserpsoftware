@@ -107,10 +107,11 @@ export function AppSidebar() {
   const { settings } = useSettings()
   const { t } = useTranslation()
 
-  // Dynamic colors from settings with fallbacks
+  // Dynamic colors from settings with precise fallbacks
   const sidebarBg = settings?.sidebarBgColor || "#FFFFFF"
   const sidebarText = settings?.sidebarTextColor || "#111827"
-  const sidebarHover = "#F1F5F9" // User requested Gray hover
+  const sidebarHover = settings?.sidebarHoverColor || "#F3F4F6"
+  const sidebarActive = settings?.sidebarActiveColor || "#E5E7EB" // DEFAULT GREY FOR ACTIVE
 
   const handleLogout = async () => {
     await signOut(auth)
@@ -164,11 +165,13 @@ export function AppSidebar() {
                     className={cn(
                       "h-10 px-3 transition-all rounded-xl group relative overflow-hidden",
                       isActive 
-                        ? "bg-slate-100 border-l-4 border-blue-600 font-bold" 
-                        : "hover:bg-slate-100"
+                        ? "border-l-4 border-blue-600 font-bold" 
+                        : ""
                     )}
                     style={{ 
-                      color: isActive ? "#000000" : sidebarText,
+                      // Apply dynamic colors
+                      color: (isActive || state === 'collapsed') ? "#000000" : sidebarText,
+                      backgroundColor: isActive ? sidebarActive : "transparent",
                       // @ts-ignore
                       '--sidebar-hover-bg': sidebarHover,
                     } as React.CSSProperties}
@@ -180,11 +183,11 @@ export function AppSidebar() {
                       <item.icon className={cn(
                         "h-4.5 w-4.5 shrink-0 transition-colors", 
                         isActive ? "text-blue-600" : item.color,
-                        "group-hover:opacity-100" // Ensure icons stay colorful
+                        "group-hover:opacity-100" 
                       )} />
                       <span className={cn(
                         "text-[12px] font-black uppercase tracking-tight transition-colors",
-                        "group-hover:text-black" // Hover text color Black as requested
+                        "group-hover:text-black" 
                       )}>
                         {t(item.name)}
                       </span>
@@ -203,10 +206,15 @@ export function AppSidebar() {
                       isActive={isMasterActive}
                       tooltip={t('master')}
                       className={cn(
-                        "h-10 px-3 transition-all rounded-xl group hover:bg-slate-100",
-                        isMasterActive ? "bg-slate-100 border-l-4 border-orange-600" : ""
+                        "h-10 px-3 transition-all rounded-xl group",
+                        isMasterActive ? "border-l-4 border-orange-600" : ""
                       )}
-                      style={{ color: isMasterActive ? "#000000" : sidebarText } as React.CSSProperties}
+                      style={{ 
+                        color: isMasterActive ? "#000000" : sidebarText,
+                        backgroundColor: isMasterActive ? sidebarActive : "transparent",
+                        // @ts-ignore
+                        '--sidebar-hover-bg': sidebarHover,
+                      } as React.CSSProperties}
                     >
                       <div className="flex items-center gap-3 w-full h-full rounded-xl">
                         <Database className={cn(
@@ -226,12 +234,17 @@ export function AppSidebar() {
                             asChild 
                             isActive={pathname === sub.path}
                             className={cn(
-                              "h-8 px-4 rounded-lg transition-all hover:bg-slate-100",
+                              "h-8 px-4 rounded-lg transition-all",
                               pathname === sub.path 
-                                ? "text-blue-600 font-black bg-blue-50/50" 
+                                ? "text-blue-600 font-black" 
                                 : ""
                             )}
-                            style={{ color: pathname === sub.path ? "blue" : sidebarText } as React.CSSProperties}
+                            style={{ 
+                              color: pathname === sub.path ? "blue" : sidebarText,
+                              backgroundColor: pathname === sub.path ? sidebarActive : "transparent",
+                              // @ts-ignore
+                              '--sidebar-hover-bg': sidebarHover,
+                            } as React.CSSProperties}
                           >
                             <Link href={sub.path}>
                               <span className="text-[11px] uppercase tracking-tighter group-hover:text-black">{t(sub.name)}</span>
@@ -256,8 +269,12 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton 
               onClick={handleLogout} 
-              className="font-black h-10 px-3 rounded-xl transition-all hover:bg-red-50 group/logout"
-              style={{ color: sidebarText } as React.CSSProperties}
+              className="font-black h-10 px-3 rounded-xl transition-all group/logout"
+              style={{ 
+                color: sidebarText,
+                // @ts-ignore
+                '--sidebar-hover-bg': "#FEE2E2", // Special red hover for logout
+              } as React.CSSProperties}
             >
               <div className="flex items-center gap-3 w-full h-full rounded-xl">
                 <LogOut className="h-4.5 w-4.5 text-red-500 transition-transform group-hover/logout:scale-110" />
