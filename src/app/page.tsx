@@ -20,7 +20,12 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   RefreshCw,
-  Box
+  Box,
+  Plus,
+  FileText,
+  UserPlus,
+  Briefcase,
+  CreditCard
 } from "lucide-react"
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { Card, CardContent } from "@/components/ui/card"
@@ -30,16 +35,19 @@ import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, limit } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { useTranslation } from "@/hooks/use-translation"
+import Link from "next/link"
+import { cn } from "@/lib/utils"
 
 /**
  * WarriorERP - High Fidelity Dashboard
  * Matches the reference image layout and colorful KPI card system.
- * Ensures 100% data accuracy from Firestore.
+ * Includes the new Floating Action Button (FAB) menu.
  */
 export default function Dashboard() {
   const { branchId, companyId } = useTenant();
   const db = useFirestore();
   const { t } = useTranslation();
+  const [isFabOpen, setIsFabOpen] = React.useState(false);
 
   // 1. Data Subscriptions
   const invoicesQuery = useMemoFirebase(() => {
@@ -138,8 +146,18 @@ export default function Dashboard() {
     };
   }, [invoices, purchases, expenses, customers, suppliers, products, projects, staff]);
 
+  const QUICK_ACTIONS = [
+    { label: "New Sale", icon: ShoppingCart, color: "bg-[#22C55E]", path: "/sales/new" },
+    { label: "New Purchase", icon: Package, color: "bg-[#F97316]", path: "/purchases/new" },
+    { label: "New Quotation", icon: FileText, color: "bg-[#A855F7]", path: "/quotations/new" },
+    { label: "New Customer", icon: UserPlus, color: "bg-[#06B6D4]", path: "/customers/new" },
+    { label: "New Supplier", icon: Truck, color: "bg-[#F59E0B]", path: "/suppliers/new" },
+    { label: "New Project", icon: Briefcase, color: "bg-[#14B8A6]", path: "/projects/new" },
+    { label: "New Payment", icon: CreditCard, color: "bg-[#6366F1]", path: "/payments/new" },
+  ];
+
   return (
-    <div className="space-y-8 pb-10">
+    <div className="relative space-y-8 pb-20">
       {/* 3. PAGE HEADER */}
       <div className="flex items-center justify-between">
         <div>
@@ -251,6 +269,55 @@ export default function Dashboard() {
               )}
            </CardContent>
         </Card>
+      </div>
+
+      {/* 10. FLOATING ACTION BUTTON (FAB) MENU */}
+      <div className="fixed bottom-10 right-10 z-[100] flex flex-col items-end gap-4">
+        {/* Backdrop for open menu */}
+        {isFabOpen && (
+          <div 
+            className="fixed inset-0 bg-black/10 backdrop-blur-[2px] z-[-1] pointer-events-auto transition-all"
+            onClick={() => setIsFabOpen(false)}
+          />
+        )}
+
+        {/* Quick Actions List */}
+        <div className={cn(
+          "flex flex-col items-end gap-3 transition-all duration-300 transform origin-bottom mb-2",
+          isFabOpen ? "scale-100 opacity-100 translate-y-0" : "scale-75 opacity-0 translate-y-10 pointer-events-none"
+        )}>
+          {QUICK_ACTIONS.map((action, i) => (
+            <Link 
+              key={i} 
+              href={action.path}
+              onClick={() => setIsFabOpen(false)}
+              className="flex items-center gap-3 transition-all hover:scale-105 active:scale-95 group"
+              style={{ transitionDelay: `${isFabOpen ? (QUICK_ACTIONS.length - i) * 50 : 0}ms` }}
+            >
+              <div className="bg-white pl-6 pr-2 py-2 rounded-2xl shadow-[0_10px_40px_-5px_rgba(0,0,0,0.15)] border border-slate-100 flex items-center gap-5 min-w-[180px] justify-between">
+                <span className="text-[12px] font-black text-slate-600 uppercase tracking-tight">{action.label}</span>
+                <div className={cn("w-10 h-10 rounded-xl text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform", action.color)}>
+                  <action.icon className="h-5 w-5" />
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* Main Floating Toggle Button */}
+        <Button 
+          onClick={() => setIsFabOpen(!isFabOpen)}
+          className={cn(
+            "w-16 h-16 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-none p-0 flex items-center justify-center transition-all duration-500 active:scale-90",
+            isFabOpen ? "bg-slate-900 rotate-90" : "bg-[#EF4444] hover:bg-[#DC2626]"
+          )}
+        >
+          {isFabOpen ? (
+            <Plus className="h-8 w-8 text-white rotate-45 transition-transform" />
+          ) : (
+            <Plus className="h-8 w-8 text-white rotate-0 transition-transform" />
+          )}
+        </Button>
       </div>
     </div>
   )
