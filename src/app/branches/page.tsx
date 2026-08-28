@@ -71,7 +71,6 @@ export default function BranchesPage() {
   }, [db, companyId]);
   const { data: rawBranchTypes } = useCollection(branchTypesQuery);
 
-  // Filter unique branch types for dropdown to prevent duplicate key error
   const branchTypes = React.useMemo(() => {
     if (!rawBranchTypes) return [];
     const seen = new Set();
@@ -94,7 +93,6 @@ export default function BranchesPage() {
     const formData = new FormData(e.currentTarget);
     const branchName = formData.get("branchName") as string;
 
-    // VALIDATION: Prevent duplicate names
     const exists = branches?.some(b => 
       b.branchName?.toLowerCase() === branchName.toLowerCase() && 
       b.id !== selectedRecord?.id
@@ -259,7 +257,6 @@ export default function BranchesPage() {
         </Card>
       )}
 
-      {/* ADD/EDIT MODAL */}
       <Dialog open={isAddModalOpen || isEditModalOpen} onOpenChange={(open) => { if(!open) { setIsAddModalOpen(false); setIsEditModalOpen(false); setSelectedRecord(null); } }}>
         <DialogContent className="max-w-4xl w-[95vw] p-0 overflow-hidden border-none shadow-2xl rounded-[2.5rem] bg-slate-50 max-h-[96vh]">
           <DialogHeader className="bg-blue-600 p-6 text-white flex-row items-center gap-4 space-y-0">
@@ -270,15 +267,14 @@ export default function BranchesPage() {
               <DialogTitle className="text-xl font-bold font-headline uppercase tracking-tight">
                 {isEditModalOpen ? t('editBranch') : t('newLocation')}
               </DialogTitle>
-              <DialogDescription className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em] mt-0.5">
-                Physical Node Terminal Configuration for Organizational Logistics
+              <DialogDescription className="sr-only">
+                Configure physical organizational nodes and logistics endpoints for the ERP terminal.
               </DialogDescription>
             </div>
           </DialogHeader>
           
           <form onSubmit={handleSaveBranch} className="p-6 md:p-8 flex flex-col overflow-y-auto custom-scrollbar max-h-[calc(96vh-120px)]">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {/* Identity */}
               <div className="lg:col-span-2 space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('branch')} Name *</Label>
                 <Input name="branchName" required defaultValue={selectedRecord?.branchName} className="h-11 rounded-xl" placeholder="e.g. Dhaka Main Office" />
@@ -288,31 +284,19 @@ export default function BranchesPage() {
                 <Input name="branchCode" required defaultValue={selectedRecord?.branchCode} className="h-11 rounded-xl uppercase font-mono" placeholder="DHK-001" />
               </div>
 
-              {/* Classification */}
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Branch Type</Label>
                 <Select name="branchType" defaultValue={selectedRecord?.branchType || "Head Office"}>
-                  <SelectTrigger className="h-11 rounded-xl bg-white">
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger className="h-11 rounded-xl bg-white"><SelectValue /></SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    {branchTypes && branchTypes.length > 0 ? (
-                      branchTypes.map((type, idx) => (
-                        <SelectItem key={`branch-type-opt-${type.id}-${idx}`} value={type.name} className="text-xs font-bold">{type.name}</SelectItem>
-                      ))
-                    ) : (
-                      <>
-                        <SelectItem key="def-ho-key" value="Head Office" className="text-xs font-bold">Head Office</SelectItem>
-                        <SelectItem key="def-sc-key" value="Sales Center" className="text-xs font-bold">Sales Center</SelectItem>
-                        <SelectItem key="def-wh-key" value="Warehouse" className="text-xs font-bold">Warehouse</SelectItem>
-                        <SelectItem key="def-sp-key" value="Service Point" className="text-xs font-bold">Service Point</SelectItem>
-                      </>
-                    )}
+                    {branchTypes?.map((type, idx) => (
+                      <SelectItem key={`bt-${type.id}-${idx}`} value={type.name} className="text-xs font-bold">{type.name}</SelectItem>
+                    ))}
+                    {!branchTypes?.length && <SelectItem value="Head Office">Head Office</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Contact */}
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Contact Person</Label>
                 <Input name="contactPerson" defaultValue={selectedRecord?.contactPerson} className="h-11 rounded-xl" placeholder="Manager Name" />
@@ -326,7 +310,6 @@ export default function BranchesPage() {
                 <Input name="email" type="email" defaultValue={selectedRecord?.email} className="h-11 rounded-xl" placeholder="branch@warrior.com" />
               </div>
 
-              {/* Status */}
               <div className="flex items-center justify-between p-4 bg-white rounded-2xl border shadow-sm ring-1 ring-slate-100">
                 <div className="space-y-0.5">
                   <Label className="text-xs font-black uppercase text-slate-900">{t('isActive')}</Label>
@@ -335,7 +318,6 @@ export default function BranchesPage() {
                 <Switch name="status" defaultChecked={selectedRecord?.status !== 'inactive'} className="data-[state=checked]:bg-blue-600" />
               </div>
 
-              {/* Address */}
               <div className="lg:col-span-3 space-y-1.5 pt-4 border-t border-slate-200">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t('address')}</Label>
                 <textarea name="address" className="w-full min-h-[80px] rounded-xl bg-white border ring-1 ring-slate-200 p-4 text-xs resize-none" defaultValue={selectedRecord?.address} placeholder="Full street address..." />

@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -57,11 +56,10 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const companyId = PRODUCTION_COMPANY_ID;
 
   React.useEffect(() => {
-    let unsubUser: any;
-    let unsubSettings: any;
+    let unsubUser: () => void;
+    let unsubSettings: () => void;
 
     if (!isUserLoading && !user) {
-      // CLEAR ALL STATE ON LOGOUT
       setUserRole(null);
       setSettings(null);
       setBranchId('dhaka-main');
@@ -75,6 +73,8 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       // 1. Fetch Global Settings
       unsubSettings = onSnapshot(doc(db, "companies", companyId, "system", "config"), (snap) => {
         if (snap.exists()) setSettings(snap.data());
+      }, (err) => {
+        console.error("Settings listener failed:", err);
       });
 
       // 2. Fetch User Profile & Role
@@ -94,29 +94,32 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           setAllowedBranches(userData.allowedBranches || ['dhaka-main']);
 
           const roleId = userData.roleId || "default-user";
-          const roleSnap = await getDoc(doc(db, "companies", companyId, "roles", roleId));
-          if (roleSnap.exists()) {
-            const roleData = roleSnap.data();
-            setUserRole({ 
-              id: roleSnap.id, 
-              ...roleData, 
-              permissions: { ...(roleData.permissions || {}), ...(userData.permissionOverrides || {}) } 
-            } as Role);
+          try {
+            const roleSnap = await getDoc(doc(db, "companies", companyId, "roles", roleId));
+            if (roleSnap.exists()) {
+              const roleData = roleSnap.data();
+              setUserRole({ 
+                id: roleSnap.id, 
+                ...roleData, 
+                permissions: { ...(roleData.permissions || {}), ...(userData.permissionOverrides || {}) } 
+              } as Role);
+            }
+          } catch (e) {
+            console.error("Role fetch failed:", e);
           }
           setIsInitializing(false);
         } else {
-          // Profile might not exist yet during bootstrap
           setIsInitializing(false);
         }
       }, (err) => {
-        console.error("Authority fetch failed:", err);
+        console.error("User profile listener failed:", err);
         setIsInitializing(false);
       });
     }
 
     return () => {
-      unsubUser?.();
-      unsubSettings?.();
+      if (unsubUser) unsubUser();
+      if (unsubSettings) unsubSettings();
     };
   }, [user, isUserLoading, db, auth, companyId]);
 

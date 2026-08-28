@@ -17,14 +17,16 @@ const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 // 3. Firestore Instance with Production Config
-// We use initializeFirestore once to set critical settings like ignoreUndefinedProperties
+// We use initializeFirestore once with specific settings for production reliability.
 let db: Firestore;
 try {
-  db = getFirestore(app);
-} catch (e) {
+  // In a client-side environment, we attempt to initialize only once.
   db = initializeFirestore(app, {
     ignoreUndefinedProperties: true,
   });
+} catch (e) {
+  // If already initialized, get the existing instance
+  db = getFirestore(app);
 }
 
 /**

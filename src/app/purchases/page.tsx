@@ -60,7 +60,7 @@ export default function PurchasesPage() {
     if (!selectedRecord || !db || !companyId || !branchId) return;
     const docRef = doc(db, "companies", companyId, "branches", branchId, "purchase_orders", selectedRecord.id);
     deleteDocumentNonBlocking(docRef);
-    toast({ title: t('common_success') });
+    toast({ title: t('success') });
     setIsDeleteAlertOpen(false);
     setSelectedRecord(null);
   };
@@ -75,7 +75,7 @@ export default function PurchasesPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">
         <div>
           <h1 className="text-xl font-bold font-headline text-orange-600 uppercase tracking-tight">{t('purchases')}</h1>
-          <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{t('dashboard_happeningToday')}</p>
+          <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{t('happeningToday')}</p>
         </div>
         <Button className="rounded-full gap-2 h-10 px-8 bg-orange-600 hover:bg-orange-700 font-bold text-[10px] uppercase shadow-xl shadow-orange-100 transition-all active:scale-95 w-full md:w-auto" asChild>
           <Link href="/purchases/new">
@@ -87,14 +87,14 @@ export default function PurchasesPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 no-print">
         <KPICard title={t('purchases')} value={`৳${stats.totalAmount.toLocaleString()}`} icon={ShoppingCart} colorClass="bg-blue-600" />
         <KPICard title={t('purchases')} value={`৳${stats.monthlyAmount.toLocaleString()}`} icon={Calendar} colorClass="bg-green-600" />
-        <KPICard title={t('dashboard_totalOrders')} value={stats.count} icon={Package} colorClass="bg-orange-600" />
+        <KPICard title={t('totalOrders')} value={stats.count} icon={Package} colorClass="bg-orange-600" />
       </div>
 
       <div className="flex gap-2 bg-white p-3 rounded-xl border shadow-sm ring-1 ring-slate-100 no-print">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <input 
-            placeholder={t('common_search')} 
+            placeholder={t('search')} 
             className="pl-9 h-10 w-full rounded-xl bg-slate-50/50 border-none text-xs focus:ring-2 focus:ring-orange-500 transition-all outline-none" 
             value={searchTerm} 
             onChange={e => setSearchTerm(e.target.value)} 
@@ -112,8 +112,8 @@ export default function PurchasesPage() {
                 <TableRow>
                   <TableHead className="h-12 text-[10px] uppercase font-black pl-6">ID</TableHead>
                   <TableHead className="h-12 text-[10px] uppercase font-black">{t('suppliers')}</TableHead>
-                  <TableHead className="h-12 text-[10px] uppercase font-black">{t('common_amount')}</TableHead>
-                  <TableHead className="h-12 text-[10px] uppercase font-black text-center">{t('common_status')}</TableHead>
+                  <TableHead className="h-12 text-[10px] uppercase font-black">{t('amount')}</TableHead>
+                  <TableHead className="h-12 text-[10px] uppercase font-black text-center">{t('status')}</TableHead>
                   <TableHead className="h-12 text-right pr-6"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -128,7 +128,7 @@ export default function PurchasesPage() {
                     <TableCell className="font-black text-xs text-slate-900">৳{po.totalAmount?.toLocaleString()}</TableCell>
                     <TableCell className="text-center">
                       <Badge variant="outline" className="text-[8px] h-5 uppercase border-none px-2 font-black bg-green-50 text-green-700">
-                        {po.status.toUpperCase()}
+                        {po.status?.toUpperCase() || 'RECEIVED'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right pr-6">
@@ -139,9 +139,9 @@ export default function PurchasesPage() {
                             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-orange-50 text-orange-600 transition-colors"><MoreVertical className="h-4 w-4" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-xl">
-                            <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedRecord(po); setIsViewModalOpen(true); }}><Printer className="mr-2 h-3.5 w-3.5" /> {t('common_print')}</DropdownMenuItem>
+                            <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedRecord(po); setIsViewModalOpen(true); }}><Printer className="mr-2 h-3.5 w-3.5" /> {t('print')}</DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(po); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('common_delete')}</DropdownMenuItem>
+                            <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(po); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -163,7 +163,7 @@ export default function PurchasesPage() {
           </DialogHeader>
           <div className="flex justify-end gap-3 mb-4 no-print fixed top-4 right-4 md:top-6 md:right-6 z-[100]">
             <Button onClick={() => window.print()} className="bg-white text-orange-600 hover:bg-orange-50 shadow-2xl rounded-full font-black text-[10px] uppercase h-10 px-6 gap-2 border-none ring-1 ring-orange-100">
-              <Printer className="h-4 w-4" /> {t('common_print')}
+              <Printer className="h-4 w-4" /> {t('print')}
             </Button>
           </div>
           {selectedRecord && (
@@ -193,12 +193,12 @@ export default function PurchasesPage() {
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tight text-slate-900">{t('common_confirmDelete')}?</AlertDialogTitle>
+            <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tight text-slate-900">{t('confirmDelete')}?</AlertDialogTitle>
             <AlertDialogDescription className="text-xs font-medium leading-relaxed">This record will be permanently removed.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-8 gap-3">
-            <AlertDialogCancel className="rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest">{t('common_cancel')}</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700 rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest" onClick={handleDeletePO}>{t('common_delete')}</AlertDialogAction>
+            <AlertDialogCancel className="rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest">{t('cancel')}</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest" onClick={handleDeletePO}>{t('delete')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
