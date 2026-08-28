@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -266,7 +267,7 @@ export default function SettingsPage() {
                       </div>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase text-slate-500">Menu Hover Background Color</Label>
+                      <Label className="text-[10px] font-black uppercase text-slate-500">Sub-menu Default Hover Color</Label>
                       <div className="flex gap-2">
                          <Input type="color" value={sidebarHoverColor} onChange={e => setSidebarHoverColor(e.target.value)} className="h-11 w-16 p-1 rounded-lg" />
                          <Input value={sidebarHoverColor} onChange={e => setSidebarHoverColor(e.target.value)} className="h-11 flex-1 rounded-xl font-mono uppercase" />
