@@ -58,7 +58,7 @@ export default function CustomersPage() {
     if (!selectedCustomer || !db) return;
     const docRef = doc(db, "companies", companyId!, "branches", branchId!, "customers", selectedCustomer.id);
     await deleteDoc(docRef);
-    toast({ title: t('common_success') });
+    toast({ title: t('success') });
     setIsDeleteAlertOpen(false);
   };
 
@@ -68,22 +68,22 @@ export default function CustomersPage() {
         <h1 className="text-xl font-bold font-headline text-cyan-600 uppercase tracking-tight">{t('customers')}</h1>
         <Button className="bg-cyan-600 hover:bg-cyan-700 gap-2 rounded-full h-9 px-6 text-[10px] uppercase font-bold shadow-lg shadow-cyan-100" asChild>
           <Link href="/customers/new">
-            <UserPlus className="h-4 w-4" /> {t('common_add')} {t('forms_customer')}
+            <UserPlus className="h-4 w-4" /> {t('add')} {t('customer')}
           </Link>
         </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <KPICard title={t('dashboard_activeCustomers')} value={stats.total} icon={Users} colorClass="bg-blue-600" />
-        <KPICard title={t('common_all')} value={stats.active} icon={UserCheck} colorClass="bg-green-600" />
-        <KPICard title={t('dashboard_pendingInvoices')} value={stats.due} icon={UserX} colorClass="bg-red-600" />
+        <KPICard title={t('activeCustomers')} value={stats.total} icon={Users} colorClass="bg-blue-600" />
+        <KPICard title={t('all')} value={stats.active} icon={UserCheck} colorClass="bg-green-600" />
+        <KPICard title={t('pendingInvoices')} value={stats.due} icon={UserX} colorClass="bg-red-600" />
       </div>
 
       <div className="bg-white p-3 rounded-2xl border ring-1 ring-slate-100">
         <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <input 
-            placeholder={t('common_search')} 
+            placeholder={t('search')} 
             className="pl-9 h-10 w-full border-none bg-slate-50/50 rounded-xl text-xs font-bold transition-all outline-none" 
             value={searchTerm} 
             onChange={(e) => setSearchTerm(e.target.value)} 
@@ -106,27 +106,31 @@ export default function CustomersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredCustomers?.map((customer) => (
-                  <TableRow key={customer.id} className="h-16 hover:bg-muted/5 transition-colors group cursor-pointer" onClick={() => router.push(`/customers/${customer.id}/view`)}>
-                    <TableCell className="pl-8">
-                      <Badge variant="outline" className="text-[8px] font-black h-5 px-2 bg-slate-100 border-none uppercase">
-                        {customer.customerType === "company" ? "Corp" : "Indiv"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-bold text-xs uppercase text-slate-900">{customer.firstName} {customer.lastName}</div>
-                      <div className="text-[9px] text-muted-foreground font-medium">{customer.email}</div>
-                    </TableCell>
-                    <TableCell className="text-xs font-bold text-slate-700 uppercase">{customer.companyName || "---"}</TableCell>
-                    <TableCell className="text-right pr-8" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-blue-600" onClick={() => router.push(`/customers/${customer.id}/view`)} title="View Profile"><Eye className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-amber-600" onClick={() => router.push(`/customers/${customer.id}/edit`)}><Edit className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-red-600" onClick={() => { setSelectedCustomer(customer); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {filteredCustomers?.length === 0 ? (
+                  <TableRow><TableCell colSpan={4} className="h-40 text-center text-[10px] font-black uppercase text-slate-300">{t('noData')}</TableCell></TableRow>
+                ) : (
+                  filteredCustomers?.map((customer) => (
+                    <TableRow key={customer.id} className="h-16 hover:bg-muted/5 transition-colors group cursor-pointer" onClick={() => router.push(`/customers/${customer.id}/view`)}>
+                      <TableCell className="pl-8">
+                        <Badge variant="outline" className="text-[8px] font-black h-5 px-2 bg-slate-100 border-none uppercase">
+                          {customer.customerType === "company" ? "Corp" : "Indiv"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-bold text-xs uppercase text-slate-900">{customer.firstName} {customer.lastName}</div>
+                        <div className="text-[9px] text-muted-foreground font-medium">{customer.email}</div>
+                      </TableCell>
+                      <TableCell className="text-xs font-bold text-slate-700 uppercase">{customer.companyName || "---"}</TableCell>
+                      <TableCell className="text-right pr-8" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-blue-600" onClick={() => router.push(`/customers/${customer.id}/view`)} title="View Profile"><Eye className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-amber-600" onClick={() => router.push(`/customers/${customer.id}/edit`)}><Edit className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-red-600" onClick={() => { setSelectedCustomer(customer); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
@@ -136,12 +140,12 @@ export default function CustomersPage() {
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tight text-slate-900">{t('common_confirmDelete')}?</AlertDialogTitle>
+            <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tight text-slate-900">{t('confirmDelete')}?</AlertDialogTitle>
             <AlertDialogDescription className="text-xs font-medium leading-relaxed">Record will be permanently deleted.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-8 gap-3">
-            <AlertDialogCancel className="rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest">{t('common_cancel')}</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700 rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest" onClick={handleDeleteCustomer}>{t('common_delete')}</AlertDialogAction>
+            <AlertDialogCancel className="rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest">{t('cancel')}</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest" onClick={handleDeleteCustomer}>{t('delete')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

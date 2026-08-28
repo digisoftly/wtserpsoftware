@@ -107,11 +107,10 @@ export function AppSidebar() {
   const { settings } = useSettings()
   const { t } = useTranslation()
 
-  // Dynamic colors from settings with precise fallbacks
   const sidebarBg = settings?.sidebarBgColor || "#FFFFFF"
-  const sidebarText = settings?.sidebarTextColor || "#111827"
-  const sidebarHover = settings?.sidebarHoverColor || "#F3F4F6"
-  const sidebarActive = settings?.sidebarActiveColor || "#E5E7EB" // DEFAULT GREY FOR ACTIVE
+  const sidebarText = settings?.sidebarTextColor || "#000000"
+  const sidebarHover = settings?.sidebarHoverColor || "#E5E7EB" 
+  const sidebarActive = settings?.sidebarActiveColor || "#E5E7EB"
 
   const handleLogout = async () => {
     await signOut(auth)
@@ -169,8 +168,7 @@ export function AppSidebar() {
                         : ""
                     )}
                     style={{ 
-                      // Apply dynamic colors
-                      color: (isActive || state === 'collapsed') ? "#000000" : sidebarText,
+                      color: isActive ? "#000000" : sidebarText,
                       backgroundColor: isActive ? sidebarActive : "transparent",
                       // @ts-ignore
                       '--sidebar-hover-bg': sidebarHover,
@@ -197,7 +195,6 @@ export function AppSidebar() {
               );
             })}
 
-            {/* Master Management Group */}
             {can('masterManagement', 'view') && (
               <Collapsible defaultOpen={isMasterActive} className="group/collapsible">
                 <SidebarMenuItem>
@@ -273,7 +270,7 @@ export function AppSidebar() {
               style={{ 
                 color: sidebarText,
                 // @ts-ignore
-                '--sidebar-hover-bg': "#FEE2E2", // Special red hover for logout
+                '--sidebar-hover-bg': "#FEE2E2",
               } as React.CSSProperties}
             >
               <div className="flex items-center gap-3 w-full h-full rounded-xl">

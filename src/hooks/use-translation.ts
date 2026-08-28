@@ -28,15 +28,15 @@ export function useTranslation() {
         for (const fKey of keys) {
           fallback = fallback?.[fKey];
         }
-        if (typeof fallback === 'object' || fallback === undefined) return path;
-        return fallback;
+        if (typeof fallback === 'string') return fallback;
+        return path;
       }
       result = result[key];
     }
     
-    if (typeof result === 'object' && result !== null) return path;
+    if (typeof result === 'string') return result;
     
-    return result || path;
+    return path;
   };
 
   /**

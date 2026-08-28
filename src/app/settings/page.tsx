@@ -11,13 +11,11 @@ import {
   ArrowDown,
   Palette,
   Eye,
-  Table as TableIcon,
   ImageIcon,
   PenTool,
   FileBadge,
   LayoutGrid,
   Monitor,
-  Type,
   MousePointer2,
   Activity
 } from "lucide-react"
@@ -81,13 +79,11 @@ export default function SettingsPage() {
   const [signPreview, setSignPreview] = React.useState<string | null>(null);
   const [menuOrder, setMenuOrder] = React.useState<string[]>(DEFAULT_MENU_ORDER);
 
-  // UI Colors State
   const [sidebarBgColor, setSidebarBgColor] = React.useState("#FFFFFF");
-  const [sidebarHoverColor, setSidebarHoverColor] = React.useState("#F3F4F6");
+  const [sidebarHoverColor, setSidebarHoverColor] = React.useState("#E5E7EB");
   const [sidebarActiveColor, setSidebarActiveColor] = React.useState("#E5E7EB");
-  const [sidebarTextColor, setSidebarTextColor] = React.useState("#111827");
+  const [sidebarTextColor, setSidebarTextColor] = React.useState("#000000");
 
-  // Design Lab State
   const [previewLayout, setPreviewLayout] = React.useState<any>("warrior");
   const [docPrimaryColor, setDocPrimaryColor] = React.useState("#0056B3");
   const [docAccentColor, setDocAccentColor] = React.useState("#F57C00");
@@ -106,14 +102,12 @@ export default function SettingsPage() {
       setSealPreview(settings.authorizedSeal || null);
       setSignPreview(settings.authorizedSignature || null);
       if (settings.sidebarMenuOrder) setMenuOrder(settings.sidebarMenuOrder);
-      else setMenuOrder(DEFAULT_MENU_ORDER);
       
       if (settings.defaultTemplate_invoice) setPreviewLayout(settings.defaultTemplate_invoice);
       if (settings.docPrimaryColor) setDocPrimaryColor(settings.docPrimaryColor);
       if (settings.docAccentColor) setDocAccentColor(settings.docAccentColor);
       if (settings.docFontSize) setDocFontSize(settings.docFontSize);
       
-      // Load UI Colors
       if (settings.sidebarBgColor) setSidebarBgColor(settings.sidebarBgColor);
       if (settings.sidebarHoverColor) setSidebarHoverColor(settings.sidebarHoverColor);
       if (settings.sidebarActiveColor) setSidebarActiveColor(settings.sidebarActiveColor);
@@ -218,7 +212,6 @@ export default function SettingsPage() {
 
           <TabsContent value="general" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* BRANDING ASSETS */}
               <Card className="border-none shadow-sm rounded-2xl flex flex-col items-center justify-center p-6 text-center bg-white ring-1 ring-slate-100">
                 <Label className="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest">Company Logo</Label>
                 <div className="w-24 h-24 mb-4 relative group">
@@ -258,7 +251,6 @@ export default function SettingsPage() {
                 <p className="text-[9px] text-slate-400 uppercase font-bold">E-Signature</p>
               </Card>
 
-              {/* CORPORATE DATA */}
               <Card className="md:col-span-3 border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100">
                 <CardHeader><CardTitle className="text-xs font-black uppercase tracking-widest text-slate-500">Corporate Identity Matrix</CardTitle></CardHeader>
                 <CardContent className="p-8 space-y-6">
@@ -273,7 +265,6 @@ export default function SettingsPage() {
                 </CardContent>
               </Card>
 
-              {/* SIDEBAR UI CUSTOMIZATION */}
               <Card className="md:col-span-3 border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100">
                 <CardHeader>
                   <div className="flex items-center gap-2">
