@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -116,6 +115,10 @@ export function AppSidebar() {
   const { settings } = useSettings()
   const { t } = useTranslation()
 
+  // Dynamic Theme Colors
+  const sidebarBg = settings?.sidebarBgColor || "#FFFFFF"
+  const hoverBg = settings?.sidebarHoverColor || "#F1F5F9"
+
   const handleLogout = async () => {
     await signOut(auth)
     router.push('/login')
@@ -124,8 +127,15 @@ export function AppSidebar() {
   const isMasterActive = pathname.startsWith('/master')
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-slate-100 bg-white shadow-sm">
-      <SidebarHeader className="h-[64px] flex items-center px-4 border-b border-slate-50 bg-white">
+    <Sidebar 
+      collapsible="icon" 
+      className="border-r border-slate-100 shadow-sm"
+      style={{ backgroundColor: sidebarBg } as React.CSSProperties}
+    >
+      <SidebarHeader 
+        className="h-[64px] flex items-center px-4 border-b border-slate-50"
+        style={{ backgroundColor: sidebarBg } as React.CSSProperties}
+      >
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-lg shadow-lg shrink-0">
             {settings?.companyLogo ? <img src={settings.companyLogo} className="w-full h-full object-contain p-1.5" alt="Logo" /> : "W"}
@@ -139,7 +149,10 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       
-      <SidebarContent className="py-4 custom-scrollbar bg-white">
+      <SidebarContent 
+        className="py-4 custom-scrollbar"
+        style={{ backgroundColor: sidebarBg } as React.CSSProperties}
+      >
         <SidebarGroup className="p-0">
           <SidebarMenu className="gap-1 px-3">
             {MAIN_MODULES.filter(m => can(m.key, 'view')).map((item) => {
@@ -155,13 +168,20 @@ export function AppSidebar() {
                       "h-10 px-3 transition-all rounded-xl group",
                       isActive 
                         ? "bg-slate-100 text-black border-l-4 border-blue-600" 
-                        : "text-black hover:bg-black hover:text-white"
+                        : "text-black"
                     )}
+                    style={{ 
+                       // @ts-ignore
+                       '--hover-bg': hoverBg,
+                    } as React.CSSProperties}
                   >
-                    <Link href={item.path} className="flex items-center gap-3">
+                    <Link 
+                      href={item.path} 
+                      className="flex items-center gap-3 group-hover:bg-[var(--hover-bg)]"
+                    >
                       <item.icon className={cn(
                         "h-4.5 w-4.5 shrink-0 transition-colors", 
-                        isActive ? "text-blue-600" : cn(item.color, "group-hover:text-white")
+                        isActive ? "text-blue-600" : item.color
                       )} />
                       <span className="text-[12px] font-black uppercase tracking-tight">{t(item.name)}</span>
                     </Link>
@@ -180,15 +200,21 @@ export function AppSidebar() {
                       tooltip={t('master')}
                       className={cn(
                         "h-10 px-3 transition-all rounded-xl group",
-                        isMasterActive ? "bg-slate-100 text-black border-l-4 border-orange-600" : "text-black hover:bg-black hover:text-white"
+                        isMasterActive ? "bg-slate-100 text-black border-l-4 border-orange-600" : "text-black"
                       )}
+                      style={{ 
+                         // @ts-ignore
+                         '--hover-bg': hoverBg,
+                      } as React.CSSProperties}
                     >
-                      <Database className={cn(
-                        "h-4.5 w-4.5 shrink-0 transition-colors", 
-                        isMasterActive ? "text-orange-600" : "text-orange-500 group-hover:text-white"
-                      )} />
-                      <span className="text-[12px] font-black uppercase tracking-tight">{t('master')}</span>
-                      <ChevronRight className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                      <div className="flex items-center gap-3 w-full group-hover:bg-[var(--hover-bg)] h-full rounded-xl">
+                        <Database className={cn(
+                          "h-4.5 w-4.5 shrink-0 transition-colors", 
+                          isMasterActive ? "text-orange-600" : "text-orange-500"
+                        )} />
+                        <span className="text-[12px] font-black uppercase tracking-tight">{t('master')}</span>
+                        <ChevronRight className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                      </div>
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
@@ -202,10 +228,14 @@ export function AppSidebar() {
                               "h-8 px-4 rounded-lg transition-all",
                               pathname === sub.path 
                                 ? "text-blue-600 font-black bg-blue-50/50" 
-                                : "text-slate-600 font-bold hover:bg-black hover:text-white"
+                                : "text-slate-600 font-bold"
                             )}
+                            style={{ 
+                               // @ts-ignore
+                               '--hover-bg': hoverBg,
+                            } as React.CSSProperties}
                           >
-                            <Link href={sub.path}>
+                            <Link href={sub.path} className="group-hover:bg-[var(--hover-bg)]">
                               <span className="text-[11px] uppercase tracking-tighter">{t(sub.name)}</span>
                             </Link>
                           </SidebarMenuButton>
@@ -220,16 +250,33 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-slate-50 p-2 bg-white">
+      <SidebarFooter 
+        className="border-t border-slate-50 p-2"
+        style={{ backgroundColor: sidebarBg } as React.CSSProperties}
+      >
         <SidebarMenu className="px-2">
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout} className="text-black font-black hover:text-white hover:bg-black h-10 px-3 rounded-xl transition-all">
-              <LogOut className="h-4.5 w-4.5 text-red-500" />
-              <span className="text-[12px] font-black uppercase tracking-tight">Logout</span>
+            <SidebarMenuButton 
+              onClick={handleLogout} 
+              className="text-black font-black h-10 px-3 rounded-xl transition-all"
+              style={{ 
+                 // @ts-ignore
+                 '--hover-bg': hoverBg,
+              } as React.CSSProperties}
+            >
+              <div className="flex items-center gap-3 w-full group-hover:bg-[var(--hover-bg)] h-full rounded-xl">
+                <LogOut className="h-4.5 w-4.5 text-red-500" />
+                <span className="text-[12px] font-black uppercase tracking-tight">Logout</span>
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
+      <style jsx global>{`
+        [data-sidebar="menu-button"]:hover {
+          background-color: var(--hover-bg) !important;
+        }
+      `}</style>
     </Sidebar>
   )
 }

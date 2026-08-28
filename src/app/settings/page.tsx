@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -15,7 +14,8 @@ import {
   ImageIcon,
   PenTool,
   FileBadge,
-  LayoutGrid
+  LayoutGrid,
+  Monitor
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -78,6 +78,10 @@ export default function SettingsPage() {
   const [signPreview, setSignPreview] = React.useState<string | null>(null);
   const [menuOrder, setMenuOrder] = React.useState<string[]>(DEFAULT_MENU_ORDER);
 
+  // UI Colors
+  const [sidebarBgColor, setSidebarBgColor] = React.useState("#FFFFFF");
+  const [sidebarHoverColor, setSidebarHoverColor] = React.useState("#F1F5F9");
+
   // Design Lab State
   const [previewLayout, setPreviewLayout] = React.useState<any>("warrior");
   const [docPrimaryColor, setDocPrimaryColor] = React.useState("#0056B3");
@@ -101,6 +105,8 @@ export default function SettingsPage() {
       if (settings.docPrimaryColor) setDocPrimaryColor(settings.docPrimaryColor);
       if (settings.docAccentColor) setDocAccentColor(settings.docAccentColor);
       if (settings.docFontSize) setDocFontSize(settings.docFontSize);
+      if (settings.sidebarBgColor) setSidebarBgColor(settings.sidebarBgColor);
+      if (settings.sidebarHoverColor) setSidebarHoverColor(settings.sidebarHoverColor);
     }
   }, [settings]);
 
@@ -138,6 +144,8 @@ export default function SettingsPage() {
       docPrimaryColor: docPrimaryColor,
       docAccentColor: docAccentColor,
       docFontSize: docFontSize,
+      sidebarBgColor: sidebarBgColor,
+      sidebarHoverColor: sidebarHoverColor,
     };
 
     formData.forEach((value, key) => {
@@ -148,9 +156,9 @@ export default function SettingsPage() {
 
     try {
       setDocumentNonBlocking(settingsRef, updates, { merge: true });
-      toast({ title: t('common_success') });
+      toast({ title: t('success') });
     } catch (err) {
-      toast({ variant: "destructive", title: t('common_error') });
+      toast({ variant: "destructive", title: t('error') });
     } finally {
       setIsSaving(false);
     }
@@ -181,7 +189,7 @@ export default function SettingsPage() {
             <Settings2 className="h-8 w-8" /> System Configuration
           </h1>
           <Button type="submit" disabled={isSaving} className="bg-blue-600 hover:bg-blue-700 rounded-full px-8 h-12 font-bold shadow-lg">
-            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} {t('common_save')}
+            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} {t('save')}
           </Button>
         </div>
 
@@ -242,6 +250,28 @@ export default function SettingsPage() {
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Official Email</Label><Input name="email" defaultValue={settings?.email} className="h-11 rounded-xl" /></div>
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Website URL</Label><Input name="website" defaultValue={settings?.website} placeholder="www example com" className="h-11 rounded-xl" /></div>
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Official Address</Label><Input name="address" defaultValue={settings?.address} className="h-11 rounded-xl" /></div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="md:col-span-3 border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100">
+                <CardHeader><CardTitle className="text-sm font-black uppercase tracking-widest text-slate-500">Sidebar UI Customization</CardTitle></CardHeader>
+                <CardContent className="p-8 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-black uppercase text-slate-500">Sidebar Background Color</Label>
+                      <div className="flex gap-2">
+                         <Input type="color" value={sidebarBgColor} onChange={e => setSidebarBgColor(e.target.value)} className="h-11 w-16 p-1 rounded-lg" />
+                         <Input value={sidebarBgColor} onChange={e => setSidebarBgColor(e.target.value)} className="h-11 flex-1 rounded-xl font-mono uppercase" />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-black uppercase text-slate-500">Menu Hover Background Color</Label>
+                      <div className="flex gap-2">
+                         <Input type="color" value={sidebarHoverColor} onChange={e => setSidebarHoverColor(e.target.value)} className="h-11 w-16 p-1 rounded-lg" />
+                         <Input value={sidebarHoverColor} onChange={e => setSidebarHoverColor(e.target.value)} className="h-11 flex-1 rounded-xl font-mono uppercase" />
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
