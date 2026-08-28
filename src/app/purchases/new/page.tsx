@@ -80,8 +80,8 @@ export default function NewPurchasePage() {
 
   // Calculations
   const subtotal = React.useMemo(() => lineItems.reduce((sum, item) => sum + (item.qty * item.price), 0), [lineItems]);
-  const itemDiscounts = lineItems.reduce((sum, item) => sum + (item.qty * item.price * (item.discount / 100)), 0), [lineItems]);
-  const itemTaxes = lineItems.reduce((sum, item) => sum + ((item.qty * item.price) - (item.qty * item.price * (item.discount / 100))) * (item.tax / 100), 0), [lineItems]);
+  const itemDiscounts = React.useMemo(() => lineItems.reduce((sum, item) => sum + (item.qty * item.price * (item.discount / 100)), 0), [lineItems]);
+  const itemTaxes = React.useMemo(() => lineItems.reduce((sum, item) => sum + ((item.qty * item.price) - (item.qty * item.price * (item.discount / 100))) * (item.tax / 100), 0), [lineItems]);
   const grandTotal = React.useMemo(() => subtotal - itemDiscounts + itemTaxes - globalDiscount + additionalCharge, [subtotal, itemDiscounts, itemTaxes, globalDiscount, additionalCharge]);
   const balanceDue = React.useMemo(() => grandTotal - paidAmount, [grandTotal, paidAmount]);
 
@@ -254,7 +254,7 @@ export default function NewPurchasePage() {
         <div className="overflow-x-auto">
           <Table>
             <TableHeader className="bg-slate-50/50 border-b">
-              <TableRow className="hover:bg-transparent">
+              <TableRow className="hover:bg-transparent h-14">
                 <TableHead className="w-12 text-center text-[10px] font-black uppercase tracking-tighter">SL</TableHead>
                 <TableHead className="min-w-[200px] text-[10px] font-black uppercase tracking-tighter">Item</TableHead>
                 <TableHead className="min-w-[200px] text-[10px] font-black uppercase tracking-tighter">Description</TableHead>
@@ -370,3 +370,4 @@ export default function NewPurchasePage() {
     </div>
   );
 }
+
