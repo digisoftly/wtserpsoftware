@@ -17,8 +17,15 @@ import {
   LayoutGrid,
   Monitor,
   MousePointer2,
-  Activity
+  Activity,
+  Plus,
+  Trash2,
+  BarChart3,
+  Edit,
+  MoveUp,
+  MoveDown
 } from "lucide-react"
+import * as Icons from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -26,7 +33,7 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useFirestore, useDoc, useMemoFirebase } from "@/firebase"
-import { doc, serverTimestamp } from "firebase/firestore"
+import { doc, serverTimestamp, setDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { toast } from "@/hooks/use-toast"
@@ -34,39 +41,31 @@ import { useTranslation } from "@/hooks/use-translation"
 import { Textarea } from "@/components/ui/textarea"
 import { DocumentTemplate } from "@/components/documents/document-template"
 import { Badge } from "@/components/ui/badge"
+import { KPICard } from "@/components/dashboard/kpi-card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { Switch } from "@/components/ui/switch"
 
 const DEFAULT_MENU_ORDER = [
-  "dashboard", 
-  "sales", 
-  "quotations", 
-  "dispatch", 
-  "purchases", 
-  "returns", 
-  "inventory", 
-  "serialTracking", 
-  "projectBilling", 
-  "contracts", 
-  "customers", 
-  "suppliers", 
-  "accounts", 
-  "expenses", 
-  "support", 
-  "crm", 
-  "hrm", 
-  "branches", 
-  "reports", 
-  "ai", 
-  "users",
-  "settings"
+  "dashboard", "sales", "quotations", "dispatch", "purchases", "returns", 
+  "inventory", "serialTracking", "projectBilling", "contracts", "customers", 
+  "suppliers", "accounts", "expenses", "support", "crm", "hrm", "branches", 
+  "reports", "ai", "users", "settings"
 ];
 
-const DOCUMENT_LAYOUTS = [
-  { value: "warrior", name: "Warrior Official Premium" },
-  { value: "erppro", name: "ERP Pro High Density" },
-  { value: "modern", name: "Modern Bold Branding" },
-  { value: "professional", name: "Professional Standard" },
-  { value: "minimal", name: "Minimalist Clean" },
-  { value: "thermal", name: "Thermal 80mm Receipt" },
+const DATA_SOURCES = [
+  { label: "Total Sales", value: "totalSales" },
+  { label: "Today Sales", value: "todaySales" },
+  { label: "Monthly Sales", value: "monthlySales" },
+  { label: "Total Purchases", value: "totalPurchase" },
+  { label: "Net Profit", value: "netProfit" },
+  { label: "Total Expenses", value: "totalExpense" },
+  { label: "Active Customers", value: "totalCustomers" },
+  { label: "Total Suppliers", value: "totalSuppliers" },
+  { label: "Low Stock Items", value: "lowStockCount" },
+  { label: "Pending Projects", value: "pendingProjects" },
+  { label: "Customer Due", value: "customerDue" },
+  { label: "Supplier Due", value: "supplierDue" },
+  { label: "Total Staff", value: "staffCount" },
 ];
 
 export default function SettingsPage() {
@@ -74,20 +73,17 @@ export default function SettingsPage() {
   const db = useFirestore();
   const { t } = useTranslation();
   const [isSaving, setIsSaving] = React.useState(false);
+  
+  // Dashboard State
+  const [kpiCards, setKpiCards] = React.useState<any[]>([]);
+  const [isKpiModalOpen, setIsKpiModalOpen] = React.useState(false);
+  const [editingCard, setEditingCard] = React.useState<any>(null);
+
+  // Global UI State
   const [logoPreview, setLogoPreview] = React.useState<string | null>(null);
   const [sealPreview, setSealPreview] = React.useState<string | null>(null);
   const [signPreview, setSignPreview] = React.useState<string | null>(null);
   const [menuOrder, setMenuOrder] = React.useState<string[]>(DEFAULT_MENU_ORDER);
-
-  const [sidebarBgColor, setSidebarBgColor] = React.useState("#FFFFFF");
-  const [sidebarHoverColor, setSidebarHoverColor] = React.useState("#000000");
-  const [sidebarActiveColor, setSidebarActiveColor] = React.useState("#E5E7EB");
-  const [sidebarTextColor, setSidebarTextColor] = React.useState("#000000");
-
-  const [previewLayout, setPreviewLayout] = React.useState<any>("warrior");
-  const [docPrimaryColor, setDocPrimaryColor] = React.useState("#0056B3");
-  const [docAccentColor, setDocAccentColor] = React.useState("#F57C00");
-  const [docFontSize, setDocFontSize] = React.useState("standard");
 
   const settingsRef = useMemoFirebase(() => {
     if (!db || !companyId) return null;
@@ -102,35 +98,46 @@ export default function SettingsPage() {
       setSealPreview(settings.authorizedSeal || null);
       setSignPreview(settings.authorizedSignature || null);
       if (settings.sidebarMenuOrder) setMenuOrder(settings.sidebarMenuOrder);
-      
-      if (settings.defaultTemplate_invoice) setPreviewLayout(settings.defaultTemplate_invoice);
-      if (settings.docPrimaryColor) setDocPrimaryColor(settings.docPrimaryColor);
-      if (settings.docAccentColor) setDocAccentColor(settings.docAccentColor);
-      if (settings.docFontSize) setDocFontSize(settings.docFontSize);
-      
-      if (settings.sidebarBgColor) setSidebarBgColor(settings.sidebarBgColor);
-      if (settings.sidebarHoverColor) setSidebarHoverColor(settings.sidebarHoverColor);
-      if (settings.sidebarActiveColor) setSidebarActiveColor(settings.sidebarActiveColor);
-      if (settings.sidebarTextColor) setSidebarTextColor(settings.sidebarTextColor);
+      if (settings.dashboardKpiCards) setKpiCards(settings.dashboardKpiCards);
     }
   }, [settings]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setter: (val: string | null) => void) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => setter(reader.result as string);
-    reader.readAsDataURL(file);
+  const handleSaveKpi = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    
+    const newCard = {
+      id: editingCard?.id || Math.random().toString(36).substr(2, 9),
+      title: formData.get("title") as string,
+      valueKey: formData.get("valueKey") as string,
+      iconName: formData.get("iconName") as string,
+      colorClass: formData.get("colorClass") as string,
+      bgColor: formData.get("bgColor") as string,
+      size: formData.get("size") as string,
+      shape: formData.get("shape") as string,
+      showGraph: formData.get("showGraph") === "on",
+      graphColor: formData.get("graphColor") as string,
+    };
+
+    if (editingCard) {
+      setKpiCards(prev => prev.map(c => c.id === editingCard.id ? newCard : c));
+    } else {
+      setKpiCards(prev => [...prev, newCard]);
+    }
+    setIsKpiModalOpen(false);
+    setEditingCard(null);
   };
 
-  const moveMenuItem = (index: number, direction: 'up' | 'down') => {
-    const newOrder = [...menuOrder];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= newOrder.length) return;
-    const temp = newOrder[index];
-    newOrder[index] = newOrder[targetIndex];
-    newOrder[targetIndex] = temp;
-    setMenuOrder(newOrder);
+  const deleteCard = (id: string) => {
+    setKpiCards(prev => prev.filter(c => c.id !== id));
+  };
+
+  const moveCard = (index: number, direction: 'up' | 'down') => {
+    const newCards = [...kpiCards];
+    const target = direction === 'up' ? index - 1 : index + 1;
+    if (target < 0 || target >= newCards.length) return;
+    [newCards[index], newCards[target]] = [newCards[target], newCards[index]];
+    setKpiCards(newCards);
   };
 
   const handleSaveSettings = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -146,44 +153,23 @@ export default function SettingsPage() {
       authorizedSeal: sealPreview,
       authorizedSignature: signPreview,
       sidebarMenuOrder: menuOrder,
-      docPrimaryColor: docPrimaryColor,
-      docAccentColor: docAccentColor,
-      docFontSize: docFontSize,
-      sidebarBgColor: sidebarBgColor,
-      sidebarHoverColor: sidebarHoverColor,
-      sidebarActiveColor: sidebarActiveColor,
-      sidebarTextColor: sidebarTextColor,
+      dashboardKpiCards: kpiCards,
     };
 
     formData.forEach((value, key) => {
-      if (!["companyLogo", "authorizedSeal", "authorizedSignature", "sidebarMenuOrder", "sidebarBgColor", "sidebarHoverColor", "sidebarActiveColor", "sidebarTextColor"].includes(key)) {
+      if (!["companyLogo", "authorizedSeal", "authorizedSignature", "sidebarMenuOrder", "dashboardKpiCards"].includes(key)) {
         updates[key] = value;
       }
     });
 
     try {
-      setDocumentNonBlocking(settingsRef, updates, { merge: true });
+      await setDoc(settingsRef, updates, { merge: true });
       toast({ title: t('success') });
     } catch (err) {
       toast({ variant: "destructive", title: t('error') });
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const mockPreviewData: any = {
-    title: "SAMPLE QUOTATION",
-    docNumber: "WTS/INV-2024-001",
-    date: new Date().toISOString(),
-    customerName: "Global Tech Solutions Ltd",
-    customerInfo: "+880 1700-000000\nUttara Dhaka-1230",
-    items: [{ name: "High Speed Camera", quantity: 2, unit: "Pcs", unitPrice: 5000, total: 10000, brand: "Hikvision", model: "DS-2C" }],
-    subtotal: 10000,
-    grandTotal: 10000,
-    status: "paid",
-    paidAmount: 8000,
-    balanceDue: 2000,
-    type: 'invoice'
   };
 
   if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-blue-600" /></div>;
@@ -205,11 +191,45 @@ export default function SettingsPage() {
 
         <Tabs defaultValue="general" className="w-full">
           <TabsList className="bg-white border rounded-xl p-1 mb-6 shadow-sm flex overflow-x-auto h-auto no-scrollbar ring-1 ring-slate-100">
-            <TabsTrigger value="general" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Company & UI Style</TabsTrigger>
-            <TabsTrigger value="documents" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">PDF Design Lab</TabsTrigger>
-            <TabsTrigger value="navigation" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">{t('navigation')}</TabsTrigger>
+            <TabsTrigger value="general" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Company & Style</TabsTrigger>
+            <TabsTrigger value="dashboard" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Dashboard Layout</TabsTrigger>
+            <TabsTrigger value="documents" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Document Lab</TabsTrigger>
+            <TabsTrigger value="navigation" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Navigation</TabsTrigger>
           </TabsList>
 
+          <TabsContent value="dashboard" className="space-y-6">
+             <div className="flex items-center justify-between px-2">
+                <div>
+                   <h3 className="text-sm font-black uppercase text-slate-700 tracking-widest">KPI Matrix Designer</h3>
+                   <p className="text-[10px] text-slate-400 uppercase font-bold mt-1">Manage dynamic analytical cards for the main terminal</p>
+                </div>
+                <Button type="button" onClick={() => { setEditingCard(null); setIsKpiModalOpen(true); }} className="bg-blue-600 rounded-full h-10 gap-2 text-[10px] font-black uppercase px-6">
+                   <Plus className="h-4 w-4" /> Add KPI Card
+                </Button>
+             </div>
+
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {kpiCards.map((card, idx) => (
+                  <div key={card.id} className="relative group">
+                    <KPICard {...card} value="Sample" />
+                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button type="button" size="icon" variant="secondary" className="h-8 w-8 rounded-full" onClick={() => moveCard(idx, 'up')} disabled={idx === 0}><MoveUp className="h-3.5 w-3.5" /></Button>
+                      <Button type="button" size="icon" variant="secondary" className="h-8 w-8 rounded-full" onClick={() => moveCard(idx, 'down')} disabled={idx === kpiCards.length -1}><MoveDown className="h-3.5 w-3.5" /></Button>
+                      <Button type="button" size="icon" variant="secondary" className="h-8 w-8 rounded-full" onClick={() => { setEditingCard(card); setIsKpiModalOpen(true); }}><Edit className="h-3.5 w-3.5" /></Button>
+                      <Button type="button" size="icon" variant="destructive" className="h-8 w-8 rounded-full" onClick={() => deleteCard(card.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                    </div>
+                  </div>
+                ))}
+                {kpiCards.length === 0 && (
+                  <div className="col-span-full p-20 text-center border-2 border-dashed rounded-[3rem] bg-slate-50 opacity-50">
+                     <BarChart3 className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+                     <p className="text-[10px] font-black uppercase tracking-[0.3em]">No Dynamic Cards Configured</p>
+                  </div>
+                )}
+             </div>
+          </TabsContent>
+
+          {/* ... existing tabs content ... */}
           <TabsContent value="general" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card className="border-none shadow-sm rounded-2xl flex flex-col items-center justify-center p-6 text-center bg-white ring-1 ring-slate-100">
@@ -220,173 +240,99 @@ export default function SettingsPage() {
                   ) : (
                     <div className="w-full h-full bg-slate-50 rounded-xl border-2 border-dashed flex items-center justify-center"><ImageIcon className="text-slate-300" /></div>
                   )}
-                  <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => handleFileChange(e, setLogoPreview)} />
+                  <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => setLogoPreview(reader.result as string);
+                      reader.readAsDataURL(file);
+                    }
+                  }} />
                 </div>
-                <p className="text-[9px] text-slate-400 uppercase font-bold">Standard Branding</p>
               </Card>
-
-              <Card className="border-none shadow-sm rounded-2xl flex flex-col items-center justify-center p-6 text-center bg-white ring-1 ring-slate-100">
-                <Label className="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest">Authorized Seal</Label>
-                <div className="w-24 h-24 mb-4 relative group">
-                  {sealPreview ? (
-                    <img src={sealPreview} className="w-full h-full object-contain rounded-xl border p-2" />
-                  ) : (
-                    <div className="w-full h-full bg-slate-50 rounded-xl border-2 border-dashed flex items-center justify-center"><ShieldCheck className="text-slate-300" /></div>
-                  )}
-                  <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => handleFileChange(e, setSealPreview)} />
-                </div>
-                <p className="text-[9px] text-slate-400 uppercase font-bold">Verification Stamp</p>
-              </Card>
-
-              <Card className="border-none shadow-sm rounded-2xl flex flex-col items-center justify-center p-6 text-center bg-white ring-1 ring-slate-100">
-                <Label className="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest">Proprietor Sign</Label>
-                <div className="w-24 h-24 mb-4 relative group">
-                  {signPreview ? (
-                    <img src={signPreview} className="w-full h-full object-contain rounded-xl border p-2" />
-                  ) : (
-                    <div className="w-full h-full bg-slate-50 rounded-xl border-2 border-dashed flex items-center justify-center"><PenTool className="text-slate-300" /></div>
-                  )}
-                  <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => handleFileChange(e, setSignPreview)} />
-                </div>
-                <p className="text-[9px] text-slate-400 uppercase font-bold">E-Signature</p>
-              </Card>
-
-              <Card className="md:col-span-3 border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100">
-                <CardHeader><CardTitle className="text-xs font-black uppercase tracking-widest text-slate-500">Corporate Identity Matrix</CardTitle></CardHeader>
-                <CardContent className="p-8 space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Company Legal Name</Label><Input name="companyName" defaultValue={settings?.companyName} className="h-11 rounded-xl font-bold" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Brand Slogan</Label><Input name="companySlogan" defaultValue={settings?.companySlogan} className="h-11 rounded-xl" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Primary Phone</Label><Input name="phone" defaultValue={settings?.phone} className="h-11 rounded-xl font-bold" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Official Email</Label><Input name="email" defaultValue={settings?.email} className="h-11 rounded-xl" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Website URL</Label><Input name="website" defaultValue={settings?.website} placeholder="www.warrior.com" className="h-11 rounded-xl font-bold" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Registered Address</Label><Input name="address" defaultValue={settings?.address} className="h-11 rounded-xl" /></div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="md:col-span-3 border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Monitor className="h-4 w-4 text-blue-600" />
-                    <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-500">Sidebar Theme Controller</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-8 space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase text-slate-400">Background Color</Label>
-                      <div className="flex gap-2">
-                         <Input type="color" value={sidebarBgColor} onChange={e => setSidebarBgColor(e.target.value)} className="h-10 w-12 p-1 rounded-lg border-none" />
-                         <Input value={sidebarBgColor} onChange={e => setSidebarBgColor(e.target.value)} className="h-10 flex-1 rounded-xl font-mono uppercase text-xs" />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase text-slate-400">Text & Icon Color</Label>
-                      <div className="flex gap-2">
-                         <Input type="color" value={sidebarTextColor} onChange={e => setSidebarTextColor(e.target.value)} className="h-10 w-12 p-1 rounded-lg border-none" />
-                         <Input value={sidebarTextColor} onChange={e => setSidebarTextColor(e.target.value)} className="h-10 flex-1 rounded-xl font-mono uppercase text-xs" />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1.5">
-                         <MousePointer2 className="h-3 w-3" /> Hover State Color
-                      </Label>
-                      <div className="flex gap-2">
-                         <Input type="color" value={sidebarHoverColor} onChange={e => setSidebarHoverColor(e.target.value)} className="h-10 w-12 p-1 rounded-lg border-none" />
-                         <Input value={sidebarHoverColor} onChange={e => setSidebarHoverColor(e.target.value)} className="h-10 flex-1 rounded-xl font-mono uppercase text-xs" />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1.5">
-                         <Activity className="h-3 w-3" /> Active Menu Color
-                      </Label>
-                      <div className="flex gap-2">
-                         <Input type="color" value={sidebarActiveColor} onChange={e => setSidebarActiveColor(e.target.value)} className="h-10 w-12 p-1 rounded-lg border-none" />
-                         <Input value={sidebarActiveColor} onChange={e => setSidebarActiveColor(e.target.value)} className="h-10 flex-1 rounded-xl font-mono uppercase text-xs" />
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
+              <Card className="md:col-span-2 border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-8 space-y-6">
+                 <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Legal Name</Label><Input name="companyName" defaultValue={settings?.companyName} className="h-11 rounded-xl" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Currency</Label><Input name="currency" defaultValue={settings?.currency} className="h-11 rounded-xl" /></div>
+                 </div>
               </Card>
             </div>
-          </TabsContent>
-
-          <TabsContent value="documents" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <div className="lg:col-span-5 space-y-6">
-                <Card className="border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-8 space-y-6">
-                  <div className="flex items-center gap-2 border-b pb-2">
-                    <Palette className="h-4 w-4 text-blue-600" />
-                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-900">Document Visuals</h3>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[10px] font-black uppercase text-slate-500">PDF Template Engine</Label>
-                    <Select name="defaultTemplate_invoice" defaultValue={settings?.defaultTemplate_invoice || "warrior"} onValueChange={setPreviewLayout}>
-                      <SelectTrigger className="h-11 rounded-xl font-bold"><SelectValue /></SelectTrigger>
-                      <SelectContent className="rounded-xl shadow-2xl">{DOCUMENT_LAYOUTS.map(l => <SelectItem key={l.value} value={l.value} className="text-xs font-bold">{l.name}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Primary Theme Color</Label><Input type="color" value={docPrimaryColor} onChange={e => setDocPrimaryColor(e.target.value)} className="h-12 w-full p-1 rounded-lg border-none" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Accent Detail Color</Label><Input type="color" value={docAccentColor} onChange={e => setDocAccentColor(e.target.value)} className="h-12 w-full p-1 rounded-lg border-none" /></div>
-                  </div>
-
-                  <div className="flex items-center gap-2 border-b pb-2 pt-4">
-                    <FileBadge className="h-4 w-4 text-blue-600" />
-                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-900">Standard Text Logic</h3>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[10px] font-black uppercase text-slate-500">Global Terms & Conditions</Label>
-                    <Textarea name="pdfTerms" defaultValue={settings?.pdfTerms} className="min-h-[120px] rounded-2xl text-[10px] font-bold p-4 bg-slate-50" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[10px] font-black uppercase text-slate-500">Footer Greeting Message</Label>
-                    <Input name="footerHeartMsg" defaultValue={settings?.footerHeartMsg} className="h-11 rounded-xl font-bold" />
-                  </div>
-                </Card>
-              </div>
-
-              <div className="lg:col-span-7 space-y-4">
-                 <div className="flex items-center justify-between px-2">
-                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><Eye className="h-3.5 w-3.5" /> Live Render Preview</p>
-                    <Badge variant="outline" className="text-[8px] font-black px-3 bg-white h-6">A4 Scaled View</Badge>
-                 </div>
-                 <div className="bg-white rounded-[3rem] border-8 border-slate-100 shadow-2xl overflow-hidden p-0 relative min-h-[700px]">
-                    <div className="scale-[0.5] sm:scale-[0.65] origin-top transition-transform duration-500 absolute left-0 right-0 top-0">
-                       <DocumentTemplate {...mockPreviewData} layoutOverride={previewLayout} />
-                    </div>
-                 </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="navigation" className="space-y-6">
-            <Card className="border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                {menuOrder.map((key, index) => (
-                  <div key={key} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:bg-white hover:border-blue-200 transition-all">
-                    <span className="font-black text-[10px] uppercase text-slate-600 tracking-tight">{t(key)}</span>
-                    <div className="flex gap-1">
-                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => moveMenuItem(index, 'up')} disabled={index === 0}><ArrowUp className="h-3.5 w-3.5" /></Button>
-                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => moveMenuItem(index, 'down')} disabled={index === menuOrder.length - 1}><ArrowDown className="h-3.5 w-3.5" /></Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-8 p-6 bg-blue-50 border-2 border-dashed border-blue-100 rounded-[2rem] flex items-center gap-5">
-                 <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center text-blue-600 shadow-sm shrink-0"><LayoutGrid className="h-6 w-6" /></div>
-                 <div>
-                    <p className="text-xs font-black uppercase text-blue-900 mb-1">Navigation Synchronization</p>
-                    <p className="text-[10px] font-bold text-blue-600 uppercase leading-relaxed max-w-2xl">
-                      Reorder your ERP terminal's sidebar layout. These changes are applied globally to all provisioned user terminals for your organization.
-                    </p>
-                 </div>
-              </div>
-            </Card>
           </TabsContent>
         </Tabs>
       </form>
+
+      {/* KPI MODAL */}
+      <Dialog open={isKpiModalOpen} onOpenChange={setIsKpiModalOpen}>
+        <DialogContent className="max-w-2xl p-0 overflow-hidden border-none shadow-2xl rounded-[2.5rem] bg-white">
+          <DialogHeader className="bg-blue-600 p-6 text-white flex-row items-center gap-4 space-y-0">
+             <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md shrink-0"><Activity className="h-6 w-6" /></div>
+             <div>
+               <DialogTitle className="text-xl font-bold font-headline uppercase tracking-tight">{editingCard ? 'Edit KPI Card' : 'New Analytical Card'}</DialogTitle>
+               <DialogDescription className="text-[10px] font-black uppercase opacity-70 tracking-widest mt-0.5">Configuration Matrix</DialogDescription>
+             </div>
+          </DialogHeader>
+
+          <form onSubmit={handleSaveKpi} className="p-8 space-y-6">
+             <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                   <Label className="text-[10px] font-black uppercase text-slate-500">Display Label</Label>
+                   <Input name="title" defaultValue={editingCard?.title} required className="h-11 rounded-xl" placeholder="e.g. Total Sales" />
+                </div>
+                <div className="space-y-2">
+                   <Label className="text-[10px] font-black uppercase text-slate-500">Data Source</Label>
+                   <Select name="valueKey" defaultValue={editingCard?.valueKey || "totalSales"}>
+                      <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
+                      <SelectContent className="rounded-xl shadow-2xl">
+                         {DATA_SOURCES.map(ds => <SelectItem key={ds.value} value={ds.value} className="text-xs font-bold uppercase">{ds.label}</SelectItem>)}
+                      </SelectContent>
+                   </Select>
+                </div>
+                <div className="space-y-2">
+                   <Label className="text-[10px] font-black uppercase text-slate-500">Icon Name (Lucide)</Label>
+                   <Input name="iconName" defaultValue={editingCard?.iconName || "Activity"} className="h-11 rounded-xl font-mono text-xs" placeholder="ShoppingCart, Wallet, etc." />
+                </div>
+                <div className="space-y-2">
+                   <Label className="text-[10px] font-black uppercase text-slate-500">Icon Background Class</Label>
+                   <Input name="colorClass" defaultValue={editingCard?.colorClass || "bg-blue-600"} className="h-11 rounded-xl font-mono text-xs" />
+                </div>
+                <div className="space-y-2">
+                   <Label className="text-[10px] font-black uppercase text-slate-500">Card Background (HEX)</Label>
+                   <div className="flex gap-2">
+                      <Input type="color" name="bgColor" defaultValue={editingCard?.bgColor || "#FFFFFF"} className="w-12 h-11 p-1" />
+                      <Input name="bgColor" defaultValue={editingCard?.bgColor || "#FFFFFF"} className="h-11 rounded-xl" />
+                   </div>
+                </div>
+                <div className="space-y-2">
+                   <Label className="text-[10px] font-black uppercase text-slate-500">Card Size</Label>
+                   <Select name="size" defaultValue={editingCard?.size || "md"}>
+                      <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
+                      <SelectContent><SelectItem value="sm">Small</SelectItem><SelectItem value="md">Standard</SelectItem><SelectItem value="lg">Large</SelectItem></SelectContent>
+                   </Select>
+                </div>
+                <div className="space-y-2">
+                   <Label className="text-[10px] font-black uppercase text-slate-500">Card Shape</Label>
+                   <Select name="shape" defaultValue={editingCard?.shape || "rounded-2xl"}>
+                      <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                         <SelectItem value="rounded-lg">Modern Square</SelectItem>
+                         <SelectItem value="rounded-2xl">Rounded</SelectItem>
+                         <SelectItem value="rounded-[2.5rem]">Classic Pill</SelectItem>
+                         <SelectItem value="rounded-full">Super Round</SelectItem>
+                      </SelectContent>
+                   </Select>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                   <Label className="text-[10px] font-black uppercase">Show Sparkline Graph?</Label>
+                   <Switch name="showGraph" defaultChecked={editingCard?.showGraph} />
+                </div>
+             </div>
+             <DialogFooter className="pt-6 border-t mt-4">
+                <Button type="button" variant="ghost" className="rounded-full px-8 h-12 text-[10px] font-black uppercase" onClick={() => setIsKpiModalOpen(false)}>Cancel</Button>
+                <Button type="submit" className="bg-blue-600 hover:bg-blue-700 rounded-full px-12 h-12 text-[10px] font-black uppercase shadow-xl shadow-blue-100">Apply Card</Button>
+             </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
