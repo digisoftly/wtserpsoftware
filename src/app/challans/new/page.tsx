@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { 
   ArrowLeft, 
   Save, 
@@ -20,7 +20,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
-import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
+import { useFirestore, useCollection, useMemoFirebase, useDoc } from "@/firebase"
 import { collection, doc, runTransaction, serverTimestamp, increment, query, orderBy } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { useTranslation } from "@/hooks/use-translation"
@@ -41,6 +41,8 @@ interface ChallanItem {
 
 export default function NewChallanPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromInvoiceId = searchParams.get('fromInvoice');
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
   const { t } = useTranslation();
@@ -55,7 +57,31 @@ export default function NewChallanPage() {
   const [lineItems, setLineItems] = React.useState<ChallanItem[]>([]);
   const [notes, setNotes] = React.useState("");
 
-  // Queries
+  // Source Invoice Query
+  const sourceInvoiceRef = useMemoFirebase(() => {
+    if (!db || !companyId || !branchId || !fromInvoiceId) return null;
+    return doc(db, "companies", companyId, "branches", branchId, "sales_invoices", fromInvoiceId);
+  }, [db, companyId, branchId, fromInvoiceId]);
+  const { data: sourceInvoice } = useDoc(sourceInvoiceRef);
+
+  React.useEffect(() => {
+    if (sourceInvoice) {
+      setSelectedCustomerId(sourceInvoice.customerId || "");
+      setSelectedInvoiceId(sourceInvoice.id);
+      
+      const items = (sourceInvoice.items || []).map((item: any, idx: number) => ({
+        ...item,
+        id: `inv-item-${idx}-${Date.now()}`,
+        qty: Number(item.qty || item.quantity || 0),
+        price: Number(item.price || item.unitPrice || 0),
+        total: Number(item.total || 0)
+      }));
+      setLineItems(items);
+      toast({ title: "Invoice Data Loaded", description: `Items from ${sourceInvoice.invoiceNumber} imported.` });
+    }
+  }, [sourceInvoice]);
+
+  // General Queries
   const customersQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
     return collection(db, "companies", companyId, "branches", branchId, "customers");
@@ -136,7 +162,7 @@ export default function NewChallanPage() {
           id: challanRef.id,
           challanNumber: `CHL-${Date.now().toString().slice(-6)}`,
           customerId: selectedCustomerId,
-          customerName: customer ? `${customer.firstName} ${customer.lastName}` : "Client",
+          customerName: customer ? (customer.customerType === 'company' ? customer.companyName : `${customer.firstName} ${customer.lastName}`) : "Client",
           invoiceId: selectedInvoiceId,
           dispatchDate,
           deliveryMethod,
@@ -152,10 +178,14 @@ export default function NewChallanPage() {
 
         transaction.set(challanRef, challanData);
 
-        for (const item of lineItems) {
-          if (!item.isCustom) {
-            const productRef = doc(db!, "companies", companyId!, "branches", branchId!, "products", item.productId);
-            transaction.update(productRef, { currentStock: increment(-item.qty) });
+        // If it's a new standalone challan, reduce stock. 
+        // If it's from invoice, stock was already reduced during invoice creation.
+        if (!fromInvoiceId) {
+          for (const item of lineItems) {
+            if (!item.isCustom) {
+              const productRef = doc(db!, "companies", companyId!, "branches", branchId!, "products", item.productId);
+              transaction.update(productRef, { currentStock: increment(-item.qty) });
+            }
           }
         }
       });
@@ -170,7 +200,6 @@ export default function NewChallanPage() {
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-6 pb-20">
-      {/* HEADER */}
       <div className="flex items-center justify-between border-b pb-4 bg-white sticky top-0 z-50 px-2">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full">
@@ -178,18 +207,18 @@ export default function NewChallanPage() {
           </Button>
           <div>
             <h1 className="text-lg font-bold text-slate-900 tracking-tight">{t('addChallan')}</h1>
+            {fromInvoiceId && <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-600 border-blue-100">From Invoice</Badge>}
           </div>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="font-bold text-xs" onClick={() => router.back()}>{t('cancel')}</Button>
-          <Button size="sm" className="font-bold text-xs gap-2" disabled={isSubmitting} onClick={handleSave}>
+          <Button size="sm" className="font-bold text-xs gap-2 px-6 h-9 rounded-lg" disabled={isSubmitting} onClick={handleSave}>
             {isSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
             {t('save')}
           </Button>
         </div>
       </div>
 
-      {/* INFO GRID */}
       <Card className="border-none shadow-sm ring-1 ring-slate-200">
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -198,7 +227,7 @@ export default function NewChallanPage() {
               <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
                 <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select Client" /></SelectTrigger>
                 <SelectContent className="max-h-[300px]">
-                  {customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-medium">{c.firstName} {c.lastName}</SelectItem>)}
+                  {customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-medium">{c.customerType === 'company' ? c.companyName : `${c.firstName} ${c.lastName}`}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -220,19 +249,10 @@ export default function NewChallanPage() {
               <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('deliveryMethod')}</Label>
               <Input value={deliveryMethod} onChange={e => setDeliveryMethod(e.target.value)} className="h-9 text-xs font-bold" />
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('vehicleNumber')}</Label>
-              <Input value={vehicleNumber} onChange={e => setVehicleNumber(e.target.value)} className="h-9 text-xs font-bold" />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('driverName')}</Label>
-              <Input value={driverName} onChange={e => setDriverName(e.target.value)} className="h-9 text-xs font-bold" />
-            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* ITEMS TABLE */}
       <Card className="border-none shadow-sm ring-1 ring-slate-200 overflow-hidden">
         <div className="p-4 bg-slate-50/50 border-b flex items-center justify-between">
           <h3 className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">{t('itemDescription')}</h3>
@@ -320,7 +340,7 @@ export default function NewChallanPage() {
             <CardContent className="p-8">
               <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest text-slate-400 mb-6">
                  <span>Total Dispatch Load</span>
-                 <span className="text-slate-900">{lineItems.reduce((s, i) => s + i.qty, 0)} Items</span>
+                 <span className="text-slate-900">{lineItems.reduce((s, i) => s + Number(i.qty), 0)} Items</span>
               </div>
               <Button className="w-full h-14 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-100" disabled={isSubmitting || lineItems.length === 0} onClick={handleSave}>
                 {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}

@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -22,7 +23,9 @@ import {
   User,
   Folder,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Truck,
+  ArrowRightLeft
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -138,8 +141,8 @@ export default function SalesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 className="text-xl font-bold text-slate-900 uppercase tracking-tight">{t('sales')}</h1>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="h-9 rounded-lg gap-2 text-[11px] font-black uppercase tracking-widest border-slate-200">
-            <Download className="h-4 w-4" /> {t('export')}
+          <Button variant="outline" size="sm" className="h-9 rounded-lg gap-2 text-[11px] font-black uppercase tracking-widest border-slate-200" onClick={() => router.push('/payments/bulk-collect')}>
+            <CreditCard className="h-4 w-4" /> Multiple Bill Payment
           </Button>
           <Button size="sm" className="h-9 rounded-lg gap-2 px-6 font-black text-[11px] uppercase tracking-widest bg-blue-600 hover:bg-blue-700" asChild>
             <Link href="/sales/new">
@@ -261,8 +264,10 @@ export default function SalesPage() {
                                           <DropdownMenuTrigger asChild>
                                             <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-slate-400"><MoreVertical className="h-4 w-4" /></Button>
                                           </DropdownMenuTrigger>
-                                          <DropdownMenuContent align="end" className="w-56 rounded-2xl shadow-2xl p-2 border-slate-100">
+                                          <DropdownMenuContent align="end" className="w-64 rounded-2xl shadow-2xl p-2 border-slate-100">
                                             <DropdownMenuItem onClick={() => router.push(`/sales/payments/collect/${inv.id}`)} className="rounded-xl h-10 text-xs font-bold py-1.5 text-green-600 focus:bg-green-50 focus:text-green-700"><CreditCard className="mr-2 h-4 w-4" /> Collect Payment</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => router.push(`/challans/new?fromInvoice=${inv.id}`)} className="rounded-xl h-10 text-xs font-bold py-1.5 text-blue-600 focus:bg-blue-50 focus:text-blue-700"><Truck className="mr-2 h-4 w-4" /> Generate Challan</DropdownMenuItem>
+                                            <DropdownMenuSeparator className="my-1 bg-slate-50" />
                                             <DropdownMenuItem onClick={() => router.push(`/sales/payments/history/${inv.id}`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><History className="mr-2 h-4 w-4" /> Payment History</DropdownMenuItem>
                                             <DropdownMenuSeparator className="my-1 bg-slate-50" />
                                             <DropdownMenuItem onClick={() => router.push(`/sales/new?copyFrom=${inv.id}`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><Copy className="mr-2 h-4 w-4 text-blue-600" /> Duplicate</DropdownMenuItem>

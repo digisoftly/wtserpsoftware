@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -22,7 +23,9 @@ import {
   Folder,
   ChevronDown,
   ChevronRight,
-  Filter
+  Filter,
+  ArrowRightLeft,
+  FileDown
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -246,13 +249,17 @@ export default function QuotationsPage() {
                                           <DropdownMenuTrigger asChild>
                                             <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-slate-400"><MoreVertical className="h-3.5 w-3.5" /></Button>
                                           </DropdownMenuTrigger>
-                                          <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl">
-                                            <DropdownMenuItem className="text-xs font-bold" onClick={() => router.push(`/quotations/new?copyFrom=${q.id}`)}><Copy className="mr-2 h-3.5 w-3.5 text-blue-600" /> Duplicate</DropdownMenuItem>
-                                            <DropdownMenuItem className="text-xs font-bold" onClick={() => router.push(`/quotations/${q.id}/edit`)}><Edit className="mr-2 h-3.5 w-3.5" /> Edit</DropdownMenuItem>
-                                            <DropdownMenuItem className="text-xs font-bold" onClick={() => router.push(`/quotations/${q.id}/view?print=true`)}><Printer className="mr-2 h-3.5 w-3.5" /> Print</DropdownMenuItem>
-                                            <DropdownMenuItem className="text-xs font-bold" onClick={() => handleShareWhatsApp(q)}><MessageSquare className="mr-2 h-3.5 w-3.5" /> WhatsApp</DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(q); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> Delete</DropdownMenuItem>
+                                          <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-xl p-2">
+                                            <DropdownMenuItem onClick={() => router.push(`/sales/new?copyFrom=${q.id}&sourceType=quotation`)} className="rounded-xl h-10 text-xs font-bold text-green-600 focus:text-green-700 focus:bg-green-50">
+                                              <ArrowRightLeft className="mr-2 h-4 w-4" /> Convert to Invoice
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator className="my-1" />
+                                            <DropdownMenuItem className="text-xs font-bold rounded-xl h-10" onClick={() => router.push(`/quotations/new?copyFrom=${q.id}`)}><Copy className="mr-2 h-3.5 w-3.5 text-blue-600" /> Duplicate</DropdownMenuItem>
+                                            <DropdownMenuItem className="text-xs font-bold rounded-xl h-10" onClick={() => router.push(`/quotations/${q.id}/edit`)}><Edit className="mr-2 h-3.5 w-3.5" /> Edit</DropdownMenuItem>
+                                            <DropdownMenuItem className="text-xs font-bold rounded-xl h-10" onClick={() => router.push(`/quotations/${q.id}/view?print=true`)}><Printer className="mr-2 h-3.5 w-3.5" /> Print</DropdownMenuItem>
+                                            <DropdownMenuItem className="text-xs font-bold rounded-xl h-10" onClick={() => handleShareWhatsApp(q)}><MessageSquare className="mr-2 h-3.5 w-3.5" /> WhatsApp</DropdownMenuItem>
+                                            <DropdownMenuSeparator className="my-1" />
+                                            <DropdownMenuItem className="text-xs font-bold text-red-600 rounded-xl h-10 focus:bg-red-50" onClick={() => { setSelectedRecord(q); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> Delete</DropdownMenuItem>
                                           </DropdownMenuContent>
                                         </DropdownMenu>
                                       </div>
