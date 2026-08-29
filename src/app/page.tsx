@@ -26,14 +26,29 @@ import {
   UserPlus,
   Briefcase,
   CreditCard,
-  LayoutDashboard
+  LayoutDashboard,
+  BarChart3,
+  BrainCircuit,
+  XCircle,
+  TrendingDown,
+  Activity,
+  Calendar,
+  History,
+  FileBarChart,
+  UserCheck,
+  UserPlus2,
+  PlaneTakeoff,
+  ShieldCheck,
+  ShieldAlert,
+  Archive,
+  Scan
 } from "lucide-react"
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { useFirestore, useCollection, useMemoFirebase, useDoc } from "@/firebase"
-import { collection, doc } from "firebase/firestore"
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
+import { collection, query, orderBy } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { useTranslation } from "@/hooks/use-translation"
 import Link from "next/link"
@@ -42,114 +57,125 @@ import { cn } from "@/lib/utils"
 export default function Dashboard() {
   const { branchId, companyId } = useTenant();
   const db = useFirestore();
-  const { t } = useTranslation();
+  const { t, formatCurrency } = useTranslation();
   const [isFabOpen, setIsFabOpen] = React.useState(false);
 
-  // 1. System Config for Dynamic Dashboard
-  const configRef = useMemoFirebase(() => {
-    if (!db || !companyId) return null;
-    return doc(db, "companies", companyId, "system", "config");
-  }, [db, companyId]);
-  const { data: config } = useDoc(configRef);
+  // Data Subscriptions
+  const invoicesQuery = useMemoFirebase(() => (!db || !companyId || !branchId) ? null : collection(db, "companies", companyId, "branches", branchId, "sales_invoices"), [db, companyId, branchId]);
+  const { data: invoices, isLoading: invLoading } = useCollection(invoicesQuery);
 
-  // 2. Data Subscriptions
-  const invoicesQuery = useMemoFirebase(() => {
-    if (!db || !companyId || !branchId) return null;
-    return collection(db, "companies", companyId, "branches", branchId, "sales_invoices");
-  }, [db, companyId, branchId]);
-  const { data: invoices } = useCollection(invoicesQuery);
+  const quotesQuery = useMemoFirebase(() => (!db || !companyId || !branchId) ? null : collection(db, "companies", companyId, "branches", branchId, "quotations"), [db, companyId, branchId]);
+  const { data: quotations, isLoading: qLoading } = useCollection(quotesQuery);
 
-  const productsQuery = useMemoFirebase(() => {
-    if (!db || !companyId || !branchId) return null;
-    return collection(db, "companies", companyId, "branches", branchId, "products");
-  }, [db, companyId, branchId]);
-  const { data: products } = useCollection(productsQuery);
+  const productsQuery = useMemoFirebase(() => (!db || !companyId || !branchId) ? null : collection(db, "companies", companyId, "branches", branchId, "products"), [db, companyId, branchId]);
+  const { data: products, isLoading: prodLoading } = useCollection(productsQuery);
 
-  const customersQuery = useMemoFirebase(() => {
-    if (!db || !companyId || !branchId) return null;
-    return collection(db, "companies", companyId, "branches", branchId, "customers");
-  }, [db, companyId, branchId]);
+  const customersQuery = useMemoFirebase(() => (!db || !companyId || !branchId) ? null : collection(db, "companies", companyId, "branches", branchId, "customers"), [db, companyId, branchId]);
   const { data: customers } = useCollection(customersQuery);
 
-  const suppliersQuery = useMemoFirebase(() => {
-    if (!db || !companyId || !branchId) return null;
-    return collection(db, "companies", companyId, "branches", branchId, "suppliers");
-  }, [db, companyId, branchId]);
+  const suppliersQuery = useMemoFirebase(() => (!db || !companyId || !branchId) ? null : collection(db, "companies", companyId, "branches", branchId, "suppliers"), [db, companyId, branchId]);
   const { data: suppliers } = useCollection(suppliersQuery);
 
-  const projectsQuery = useMemoFirebase(() => {
-    if (!db || !companyId || !branchId) return null;
-    return collection(db, "companies", companyId, "branches", branchId, "projects");
-  }, [db, companyId, branchId]);
+  const projectsQuery = useMemoFirebase(() => (!db || !companyId || !branchId) ? null : collection(db, "companies", companyId, "branches", branchId, "projects"), [db, companyId, branchId]);
   const { data: projects } = useCollection(projectsQuery);
 
-  const expensesQuery = useMemoFirebase(() => {
-    if (!db || !companyId || !branchId) return null;
-    return collection(db, "companies", companyId, "branches", branchId, "expenses");
-  }, [db, companyId, branchId]);
+  const expensesQuery = useMemoFirebase(() => (!db || !companyId || !branchId) ? null : collection(db, "companies", companyId, "branches", branchId, "expenses"), [db, companyId, branchId]);
   const { data: expenses } = useCollection(expensesQuery);
 
-  const purchasesQuery = useMemoFirebase(() => {
-    if (!db || !companyId || !branchId) return null;
-    return collection(db, "companies", companyId, "branches", branchId, "purchase_orders");
-  }, [db, companyId, branchId]);
+  const purchasesQuery = useMemoFirebase(() => (!db || !companyId || !branchId) ? null : collection(db, "companies", companyId, "branches", branchId, "purchase_orders"), [db, companyId, branchId]);
   const { data: purchases } = useCollection(purchasesQuery);
 
-  const staffQuery = useMemoFirebase(() => {
-    if (!db || !companyId || !branchId) return null;
-    return collection(db, "companies", companyId, "branches", branchId, "employees");
-  }, [db, companyId, branchId]);
+  const staffQuery = useMemoFirebase(() => (!db || !companyId || !branchId) ? null : collection(db, "companies", companyId, "branches", branchId, "employees"), [db, companyId, branchId]);
   const { data: staff } = useCollection(staffQuery);
 
-  // 3. Aggregate Calculations
-  const stats: any = React.useMemo(() => {
+  const contractsQuery = useMemoFirebase(() => (!db || !companyId || !branchId) ? null : collection(db, "companies", companyId, "branches", branchId, "service_contracts"), [db, companyId, branchId]);
+  const { data: contracts } = useCollection(contractsQuery);
+
+  const serialsQuery = useMemoFirebase(() => (!db || !companyId || !branchId) ? null : collection(db, "companies", companyId, "branches", branchId, "serial_numbers"), [db, companyId, branchId]);
+  const { data: serials } = useCollection(serialsQuery);
+
+  const isLoading = invLoading || qLoading || prodLoading;
+
+  // Aggregate Calculations
+  const stats = React.useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
     const thisMonth = new Date().toISOString().slice(0, 7);
-    const monthName = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
-    const formattedToday = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
+    // Sales
     const totalSales = invoices?.reduce((sum, inv) => sum + (inv.totalAmount || 0), 0) || 0;
     const todaySales = invoices?.filter(i => i.invoiceDate === today).reduce((sum, i) => sum + (i.totalAmount || 0), 0) || 0;
     const monthlySales = invoices?.filter(i => i.invoiceDate?.startsWith(thisMonth)).reduce((sum, i) => sum + (i.totalAmount || 0), 0) || 0;
-    
+
+    // Purchase
     const totalPurchase = purchases?.reduce((sum, p) => sum + (p.totalAmount || 0), 0) || 0;
+    const todayPurchase = purchases?.filter(p => p.orderDate === today).reduce((sum, p) => sum + (p.totalAmount || 0), 0) || 0;
+    const monthlyPurchase = purchases?.filter(p => p.orderDate?.startsWith(thisMonth)).reduce((sum, p) => sum + (p.totalAmount || 0), 0) || 0;
+
+    // Expenses
     const totalExpense = expenses?.reduce((sum, e) => sum + (e.amount || 0), 0) || 0;
-    const netProfit = totalSales - (totalPurchase + totalExpense);
+    const todayExpense = expenses?.filter(e => e.expenseDate === today).reduce((sum, e) => sum + (e.amount || 0), 0) || 0;
+    const monthlyExpense = expenses?.filter(e => e.expenseDate?.startsWith(thisMonth)).reduce((sum, e) => sum + (e.amount || 0), 0) || 0;
 
+    // Income (Simulated from sales paid amount)
+    const totalIncome = invoices?.reduce((sum, i) => sum + (i.paidAmount || 0), 0) || 0;
+    const todayIncome = invoices?.filter(i => i.lastPaymentDate === today).reduce((sum, i) => sum + (i.paidAmount || 0), 0) || 0;
+    const monthlyIncome = invoices?.filter(i => i.lastPaymentDate?.startsWith(thisMonth)).reduce((sum, i) => sum + (i.paidAmount || 0), 0) || 0;
+
+    // Dues
     const customerDue = invoices?.reduce((sum, i) => sum + (i.balanceDue || 0), 0) || 0;
-    const dueCustomersCount = Array.from(new Set(invoices?.filter(i => (i.balanceDue || 0) > 0).map(i => i.customerId))).length;
-    const supplierDue = suppliers?.reduce((sum, s) => sum + (s.totalDueAmount || 0), 0) || 0;
-    const dueSuppliersCount = suppliers?.filter(s => (s.totalDueAmount || 0) > 0).length || 0;
+    const supplierDue = purchases?.reduce((sum, p) => sum + (p.balanceDue || 0), 0) || 0;
 
-    const lowStockItems = products?.filter(p => (p.currentStock || 0) <= (p.minStockLevel || 5)) || [];
-
+    // Projects
     const projectBill = projects?.reduce((sum, p) => sum + (p.budget || 0), 0) || 0;
     const projectPaid = projects?.reduce((sum, p) => sum + (p.paidAmount || 0), 0) || 0;
-    const projectDue = projectBill - projectPaid;
-
-    const staffCount = staff?.length || 0;
 
     return {
-      totalSales: `৳${totalSales.toLocaleString()}`,
-      todaySales: `৳${todaySales.toLocaleString()}`,
-      monthlySales: `৳${monthlySales.toLocaleString()}`,
-      totalPurchase: `৳${totalPurchase.toLocaleString()}`,
-      netProfit: `৳${netProfit.toLocaleString()}`,
-      totalExpense: `৳${totalExpense.toLocaleString()}`,
-      totalCustomers: customers?.length || 0,
-      totalSuppliers: suppliers?.length || 0,
-      lowStockCount: lowStockItems.length,
-      pendingProjects: projects?.filter(p => !['Completed', 'completed'].includes(p.status)).length || 0,
-      customerDue: `৳${customerDue.toLocaleString()}`,
-      supplierDue: `৳${supplierDue.toLocaleString()}`,
-      staffCount,
-      monthName,
-      formattedToday,
-      lowStockItems
-    };
-  }, [invoices, purchases, expenses, customers, suppliers, products, projects, staff]);
+      todaySales,
+      monthlySales,
+      totalSales,
+      netProfit: totalSales - (totalPurchase + totalExpense),
+      
+      totalQuotations: quotations?.length || 0,
+      activeQuotations: quotations?.filter(q => q.status === 'approved').length || 0,
+      pendingQuotations: quotations?.filter(q => q.status === 'draft').length || 0,
+      cancelledQuotations: quotations?.filter(q => q.status === 'rejected' || q.status === 'expired').length || 0,
 
-  const dynamicCards = config?.dashboardKpiCards || [];
+      todayPurchase,
+      monthlyPurchase,
+      totalPurchase,
+      pendingPurchase: purchases?.filter(p => p.status === 'pending').length || 0,
+
+      todayIncome,
+      monthlyIncome,
+      totalIncome,
+      pendingIncome: customerDue,
+
+      todayExpense,
+      monthlyExpense,
+      totalExpense,
+      pendingExpense: 0, // Mock or from a specific logic
+
+      customerDue,
+      salesDue: customerDue,
+      purchaseDue: supplierDue,
+      supplierDue,
+
+      totalProjectBill: projectBill,
+      totalProjectPaid: projectPaid,
+      projectDue: projectBill - projectPaid,
+      activeProjects: projects?.filter(p => p.status === 'In Progress').length || 0,
+
+      lowStockItems: products?.filter(p => (p.currentStock || 0) <= (p.minStockLevel || 5)).length || 0,
+      serialInventory: serials?.length || 0,
+      pendingProjects: projects?.filter(p => p.status === 'Pending').length || 0,
+      activeServiceContracts: contracts?.filter(c => c.status === 'active').length || 0,
+
+      staffPresent: staff?.length || 0, // Mock
+      staffAbsent: 0,
+      staffLate: 0,
+      staffOnLeave: 0
+    };
+  }, [invoices, purchases, expenses, quotations, products, projects, staff, contracts, serials]);
 
   const QUICK_ACTIONS = [
     { label: t('sales'), icon: ShoppingCart, color: "bg-[#22C55E]", path: "/sales/new" },
@@ -161,101 +187,122 @@ export default function Dashboard() {
     { label: t('payments'), icon: CreditCard, color: "bg-[#6366F1]", path: "/payments/new" },
   ];
 
+  const renderSectionHeader = (title: string) => (
+    <div className="flex items-center gap-3 mb-4 mt-8 first:mt-0">
+      <div className="h-1 w-12 bg-blue-600 rounded-full" />
+      <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">{t(title)}</h2>
+    </div>
+  );
+
+  const gridClass = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4";
+
   return (
-    <div className="relative space-y-8 pb-20">
+    <div className="relative space-y-6 pb-20">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tight leading-none">{t('dashboard')}</h1>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Enterprise Analytical Interface</p>
+          <h1 className="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tight">{t('dashboard')}</h1>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{t('happeningToday')}</p>
         </div>
-        <Button variant="outline" size="sm" className="h-10 rounded-full gap-2 font-black text-[10px] uppercase tracking-widest bg-white shadow-sm hover:bg-slate-50" onClick={() => window.location.reload()}>
-          <RefreshCw className="h-4 w-4 text-blue-600" /> Refresh Terminal
+        <Button variant="outline" size="sm" className="h-9 rounded-full gap-2 font-black text-[10px] uppercase tracking-widest bg-white shadow-sm" onClick={() => window.location.reload()}>
+          <RefreshCw className={cn("h-3.5 w-3.5 text-blue-600", isLoading && "animate-spin")} /> {t('refreshTerminal')}
         </Button>
       </div>
 
-      {/* DYNAMIC KPI GRID */}
-      {dynamicCards.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {dynamicCards.map((card: any) => (
-            <KPICard 
-              key={card.id}
-              {...card}
-              value={stats[card.valueKey] || "---"}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <KPICard title="Total Sales" value={stats.totalSales} icon={ShoppingCart} colorClass="bg-green-600" />
-          <KPICard title="Today Sales" value={stats.todaySales} subtext={stats.formattedToday} icon={DollarSign} colorClass="bg-blue-600" />
-          <KPICard title="Total Orders" value={stats.totalPurchase} icon={Package} colorClass="bg-orange-600" />
-          <KPICard title="Net Profit" value={stats.netProfit} icon={TrendingUp} colorClass="bg-green-500" />
-        </div>
-      )}
-
-      {/* ... keeping the remaining sections for visual consistency ... */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="border-none shadow-sm rounded-[2rem] bg-[#FFEBEE]/40 ring-1 ring-red-100/50">
-          <CardContent className="p-8 flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-[11px] font-black uppercase text-slate-400 tracking-widest">{t('customer')} Due</p>
-              <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter">{stats.customerDue}</h2>
-            </div>
-            <div className="w-14 h-14 md:w-16 md:h-16 rounded-[1.5rem] bg-red-500 text-white flex items-center justify-center shadow-2xl shadow-red-200 shrink-0">
-               <ArrowDownRight className="h-6 w-6 md:h-8 md:w-8" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-none shadow-sm rounded-[2rem] bg-[#FFF3E0]/40 ring-1 ring-orange-100/50">
-          <CardContent className="p-8 flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-[11px] font-black uppercase text-slate-400 tracking-widest">{t('suppliers')} Due</p>
-              <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter">{stats.supplierDue}</h2>
-            </div>
-            <div className="w-14 h-14 md:w-16 md:h-16 rounded-[1.5rem] bg-orange-600 text-white flex items-center justify-center shadow-2xl shadow-orange-200 shrink-0">
-               <ArrowUpRight className="h-6 w-6 md:h-8 md:w-8" />
-            </div>
-          </CardContent>
-        </Card>
+      {/* GROUP 01 - SALES OVERVIEW */}
+      {renderSectionHeader('salesOverview')}
+      <div className={gridClass}>
+        <KPICard isLoading={isLoading} title="todaySales" value={formatCurrency(stats.todaySales)} icon={ShoppingCart} colorClass="bg-green-600" showGraph graphColor="#16a34a" />
+        <KPICard isLoading={isLoading} title="monthlySales" value={formatCurrency(stats.monthlySales)} icon={TrendingUp} colorClass="bg-blue-600" />
+        <KPICard isLoading={isLoading} title="totalSales" value={formatCurrency(stats.totalSales)} icon={BarChart3} colorClass="bg-indigo-600" />
+        <KPICard isLoading={isLoading} title="netProfit" value={formatCurrency(stats.netProfit)} icon={DollarSign} colorClass="bg-emerald-600" />
       </div>
 
-      <div className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-[100] flex flex-col items-end gap-4">
-        {isFabOpen && (
-          <div 
-            className="fixed inset-0 bg-black/10 backdrop-blur-[2px] z-[-1] pointer-events-auto transition-all"
-            onClick={() => setIsFabOpen(false)}
-          />
-        )}
+      {/* GROUP 02 - QUOTATION OVERVIEW */}
+      {renderSectionHeader('quotationOverview')}
+      <div className={gridClass}>
+        <KPICard isLoading={isLoading} title="totalQuotations" value={stats.totalQuotations} icon={FileText} colorClass="bg-amber-600" />
+        <KPICard isLoading={isLoading} title="activeQuotations" value={stats.activeQuotations} icon={CheckCircle2} colorClass="bg-green-600" />
+        <KPICard isLoading={isLoading} title="pendingQuotations" value={stats.pendingQuotations} icon={Clock} colorClass="bg-orange-600" />
+        <KPICard isLoading={isLoading} title="cancelledQuotations" value={stats.cancelledQuotations} icon={XCircle} colorClass="bg-red-600" />
+      </div>
 
-        <div className={cn(
-          "flex flex-col items-end gap-3 transition-all duration-300 transform origin-bottom mb-2",
-          isFabOpen ? "scale-100 opacity-100 translate-y-0" : "scale-75 opacity-0 translate-y-10 pointer-events-none"
-        )}>
+      {/* GROUP 03 - PURCHASE OVERVIEW */}
+      {renderSectionHeader('purchaseOverview')}
+      <div className={gridClass}>
+        <KPICard isLoading={isLoading} title="todayPurchase" value={formatCurrency(stats.todayPurchase)} icon={Package} colorClass="bg-blue-600" />
+        <KPICard isLoading={isLoading} title="monthlyPurchase" value={formatCurrency(stats.monthlyPurchase)} icon={Calendar} colorClass="bg-indigo-600" />
+        <KPICard isLoading={isLoading} title="totalPurchase" value={formatCurrency(stats.totalPurchase)} icon={Archive} colorClass="bg-blue-700" />
+        <KPICard isLoading={isLoading} title="pendingPurchase" value={stats.pendingPurchase} icon={History} colorClass="bg-orange-600" />
+      </div>
+
+      {/* GROUP 04 - INCOME OVERVIEW */}
+      {renderSectionHeader('incomeOverview')}
+      <div className={gridClass}>
+        <KPICard isLoading={isLoading} title="todayIncome" value={formatCurrency(stats.todayIncome)} icon={TrendingUp} colorClass="bg-green-600" />
+        <KPICard isLoading={isLoading} title="monthlyIncome" value={formatCurrency(stats.monthlyIncome)} icon={Activity} colorClass="bg-emerald-600" />
+        <KPICard isLoading={isLoading} title="totalIncome" value={formatCurrency(stats.totalIncome)} icon={Wallet} colorClass="bg-green-700" />
+        <KPICard isLoading={isLoading} title="pendingIncome" value={formatCurrency(stats.pendingIncome)} icon={Clock} colorClass="bg-amber-600" />
+      </div>
+
+      {/* GROUP 05 - EXPENSE OVERVIEW */}
+      {renderSectionHeader('expenseOverview')}
+      <div className={gridClass}>
+        <KPICard isLoading={isLoading} title="todayExpense" value={formatCurrency(stats.todayExpense)} icon={TrendingDown} colorClass="bg-red-600" />
+        <KPICard isLoading={isLoading} title="monthlyExpense" value={formatCurrency(stats.monthlyExpense)} icon={Calendar} colorClass="bg-rose-600" />
+        <KPICard isLoading={isLoading} title="totalExpense" value={formatCurrency(stats.totalExpense)} icon={Receipt} colorClass="bg-red-700" />
+        <KPICard isLoading={isLoading} title="pendingExpense" value={formatCurrency(stats.pendingExpense)} icon={AlertCircle} colorClass="bg-orange-600" />
+      </div>
+
+      {/* GROUP 06 - DUE SUMMARY */}
+      {renderSectionHeader('dueSummary')}
+      <div className={gridClass}>
+        <KPICard isLoading={isLoading} title="customerDue" value={formatCurrency(stats.customerDue)} icon={Users} colorClass="bg-red-600" />
+        <KPICard isLoading={isLoading} title="salesDue" value={formatCurrency(stats.salesDue)} icon={ArrowDownRight} colorClass="bg-orange-600" />
+        <KPICard isLoading={isLoading} title="purchaseDue" value={formatCurrency(stats.purchaseDue)} icon={ArrowUpRight} colorClass="bg-amber-600" />
+        <KPICard isLoading={isLoading} title="supplierDue" value={formatCurrency(stats.supplierDue)} icon={Truck} colorClass="bg-red-700" />
+      </div>
+
+      {/* GROUP 07 - PROJECT BILLING SUMMARY */}
+      {renderSectionHeader('projectBillingSummary')}
+      <div className={gridClass}>
+        <KPICard isLoading={isLoading} title="totalProjectBill" value={formatCurrency(stats.totalProjectBill)} icon={FileBarChart} colorClass="bg-teal-600" />
+        <KPICard isLoading={isLoading} title="totalProjectPaid" value={formatCurrency(stats.totalProjectPaid)} icon={CheckCircle2} colorClass="bg-emerald-600" />
+        <KPICard isLoading={isLoading} title="projectDue" value={formatCurrency(stats.projectDue)} icon={AlertCircle} colorClass="bg-red-600" />
+        <KPICard isLoading={isLoading} title="activeProjects" value={stats.activeProjects} icon={Briefcase} colorClass="bg-blue-600" />
+      </div>
+
+      {/* GROUP 08 - OPERATIONS OVERVIEW */}
+      {renderSectionHeader('operationsOverview')}
+      <div className={gridClass}>
+        <KPICard isLoading={isLoading} title="lowStockItems" value={stats.lowStockItems} icon={Box} colorClass="bg-red-600" />
+        <KPICard isLoading={isLoading} title="serialInventory" value={stats.serialInventory} icon={Scan} colorClass="bg-purple-600" />
+        <KPICard isLoading={isLoading} title="pendingProjects" value={stats.pendingProjects} icon={ClipboardList} colorClass="bg-indigo-600" />
+        <KPICard isLoading={isLoading} title="activeServiceContracts" value={stats.activeServiceContracts} icon={Wrench} colorClass="bg-teal-600" />
+      </div>
+
+      {/* GROUP 09 - ATTENDANCE OVERVIEW */}
+      {renderSectionHeader('attendanceOverview')}
+      <div className={gridClass}>
+        <KPICard isLoading={isLoading} title="presentToday" value={stats.staffPresent} icon={UserCheck} colorClass="bg-green-600" />
+        <KPICard isLoading={isLoading} title="absentToday" value={stats.staffAbsent} icon={UserX} colorClass="bg-red-600" />
+        <KPICard isLoading={isLoading} title="lateToday" value={stats.staffLate} icon={Clock} colorClass="bg-orange-600" />
+        <KPICard isLoading={isLoading} title="onLeaveToday" value={stats.staffOnLeave} icon={PlaneTakeoff} colorClass="bg-blue-600" />
+      </div>
+
+      {/* FAB Quick Actions */}
+      <div className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-[100] flex flex-col items-end gap-4">
+        {isFabOpen && <div className="fixed inset-0 bg-black/10 backdrop-blur-[2px] z-[-1] pointer-events-auto transition-all" onClick={() => setIsFabOpen(false)} />}
+        <div className={cn("flex flex-col items-end gap-3 transition-all duration-300 transform origin-bottom mb-2", isFabOpen ? "scale-100 opacity-100 translate-y-0" : "scale-75 opacity-0 translate-y-10 pointer-events-none")}>
           {QUICK_ACTIONS.map((action, i) => (
-            <Link 
-              key={i} 
-              href={action.path}
-              onClick={() => setIsFabOpen(false)}
-              className="flex items-center gap-3 transition-all hover:scale-105 active:scale-95 group"
-              style={{ transitionDelay: `${isFabOpen ? (QUICK_ACTIONS.length - i) * 50 : 0}ms` }}
-            >
+            <Link key={i} href={action.path} onClick={() => setIsFabOpen(false)} className="flex items-center gap-3 transition-all hover:scale-105 active:scale-95 group" style={{ transitionDelay: `${isFabOpen ? (QUICK_ACTIONS.length - i) * 50 : 0}ms` }}>
               <div className="bg-white pl-4 md:pl-6 pr-2 py-2 rounded-2xl shadow-[0_10px_40px_-5px_rgba(0,0,0,0.15)] border border-slate-100 flex items-center gap-3 md:gap-5 min-w-[160px] md:min-w-[180px] justify-between">
                 <span className="text-[11px] md:text-[12px] font-black text-slate-600 uppercase tracking-tight">{action.label}</span>
-                <div className={cn("w-9 h-9 md:w-10 md:h-10 rounded-xl text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform", action.color)}>
-                  <action.icon className="h-4 w-4 md:h-5 md:w-5" />
-                </div>
+                <div className={cn("w-9 h-9 md:w-10 md:h-10 rounded-xl text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform", action.color)}><action.icon className="h-4 w-4 md:h-5 md:w-5" /></div>
               </div>
             </Link>
           ))}
         </div>
-
-        <Button 
-          onClick={() => setIsFabOpen(!isFabOpen)}
-          className={cn(
-            "w-14 h-14 md:w-16 md:h-16 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-none p-0 flex items-center justify-center transition-all duration-500 active:scale-90",
-            isFabOpen ? "bg-slate-900 rotate-90" : "bg-[#EF4444] hover:bg-[#DC2626]"
-          )}
-        >
+        <Button onClick={() => setIsFabOpen(!isFabOpen)} className={cn("w-14 h-14 md:w-16 md:h-16 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-none p-0 flex items-center justify-center transition-all duration-500 active:scale-90", isFabOpen ? "bg-slate-900 rotate-90" : "bg-[#EF4444] hover:bg-[#DC2626]")}>
           <Plus className={cn("h-7 w-7 md:h-8 md:w-8 text-white transition-transform", isFabOpen ? "rotate-45" : "rotate-0")} />
         </Button>
       </div>

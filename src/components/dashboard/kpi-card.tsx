@@ -1,3 +1,6 @@
+
+"use client"
+
 import * as React from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { type LucideIcon } from "lucide-react"
@@ -11,33 +14,28 @@ interface KPICardProps {
   value: string | number
   subtext?: string
   iconName?: string
-  icon?: LucideIcon // Support both direct icon and icon name
+  icon?: LucideIcon
   colorClass?: string 
   bgColor?: string
   size?: 'sm' | 'md' | 'lg'
   shape?: 'rounded-lg' | 'rounded-2xl' | 'rounded-[2rem]' | 'rounded-full'
   showGraph?: boolean
   graphColor?: string
+  isLoading?: boolean
 }
 
-/**
- * Dynamic KPI Card supporting custom sizes, shapes, and mini-graphs.
- */
 export const KPICard = React.memo(function KPICard(props: KPICardProps) {
   const { 
     title, value, subtext, iconName, icon: DirectIcon, 
     colorClass, bgColor, size = 'md', shape = 'rounded-[1.5rem]', 
-    showGraph = false, graphColor = "#3b82f6" 
+    showGraph = false, graphColor = "#3b82f6", isLoading = false
   } = props;
   
   const { formatNumber, t } = useTranslation();
   
-  // Resolve Icon
   const Icon = DirectIcon || (iconName ? (Icons as any)[iconName] : Icons.Activity);
-
   const displayValue = typeof value === 'number' ? formatNumber(value) : value;
 
-  // Size mapping
   const sizeClasses = {
     sm: "p-4 min-h-[100px]",
     md: "p-5 min-h-[120px]",
@@ -47,10 +45,26 @@ export const KPICard = React.memo(function KPICard(props: KPICardProps) {
   const titleSize = size === 'sm' ? "text-[9px]" : "text-[11px]";
   const valueSize = size === 'sm' ? "text-xl" : size === 'lg' ? "text-4xl" : "text-2xl";
 
-  // Mock data for mini graph
   const miniGraphData = [
     { v: 10 }, { v: 25 }, { v: 15 }, { v: 45 }, { v: 30 }, { v: 55 }, { v: 40 }
   ];
+
+  if (isLoading) {
+    return (
+      <Card className={cn("overflow-hidden border-none shadow-sm animate-pulse bg-white", shape)}>
+        <CardContent className={cn("flex flex-col justify-between h-full", sizeClasses[size])}>
+          <div className="flex items-start justify-between w-full">
+            <div className="space-y-2">
+              <div className="h-3 w-20 bg-slate-100 rounded" />
+              <div className="h-6 w-32 bg-slate-100 rounded" />
+            </div>
+            <div className="h-10 w-10 bg-slate-100 rounded-xl" />
+          </div>
+          {showGraph && <div className="h-8 w-full bg-slate-50 rounded mt-4" />}
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className={cn(
@@ -62,6 +76,8 @@ export const KPICard = React.memo(function KPICard(props: KPICardProps) {
       !bgColor && colorClass?.includes('red') ? 'bg-[#FFEBEE]/60' :
       !bgColor && colorClass?.includes('purple') ? 'bg-[#F3E5F5]/60' :
       !bgColor && colorClass?.includes('indigo') ? 'bg-[#E8EAF6]/60' :
+      !bgColor && colorClass?.includes('teal') ? 'bg-[#E0F2F1]/60' :
+      !bgColor && colorClass?.includes('amber') ? 'bg-[#FFF8E1]/60' :
       'bg-white'
     )}
     style={bgColor ? { backgroundColor: bgColor } : {}}
@@ -99,8 +115,6 @@ export const KPICard = React.memo(function KPICard(props: KPICardProps) {
           </div>
         )}
       </CardContent>
-      
-      {/* Visual Decoration */}
       <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-black/[0.02] rounded-full group-hover:scale-150 transition-transform pointer-events-none" />
     </Card>
   )
