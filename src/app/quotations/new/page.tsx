@@ -162,7 +162,7 @@ export default function NewQuotationPage() {
           const product = products?.find(p => p.id === snDoc.productId);
           if (product) {
             handleAddProduct(product, snDoc.serialNumber);
-            toast({ title: "Serial Linked", description: `Added: ${product.name}` });
+            toast({ title: "Serial Identity Linked", description: `Product: ${product.name}` });
             return;
           }
         }
@@ -173,7 +173,7 @@ export default function NewQuotationPage() {
           return;
         }
 
-        toast({ variant: "destructive", title: "Notice", description: "Serial number or SKU not matched" });
+        toast({ variant: "destructive", title: "Identity Pending", description: "Serial or SKU not matched in registry" });
       } catch (err) {
         console.error(err);
       } finally {
@@ -366,7 +366,7 @@ export default function NewQuotationPage() {
                           </SelectTrigger>
                           <SelectContent className="max-h-[300px] rounded-xl shadow-2xl border-none ring-1 ring-slate-100">
                             {customers?.map((c, idx) => (
-                              <SelectItem key={`c-qt-${c.id}-${idx}`} value={c.id} className="text-xs font-bold uppercase py-2.5 cursor-pointer">
+                              <SelectItem key={`c-qt-new-${c.id}-${idx}`} value={c.id} className="text-xs font-bold uppercase py-2.5 cursor-pointer">
                                 {c.customerType === 'company' ? c.companyName : `${c.firstName} ${c.lastName}`}
                               </SelectItem>
                             ))}
@@ -385,14 +385,17 @@ export default function NewQuotationPage() {
                 </div>
               ) : (
                 <form onSubmit={handleQuickCustomerCreate} className="animate-in fade-in slide-in-from-top-2 duration-400 space-y-8">
-                   <div className="flex gap-4 p-1 bg-slate-100 rounded-xl w-fit mb-6">
-                      <Button type="button" variant={quickCustType === 'individual' ? 'white' : 'ghost'} className={cn("h-8 px-6 rounded-lg text-[9px] font-black uppercase shadow-none", quickCustType === 'individual' && "bg-white shadow-sm text-blue-600")} onClick={() => setQuickCustType('individual')}>Individual</Button>
-                      <Button type="button" variant={quickCustType === 'company' ? 'white' : 'ghost'} className={cn("h-8 px-6 rounded-lg text-[9px] font-black uppercase shadow-none", quickCustType === 'company' && "bg-white shadow-sm text-blue-600")} onClick={() => setQuickCustType('company')}>Organization</Button>
-                   </div>
-
                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <div className="space-y-4">
+                        <Label className="text-[10px] font-black uppercase text-slate-400">Identity Type</Label>
+                        <div className="flex gap-2">
+                           <Button type="button" variant={quickCustType === 'individual' ? 'default' : 'outline'} className="flex-1 h-10 rounded-xl text-[9px] font-black uppercase" onClick={() => setQuickCustType('individual')}>Individual</Button>
+                           <Button type="button" variant={quickCustType === 'company' ? 'default' : 'outline'} className="flex-1 h-10 rounded-xl text-[9px] font-black uppercase" onClick={() => setQuickCustType('company')}>Organization</Button>
+                        </div>
+                      </div>
+
                       {quickCustType === 'company' && (
-                        <div className="space-y-1.5 lg:col-span-3">
+                        <div className="space-y-1.5 lg:col-span-2">
                           <Label className="text-[10px] font-black uppercase text-slate-500">Legal Company Name *</Label>
                           <Input name="companyName" required className="h-10 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold" />
                         </div>
@@ -566,7 +569,7 @@ export default function NewQuotationPage() {
                               className="w-full text-[10px] font-medium bg-slate-50 border border-slate-200 rounded-xl p-3 min-h-[60px] resize-none outline-none focus:bg-white focus:ring-1 focus:ring-blue-500 transition-all" 
                               value={item.specs || ''} 
                               onChange={e => updateItem(item.id, 'specs', e.target.value)} 
-                              placeholder="Component Specifications" 
+                              placeholder="Full Technical Specification Details" 
                             />
                           </div>
                         </TableCell>
@@ -574,7 +577,7 @@ export default function NewQuotationPage() {
                           <Select value={item.unit || 'Pcs'} onValueChange={(val) => updateItem(item.id, 'unit', val)}>
                             <SelectTrigger className="h-9 border-none bg-slate-100 text-[11px] font-black uppercase w-20 mx-auto rounded-xl"><SelectValue /></SelectTrigger>
                             <SelectContent className="rounded-xl border-none shadow-2xl ring-1 ring-slate-100">
-                              {masterUnits?.map((u, uidx) => <SelectItem key={`u-qt-${u.id}-${uidx}`} value={u.shortName} className="text-xs font-bold">{u.shortName}</SelectItem>)}
+                              {masterUnits?.map((u, uidx) => <SelectItem key={`u-qt-new-${u.id}-${uidx}`} value={u.shortName} className="text-xs font-bold">{u.shortName}</SelectItem>)}
                               {!masterUnits?.length && <SelectItem value="Pcs">Pcs</SelectItem>}
                             </SelectContent>
                           </Select>
@@ -604,9 +607,15 @@ export default function NewQuotationPage() {
                 <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em]">Estimated Proposal Total</p>
                 <h2 className="text-3xl md:text-4xl font-headline font-black tracking-tighter tabular-nums text-blue-600">৳{(grandTotal || 0).toLocaleString()}</h2>
              </div>
-             <div className="pt-6 space-y-3 border-t border-slate-100 text-[10px] font-black uppercase tracking-widest text-left text-slate-500">
-                <div className="flex justify-between"><span>Subtotal Gross</span><span>৳{(subtotal || 0).toLocaleString()}</span></div>
-                <div className="flex justify-between"><span>Estimated Tax</span><span>+৳{(itemTaxes || 0).toLocaleString()}</span></div>
+             <div className="pt-6 space-y-3 border-t border-slate-100 text-[10px] font-black uppercase tracking-widest text-left">
+                <div className="flex justify-between items-center text-slate-500">
+                   <span>{t('subtotal')}</span>
+                   <span className="text-slate-900">৳{(subtotal || 0).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center text-slate-500 bg-slate-50 p-2.5 rounded-xl">
+                   <span>Accrued {t('tax')} 15%</span>
+                   <span className="text-blue-600">+৳{(itemTaxes || 0).toLocaleString()}</span>
+                </div>
              </div>
           </Card>
 

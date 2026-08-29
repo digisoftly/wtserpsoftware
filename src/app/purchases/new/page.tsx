@@ -11,7 +11,9 @@ import {
   Calculator,
   X,
   PlusCircle,
-  ShoppingCart
+  ShoppingCart,
+  Scan,
+  Barcode
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -38,6 +40,8 @@ interface POItem {
   discount: number;
   tax: number;
   total: number;
+  serials: string;
+  isSerialized: boolean;
   isCustom?: boolean;
 }
 
@@ -79,20 +83,15 @@ export default function NewPurchasePage() {
 
   // Calculations
   const subtotal = React.useMemo(() => lineItems.reduce((sum, item) => sum + (Number(item.qty || 0) * Number(item.price || 0)), 0), [lineItems]);
-  
-  const itemDiscounts = React.useMemo(() => lineItems.reduce((sum, item) => {
-    const base = Number(item.qty || 0) * Number(item.price || 0);
-    return sum + (base * (Number(item.discount || 0) / 100));
-  }, 0), [lineItems]);
-
-  const itemTaxes = React.useMemo(() => lineItems.reduce((sum, item) => {
+  const itemDiscounts = lineItems.reduce((sum, item) => sum + (Number(item.qty || 0) * Number(item.price || 0) * (Number(item.discount || 0) / 100)), 0);
+  const itemTaxes = lineItems.reduce((sum, item) => {
     const base = Number(item.qty || 0) * Number(item.price || 0);
     const disc = base * (Number(item.discount || 0) / 100);
     return sum + ((base - disc) * (Number(item.tax || 0) / 100));
-  }, 0), [lineItems]);
+  }, 0);
 
-  const grandTotal = React.useMemo(() => subtotal - itemDiscounts + itemTaxes - globalDiscount + additionalCharge, [subtotal, itemDiscounts, itemTaxes, globalDiscount, additionalCharge]);
-  const balanceDue = React.useMemo(() => grandTotal - paidAmount, [grandTotal, paidAmount]);
+  const grandTotal = subtotal - itemDiscounts + itemTaxes - globalDiscount + additionalCharge;
+  const balanceDue = grandTotal - paidAmount;
 
   const handleAddProduct = (productId: string) => {
     const product = products?.find(p => p.id === productId);
@@ -109,23 +108,8 @@ export default function NewPurchasePage() {
       discount: 0,
       tax: 0,
       total: product.costPrice || 0,
-    };
-    setLineItems([...lineItems, newItem]);
-  };
-
-  const addManualRow = () => {
-    const newItem: POItem = {
-      id: Math.random().toString(36).substr(2, 9),
-      productId: "custom",
-      name: "",
-      description: "",
-      qty: 1,
-      unit: "Pcs",
-      price: 0,
-      discount: 0,
-      tax: 0,
-      total: 0,
-      isCustom: true
+      serials: "",
+      isSerialized: !!product.serialNumberTrackingRequired,
     };
     setLineItems([...lineItems, newItem]);
   };
@@ -185,6 +169,25 @@ export default function NewPurchasePage() {
               currentStock: increment(item.qty),
               costPrice: item.price
             });
+
+            // If item is serialized, register them
+            if (item.isSerialized && item.serials) {
+              const snList = item.serials.split(/[\n,]+/).map(s => s.trim()).filter(s => s.length > 0);
+              for (const sn of snList) {
+                const snRef = doc(collection(db!, "companies", companyId!, "branches", branchId!, "serial_numbers"));
+                transaction.set(snRef, {
+                  id: snRef.id,
+                  companyId,
+                  branchId,
+                  productId: item.productId,
+                  serialNumber: sn,
+                  status: "available",
+                  purchaseOrderId: poRef.id,
+                  createdAt: serverTimestamp(),
+                  updatedAt: serverTimestamp(),
+                });
+              }
+            }
           }
         }
       });
@@ -205,7 +208,7 @@ export default function NewPurchasePage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-lg font-bold text-slate-900 tracking-tight">Receive Stock</h1>
+            <h1 className="text-lg font-bold text-slate-900 tracking-tight">Purchase & Stock Intake</h1>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -234,12 +237,8 @@ export default function NewPurchasePage() {
               <Input type="date" value={orderDate} onChange={e => setOrderDate(e.target.value)} className="h-9 text-xs font-bold" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">Payment Terms</Label>
-              <Input value={paymentTerms} onChange={e => setPaymentTerms(e.target.value)} className="h-9 text-xs" placeholder="e.g. Net 30" />
-            </div>
-            <div className="space-y-1.5">
               <Label className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">External Reference</Label>
-              <Input value={reference} onChange={e => setReference(e.target.value)} className="h-9 text-xs" placeholder="Challan/Bill #" />
+              <Input value={reference} onChange={e => setReference(e.target.value)} className="h-9 text-xs" placeholder="Bill or Challan #" />
             </div>
           </div>
         </CardContent>
@@ -247,7 +246,7 @@ export default function NewPurchasePage() {
 
       <Card className="border-none shadow-sm ring-1 ring-slate-200 overflow-hidden rounded-[2rem] bg-white">
         <div className="p-4 bg-white border-b flex items-center justify-between">
-          <h3 className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">Item Description</h3>
+          <h3 className="text-[10px] font-bold uppercase text-slate-500 tracking-widest">Asset Manifest</h3>
           <div className="flex gap-2">
             <Select onValueChange={handleAddProduct}>
               <SelectTrigger className="h-8 w-64 text-[10px] bg-slate-50 border-slate-200 font-bold uppercase"><SelectValue placeholder="Add From Catalog" /></SelectTrigger>
@@ -255,42 +254,46 @@ export default function NewPurchasePage() {
                 {products?.map(p => <SelectItem key={p.id} value={p.id} className="text-xs">{p.name}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm" className="h-8 rounded-md gap-2 text-[10px] font-bold uppercase" onClick={addManualRow}>
-              <PlusCircle className="h-3.5 w-3.5" /> {t('add')} Generic
-            </Button>
           </div>
         </div>
         <div className="overflow-x-auto">
           <Table>
             <TableHeader className="bg-slate-50/50 border-b">
               <TableRow className="hover:bg-transparent h-14">
-                <TableHead className="w-12 text-center text-[10px] font-black uppercase tracking-tighter">SL</TableHead>
-                <TableHead className="min-w-[200px] text-[10px] font-black uppercase tracking-tighter">Item</TableHead>
-                <TableHead className="min-w-[200px] text-[10px] font-black uppercase tracking-tighter">Description</TableHead>
-                <TableHead className="w-24 text-[10px] font-black uppercase tracking-tighter text-center">Unit</TableHead>
-                <TableHead className="w-32 text-[10px] font-black uppercase tracking-tighter text-center">Quantity</TableHead>
-                <TableHead className="w-32 text-[10px] font-black uppercase tracking-tighter text-right">Cost Rate</TableHead>
-                <TableHead className="w-24 text-[10px] font-black uppercase tracking-tighter text-center">Disc%</TableHead>
-                <TableHead className="w-24 text-[10px] font-black uppercase tracking-tighter text-center">VAT%</TableHead>
-                <TableHead className="w-32 text-[10px] font-black uppercase tracking-tighter text-right pr-10">Amount</TableHead>
-                <TableHead className="w-20 text-right pr-4"></TableHead>
+                <TableHead className="w-12 text-center text-[10px] font-black uppercase pl-6">Sl</TableHead>
+                <TableHead className="min-w-[300px] text-[10px] font-black uppercase">Identity & Specific S/L</TableHead>
+                <TableHead className="w-24 text-[10px] font-black uppercase text-center">Unit</TableHead>
+                <TableHead className="w-24 text-[10px] font-black uppercase text-center">Qty</TableHead>
+                <TableHead className="w-32 text-[10px] font-black uppercase text-right">Cost Rate</TableHead>
+                <TableHead className="w-32 text-[10px] font-black uppercase text-right pr-10">Amount</TableHead>
+                <TableHead className="w-10"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {lineItems.map((item, idx) => (
-                <TableRow key={item.id} className="group hover:bg-slate-50 transition-colors h-16 border-b border-slate-100">
-                  <TableCell className="text-center text-[10px] font-bold text-slate-400">{(idx + 1).toString().padStart(2, '0')}</TableCell>
-                  <TableCell>
-                    {item.isCustom ? (
-                      <Input className="h-8 text-xs font-bold uppercase border-slate-200" value={item.name} onChange={e => updateItem(item.id, 'name', e.target.value)} />
-                    ) : (
-                      <span className="text-[11px] font-black uppercase text-slate-900 leading-tight">{item.name}</span>
-                    )}
+                <TableRow key={item.id} className="group hover:bg-slate-50 transition-colors h-auto border-b border-slate-100">
+                  <TableCell className="text-center text-[10px] font-bold text-slate-400 py-6 pl-6">{(idx + 1).toString().padStart(2, '0')}</TableCell>
+                  <TableCell className="py-6">
+                    <div className="space-y-3">
+                       <span className="text-[11px] font-black uppercase text-slate-900 leading-tight">{item.name}</span>
+                       {item.isSerialized && (
+                         <div className="space-y-1.5 animate-in fade-in zoom-in-95 duration-300">
+                            <div className="flex items-center gap-2 text-purple-600">
+                               <Scan className="h-3.5 w-3.5" />
+                               <span className="text-[9px] font-black uppercase">Register Serial Numbers</span>
+                            </div>
+                            <textarea 
+                              className="w-full h-16 bg-slate-50 border border-slate-200 rounded-xl p-3 text-[10px] font-mono focus:ring-1 focus:ring-purple-500 outline-none" 
+                              value={item.serials} 
+                              onChange={e => updateItem(item.id, 'serials', e.target.value)} 
+                              placeholder="Scan or Type: SN-001, SN-002..."
+                            />
+                            <p className="text-[8px] font-bold text-slate-400 uppercase">Registered: {item.serials.split(/[\n,]+/).filter(s => s.trim().length > 0).length} / {item.qty}</p>
+                         </div>
+                       )}
+                    </div>
                   </TableCell>
-                  <TableCell>
-                    <textarea className="w-full text-[10px] font-medium bg-transparent border-none resize-none h-8 focus:ring-0 outline-none" value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} placeholder="Batch/Spec..." />
-                  </TableCell>
-                  <TableCell>
+                  <TableCell className="py-6">
                     <Select value={item.unit} onValueChange={(val) => updateItem(item.id, 'unit', val)}>
                       <SelectTrigger className="h-8 border-none bg-slate-50 text-[10px] font-bold uppercase w-20 mx-auto">
                         <SelectValue />
@@ -301,19 +304,14 @@ export default function NewPurchasePage() {
                       </SelectContent>
                     </Select>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1 justify-center">
-                      <Input type="number" className="h-8 w-16 text-center text-xs font-bold bg-slate-50 border-none" value={item.qty} onChange={e => updateItem(item.id, 'qty', e.target.value)} />
-                      <span className="text-[9px] font-black text-slate-400 uppercase">{item.unit}</span>
-                    </div>
+                  <TableCell className="py-6">
+                    <Input type="number" className="h-8 w-16 text-center text-xs font-bold bg-slate-50 border-none mx-auto" value={item.qty} onChange={e => updateItem(item.id, 'qty', Number(e.target.value))} />
                   </TableCell>
-                  <TableCell className="text-right">
-                    <Input type="number" className="h-8 w-24 text-right text-xs font-black bg-slate-50 border-none ml-auto" value={item.price} onChange={e => updateItem(item.id, 'price', e.target.value)} />
+                  <TableCell className="py-6 text-right">
+                    <Input type="number" className="h-8 w-24 text-right text-xs font-black bg-slate-50 border-none ml-auto" value={item.price} onChange={e => updateItem(item.id, 'price', Number(e.target.value))} />
                   </TableCell>
-                  <TableCell><Input type="number" className="h-8 w-14 text-center text-xs font-bold bg-slate-50 border-none mx-auto" value={item.discount} onChange={e => updateItem(item.id, 'discount', e.target.value)} /></TableCell>
-                  <TableCell><Input type="number" className="h-8 w-14 text-center text-xs font-bold bg-slate-50 border-none mx-auto" value={item.tax} onChange={e => updateItem(item.id, 'tax', e.target.value)} /></TableCell>
-                  <TableCell className="text-right pr-10 font-black text-xs text-slate-900">৳{item.total.toLocaleString()}</TableCell>
-                  <TableCell className="text-right pr-4">
+                  <TableCell className="py-6 text-right pr-10 font-black text-xs text-slate-900">৳{item.total.toLocaleString()}</TableCell>
+                  <TableCell className="py-6">
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:text-red-600 rounded-full" onClick={() => setLineItems(lineItems.filter(i => i.id !== item.id))}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -336,41 +334,20 @@ export default function NewPurchasePage() {
         <div className="flex flex-col items-end">
           <Card className="w-full max-w-md border-none shadow-sm ring-1 ring-slate-200 bg-white rounded-[2rem]">
             <CardContent className="p-8 space-y-4">
-              <div className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-tight">
-                <span>Subtotal Gross</span>
-                <span className="text-slate-900">৳{subtotal.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between items-center text-xs font-bold text-red-500 uppercase tracking-tight">
-                <span>{t('discount')}</span>
-                <span>-৳{itemDiscounts.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-tight">
-                <span>{t('tax')}</span>
-                <span className="text-slate-900">+৳{itemTaxes.toLocaleString()}</span>
-              </div>
-              
-              <div className="pt-6 border-t mt-4 flex justify-between items-end">
+              <div className="flex justify-between items-end border-b pb-4">
                 <div className="space-y-1">
-                  <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t('grandTotal')}</p>
+                  <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Invoice Payable</p>
                   <h2 className="text-3xl font-black text-blue-600 tracking-tighter">৳{grandTotal.toLocaleString()}</h2>
                 </div>
-                <div className="text-right space-y-2">
-                  <Label className="text-[10px] font-black uppercase text-blue-600 tracking-widest">{t('paidAmount')}</Label>
+                <div className="text-right space-y-1">
+                  <Label className="text-[10px] font-black uppercase text-blue-600 tracking-widest">Total Paid</Label>
                   <Input type="number" className="h-10 w-32 text-right text-base font-black border-2 border-blue-50 bg-blue-50/20 text-blue-700" value={paidAmount || ''} onChange={e => setPaidAmount(Number(e.target.value))} />
                 </div>
               </div>
 
-              <div className={cn("p-4 rounded-xl flex justify-between items-center mt-6 transition-colors", balanceDue > 0 ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700")}>
-                <div className="flex items-center gap-3">
-                   <Calculator className="h-5 w-5 opacity-50" />
-                   <span className="text-[10px] font-black uppercase tracking-widest">Payable to Vendor</span>
-                </div>
-                <span className="text-xl font-black tabular-nums">৳{balanceDue.toLocaleString()}</span>
-              </div>
-
               <Button className="w-full h-14 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-100 mt-6" disabled={isSubmitting || lineItems.length === 0} onClick={handleSave}>
                 {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                Finalize Purchase
+                Register Stock & Invoices
               </Button>
             </CardContent>
           </Card>

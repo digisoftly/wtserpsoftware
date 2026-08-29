@@ -149,46 +149,6 @@ export default function NewInvoicePage() {
     setProductSearch("");
   };
 
-  const addManualRow = () => {
-    const newItem: InvoiceItem = {
-      id: Math.random().toString(36).substr(2, 9),
-      productId: "custom",
-      name: "",
-      description: "",
-      brand: "",
-      model: "",
-      specs: "",
-      warranty: "1 Year",
-      sn: "",
-      qty: 1,
-      unit: "Pcs",
-      price: 0,
-      discount: 0,
-      tax: 0,
-      total: 0,
-      isCustom: true
-    };
-    setLineItems([...lineItems, newItem]);
-  };
-
-  const updateItem = (id: string, field: keyof InvoiceItem, val: any) => {
-    setLineItems(prev => prev.map(item => {
-      if (item.id !== id) return item;
-      const updated = { ...item, [field]: val };
-      if (['qty', 'price', 'discount', 'tax'].includes(field)) {
-        const q = Number(updated.qty) || 0;
-        const p = Number(updated.price) || 0;
-        const d = Number(updated.discount) || 0;
-        const t = Number(updated.tax) || 0;
-        const base = q * p;
-        const disc = base * (d / 100);
-        const taxed = (base - disc) * (t / 100);
-        updated.total = base - disc + taxed;
-      }
-      return updated;
-    }));
-  };
-
   const handleQuickCustomerCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!db || !companyId || !branchId || isCreatingCustomer) return;
@@ -240,6 +200,10 @@ export default function NewInvoicePage() {
         
         if (!snSnap.empty) {
           const snDoc = snSnap.docs[0].data();
+          if (snDoc.status !== 'available') {
+            toast({ variant: "destructive", title: "Already Sold", description: `Serial ${snDoc.serialNumber} is not in stock.` });
+            return;
+          }
           const product = products?.find(p => p.id === snDoc.productId);
           if (product) {
             handleAddProduct(product, snDoc.serialNumber);
@@ -308,6 +272,27 @@ export default function NewInvoicePage() {
           if (!item.isCustom) {
             const productRef = doc(db!, "companies", companyId!, "branches", branchId!, "products", item.productId);
             transaction.update(productRef, { currentStock: increment(-item.qty) });
+
+            // Update specific serial number if provided
+            if (item.sn) {
+              const snQuery = query(
+                collection(db!, "companies", companyId!, "branches", branchId!, "serial_numbers"),
+                where("serialNumber", "==", item.sn),
+                where("productId", "==", item.productId),
+                limit(1)
+              );
+              const snSnap = await getDocs(snQuery);
+              if (!snSnap.empty) {
+                const snDocRef = doc(db!, "companies", companyId!, "branches", branchId!, "serial_numbers", snSnap.docs[0].id);
+                transaction.update(snDocRef, {
+                  status: 'sold',
+                  invoiceId: invoiceRef.id,
+                  customerName: invoiceData.customerName,
+                  saleDate: invoiceDate,
+                  updatedAt: serverTimestamp()
+                });
+              }
+            }
           }
         }
       });
@@ -318,6 +303,28 @@ export default function NewInvoicePage() {
       toast({ variant: "destructive", title: t('error'), description: e.message });
       setIsSubmitting(false);
     }
+  };
+
+  const addManualRow = () => {
+    const newItem: InvoiceItem = {
+      id: Math.random().toString(36).substr(2, 9),
+      productId: "custom",
+      name: "",
+      description: "",
+      brand: "",
+      model: "",
+      specs: "",
+      warranty: "1 Year",
+      sn: "",
+      qty: 1,
+      unit: "Pcs",
+      price: 0,
+      discount: 0,
+      tax: 0,
+      total: 0,
+      isCustom: true
+    };
+    setLineItems([...lineItems, newItem]);
   };
 
   return (
@@ -366,7 +373,7 @@ export default function NewInvoicePage() {
                     </Button>
                     <Button 
                       type="button" 
-                      variant="ghost"
+                      variant="ghost" 
                       size="sm" 
                       className={cn("h-8 rounded-full text-[10px] font-black uppercase gap-2 transition-all px-4", isNewCustomerMode ? "bg-blue-600 text-white shadow-lg" : "text-slate-400 hover:text-blue-600")}
                       onClick={() => setIsNewCustomerMode(true)}
@@ -388,7 +395,7 @@ export default function NewInvoicePage() {
                           </SelectTrigger>
                           <SelectContent className="max-h-[300px] rounded-xl shadow-2xl border-none ring-1 ring-slate-100">
                             {customers?.map((c, idx) => (
-                              <SelectItem key={`c-${c.id}-${idx}`} value={c.id} className="text-xs font-bold uppercase py-2.5 cursor-pointer">
+                              <SelectItem key={`c-inv-${c.id}-${idx}`} value={c.id} className="text-xs font-bold uppercase py-2.5 cursor-pointer">
                                 {c.customerType === 'company' ? c.companyName : `${c.firstName} ${c.lastName}`}
                               </SelectItem>
                             ))}
@@ -601,7 +608,7 @@ export default function NewInvoicePage() {
                           <Select value={item.unit || 'Pcs'} onValueChange={(val) => updateItem(item.id, 'unit', val)}>
                             <SelectTrigger className="h-9 border-none bg-slate-100 text-[11px] font-black uppercase w-20 mx-auto rounded-xl"><SelectValue /></SelectTrigger>
                             <SelectContent className="rounded-xl border-none shadow-2xl ring-1 ring-slate-100">
-                              {masterUnits?.map((u, uidx) => <SelectItem key={`u-${u.id}-${uidx}`} value={u.shortName} className="text-xs font-bold">{u.shortName}</SelectItem>)}
+                              {masterUnits?.map((u, uidx) => <SelectItem key={`u-inv-${u.id}-${uidx}`} value={u.shortName} className="text-xs font-bold">{u.shortName}</SelectItem>)}
                               {!masterUnits?.length && <SelectItem value="Pcs">Pcs</SelectItem>}
                             </SelectContent>
                           </Select>
