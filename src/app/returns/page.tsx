@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -26,7 +25,10 @@ import {
   FileText,
   PlusCircle,
   History,
-  MoreVertical
+  MoreVertical,
+  User,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -62,7 +64,7 @@ type ViewState = 'list' | 'form' | 'view';
 export default function ReturnsPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
-  const { t } = useTranslation();
+  const { t, formatCurrency } = useTranslation();
   
   const [view, setView] = React.useState<ViewState>('list');
   const [formMode, setFormMode] = React.useState<'add' | 'edit'>('add');
@@ -71,6 +73,7 @@ export default function ReturnsPage() {
   const [activeTab, setActiveTab] = React.useState("sales");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
+  const [expandedCustomers, setExpandedCustomers] = React.useState<Record<string, boolean>>({});
 
   // Form State
   const [selectedParentId, setSelectedParentId] = React.useState("");
@@ -116,15 +119,46 @@ export default function ReturnsPage() {
     purchaseAmount: purchaseReturns?.reduce((s, r) => s + (r.totalAmount || 0), 0) || 0,
   }), [salesReturns, purchaseReturns]);
 
-  // Available items from selected source document
-  const availableSourceItems = React.useMemo(() => {
-    if (!selectedParentId) return [];
-    if (activeTab === "sales") {
-      return invoices?.find(i => i.id === selectedParentId)?.items || [];
-    } else {
-      return purchaseOrders?.find(p => p.id === selectedParentId)?.items || [];
-    }
-  }, [selectedParentId, activeTab, invoices, purchaseOrders]);
+  // Grouping Logic for List View
+  const groupedData = React.useMemo(() => {
+    const currentData = activeTab === "sales" ? salesReturns : purchaseReturns;
+    if (!currentData) return [];
+
+    const groups: Record<string, any> = {};
+
+    const filtered = currentData.filter(r => 
+      r.parentNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (r.reason || '').toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    filtered.forEach(r => {
+      // In returns, we don't always have a direct customerName at the top level
+      // but we can try to derive it from the parent document if needed.
+      // For now we'll group by Parent Document if customer isn't explicit
+      const cId = r.parentNumber || 'unknown';
+      const cName = r.parentNumber || t('unknownCustomer');
+
+      if (!groups[cId]) {
+        groups[cId] = {
+          id: cId,
+          name: cName,
+          totalDocs: 0,
+          totalAmount: 0,
+          lastDate: r.returnDate,
+          records: []
+        };
+      }
+
+      groups[cId].records.push(r);
+      groups[cId].totalDocs += 1;
+      groups[cId].totalAmount += (Number(r.totalAmount) || 0);
+      if (new Date(r.returnDate) > new Date(groups[cId].lastDate)) {
+        groups[cId].lastDate = r.returnDate;
+      }
+    });
+
+    return Object.values(groups);
+  }, [activeTab, salesReturns, purchaseReturns, searchTerm, t]);
 
   const handleAddItemToReturn = (sourceItem: any) => {
     const exists = lineItems.find(i => i.productId === sourceItem.productId);
@@ -241,6 +275,10 @@ export default function ReturnsPage() {
     setIsDeleteAlertOpen(false);
   };
 
+  const toggleCustomer = (id: string) => {
+    setExpandedCustomers(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
   if (view === 'view' && selectedRecord) {
     return (
       <div className="space-y-6 pb-20">
@@ -347,7 +385,7 @@ export default function ReturnsPage() {
                 <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
                    <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Available Items from Source</h3>
                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {availableSourceItems.map((item: any, i: number) => (
+                      {((activeTab === "sales" ? invoices : purchaseOrders)?.find((i: any) => i.id === selectedParentId)?.items || []).map((item: any, i: number) => (
                         <div key={i} className="p-4 bg-slate-50 rounded-2xl ring-1 ring-slate-100 flex justify-between items-center group hover:bg-white hover:ring-red-200 transition-all">
                            <div className="flex flex-col">
                               <span className="text-[11px] font-black uppercase truncate max-w-[120px]">{item.name}</span>
@@ -470,8 +508,8 @@ export default function ReturnsPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <KPICard title={t('salesReturn')} value={`৳${stats.salesAmount.toLocaleString()}`} icon={ArrowDownCircle} colorClass="bg-red-600" />
-        <KPICard title={t('purchaseReturn')} value={`৳${stats.purchaseAmount.toLocaleString()}`} icon={ArrowUpCircle} colorClass="bg-blue-600" />
+        <KPICard title="salesReturn" value={formatCurrency(stats.salesAmount)} icon={ArrowDownCircle} colorClass="bg-red-600" />
+        <KPICard title="purchaseReturn" value={formatCurrency(stats.purchaseAmount)} icon={ArrowUpCircle} colorClass="bg-blue-600" />
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -484,90 +522,90 @@ export default function ReturnsPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="sales" className="space-y-4">
-          {isSalesLoading ? (
-            <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-red-600" /></div>
-          ) : salesReturns && salesReturns.length > 0 ? (
-            <Card className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white ring-1 ring-slate-100">
-              <div className="overflow-x-auto custom-scrollbar">
-                <Table>
-                  <TableHeader className="bg-slate-50/50">
-                    <TableRow>
-                      <TableHead className="h-12 text-[10px] uppercase font-black pl-8">{t('date')}</TableHead>
-                      <TableHead className="h-12 text-[10px] uppercase font-black">{t('invoiceNumber')}</TableHead>
-                      <TableHead className="h-12 text-[10px] uppercase font-black">{t('reason')}</TableHead>
-                      <TableHead className="h-12 text-[10px] uppercase font-black text-right">{t('amount')}</TableHead>
-                      <TableHead className="h-12 text-right pr-8 sticky right-0 bg-white/95 backdrop-blur-sm z-20 w-[120px]">{t('actions')}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {salesReturns.map((r) => (
-                      <TableRow key={r.id} className="h-16 hover:bg-muted/5 transition-colors group">
-                        <TableCell className="pl-8 text-[10px] font-bold uppercase text-slate-500">{new Date(r.returnDate).toLocaleDateString()}</TableCell>
-                        <TableCell className="font-black text-xs text-red-600 uppercase tracking-tighter">{r.parentNumber}</TableCell>
-                        <TableCell className="text-xs font-bold text-slate-600">{r.reason || "---"}</TableCell>
-                        <TableCell className="text-right font-black text-xs text-slate-900">৳{r.totalAmount?.toLocaleString()}</TableCell>
-                        <TableCell className="text-right pr-8 sticky right-0 bg-white/90 backdrop-blur-sm group-hover:bg-slate-50/90 transition-colors z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
-                           <div className="flex justify-end gap-1">
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-blue-600" onClick={() => openView(r)}><Eye className="h-4 w-4" /></Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-amber-600" onClick={() => openEdit(r)}><Edit className="h-4 w-4" /></Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-red-600" onClick={() => { setSelectedRecord(r); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
-                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </Card>
-          ) : (
-            <div className="p-24 bg-white rounded-[3rem] border border-dashed text-center flex flex-col items-center ring-1 ring-slate-100">
-              <RotateCcw className="h-12 w-12 text-red-200 mb-6" />
-              <p className="text-[10px] uppercase font-black text-muted-foreground tracking-[0.3em]">{t('noReturns')}</p>
+        <TabsContent value={activeTab} className="space-y-4">
+          <div className="flex gap-2 bg-white p-3 rounded-xl border shadow-sm ring-1 ring-slate-100">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <input 
+                placeholder={t('search')} 
+                className="pl-9 h-10 w-full rounded-xl bg-slate-50/50 border-none text-xs focus:ring-2 focus:ring-red-500 transition-all outline-none font-bold" 
+                value={searchTerm} 
+                onChange={e => setSearchTerm(e.target.value)} 
+              />
             </div>
-          )}
-        </TabsContent>
+          </div>
 
-        <TabsContent value="purchase" className="space-y-4">
-          {isPurchaseLoading ? (
-            <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
-          ) : purchaseReturns && purchaseReturns.length > 0 ? (
-            <Card className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white ring-1 ring-slate-100">
-              <div className="overflow-x-auto custom-scrollbar">
-                <Table>
-                  <TableHeader className="bg-slate-50/50">
-                    <TableRow>
-                      <TableHead className="h-12 text-[10px] uppercase font-black pl-8">{t('date')}</TableHead>
-                      <TableHead className="h-12 text-[10px] uppercase font-black">{t('poNumber')}</TableHead>
-                      <TableHead className="h-12 text-[10px] uppercase font-black">{t('reason')}</TableHead>
-                      <TableHead className="h-12 text-[10px] uppercase font-black text-right">{t('amount')}</TableHead>
-                      <TableHead className="h-12 text-right pr-8 sticky right-0 bg-white/95 backdrop-blur-sm z-20 w-[120px]">{t('actions')}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {purchaseReturns.map((r) => (
-                      <TableRow key={r.id} className="h-16 hover:bg-muted/5 transition-colors group">
-                        <TableCell className="pl-8 text-[10px] font-bold uppercase text-slate-500">{new Date(r.returnDate).toLocaleDateString()}</TableCell>
-                        <TableCell className="font-black text-xs text-blue-600 uppercase tracking-tighter">{r.parentNumber}</TableCell>
-                        <TableCell className="text-xs font-bold text-slate-600">{r.reason || "---"}</TableCell>
-                        <TableCell className="text-right font-black text-xs text-slate-900">৳{r.totalAmount?.toLocaleString()}</TableCell>
-                        <TableCell className="text-right pr-8 sticky right-0 bg-white/90 backdrop-blur-sm group-hover:bg-slate-50/90 transition-colors z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
-                           <div className="flex justify-end gap-1">
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-blue-600" onClick={() => openView(r)}><Eye className="h-4 w-4" /></Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-amber-600" onClick={() => openEdit(r)}><Edit className="h-4 w-4" /></Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-red-600" onClick={() => { setSelectedRecord(r); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
-                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </Card>
+          {(isSalesLoading || isPurchaseLoading) ? (
+            <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-red-600" /></div>
+          ) : groupedData.length > 0 ? (
+            <div className="space-y-4">
+              {groupedData.map((customer) => (
+                <Card key={customer.id} className="border-none shadow-sm overflow-hidden rounded-[1.5rem] bg-white ring-1 ring-slate-100">
+                  <div 
+                    className="p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors border-b border-slate-50"
+                    onClick={() => toggleCustomer(customer.id)}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400">
+                        <FileText className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h2 className="text-sm font-black uppercase text-slate-900 leading-tight">{customer.name}</h2>
+                        <div className="flex gap-3 mt-1">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                            {customer.totalDocs} {t('documents')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <div className="text-right hidden md:block">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('totalAmount')}</p>
+                        <p className="text-sm font-black text-red-600">{formatCurrency(customer.totalAmount)}</p>
+                      </div>
+                      {expandedCustomers[customer.id] ? <ChevronDown className="h-5 w-5 text-slate-300" /> : <ChevronRight className="h-5 w-5 text-slate-300" />}
+                    </div>
+                  </div>
+
+                  {expandedCustomers[customer.id] && (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader className="bg-slate-50/50">
+                          <TableRow className="h-10">
+                            <TableHead className="h-10 text-[9px] uppercase font-black pl-8">{t('date')}</TableHead>
+                            <TableHead className="h-10 text-[9px] uppercase font-black">{t('docNo')}</TableHead>
+                            <TableHead className="h-10 text-[9px] uppercase font-black">{t('reason')}</TableHead>
+                            <TableHead className="h-10 text-[9px] uppercase font-black text-right">{t('amount')}</TableHead>
+                            <TableHead className="h-10 text-right pr-8 w-32">{t('actions')}</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {customer.records.map((r: any) => (
+                            <TableRow key={r.id} className="h-14 hover:bg-slate-50/30 transition-colors border-slate-50">
+                              <TableCell className="pl-8 text-[10px] font-bold uppercase text-slate-500">{new Date(r.returnDate).toLocaleDateString()}</TableCell>
+                              <TableCell className="font-black text-[10px] text-red-600 uppercase tracking-tighter">{r.parentNumber}</TableCell>
+                              <TableCell className="text-[10px] font-bold text-slate-600 truncate max-w-[200px]">{r.reason || "---"}</TableCell>
+                              <TableCell className="text-right font-black text-[10px] text-slate-900">{formatCurrency(r.totalAmount)}</TableCell>
+                              <TableCell className="text-right pr-8">
+                                <div className="flex justify-end gap-1">
+                                  <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-blue-600" onClick={() => openView(r)}><Eye className="h-3.5 w-3.5" /></Button>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-amber-600" onClick={() => openEdit(r)}><Edit className="h-3.5 w-3.5" /></Button>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-red-600" onClick={() => { setSelectedRecord(r); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4" /></Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </Card>
+              ))}
+            </div>
           ) : (
             <div className="p-24 bg-white rounded-[3rem] border border-dashed text-center flex flex-col items-center ring-1 ring-slate-100">
               <RotateCcw className="h-12 w-12 text-red-200 mb-6" />
-              <p className="text-[10px] uppercase font-black text-muted-foreground tracking-[0.3em]">{t('noReturns')}</p>
+              <p className="text-[10px] uppercase font-black text-muted-foreground tracking-[0.3em]">{t('noData')}</p>
             </div>
           )}
         </TabsContent>
@@ -576,8 +614,8 @@ export default function ReturnsPage() {
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl max-w-sm">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-black uppercase text-slate-900 tracking-tight">{t('delete')}?</AlertDialogTitle>
-            <AlertDialogDescription className="text-xs font-medium leading-relaxed">This action will permanently remove the return record and stop its audit trail.</AlertDialogDescription>
+            <AlertDialogTitle className="text-xl font-black uppercase text-slate-900 tracking-tight">{t('confirmDelete')}?</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs font-medium leading-relaxed">This action will permanently remove the return record.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-8 gap-3">
             <AlertDialogCancel className="rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest">{t('cancel')}</AlertDialogCancel>

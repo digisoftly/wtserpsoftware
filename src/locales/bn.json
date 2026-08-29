@@ -1,4 +1,3 @@
-
 {
   "save": "সংরক্ষণ",
   "cancel": "বাতিল",
@@ -38,7 +37,7 @@
   "login": "লগইন",
   "systemLogin": "সিস্টেম লগইন",
   "authorizedAccess": "অনুমোদিত প্রবেশ পয়েন্ট",
-  "email": "イমেইল অ্যাড্রেস",
+  "email": "ইমেইল অ্যাড্রেস",
   "password": "পাসওয়ার্ড",
   "signInTerminal": "টার্মিনালে প্রবেশ করুন",
   "establishingSession": "লোডিং হচ্ছে...!",
@@ -148,5 +147,11 @@
   "collectPayment": "পেমেন্ট সংগ্রহ করুন",
   "profile": "প্রোফাইল",
   "refreshTerminal": "টার্মিনাল রিফ্রেশ করুন",
-  "itemsSelected": "টি আইটেম সিলেক্ট করা হয়েছে"
+  "itemsSelected": "টি আইটেম সিলেক্ট করা হয়েছে",
+  "unknownCustomer": "অজানা গ্রাহক",
+  "generalNoProject": "সাধারণ / প্রজেক্ট ছাড়া",
+  "totalDocuments": "মোট ডকুমেন্ট",
+  "lastDocument": "শেষ ডকুমেন্ট",
+  "expand": "বিস্তৃত করুন",
+  "collapse": "সংকুচিত করুন"
 }

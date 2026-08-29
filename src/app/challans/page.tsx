@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -26,7 +25,10 @@ import {
   MapPin,
   Phone,
   Edit,
-  Download
+  Download,
+  Folder,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -47,17 +49,19 @@ import { useTranslation } from "@/hooks/use-translation"
 import { DocumentTemplate } from "@/components/documents/document-template"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 
 export default function ChallansPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
-  const { t } = useTranslation();
+  const { t, formatCurrency } = useTranslation();
   const router = useRouter();
   
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
   const [selectedRecord, setSelectedRecord] = React.useState<any>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
+  const [expandedCustomers, setExpandedCustomers] = React.useState<Record<string, boolean>>({});
 
   // Queries
   const challansQuery = useMemoFirebase(() => {
@@ -72,15 +76,52 @@ export default function ChallansPage() {
     delivered: challans?.filter(c => c.status === 'delivered').length || 0,
   }), [challans]);
 
+  const filteredChallans = React.useMemo(() => {
+    if (!challans) return [];
+    return challans.filter(c => 
+      c.challanNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.customerName || '').toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [challans, searchTerm]);
+
+  // Grouping Logic
+  const groupedData = React.useMemo(() => {
+    const groups: Record<string, any> = {};
+
+    filteredChallans.forEach(c => {
+      const cId = c.customerId || 'unknown';
+      const cName = c.customerName || t('unknownCustomer');
+
+      if (!groups[cId]) {
+        groups[cId] = {
+          id: cId,
+          name: cName,
+          totalDocs: 0,
+          totalAmount: 0,
+          lastDate: c.dispatchDate,
+          records: []
+        };
+      }
+
+      groups[cId].records.push(c);
+      groups[cId].totalDocs += 1;
+      groups[cId].totalAmount += (Number(c.totalAmount) || 0);
+      if (new Date(c.dispatchDate) > new Date(groups[cId].lastDate)) {
+        groups[cId].lastDate = c.dispatchDate;
+      }
+    });
+
+    return Object.values(groups);
+  }, [filteredChallans, t]);
+
   const handleShareWhatsApp = (challan: any) => {
     const text = `Hello ${challan.customerName}, your delivery challan ${challan.challanNumber} has been generated. Dispatch Date: ${challan.dispatchDate}. Status: ${challan.status.toUpperCase()}.`;
     window.open(`https://wa.me/${challan.customerPhone}?text=${encodeURIComponent(text)}`, '_blank');
   };
 
-  const filteredChallans = challans?.filter(c => 
-    c.challanNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.customerName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const toggleCustomer = (id: string) => {
+    setExpandedCustomers(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   return (
     <div className="space-y-6 pb-10">
@@ -97,9 +138,9 @@ export default function ChallansPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <KPICard title={t('totalDispatch')} value={stats.total} icon={Truck} colorClass="bg-blue-600" />
-        <KPICard title={t('pendingDeliveries')} value={stats.pending} icon={Clock} colorClass="bg-orange-600" />
-        <KPICard title={t('deliveredOrders')} value={stats.delivered} icon={CheckCircle2} colorClass="bg-green-600" />
+        <KPICard title="totalDispatch" value={stats.total} icon={Truck} colorClass="bg-blue-600" />
+        <KPICard title="pendingDeliveries" value={stats.pending} icon={Clock} colorClass="bg-orange-600" />
+        <KPICard title="deliveredOrders" value={stats.delivered} icon={CheckCircle2} colorClass="bg-green-600" />
       </div>
 
       <div className="flex gap-2 bg-white p-3 rounded-xl border shadow-sm ring-1 ring-slate-100">
@@ -107,7 +148,7 @@ export default function ChallansPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <input 
             placeholder={t('search')} 
-            className="pl-9 h-10 w-full rounded-xl bg-slate-50/50 border-none text-xs focus:ring-2 focus:ring-amber-500 transition-all outline-none" 
+            className="pl-9 h-10 w-full rounded-xl bg-slate-50/50 border-none text-xs focus:ring-2 focus:ring-amber-500 transition-all outline-none font-bold" 
             value={searchTerm} 
             onChange={e => setSearchTerm(e.target.value)} 
           />
@@ -116,54 +157,89 @@ export default function ChallansPage() {
 
       {isLoading ? (
         <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-amber-600" /></div>
+      ) : groupedData.length > 0 ? (
+        <div className="space-y-4">
+          {groupedData.map((customer) => (
+            <Card key={customer.id} className="border-none shadow-sm overflow-hidden rounded-[1.5rem] bg-white ring-1 ring-slate-100">
+              {/* CUSTOMER HEADER */}
+              <div 
+                className="p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors border-b border-slate-50"
+                onClick={() => toggleCustomer(customer.id)}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
+                    <User className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-black uppercase text-slate-900 leading-tight">{customer.name}</h2>
+                    <div className="flex gap-3 mt-1">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                        {customer.totalDocs} {t('documents')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-6">
+                  <div className="text-right hidden md:block">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('lastDocument')}</p>
+                    <p className="text-[11px] font-bold text-slate-700">{new Date(customer.lastDate).toLocaleDateString()}</p>
+                  </div>
+                  {expandedCustomers[customer.id] ? <ChevronDown className="h-5 w-5 text-slate-300" /> : <ChevronRight className="h-5 w-5 text-slate-300" />}
+                </div>
+              </div>
+
+              {/* RECORD TABLE */}
+              {expandedCustomers[customer.id] && (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader className="bg-slate-50/50">
+                      <TableRow className="h-10">
+                        <TableHead className="h-10 text-[9px] uppercase font-black pl-8">ID</TableHead>
+                        <TableHead className="h-10 text-[9px] uppercase font-black">{t('date')}</TableHead>
+                        <TableHead className="h-10 text-[9px] uppercase font-black text-center">{t('status')}</TableHead>
+                        <TableHead className="h-10 text-right pr-8 w-32">{t('actions')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {customer.records.map((c: any) => (
+                        <TableRow key={c.id} className="h-14 hover:bg-slate-50/30 transition-colors border-slate-50">
+                          <TableCell className="pl-8 font-black text-[10px] text-amber-600 uppercase tracking-tighter">{c.challanNumber}</TableCell>
+                          <TableCell className="text-[10px] font-bold text-slate-500">{new Date(c.dispatchDate).toLocaleDateString()}</TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="outline" className={cn("text-[8px] h-4 uppercase border-none px-2 font-black", 
+                              c.status === 'delivered' ? "bg-green-50 text-green-700" : "bg-orange-50 text-orange-700")}>
+                              {c.status.toUpperCase()}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right pr-8">
+                            <div className="flex justify-end gap-1">
+                              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-blue-600" onClick={() => { setSelectedRecord(c); setIsViewModalOpen(true); }}><Eye className="h-3.5 w-3.5" /></Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-slate-400"><MoreVertical className="h-4 w-4" /></Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl">
+                                  <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedRecord(c); setIsViewModalOpen(true); }}><Printer className="mr-2 h-3.5 w-3.5" /> {t('print')}</DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(c); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </Card>
+          ))}
+        </div>
       ) : (
-        <Card className="border-none shadow-sm overflow-hidden rounded-2xl bg-white ring-1 ring-slate-100">
-          <div className="overflow-x-auto custom-scrollbar">
-            <Table>
-              <TableHeader className="bg-muted/10">
-                <TableRow>
-                  <TableHead className="h-10 text-[10px] uppercase font-black pl-6">ID</TableHead>
-                  <TableHead className="h-10 text-[10px] uppercase font-black">{t('customer')}</TableHead>
-                  <TableHead className="h-10 text-[10px] uppercase font-black">{t('date')}</TableHead>
-                  <TableHead className="h-10 text-[10px] uppercase font-black text-center">{t('status')}</TableHead>
-                  <TableHead className="h-10 text-right pr-6 sticky right-0 bg-white/95 backdrop-blur-sm z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] w-[180px]">{t('actions')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredChallans?.map((c) => (
-                  <TableRow key={c.id} className="h-14 hover:bg-muted/5 transition-colors group">
-                    <TableCell className="pl-6 font-black text-xs uppercase text-amber-600">
-                      {c.challanNumber}
-                    </TableCell>
-                    <TableCell className="text-xs font-bold text-slate-700">{c.customerName}</TableCell>
-                    <TableCell className="text-xs font-medium text-slate-500">{new Date(c.dispatchDate).toLocaleDateString()}</TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline" className={cn("text-[8px] h-5 uppercase border-none px-2 font-black", 
-                        c.status === 'delivered' ? "bg-green-50 text-green-700" : "bg-orange-50 text-orange-700")}>
-                        {c.status.toUpperCase()}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right pr-6 sticky right-0 bg-white/90 backdrop-blur-sm group-hover:bg-slate-50/90 transition-colors z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
-                      <div className="flex justify-end items-center gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-blue-600" onClick={() => { setSelectedRecord(c); setIsViewModalOpen(true); }}><Eye className="h-3.5 w-3.5" /></Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-400"><MoreVertical className="h-4 w-4" /></Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl">
-                            <DropdownMenuItem className="text-xs font-bold" onClick={() => { setSelectedRecord(c); setIsViewModalOpen(true); }}><Printer className="mr-2 h-3.5 w-3.5" /> {t('print')}</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-xs font-bold text-red-600" onClick={() => { setSelectedRecord(c); setIsDeleteAlertOpen(true); }}><Trash2 className="mr-2 h-3.5 w-3.5" /> {t('delete')}</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </Card>
+        <div className="p-16 bg-white rounded-[2rem] border border-dashed text-center flex flex-col items-center ring-1 ring-slate-100">
+          <Truck className="h-10 w-10 text-slate-200 mb-4" />
+          <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">{t('noData')}</p>
+        </div>
       )}
 
       {/* VIEW CHALLAN DIALOG */}

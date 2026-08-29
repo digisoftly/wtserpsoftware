@@ -1,7 +1,29 @@
 "use client"
 
 import * as React from "react"
-import { Plus, Search, Loader2, MoreVertical, Eye, Trash2, TrendingUp, Calendar, AlertCircle, Download, Edit, Printer, Filter, ShoppingCart, CreditCard, History, Copy } from "lucide-react"
+import { 
+  Plus, 
+  Search, 
+  Loader2, 
+  MoreVertical, 
+  Eye, 
+  Trash2, 
+  TrendingUp, 
+  Calendar, 
+  AlertCircle, 
+  Download, 
+  Edit, 
+  Printer, 
+  Filter, 
+  ShoppingCart, 
+  CreditCard, 
+  History, 
+  Copy,
+  User,
+  Folder,
+  ChevronDown,
+  ChevronRight
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -20,36 +42,28 @@ import { useBulkSelection } from "@/hooks/use-bulk-selection"
 import { BulkActionToolbar } from "@/components/layout/bulk-action-toolbar"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 
 export default function SalesPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
-  const { t } = useTranslation();
+  const { t, formatCurrency } = useTranslation();
   const router = useRouter();
   
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
   const [selectedRecord, setSelectedRecord] = React.useState<any>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
-  const deferredSearch = React.useDeferredValue(searchTerm);
+  const [expandedCustomers, setExpandedCustomers] = React.useState<Record<string, boolean>>({});
 
   const invoicesQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
     return query(
       collection(db, "companies", companyId, "branches", branchId, "sales_invoices"), 
       orderBy("createdAt", "desc"),
-      limit(100)
+      limit(200)
     );
   }, [db, companyId, branchId]);
   const { data: invoices, isLoading } = useCollection(invoicesQuery);
-
-  const { selectedIds, isAllSelected, toggleSelect, toggleSelectAll, clearSelection, selectedCount } = useBulkSelection(invoices);
-
-  const filteredInvoices = React.useMemo(() => {
-    return invoices?.filter(inv => 
-      inv.invoiceNumber?.toLowerCase().includes(deferredSearch.toLowerCase()) ||
-      inv.customerName?.toLowerCase().includes(deferredSearch.toLowerCase())
-    );
-  }, [invoices, deferredSearch]);
 
   const stats = React.useMemo(() => ({
     receivable: invoices?.reduce((s, i) => s + (i.balanceDue || 0), 0) || 0,
@@ -57,6 +71,52 @@ export default function SalesPage() {
     totalSales: invoices?.reduce((s, i) => s + (i.totalAmount || 0), 0) || 0,
     count: invoices?.length || 0
   }), [invoices]);
+
+  const filteredInvoices = React.useMemo(() => {
+    if (!invoices) return [];
+    return invoices.filter(inv => 
+      inv.invoiceNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (inv.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (inv.projectName || '').toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [invoices, searchTerm]);
+
+  // Grouping Logic
+  const groupedData = React.useMemo(() => {
+    const groups: Record<string, any> = {};
+
+    filteredInvoices.forEach(inv => {
+      const cId = inv.customerId || 'unknown';
+      const cName = inv.customerName || t('unknownCustomer');
+      const pName = inv.projectName || t('generalNoProject');
+
+      if (!groups[cId]) {
+        groups[cId] = {
+          id: cId,
+          name: cName,
+          totalDocs: 0,
+          totalAmount: 0,
+          totalDue: 0,
+          lastDate: inv.invoiceDate,
+          projects: {}
+        };
+      }
+
+      if (!groups[cId].projects[pName]) {
+        groups[cId].projects[pName] = [];
+      }
+
+      groups[cId].projects[pName].push(inv);
+      groups[cId].totalDocs += 1;
+      groups[cId].totalAmount += (Number(inv.totalAmount) || 0);
+      groups[cId].totalDue += (Number(inv.balanceDue) || 0);
+      if (new Date(inv.invoiceDate) > new Date(groups[cId].lastDate)) {
+        groups[cId].lastDate = inv.invoiceDate;
+      }
+    });
+
+    return Object.values(groups);
+  }, [filteredInvoices, t]);
 
   const handleDelete = async () => {
     if (!selectedRecord || !db || !companyId || !branchId) return;
@@ -67,6 +127,10 @@ export default function SalesPage() {
     } catch (e) {
       toast({ variant: "destructive", title: t('error') });
     }
+  };
+
+  const toggleCustomer = (id: string) => {
+    setExpandedCustomers(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   return (
@@ -86,10 +150,10 @@ export default function SalesPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        <KPICard title="Total Sales" value={`৳${stats.totalSales.toLocaleString()}`} icon={ShoppingCart} colorClass="bg-blue-600" />
-        <KPICard title="Total Collected" value={`৳${(stats.totalSales - stats.receivable).toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-600" />
-        <KPICard title="Total Receivable" value={`৳${stats.receivable.toLocaleString()}`} icon={AlertCircle} colorClass="bg-red-600" />
-        <KPICard title="Invoice Count" value={stats.count} icon={Calendar} colorClass="bg-purple-600" />
+        <KPICard title="totalSales" value={formatCurrency(stats.totalSales)} icon={ShoppingCart} colorClass="bg-blue-600" />
+        <KPICard title="todayIncome" value={formatCurrency(stats.collectedToday)} icon={TrendingUp} colorClass="bg-green-600" />
+        <KPICard title="salesDue" value={formatCurrency(stats.receivable)} icon={AlertCircle} colorClass="bg-red-600" />
+        <KPICard title="totalDocuments" value={stats.count} icon={Calendar} colorClass="bg-purple-600" />
       </div>
 
       <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex flex-col sm:flex-row gap-3 items-center justify-between ring-1 ring-slate-100">
@@ -102,84 +166,134 @@ export default function SalesPage() {
             onChange={e => setSearchTerm(e.target.value)} 
           />
         </div>
-        <Button variant="ghost" size="sm" className="h-10 px-4 gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50">
-          <Filter className="h-3.5 w-3.5" /> {t('actions')}
-        </Button>
       </div>
 
       {isLoading ? (
         <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-slate-200" /></div>
-      ) : (
-        <Card className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white ring-1 ring-slate-100">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-slate-50/50">
-                <TableRow>
-                  <TableHead className="w-10 pl-6 h-12">
-                    <Checkbox checked={isAllSelected} onCheckedChange={toggleSelectAll} />
-                  </TableHead>
-                  <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12 pl-4">Ref #</TableHead>
-                  <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12">Customer</TableHead>
-                  <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12 text-right">Invoice Total</TableHead>
-                  <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12 text-right">Balance Due</TableHead>
-                  <TableHead className="text-[10px] uppercase font-black text-slate-500 text-center h-12">Payment</TableHead>
-                  <TableHead className="text-[10px] uppercase font-black text-slate-500 text-right pr-8 sticky right-0 bg-white/95 h-12 w-24">{t('actions')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredInvoices?.length === 0 ? (
-                  <TableRow><TableCell colSpan={7} className="h-40 text-center text-slate-300 text-[10px] font-black uppercase tracking-[0.2em] italic">{t('noData')}</TableCell></TableRow>
-                ) : (
-                  filteredInvoices?.map((inv) => (
-                    <TableRow key={inv.id} className={cn("h-20 hover:bg-muted/5 transition-colors group", selectedIds.includes(inv.id) && "bg-blue-50/30")}>
-                      <TableCell className="pl-6 py-3">
-                        <Checkbox checked={selectedIds.includes(inv.id)} onCheckedChange={() => toggleSelect(inv.id)} />
-                      </TableCell>
-                      <TableCell className="pl-4">
-                        <span className="text-xs font-black text-blue-600 uppercase">{inv.invoiceNumber}</span>
-                        <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase">{new Date(inv.invoiceDate).toLocaleDateString()}</p>
-                      </TableCell>
-                      <TableCell className="text-xs font-bold text-slate-700 truncate max-w-[180px] uppercase">{inv.customerName}</TableCell>
-                      <TableCell className="text-right text-xs font-black text-slate-900">৳{inv.totalAmount?.toLocaleString()}</TableCell>
-                      <TableCell className="text-right text-xs font-black text-red-600">৳{(inv.balanceDue || 0).toLocaleString()}</TableCell>
-                      <TableCell className="text-center">
-                        <Badge className={cn(
-                          "text-[9px] uppercase font-black px-2 h-5 border-none",
-                          inv.status === 'paid' ? "bg-green-50 text-green-700" : inv.status === 'partial' ? "bg-orange-50 text-orange-700" : "bg-red-50 text-red-700"
-                        )}>
-                          {inv.status || 'UNPAID'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right pr-8 sticky right-0 bg-white group-hover:bg-slate-50/90 transition-colors shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
-                        <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-blue-600 hover:bg-blue-50" onClick={() => router.push(`/sales/${inv.id}/view`)}><Eye className="h-4 w-4" /></Button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-400"><MoreVertical className="h-4 w-4" /></Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-56 rounded-2xl shadow-2xl p-2 border-slate-100">
-                              <DropdownMenuItem onClick={() => router.push(`/sales/payments/collect/${inv.id}`)} className="rounded-xl h-10 text-xs font-bold py-1.5 text-green-600 focus:bg-green-50 focus:text-green-700"><CreditCard className="mr-2 h-4 w-4" /> Collect Payment</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => router.push(`/sales/payments/history/${inv.id}`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><History className="mr-2 h-4 w-4" /> Payment History</DropdownMenuItem>
-                              <DropdownMenuSeparator className="my-1 bg-slate-50" />
-                              <DropdownMenuItem onClick={() => router.push(`/sales/new?copyFrom=${inv.id}`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><Copy className="mr-2 h-4 w-4 text-blue-600" /> Copy / Duplicate</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => router.push(`/sales/${inv.id}/edit`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><Edit className="mr-2 h-4 w-4" /> Edit Invoice</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => router.push(`/sales/${inv.id}/view?print=true`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><Printer className="mr-2 h-4 w-4" /> Print</DropdownMenuItem>
-                              <DropdownMenuSeparator className="my-1 bg-slate-50" />
-                              <DropdownMenuItem onClick={() => { setSelectedRecord(inv); setIsDeleteAlertOpen(true); }} className="rounded-xl h-10 text-red-600 text-xs font-bold py-1.5 focus:bg-red-50 focus:text-red-700"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </Card>
-      )}
+      ) : groupedData.length > 0 ? (
+        <div className="space-y-4">
+          {groupedData.map((customer) => (
+            <Card key={customer.id} className="border-none shadow-sm overflow-hidden rounded-[1.5rem] bg-white ring-1 ring-slate-100">
+              {/* CUSTOMER HEADER */}
+              <div 
+                className="p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors border-b border-slate-50"
+                onClick={() => toggleCustomer(customer.id)}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                    <User className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-black uppercase text-slate-900 leading-tight">{customer.name}</h2>
+                    <div className="flex gap-3 mt-1">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                        {customer.totalDocs} {t('documents')}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                        • {Object.keys(customer.projects).length} {t('projectBilling')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-6">
+                  <div className="text-right hidden sm:block">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('totalAmount')}</p>
+                    <p className="text-sm font-black text-blue-600">{formatCurrency(customer.totalAmount)}</p>
+                  </div>
+                  <div className="text-right hidden sm:block">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('balanceDue')}</p>
+                    <p className="text-sm font-black text-red-600">{formatCurrency(customer.totalDue)}</p>
+                  </div>
+                  {expandedCustomers[customer.id] ? <ChevronDown className="h-5 w-5 text-slate-300" /> : <ChevronRight className="h-5 w-5 text-slate-300" />}
+                </div>
+              </div>
 
-      <BulkActionToolbar selectedCount={selectedCount} onClear={clearSelection} onAction={() => {}} />
+              {/* PROJECT GROUPS */}
+              {expandedCustomers[customer.id] && (
+                <div className="p-4 bg-slate-50/30 space-y-3">
+                  {Object.entries(customer.projects).map(([projectName, docs]: [string, any]) => (
+                    <Collapsible key={projectName} defaultOpen={true}>
+                      <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
+                        <CollapsibleTrigger asChild>
+                          <div className="p-3 flex items-center justify-between cursor-pointer hover:bg-slate-50/50">
+                            <div className="flex items-center gap-2">
+                              <Folder className="h-3.5 w-3.5 text-teal-500" />
+                              <span className="text-[11px] font-black uppercase tracking-tight text-slate-600">{projectName}</span>
+                              <Badge className="bg-slate-100 text-slate-500 text-[8px] h-4 font-black border-none ml-2">
+                                {docs.length}
+                              </Badge>
+                            </div>
+                            <ChevronDown className="h-3.5 w-3.5 text-slate-300" />
+                          </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="overflow-x-auto">
+                            <Table>
+                              <TableHeader className="bg-slate-50/50">
+                                <TableRow className="h-8">
+                                  <TableHead className="h-8 text-[9px] uppercase font-black pl-6">{t('docNo')}</TableHead>
+                                  <TableHead className="h-8 text-[9px] uppercase font-black">{t('date')}</TableHead>
+                                  <TableHead className="h-8 text-[9px] uppercase font-black text-right">{t('total')}</TableHead>
+                                  <TableHead className="h-8 text-[9px] uppercase font-black text-right">{t('balanceDue')}</TableHead>
+                                  <TableHead className="h-8 text-[9px] uppercase font-black text-center">{t('status')}</TableHead>
+                                  <TableHead className="h-8 text-right pr-6 w-32">{t('actions')}</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {docs.map((inv: any) => (
+                                  <TableRow key={inv.id} className="h-12 hover:bg-slate-50/30 transition-colors border-slate-50">
+                                    <TableCell className="pl-6 font-black text-[10px] text-blue-600 uppercase tracking-tighter">{inv.invoiceNumber}</TableCell>
+                                    <TableCell className="text-[10px] font-bold text-slate-500">{new Date(inv.invoiceDate).toLocaleDateString()}</TableCell>
+                                    <TableCell className="text-right font-black text-[10px] text-slate-900">{formatCurrency(inv.totalAmount)}</TableCell>
+                                    <TableCell className="text-right font-black text-[10px] text-red-600">{formatCurrency(inv.balanceDue)}</TableCell>
+                                    <TableCell className="text-center">
+                                      <Badge className={cn(
+                                        "text-[8px] uppercase font-black px-2 h-4 border-none",
+                                        inv.status === 'paid' ? "bg-green-50 text-green-700" : inv.status === 'partial' ? "bg-orange-50 text-orange-700" : "bg-red-50 text-red-700"
+                                      )}>
+                                        {inv.status || 'UNPAID'}
+                                      </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right pr-6">
+                                      <div className="flex justify-end gap-1">
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-blue-600" onClick={() => router.push(`/sales/${inv.id}/view`)}><Eye className="h-3.5 w-3.5" /></Button>
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-slate-400"><MoreVertical className="h-4 w-4" /></Button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="end" className="w-56 rounded-2xl shadow-2xl p-2 border-slate-100">
+                                            <DropdownMenuItem onClick={() => router.push(`/sales/payments/collect/${inv.id}`)} className="rounded-xl h-10 text-xs font-bold py-1.5 text-green-600 focus:bg-green-50 focus:text-green-700"><CreditCard className="mr-2 h-4 w-4" /> Collect Payment</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => router.push(`/sales/payments/history/${inv.id}`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><History className="mr-2 h-4 w-4" /> Payment History</DropdownMenuItem>
+                                            <DropdownMenuSeparator className="my-1 bg-slate-50" />
+                                            <DropdownMenuItem onClick={() => router.push(`/sales/new?copyFrom=${inv.id}`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><Copy className="mr-2 h-4 w-4 text-blue-600" /> Duplicate</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => router.push(`/sales/${inv.id}/edit`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => router.push(`/sales/${inv.id}/view?print=true`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><Printer className="mr-2 h-4 w-4" /> Print</DropdownMenuItem>
+                                            <DropdownMenuSeparator className="my-1 bg-slate-50" />
+                                            <DropdownMenuItem onClick={() => { setSelectedRecord(inv); setIsDeleteAlertOpen(true); }} className="rounded-xl h-10 text-red-600 text-xs font-bold py-1.5 focus:bg-red-50 focus:text-red-700"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </CollapsibleContent>
+                      </div>
+                    </Collapsible>
+                  ))}
+                </div>
+              )}
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="p-16 bg-white rounded-[2rem] border border-dashed text-center flex flex-col items-center ring-1 ring-slate-100">
+          <ShoppingCart className="h-10 w-10 text-slate-200 mb-4" />
+          <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">{t('noData')}</p>
+        </div>
+      )}
 
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl max-w-sm">

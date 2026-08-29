@@ -1,4 +1,3 @@
-
 {
   "save": "Save",
   "cancel": "Cancel",
@@ -148,5 +147,11 @@
   "collectPayment": "Collect Payment",
   "profile": "Profile",
   "refreshTerminal": "Refresh Terminal",
-  "itemsSelected": "Items Selected"
+  "itemsSelected": "Items Selected",
+  "unknownCustomer": "Unknown Customer",
+  "generalNoProject": "General / No Project",
+  "totalDocuments": "Total Documents",
+  "lastDocument": "Last Document",
+  "expand": "Expand",
+  "collapse": "Collapse"
 }
