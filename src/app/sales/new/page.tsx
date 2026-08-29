@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { 
   ArrowLeft, 
   Save, 
@@ -29,7 +29,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
-import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
+import { useFirestore, useCollection, useMemoFirebase, useDoc } from "@/firebase"
 import { collection, doc, runTransaction, serverTimestamp, increment, query, orderBy, setDoc, getDocs, where, limit } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { useTranslation } from "@/hooks/use-translation"
@@ -58,6 +58,8 @@ interface InvoiceItem {
 
 export default function NewInvoicePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const copyFromId = searchParams.get('copyFrom');
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
   const { t } = useTranslation();
@@ -78,6 +80,36 @@ export default function NewInvoicePage() {
   const [paidAmount, setPaidAmount] = React.useState(0);
   const [notes, setNotes] = React.useState("");
   const [terms, setTerms] = React.useState("");
+
+  // Copy Logic
+  const copySourceRef = useMemoFirebase(() => {
+    if (!db || !companyId || !branchId || !copyFromId) return null;
+    return doc(db, "companies", companyId, "branches", branchId, "sales_invoices", copyFromId);
+  }, [db, companyId, branchId, copyFromId]);
+  const { data: sourceInvoice } = useDoc(copySourceRef);
+
+  React.useEffect(() => {
+    if (sourceInvoice) {
+      setSelectedCustomerId(sourceInvoice.customerId || "");
+      setProjectName(sourceInvoice.projectName || "");
+      setProjectLocation(sourceInvoice.projectLocation || "");
+      setGlobalDiscount(Number(sourceInvoice.globalDiscount || sourceInvoice.discount || 0));
+      setAdditionalCharge(Number(sourceInvoice.additionalCharge || 0));
+      setNotes(sourceInvoice.notes || "");
+      setTerms(sourceInvoice.terms || "");
+      
+      const itemsWithIds = (sourceInvoice.items || []).map((item: any, idx: number) => ({
+        ...item,
+        id: `clone-item-${idx}-${Date.now()}`,
+        qty: Number(item.qty || item.quantity || 0),
+        price: Number(item.price || item.unitPrice || 0),
+        total: Number(item.total || 0),
+        sn: "" // Don't copy serial numbers as they are unique to units
+      }));
+      setLineItems(itemsWithIds);
+      toast({ title: "Data Cloned", description: "All fields pre-filled from existing invoice." });
+    }
+  }, [sourceInvoice]);
 
   // Product Search State
   const [productSearch, setProductSearch] = React.useState("");
@@ -327,6 +359,24 @@ export default function NewInvoicePage() {
     setLineItems([...lineItems, newItem]);
   };
 
+  const updateItem = (id: string, field: keyof InvoiceItem, val: any) => {
+    setLineItems(prev => prev.map(item => {
+      if (item.id !== id) return item;
+      const updated = { ...item, [field]: val };
+      if (['qty', 'price', 'discount', 'tax'].includes(field as string)) {
+        const q = Number(updated.qty) || 0;
+        const p = Number(updated.price) || 0;
+        const d = Number(updated.discount) || 0;
+        const t_val = Number(updated.tax) || 0;
+        const base = q * p;
+        const disc = base * (d / 100);
+        const taxed = (base - disc) * (t_val / 100);
+        updated.total = base - disc + taxed;
+      }
+      return updated;
+    }));
+  };
+
   return (
     <div className="max-w-full mx-auto space-y-6 pb-20 overflow-x-hidden">
       <div className="flex items-center justify-between border-b pb-4 bg-white/80 backdrop-blur-md sticky top-0 z-50 px-2 sm:px-4">
@@ -335,7 +385,7 @@ export default function NewInvoicePage() {
             <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
           </Button>
           <div>
-            <h1 className="text-base md:text-lg font-black text-slate-900 tracking-tight leading-none">New Sales Invoice</h1>
+            <h1 className="text-base md:text-lg font-black text-slate-900 tracking-tight leading-none">{copyFromId ? 'Duplicate Invoice' : 'New Sales Invoice'}</h1>
             <p className="text-[9px] md:text-[10px] font-black text-blue-600 uppercase tracking-widest mt-1">Transaction Ledger Mode</p>
           </div>
         </div>

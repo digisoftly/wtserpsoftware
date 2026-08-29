@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { 
   ArrowLeft, 
   Save, 
@@ -29,7 +29,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
-import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
+import { useFirestore, useCollection, useMemoFirebase, useDoc } from "@/firebase"
 import { collection, doc, setDoc, serverTimestamp, query, orderBy, where, getDocs, limit } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { useTranslation } from "@/hooks/use-translation"
@@ -59,6 +59,8 @@ interface QuoteItem {
 
 export default function NewQuotationPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const copyFromId = searchParams.get('copyFrom');
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
   const { t } = useTranslation();
@@ -75,6 +77,35 @@ export default function NewQuotationPage() {
   const [globalDiscount, setGlobalDiscount] = React.useState(0);
   const [notes, setNotes] = React.useState("");
   const [terms, setTerms] = React.useState("");
+
+  // Copy Logic
+  const copySourceRef = useMemoFirebase(() => {
+    if (!db || !companyId || !branchId || !copyFromId) return null;
+    return doc(db, "companies", companyId, "branches", branchId, "quotations", copyFromId);
+  }, [db, companyId, branchId, copyFromId]);
+  const { data: sourceQuote } = useDoc(copySourceRef);
+
+  React.useEffect(() => {
+    if (sourceQuote) {
+      setSelectedCustomerId(sourceQuote.customerId || "");
+      setProjectName(sourceQuote.projectName || "");
+      setProjectLocation(sourceQuote.projectLocation || "");
+      setGlobalDiscount(Number(sourceQuote.globalDiscount || sourceQuote.discount || 0));
+      setNotes(sourceQuote.notes || "");
+      setTerms(sourceQuote.terms || "");
+      
+      const itemsWithIds = (sourceQuote.items || []).map((item: any, idx: number) => ({
+        ...item,
+        id: `clone-quote-${idx}-${Date.now()}`,
+        qty: Number(item.qty || item.quantity || 0),
+        price: Number(item.price || item.unitPrice || 0),
+        total: Number(item.total || 0),
+        sn: "" 
+      }));
+      setLineItems(itemsWithIds);
+      toast({ title: "Quotation Cloned", description: "All fields pre-filled from existing quotation." });
+    }
+  }, [sourceQuote]);
 
   // Product Search State
   const [productSearch, setProductSearch] = React.useState("");
@@ -306,7 +337,7 @@ export default function NewQuotationPage() {
             <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
           </Button>
           <div>
-            <h1 className="text-base md:text-lg font-black text-slate-900 tracking-tight leading-none">New Proposal</h1>
+            <h1 className="text-base md:text-lg font-black text-slate-900 tracking-tight leading-none">{copyFromId ? 'Duplicate Proposal' : 'New Proposal'}</h1>
             <p className="text-[9px] md:text-[10px] font-black text-blue-600 uppercase tracking-widest mt-1">Pre-Sales Terminal</p>
           </div>
         </div>

@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -17,7 +16,8 @@ import {
   Download,
   Share2,
   X,
-  MessageSquare
+  MessageSquare,
+  Copy
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -152,6 +152,7 @@ export default function QuotationsPage() {
                             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-blue-50 text-blue-600"><MoreVertical className="h-4 w-4" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl">
+                            <DropdownMenuItem className="text-xs font-bold" onClick={() => router.push(`/quotations/new?copyFrom=${q.id}`)}><Copy className="mr-2 h-3.5 w-3.5 text-blue-600" /> Copy / Duplicate</DropdownMenuItem>
                             <DropdownMenuItem className="text-xs font-bold" onClick={() => router.push(`/quotations/${q.id}/view?print=true`)}><Printer className="mr-2 h-3.5 w-3.5" /> {t('print')}</DropdownMenuItem>
                             <DropdownMenuItem className="text-xs font-bold" onClick={() => handleShareWhatsApp(q)}><MessageSquare className="mr-2 h-3.5 w-3.5" /> WhatsApp</DropdownMenuItem>
                             <DropdownMenuSeparator />

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Plus, Search, Loader2, MoreVertical, Eye, Trash2, TrendingUp, Calendar, AlertCircle, Download, Edit, Printer, Filter, ShoppingCart, CreditCard, History } from "lucide-react"
+import { Plus, Search, Loader2, MoreVertical, Eye, Trash2, TrendingUp, Calendar, AlertCircle, Download, Edit, Printer, Filter, ShoppingCart, CreditCard, History, Copy } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -123,7 +123,7 @@ export default function SalesPage() {
                   <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12 text-right">Invoice Total</TableHead>
                   <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12 text-right">Balance Due</TableHead>
                   <TableHead className="text-[10px] uppercase font-black text-slate-500 text-center h-12">Payment</TableHead>
-                  <TableHead className="text-[10px] uppercase font-black text-slate-500 text-right pr-8 sticky right-0 bg-white/95 h-12 w-24">Action</TableHead>
+                  <TableHead className="text-[10px] uppercase font-black text-slate-500 text-right pr-8 sticky right-0 bg-white/95 h-12 w-24">{t('actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -150,7 +150,7 @@ export default function SalesPage() {
                           {inv.status || 'UNPAID'}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right pr-6 sticky right-0 bg-white group-hover:bg-slate-50/90 transition-colors shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                      <TableCell className="text-right pr-8 sticky right-0 bg-white group-hover:bg-slate-50/90 transition-colors shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
                         <div className="flex justify-end gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-blue-600 hover:bg-blue-50" onClick={() => router.push(`/sales/${inv.id}/view`)}><Eye className="h-4 w-4" /></Button>
                           <DropdownMenu>
@@ -161,6 +161,7 @@ export default function SalesPage() {
                               <DropdownMenuItem onClick={() => router.push(`/sales/payments/collect/${inv.id}`)} className="rounded-xl h-10 text-xs font-bold py-1.5 text-green-600 focus:bg-green-50 focus:text-green-700"><CreditCard className="mr-2 h-4 w-4" /> Collect Payment</DropdownMenuItem>
                               <DropdownMenuItem onClick={() => router.push(`/sales/payments/history/${inv.id}`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><History className="mr-2 h-4 w-4" /> Payment History</DropdownMenuItem>
                               <DropdownMenuSeparator className="my-1 bg-slate-50" />
+                              <DropdownMenuItem onClick={() => router.push(`/sales/new?copyFrom=${inv.id}`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><Copy className="mr-2 h-4 w-4 text-blue-600" /> Copy / Duplicate</DropdownMenuItem>
                               <DropdownMenuItem onClick={() => router.push(`/sales/${inv.id}/edit`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><Edit className="mr-2 h-4 w-4" /> Edit Invoice</DropdownMenuItem>
                               <DropdownMenuItem onClick={() => router.push(`/sales/${inv.id}/view?print=true`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><Printer className="mr-2 h-4 w-4" /> Print</DropdownMenuItem>
                               <DropdownMenuSeparator className="my-1 bg-slate-50" />
