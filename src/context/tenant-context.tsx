@@ -1,8 +1,9 @@
+
 'use client';
 
 import * as React from 'react';
 import { useUser, useFirestore, useAuth } from '@/firebase';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { Language } from '@/lib/translations';
 import { toast } from '@/hooks/use-toast';
@@ -48,12 +49,25 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   
   const [isInitializing, setIsInitializing] = React.useState(true);
   const [userRole, setUserRole] = React.useState<Role | null>(null);
-  const [language, setLanguage] = React.useState<Language>('BN');
+  const [language, setLanguageState] = React.useState<Language>('BN');
   const [branchId, setBranchId] = React.useState<string | null>('dhaka-main');
   const [allowedBranches, setAllowedBranches] = React.useState<string[]>(['dhaka-main']);
   const [settings, setSettings] = React.useState<any>(null);
   
   const companyId = PRODUCTION_COMPANY_ID;
+
+  // Optimized Language Setter that syncs with Firestore
+  const setLanguage = React.useCallback(async (lang: Language) => {
+    setLanguageState(lang);
+    if (user && db) {
+      try {
+        const userRef = doc(db, "companies", companyId, "users", user.uid);
+        await updateDoc(userRef, { preferredLanguage: lang });
+      } catch (e) {
+        console.error("Failed to sync language preference:", e);
+      }
+    }
+  }, [user, db, companyId]);
 
   React.useEffect(() => {
     let unsubUser: () => void;
@@ -89,7 +103,11 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
             return;
           }
 
-          setLanguage(userData.preferredLanguage || 'BN');
+          // Only update language if it's different to prevent loops
+          if (userData.preferredLanguage && userData.preferredLanguage !== language) {
+            setLanguageState(userData.preferredLanguage);
+          }
+          
           setBranchId(userData.branchId || 'dhaka-main');
           setAllowedBranches(userData.allowedBranches || ['dhaka-main']);
 
@@ -129,11 +147,11 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     setBranchId: (id: string) => setBranchId(id),
     userRole,
     language,
-    setLanguage: (lang: Language) => setLanguage(lang),
+    setLanguage,
     isLoading: isUserLoading || isInitializing,
     settings,
     allowedBranches
-  }), [branchId, userRole, language, isUserLoading, isInitializing, companyId, settings, allowedBranches]);
+  }), [branchId, userRole, language, isUserLoading, isInitializing, companyId, settings, allowedBranches, setLanguage]);
 
   return <TenantContext.Provider value={contextValue}>{children}</TenantContext.Provider>;
 }
