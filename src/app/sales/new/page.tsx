@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -53,6 +52,7 @@ interface InvoiceItem {
   discount: number;
   tax: number;
   total: number;
+  imageUrl?: string;
   isCustom?: boolean;
 }
 
@@ -143,6 +143,7 @@ export default function NewInvoicePage() {
       discount: 0,
       tax: 0,
       total: product.unitPrice || 0,
+      imageUrl: product.imageUrl || "",
     };
     setLineItems([...lineItems, newItem]);
     setProductSearch("");
@@ -508,8 +509,8 @@ export default function NewInvoicePage() {
                            onClick={() => handleAddProduct(p)}
                         >
                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-600">
-                                 <Package className="h-5 w-5" />
+                              <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-600 overflow-hidden">
+                                 {p.imageUrl ? <img src={p.imageUrl} className="w-full h-full object-cover" /> : <Package className="h-5 w-5" />}
                               </div>
                               <div>
                                  <p className="text-[11px] font-black uppercase text-slate-900">{p.name}</p>
@@ -567,12 +568,21 @@ export default function NewInvoicePage() {
                         <TableCell className="text-center text-[11px] font-black text-slate-300 py-6 pl-6">{(idx + 1).toString().padStart(2, '0')}</TableCell>
                         <TableCell className="py-6 px-2">
                           <div className="space-y-3">
-                            <Input 
-                              className="h-10 text-xs font-black uppercase border-none bg-slate-100/50 focus:bg-white focus:ring-1 focus:ring-blue-500 transition-all rounded-xl" 
-                              value={item.name || ''} 
-                              onChange={e => updateItem(item.id, 'name', e.target.value)} 
-                              placeholder="Main Item Name" 
-                            />
+                            <div className="flex gap-4">
+                               {item.imageUrl && (
+                                 <div className="w-16 h-16 rounded-xl border p-1 bg-white shrink-0">
+                                   <img src={item.imageUrl} className="w-full h-full object-contain" />
+                                 </div>
+                               )}
+                               <div className="flex-1">
+                                  <Input 
+                                    className="h-10 text-xs font-black uppercase border-none bg-slate-100/50 focus:bg-white focus:ring-1 focus:ring-blue-500 transition-all rounded-xl" 
+                                    value={item.name || ''} 
+                                    onChange={e => updateItem(item.id, 'name', e.target.value)} 
+                                    placeholder="Main Item Name" 
+                                  />
+                               </div>
+                            </div>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                                <Input className="h-8 text-[10px] font-bold border-slate-100 bg-white rounded-lg" value={item.model || ''} onChange={e => updateItem(item.id, 'model', e.target.value)} placeholder="Model" />
                                <Input className="h-8 text-[10px] font-bold border-slate-100 bg-white rounded-lg" value={item.brand || ''} onChange={e => updateItem(item.id, 'brand', e.target.value)} placeholder="Brand" />
@@ -666,7 +676,7 @@ export default function NewInvoicePage() {
             </div>
 
             <Button className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl text-white bg-blue-600 hover:bg-blue-700 transition-all active:scale-95 shadow-blue-200" disabled={isSubmitting || lineItems.length === 0} onClick={handleSaveInvoice}>
-              {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <Save className="h-5 w-5" />}
+              {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <ArrowRight className="h-5 w-5" />}
               Post Final Invoice
             </Button>
           </Card>

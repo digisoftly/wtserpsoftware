@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -54,6 +53,7 @@ interface QuoteItem {
   discount: number;
   tax: number;
   total: number;
+  imageUrl?: string;
   isCustom?: boolean;
 }
 
@@ -138,6 +138,7 @@ export default function NewQuotationPage() {
       discount: 0,
       tax: 0,
       total: product.unitPrice || 0,
+      imageUrl: product.imageUrl || "",
     };
     setLineItems([...lineItems, newItem]);
     setProductSearch("");
@@ -249,9 +250,9 @@ export default function NewQuotationPage() {
       
       setSelectedCustomerId(newDocRef.id);
       setIsNewCustomerMode(false);
-      toast({ title: t('common_success'), description: "New customer added and selected" });
+      toast({ title: t('success'), description: "New customer added and selected" });
     } catch (err: any) {
-      toast({ variant: "destructive", title: t('common_error'), description: err.message });
+      toast({ variant: "destructive", title: t('error'), description: err.message });
     } finally {
       setIsCustomerCreating(false);
     }
@@ -289,10 +290,10 @@ export default function NewQuotationPage() {
       };
 
       await setDoc(quoteRef, quoteData);
-      toast({ title: t('common_success') });
+      toast({ title: t('success') });
       router.push("/quotations");
     } catch (e: any) {
-      toast({ variant: "destructive", title: t('common_error'), description: e.message });
+      toast({ variant: "destructive", title: t('error'), description: e.message });
       setIsSubmitting(false);
     }
   };
@@ -310,10 +311,10 @@ export default function NewQuotationPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="hidden sm:inline-flex font-bold text-xs" onClick={() => router.back()}>{t('common_cancel')}</Button>
+          <Button variant="ghost" size="sm" className="hidden sm:inline-flex font-bold text-xs" onClick={() => router.back()}>{t('cancel')}</Button>
           <Button size="sm" className="font-bold text-[10px] md:text-xs gap-2 px-4 md:px-8 h-9 md:h-11 rounded-full bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-100" disabled={isSubmitting} onClick={handleSave}>
             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            <span className="hidden xs:inline">{t('common_save')} Proposal</span>
+            <span className="hidden xs:inline">{t('save')} Proposal</span>
             <span className="xs:hidden">Save</span>
           </Button>
         </div>
@@ -482,8 +483,8 @@ export default function NewQuotationPage() {
                            onClick={() => handleAddProduct(p)}
                         >
                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-600">
-                                 <Package className="h-5 w-5" />
+                              <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-600 overflow-hidden">
+                                 {p.imageUrl ? <img src={p.imageUrl} className="w-full h-full object-cover" /> : <Package className="h-5 w-5" />}
                               </div>
                               <div>
                                  <p className="text-[11px] font-black uppercase text-slate-900">{p.name}</p>
@@ -507,7 +508,7 @@ export default function NewQuotationPage() {
                  <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-900">Proposal Matrix</h3>
               </div>
               <Button variant="outline" size="sm" className="h-10 rounded-xl gap-2 text-[10px] font-black uppercase border-slate-200 text-slate-900 hover:bg-slate-50 transition-all" onClick={addManualRow}>
-                <PlusCircle className="h-4 w-4" /> {t('common_add')} Generic Row
+                <PlusCircle className="h-4 w-4" /> {t('add')} Generic Row
               </Button>
             </div>
             
@@ -540,16 +541,25 @@ export default function NewQuotationPage() {
                         <TableCell className="text-center text-[11px] font-black text-slate-300 py-6 pl-6">{(idx + 1).toString().padStart(2, '0')}</TableCell>
                         <TableCell className="py-6 px-2">
                           <div className="space-y-3">
-                            <Input 
-                              className="h-10 text-xs font-black uppercase border-none bg-slate-100/50 focus:bg-white focus:ring-1 focus:ring-blue-500 transition-all rounded-xl" 
-                              value={item.name || ''} 
-                              onChange={e => updateItem(item.id, 'name', e.target.value)} 
-                              placeholder="Main Item Name" 
-                            />
+                            <div className="flex gap-4">
+                               {item.imageUrl && (
+                                 <div className="w-16 h-16 rounded-xl border p-1 bg-white shrink-0">
+                                   <img src={item.imageUrl} className="w-full h-full object-contain" />
+                                 </div>
+                               )}
+                               <div className="flex-1">
+                                  <Input 
+                                    className="h-10 text-xs font-black uppercase border-none bg-slate-100/50 focus:bg-white focus:ring-1 focus:ring-blue-500 transition-all rounded-xl" 
+                                    value={item.name || ''} 
+                                    onChange={e => updateItem(item.id, 'name', e.target.value)} 
+                                    placeholder="Main Item Name" 
+                                  />
+                               </div>
+                            </div>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                                <Input className="h-8 text-[10px] font-bold border-slate-100 bg-white rounded-lg" value={item.model || ''} onChange={e => updateItem(item.id, 'model', e.target.value)} placeholder="Model" />
                                <Input className="h-8 text-[10px] font-bold border-slate-100 bg-white rounded-lg" value={item.brand || ''} onChange={e => updateItem(item.id, 'brand', e.target.value)} placeholder="Brand" />
-                               <Input className="h-8 text-[10px] font-black text-blue-600 border-blue-100 bg-blue-50/30 rounded-lg uppercase" value={item.sn || ''} onChange={e => updateItem(item.id, 'sn', e.target.value)} placeholder="S/N" />
+                               <Input className="h-8 text-[10px] font-black text-blue-600 border-blue-100 bg-blue-50/30 rounded-lg uppercase" value={item.sn || ''} onChange={e => updateItem(item.id, 'sn', e.target.value)} placeholder="S/N Number" />
                                <Input className="h-8 text-[10px] font-bold border-slate-100 bg-white rounded-lg" value={item.warranty || ''} onChange={e => updateItem(item.id, 'warranty', e.target.value)} placeholder="Warranty" />
                             </div>
                             <textarea 

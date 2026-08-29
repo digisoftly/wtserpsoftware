@@ -10,7 +10,7 @@
   "print": "প্রিন্ট",
   "download": "ডাউনলোড",
   "share": "শেয়ার",
-  "search": "অনুসন্ধান",
+  "search": "অনুদান",
   "actions": "অ্যাকশন",
   "status": "অবস্থা",
   "date": "তারিখ",
@@ -240,5 +240,6 @@
   "quotationNumber": "কোটেশন নং",
   "quotationDate": "কোটেশন তারিখ",
   "expiryDate": "মেয়াদ উত্তীর্ণ তারিখ",
-  "addQuotation": "কোটেশন তৈরি করুন"
+  "addQuotation": "কোটেশন তৈরি করুন",
+  "image": "ছবি"
 }

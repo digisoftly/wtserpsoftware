@@ -240,5 +240,6 @@
   "quotationNumber": "Quotation Number",
   "quotationDate": "Quotation Date",
   "expiryDate": "Expiry Date",
-  "addQuotation": "Add Quotation"
+  "addQuotation": "Add Quotation",
+  "image": "Image"
 }

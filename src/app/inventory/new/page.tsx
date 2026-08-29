@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -11,7 +10,9 @@ import {
   Plus,
   ShieldCheck,
   MapPin,
-  Layers
+  Layers,
+  ImageIcon,
+  X
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -36,6 +37,7 @@ export default function NewProductPage() {
   const [isSerialTracking, setIsSerialTracking] = React.useState(false);
   const [rawSerials, setRawSerials] = React.useState("");
   const [selectedBrandId, setSelectedBrandId] = React.useState<string>("");
+  const [productImage, setProductImage] = React.useState<string | null>(null);
 
   // Hierarchical Category State
   const [catLevel1, setCatLevel1] = React.useState<string>("");
@@ -76,6 +78,17 @@ export default function NewProductPage() {
     });
   }, [warrantyTypes]);
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProductImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSaveProduct = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!db || !companyId || !branchId || isSubmitting) return;
@@ -108,6 +121,7 @@ export default function NewProductPage() {
       location: formData.get("location") as string || "",
       description: formData.get("description") as string || "",
       serialNumberTrackingRequired: isSerialTracking,
+      imageUrl: productImage,
       isActive: true,
       updatedAt: serverTimestamp(),
     };
@@ -156,7 +170,7 @@ export default function NewProductPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-lg font-black font-headline uppercase tracking-tight text-blue-600">{t('inventory_addProduct')}</h1>
+            <h1 className="text-lg font-black font-headline uppercase tracking-tight text-blue-600">{t('addProduct')}</h1>
             <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Catalog Definition Terminal</p>
           </div>
         </div>
@@ -173,133 +187,166 @@ export default function NewProductPage() {
 
       <div className="max-w-6xl mx-auto w-full p-4 md:p-10">
         <form id="product-form" onSubmit={handleSaveProduct} className="space-y-8">
-          <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-8">
-            <CardContent className="p-0 space-y-10">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('itemName')} *</Label>
-                  <Input name="name" required className="h-12 rounded-xl" placeholder="e.g. Sony 4K IP Camera Pro" />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Left Column: Image Upload */}
+            <div className="lg:col-span-4 space-y-6">
+              <Card className="border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-8 text-center">
+                <Label className="text-[10px] font-black uppercase text-slate-400 mb-6 block tracking-widest">{t('image')}</Label>
+                <div className="relative w-full aspect-square bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden group">
+                  {productImage ? (
+                    <>
+                      <img src={productImage} alt="Preview" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                         <Button type="button" variant="destructive" size="icon" className="rounded-full h-10 w-10" onClick={() => setProductImage(null)}>
+                           <X className="h-5 w-5" />
+                         </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center shadow-sm">
+                        <ImageIcon className="h-8 w-8 text-slate-300" />
+                      </div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase">Drop Product Photo</p>
+                    </div>
+                  )}
+                  <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageChange} />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('brand')}</Label>
-                  <Select name="brandId" onValueChange={setSelectedBrandId} required>
-                    <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Select Brand" /></SelectTrigger>
-                    <SelectContent className="rounded-xl shadow-2xl">
-                      {masterBrands?.map((b, idx) => (
-                        <SelectItem key={`brand-${b.id}-${idx}`} value={b.id} className="text-xs uppercase font-bold">{b.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+                <p className="text-[9px] text-muted-foreground mt-4 uppercase font-bold">Standard 1:1 ratio recommended</p>
+              </Card>
+            </div>
 
-              <div className="space-y-4 p-6 bg-slate-50/50 rounded-3xl ring-1 ring-slate-100">
-                <div className="flex items-center gap-2 mb-2">
-                   <Layers className="h-4 w-4 text-blue-600" />
-                   <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-900">Hierarchical Classification</h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">Root Category *</Label>
-                    <Select value={catLevel1} onValueChange={(val) => { setCatLevel1(val); setCatLevel2(""); setCatLevel3(""); }}>
-                      <SelectTrigger className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200">
-                        <SelectValue placeholder="Select Category" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl shadow-2xl">
-                        {level1List.map((c, i) => <SelectItem key={`${c.id}-${i}`} value={c.id} className="text-xs font-bold uppercase">{c.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+            {/* Right Column: Details */}
+            <div className="lg:col-span-8 space-y-8">
+              <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-8">
+                <CardContent className="p-0 space-y-10">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="md:col-span-2 space-y-1.5">
+                      <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('itemName')} *</Label>
+                      <Input name="name" required className="h-12 rounded-xl" placeholder="e.g. Sony 4K IP Camera Pro" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('brand')}</Label>
+                      <Select name="brandId" onValueChange={setSelectedBrandId} required>
+                        <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Select Brand" /></SelectTrigger>
+                        <SelectContent className="rounded-xl shadow-2xl">
+                          {masterBrands?.map((b, idx) => (
+                            <SelectItem key={`brand-${b.id}-${idx}`} value={b.id} className="text-xs uppercase font-bold">{b.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('model')}</Label>
+                      <Input name="modelId" className="h-12 rounded-xl font-mono uppercase" placeholder="e.g. SNC-VB770" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 p-6 bg-slate-50/50 rounded-3xl ring-1 ring-slate-100">
+                    <div className="flex items-center gap-2 mb-2">
+                       <Layers className="h-4 w-4 text-blue-600" />
+                       <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-900">Classification</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">Root Category *</Label>
+                        <Select value={catLevel1} onValueChange={(val) => { setCatLevel1(val); setCatLevel2(""); setCatLevel3(""); }}>
+                          <SelectTrigger className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200">
+                            <SelectValue placeholder="Select Category" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl shadow-2xl">
+                            {level1List.map((c, i) => <SelectItem key={`${c.id}-${i}`} value={c.id} className="text-xs font-bold uppercase">{c.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">Sub Category</Label>
+                        <Select value={catLevel2} onValueChange={(val) => { setCatLevel2(val); setCatLevel3(""); }} disabled={!catLevel1 || level2List.length === 0}>
+                          <SelectTrigger className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200">
+                            <SelectValue placeholder={level2List.length === 0 ? "No Sub-categories" : "Select Sub-category"} />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl shadow-2xl">
+                            {level2List.map((c, i) => <SelectItem key={`${c.id}-${i}`} value={c.id} className="text-xs font-bold uppercase">{c.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">Child Category</Label>
+                        <Select value={catLevel3} onValueChange={setCatLevel3} disabled={!catLevel2 || level3List.length === 0}>
+                          <SelectTrigger className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200">
+                            <SelectValue placeholder={level3List.length === 0 ? "No Child-categories" : "Select Child-category"} />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl shadow-2xl">
+                            {level3List.map((c, i) => <SelectItem key={`${c.id}-${i}`} value={c.id} className="text-xs font-bold uppercase">{c.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('price')} (৳)</Label>
+                      <Input name="unitPrice" type="number" required className="h-12 rounded-xl text-blue-600 font-black text-lg" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-black uppercase text-muted-foreground">Cost Price (৳)</Label>
+                      <Input name="costPrice" type="number" required className="h-12 rounded-xl" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-black uppercase text-muted-foreground">Initial Stock</Label>
+                      <Input name="currentStock" type="number" required className="h-12 rounded-xl font-bold" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1">
+                        <ShieldCheck className="h-3 w-3 text-emerald-500" /> {t('warranty')}
+                      </Label>
+                      <Select name="warranty" defaultValue="1 Year">
+                        <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue /></SelectTrigger>
+                        <SelectContent className="rounded-xl shadow-2xl">
+                          {uniqueWarrantyTypes?.map((w, idx) => (
+                            <SelectItem key={`warranty-${w.id || idx}-${idx}`} value={w.name} className="text-xs font-bold uppercase">{w.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1">
+                        <MapPin className="h-3 w-3 text-blue-500" /> Storage Location
+                      </Label>
+                      <Input name="location" className="h-12 rounded-xl" placeholder="e.g. Shelf A-04" />
+                    </div>
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">Sub Category</Label>
-                    <Select value={catLevel2} onValueChange={(val) => { setCatLevel2(val); setCatLevel3(""); }} disabled={!catLevel1 || level2List.length === 0}>
-                      <SelectTrigger className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200">
-                        <SelectValue placeholder={level2List.length === 0 ? "No Sub-categories" : "Select Sub-category"} />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl shadow-2xl">
-                        {level2List.map((c, i) => <SelectItem key={`${c.id}-${i}`} value={c.id} className="text-xs font-bold uppercase">{c.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('details')}</Label>
+                    <Textarea name="description" className="min-h-[100px] rounded-2xl border-slate-200" placeholder="Technical specifications..." />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <Label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">Child Category</Label>
-                    <Select value={catLevel3} onValueChange={setCatLevel3} disabled={!catLevel2 || level3List.length === 0}>
-                      <SelectTrigger className="h-10 rounded-xl bg-white border-none ring-1 ring-slate-200">
-                        <SelectValue placeholder={level3List.length === 0 ? "No Child-categories" : "Select Child-category"} />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl shadow-2xl">
-                        {level3List.map((c, i) => <SelectItem key={`${c.id}-${i}`} value={c.id} className="text-xs font-bold uppercase">{c.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                  <div className="space-y-4 pt-6 border-t border-slate-100">
+                    <div className="flex items-center justify-between bg-slate-50 p-6 rounded-3xl ring-1 ring-slate-100">
+                      <div className="space-y-1">
+                        <Label className="text-sm font-black uppercase text-slate-900">Serial Tracking Required?</Label>
+                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Enable individual tracking for IMEI/SN</p>
+                      </div>
+                      <Switch checked={isSerialTracking} onCheckedChange={setIsSerialTracking} className="data-[state=checked]:bg-blue-600" />
+                    </div>
+                    {isSerialTracking && (
+                      <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <Label className="text-[10px] font-black uppercase text-slate-400">Bulk Serial Entry</Label>
+                        <Textarea value={rawSerials} onChange={e => setRawSerials(e.target.value)} placeholder="SN123, SN124, SN125..." className="min-h-[120px] rounded-2xl font-mono text-xs uppercase" />
+                      </div>
+                    )}
                   </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('model')}</Label>
-                  <Input name="modelId" className="h-12 rounded-xl font-mono uppercase" placeholder="e.g. SNC-VB770" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('price')} (৳)</Label>
-                  <Input name="unitPrice" type="number" required className="h-12 rounded-xl text-blue-600 font-black text-lg" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground">Cost Price (৳)</Label>
-                  <Input name="costPrice" type="number" required className="h-12 rounded-xl" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground">Initial Stock</Label>
-                  <Input name="currentStock" type="number" required className="h-12 rounded-xl font-bold" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1">
-                    <ShieldCheck className="h-3 w-3 text-emerald-500" /> {t('warranty')}
-                  </Label>
-                  <Select name="warranty" defaultValue="1 Year">
-                    <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue /></SelectTrigger>
-                    <SelectContent className="rounded-xl shadow-2xl">
-                      {uniqueWarrantyTypes?.map((w, idx) => (
-                        <SelectItem key={`warranty-${w.id || idx}-${idx}`} value={w.name} className="text-xs font-bold uppercase">{w.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5 lg:col-span-2">
-                  <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1">
-                    <MapPin className="h-3 w-3 text-blue-500" /> Storage Location
-                  </Label>
-                  <Input name="location" className="h-12 rounded-xl" placeholder="e.g. Shelf A-04, Rack 2" />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('details')}</Label>
-                <Textarea name="description" className="min-h-[100px] rounded-2xl border-slate-200" placeholder="Technical specifications..." />
-              </div>
-
-              <div className="space-y-4 pt-6 border-t border-slate-100">
-                <div className="flex items-center justify-between bg-slate-50 p-6 rounded-3xl ring-1 ring-slate-100">
-                  <div className="space-y-1">
-                    <Label className="text-sm font-black uppercase text-slate-900">Serial Tracking Required?</Label>
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Enable individual tracking for IMEI/SN</p>
-                  </div>
-                  <Switch checked={isSerialTracking} onCheckedChange={setIsSerialTracking} className="data-[state=checked]:bg-blue-600" />
-                </div>
-                {isSerialTracking && (
-                  <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <Label className="text-[10px] font-black uppercase text-slate-400">Bulk Serial Entry</Label>
-                    <Textarea value={rawSerials} onChange={e => setRawSerials(e.target.value)} placeholder="SN123, SN124, SN125..." className="min-h-[120px] rounded-2xl font-mono text-xs uppercase" />
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </form>
       </div>
     </div>
