@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -37,6 +38,7 @@ interface QuoteItem {
   model: string;
   specs: string;
   warranty: string;
+  sn: string;
   quantity: number;
   unit: string;
   unitPrice: number;
@@ -82,20 +84,24 @@ export default function EditQuotationPage() {
       const itemsWithIds = (quote.items || []).map((item: any, idx: number) => ({
         ...item,
         id: item.id || `quote-item-${idx}-${item.productId}-${Date.now()}`,
+        name: item.name || '',
+        description: item.description || '',
         unit: item.unit || "Pcs",
         brand: item.brand || "",
         model: item.model || "",
         specs: item.specs || "",
         warranty: item.warranty || "",
-        quantity: item.quantity || 0,
-        unitPrice: item.unitPrice || 0,
-        discountValue: item.discountValue || 0,
+        sn: item.sn || "",
+        quantity: Number(item.quantity || item.qty || 0),
+        unitPrice: Number(item.unitPrice || item.price || 0),
+        discountValue: Number(item.discountValue || item.discount || 0),
         discountType: item.discountType || 'percent',
-        taxPercent: item.taxPercent || 0
+        taxPercent: Number(item.taxPercent || item.tax || 0),
+        total: Number(item.total || 0)
       }));
       setLineItems(itemsWithIds);
       
-      setGlobalDiscount(quote.discount || 0);
+      setGlobalDiscount(Number(quote.discount || 0));
       setNotes(quote.notes || "");
       setStatus(quote.status || "draft");
       setExpiryDate(quote.expiryDate || "");
@@ -108,12 +114,6 @@ export default function EditQuotationPage() {
     return collection(db, "companies", companyId, "branches", branchId, "customers");
   }, [db, companyId, branchId]);
   const { data: customers } = useCollection(customersQuery);
-
-  const productsQuery = useMemoFirebase(() => {
-    if (!db || !companyId || !branchId) return null;
-    return collection(db, "companies", companyId, "branches", branchId, "products");
-  }, [db, companyId, branchId]);
-  const { data: products } = useCollection(productsQuery);
 
   const unitsQuery = useMemoFirebase(() => {
     if (!db || !companyId) return null;
@@ -135,10 +135,10 @@ export default function EditQuotationPage() {
       return sum + (discountedPrice * (item.taxPercent / 100));
     }, 0);
 
-    const subtotal = itemSubtotal - itemDiscounts;
-    const finalTotal = subtotal + itemTaxes - globalDiscount;
+    const subtotalCalc = itemSubtotal - itemDiscounts;
+    const finalTotal = subtotalCalc + itemTaxes - globalDiscount;
 
-    return { rawSubtotal: itemSubtotal, discounts: itemDiscounts, taxes: itemTaxes, subtotal, finalTotal };
+    return { rawSubtotal: itemSubtotal, discounts: itemDiscounts, taxes: itemTaxes, subtotal: subtotalCalc, finalTotal };
   }, [lineItems, globalDiscount]);
 
   const handleUpdateLineItem = (id: string, field: keyof QuoteItem, value: any) => {
@@ -146,8 +146,8 @@ export default function EditQuotationPage() {
       if (item.id !== id) return item;
       const updated = { ...item, [field]: value };
       const raw = (Number(updated.quantity) || 0) * (Number(updated.unitPrice) || 0);
-      const disc = updated.discountType === 'percent' ? (raw * (updated.discountValue / 100)) : updated.discountValue;
-      const taxed = (raw - disc) * (updated.taxPercent / 100);
+      const disc = updated.discountType === 'percent' ? (raw * (updated.discountValue / 100)) : Number(updated.discountValue);
+      const taxed = (raw - disc) * (Number(updated.taxPercent) / 100);
       updated.total = raw - disc + taxed;
       return updated;
     }));
@@ -167,7 +167,8 @@ export default function EditQuotationPage() {
       items: lineItems,
       subtotal: calculations.subtotal,
       taxAmount: calculations.taxes,
-      discount: globalDiscount,
+      discount: globalDiscount + calculations.discounts,
+      globalDiscount: globalDiscount,
       totalAmount: calculations.finalTotal,
       status,
       notes,
@@ -219,7 +220,7 @@ export default function EditQuotationPage() {
                  <Input disabled value={quote?.customerName || ''} className="h-10 rounded-xl bg-slate-50 border-none font-bold text-xs" />
                </div>
                <div className="space-y-2">
-                 <Label className="text-[10px] font-black uppercase text-slate-400">Project Name</Label>
+                 <Label className="text-[10px) font-black uppercase text-slate-400">Project Name</Label>
                  <Input value={projectName || ''} onChange={e => setProjectName(e.target.value)} className="h-10 rounded-xl font-bold text-xs" />
                </div>
                <div className="space-y-2">
@@ -253,7 +254,7 @@ export default function EditQuotationPage() {
                  <LayoutGrid className="h-4 w-4 text-blue-600" />
                  <h3 className="text-[10px] font-black uppercase text-slate-900 tracking-widest">Proposal Matrix</h3>
                </div>
-               <Button variant="outline" size="sm" className="rounded-full gap-2 border-blue-100 text-blue-700 bg-white h-9 px-4 font-black text-[10px] uppercase shadow-sm" onClick={() => setLineItems([...lineItems, { id: Math.random().toString(36).substr(2, 9), productId: 'custom', name: '', description: '', brand: '', model: '', specs: '', warranty: '', quantity: 1, unit: 'Pcs', unitPrice: 0, discountValue: 0, discountType: 'percent', taxPercent: 0, total: 0, isCustom: true }])}>
+               <Button variant="outline" size="sm" className="rounded-full gap-2 border-blue-100 text-blue-700 bg-white h-9 px-4 font-black text-[10px] uppercase shadow-sm" onClick={() => setLineItems([...lineItems, { id: Math.random().toString(36).substr(2, 9), productId: 'custom', name: '', description: '', brand: '', model: '', specs: '', warranty: '', sn: '', quantity: 1, unit: 'Pcs', unitPrice: 0, discountValue: 0, discountType: 'percent', taxPercent: 0, total: 0, isCustom: true }])}>
                  <PackagePlus className="h-4 w-4" /> New Row
                </Button>
             </div>
@@ -285,6 +286,7 @@ export default function EditQuotationPage() {
                           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-1.5">
                              <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.model || ''} onChange={e => handleUpdateLineItem(item.id, 'model', e.target.value)} placeholder="Model" />
                              <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.brand || ''} onChange={e => handleUpdateLineItem(item.id, 'brand', e.target.value)} placeholder="Brand" />
+                             <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.sn || ''} onChange={e => handleUpdateLineItem(item.id, 'sn', e.target.value)} placeholder="S/N" />
                              <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.warranty || ''} onChange={e => handleUpdateLineItem(item.id, 'warranty', e.target.value)} placeholder="Warranty" />
                           </div>
                           <textarea 

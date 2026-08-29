@@ -138,8 +138,8 @@ export default function ReturnsPage() {
       name: sourceItem.name,
       qty: 1,
       unit: sourceItem.unit || "Pcs",
-      price: sourceItem.price || sourceItem.unitPrice || 0,
-      total: sourceItem.price || sourceItem.unitPrice || 0
+      price: Number(sourceItem.price || sourceItem.unitPrice || 0),
+      total: Number(sourceItem.price || sourceItem.unitPrice || 0)
     }]);
   };
 
@@ -577,7 +577,7 @@ export default function ReturnsPage() {
         <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl max-w-sm">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-xl font-black uppercase text-slate-900 tracking-tight">{t('delete')}?</AlertDialogTitle>
-            <AlertDialogDescription className="text-xs font-medium leading-relaxed">{t('errorSub')}</AlertDialogDescription>
+            <AlertDialogDescription className="text-xs font-medium leading-relaxed">This action will permanently remove the return record and stop its audit trail.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-8 gap-3">
             <AlertDialogCancel className="rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest">{t('cancel')}</AlertDialogCancel>

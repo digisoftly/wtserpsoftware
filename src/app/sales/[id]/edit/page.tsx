@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -84,9 +85,9 @@ export default function EditInvoicePage() {
       setPaymentMethod(invoice.paymentMethod || "cash");
       setProjectName(invoice.projectName || "");
       setProjectLocation(invoice.projectLocation || "");
-      setGlobalDiscount(invoice.globalDiscount || 0);
-      setAdditionalCharge(invoice.additionalCharge || 0);
-      setPaidAmount(invoice.paidAmount || 0);
+      setGlobalDiscount(Number(invoice.globalDiscount || invoice.discount || 0));
+      setAdditionalCharge(Number(invoice.additionalCharge || 0));
+      setPaidAmount(Number(invoice.paidAmount || 0));
       setNotes(invoice.notes || "");
       setTerms(invoice.terms || "");
       
@@ -98,7 +99,12 @@ export default function EditInvoicePage() {
         model: item.model || "",
         specs: item.specs || "",
         warranty: item.warranty || "",
-        sn: item.sn || ""
+        sn: item.sn || "",
+        qty: Number(item.qty || item.quantity || 0),
+        price: Number(item.price || item.unitPrice || 0),
+        discount: Number(item.discount || 0),
+        tax: Number(item.tax || item.taxPercent || 0),
+        total: Number(item.total || 0)
       }));
       setLineItems(itemsWithIds);
     }
@@ -148,6 +154,7 @@ export default function EditInvoicePage() {
       items: lineItems,
       subtotal,
       discount: globalDiscount + itemDiscounts,
+      globalDiscount,
       taxAmount: itemTaxes,
       additionalCharge,
       totalAmount: grandTotal,
@@ -173,14 +180,14 @@ export default function EditInvoicePage() {
     setLineItems(prev => prev.map(item => {
       if (item.id !== id) return item;
       const updated = { ...item, [field]: val };
-      if (['qty', 'price', 'discount', 'tax'].includes(field)) {
+      if (['qty', 'price', 'discount', 'tax'].includes(field as string)) {
         const q = Number(updated.qty) || 0;
         const p = Number(updated.price) || 0;
         const d = Number(updated.discount) || 0;
-        const t = Number(updated.tax) || 0;
+        const t_val = Number(updated.tax) || 0;
         const base = q * p;
         const disc = base * (d / 100);
-        const taxed = (base - disc) * (t / 100);
+        const taxed = (base - disc) * (t_val / 100);
         updated.total = base - disc + taxed;
       }
       return updated;
@@ -338,6 +345,10 @@ export default function EditInvoicePage() {
               <div className="space-y-1">
                 <Label className="text-[9px] font-black uppercase text-slate-400">Extra Discount (৳)</Label>
                 <Input type="number" className="h-8 rounded-lg bg-slate-50 border-none font-black text-red-600" value={globalDiscount || ''} onChange={e => setGlobalDiscount(Number(e.target.value))} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[9px] font-black uppercase text-slate-400">Additional Charges (৳)</Label>
+                <Input type="number" className="h-8 rounded-lg bg-slate-50 border-none font-black text-blue-600" value={additionalCharge || ''} onChange={e => setAdditionalCharge(Number(e.target.value))} />
               </div>
               <div className="space-y-1">
                 <Label className="text-[9px] font-black uppercase text-slate-400">Paid Amount (৳)</Label>
