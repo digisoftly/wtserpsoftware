@@ -5,28 +5,27 @@ import * as React from "react"
 import { 
   Settings2,
   CheckCircle2,
-  ShieldCheck,
   Loader2,
-  ArrowUp,
-  ArrowDown,
   Palette,
-  Eye,
   ImageIcon,
-  PenTool,
-  FileBadge,
   LayoutGrid,
-  Monitor,
-  MousePointer2,
   Activity,
   Plus,
   Trash2,
   BarChart3,
   Edit,
   MoveUp,
-  MoveDown
+  MoveDown,
+  Mail,
+  Phone,
+  Globe,
+  MapPin,
+  FileText,
+  Clock,
+  ShieldCheck
 } from "lucide-react"
 import * as Icons from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -35,12 +34,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useFirestore, useDoc, useMemoFirebase } from "@/firebase"
 import { doc, serverTimestamp, setDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
-import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { toast } from "@/hooks/use-toast"
 import { useTranslation } from "@/hooks/use-translation"
 import { Textarea } from "@/components/ui/textarea"
-import { DocumentTemplate } from "@/components/documents/document-template"
-import { Badge } from "@/components/ui/badge"
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
@@ -85,6 +81,12 @@ export default function SettingsPage() {
   const [signPreview, setSignPreview] = React.useState<string | null>(null);
   const [menuOrder, setMenuOrder] = React.useState<string[]>(DEFAULT_MENU_ORDER);
 
+  // Color States
+  const [sidebarBg, setSidebarBg] = React.useState("#FFFFFF");
+  const [sidebarText, setSidebarText] = React.useState("#000000");
+  const [sidebarHover, setSidebarHover] = React.useState("#F1F5F9");
+  const [sidebarActive, setSidebarActive] = React.useState("#E2E8F0");
+
   const settingsRef = useMemoFirebase(() => {
     if (!db || !companyId) return null;
     return doc(db, "companies", companyId, "system", "config");
@@ -99,6 +101,12 @@ export default function SettingsPage() {
       setSignPreview(settings.authorizedSignature || null);
       if (settings.sidebarMenuOrder) setMenuOrder(settings.sidebarMenuOrder);
       if (settings.dashboardKpiCards) setKpiCards(settings.dashboardKpiCards);
+      
+      // Load Colors
+      if (settings.sidebarBgColor) setSidebarBg(settings.sidebarBgColor);
+      if (settings.sidebarTextColor) setSidebarText(settings.sidebarTextColor);
+      if (settings.sidebarHoverColor) setSidebarHover(settings.sidebarHoverColor);
+      if (settings.sidebarActiveColor) setSidebarActive(settings.sidebarActiveColor);
     }
   }, [settings]);
 
@@ -154,10 +162,14 @@ export default function SettingsPage() {
       authorizedSignature: signPreview,
       sidebarMenuOrder: menuOrder,
       dashboardKpiCards: kpiCards,
+      sidebarBgColor: sidebarBg,
+      sidebarTextColor: sidebarText,
+      sidebarHoverColor: sidebarHover,
+      sidebarActiveColor: sidebarActive,
     };
 
     formData.forEach((value, key) => {
-      if (!["companyLogo", "authorizedSeal", "authorizedSignature", "sidebarMenuOrder", "dashboardKpiCards"].includes(key)) {
+      if (!["companyLogo", "authorizedSeal", "authorizedSignature", "sidebarMenuOrder", "dashboardKpiCards", "sidebarBgColor", "sidebarTextColor", "sidebarHoverColor", "sidebarActiveColor"].includes(key)) {
         updates[key] = value;
       }
     });
@@ -192,10 +204,88 @@ export default function SettingsPage() {
         <Tabs defaultValue="general" className="w-full">
           <TabsList className="bg-white border rounded-xl p-1 mb-6 shadow-sm flex overflow-x-auto h-auto no-scrollbar ring-1 ring-slate-100">
             <TabsTrigger value="general" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Company & Style</TabsTrigger>
-            <TabsTrigger value="dashboard" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Dashboard Layout</TabsTrigger>
+            <TabsTrigger value="branding" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Sidebar UI</TabsTrigger>
+            <TabsTrigger value="dashboard" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Dashboard Matrix</TabsTrigger>
             <TabsTrigger value="documents" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Document Lab</TabsTrigger>
             <TabsTrigger value="navigation" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Navigation</TabsTrigger>
+            <TabsTrigger value="security" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Security</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="general" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="border-none shadow-sm rounded-2xl flex flex-col items-center justify-center p-6 text-center bg-white ring-1 ring-slate-100">
+                <Label className="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest">Company Logo</Label>
+                <div className="w-32 h-32 mb-4 relative group">
+                  {logoPreview ? (
+                    <img src={logoPreview} className="w-full h-full object-contain rounded-xl border p-2 bg-slate-50" />
+                  ) : (
+                    <div className="w-full h-full bg-slate-50 rounded-xl border-2 border-dashed flex items-center justify-center"><ImageIcon className="text-slate-300" /></div>
+                  )}
+                  <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => setLogoPreview(reader.result as string);
+                      reader.readAsDataURL(file);
+                    }
+                  }} />
+                </div>
+                <p className="text-[9px] font-bold text-slate-400 uppercase">Click to change (PNG/JPG)</p>
+              </Card>
+
+              <Card className="md:col-span-2 border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-8 space-y-6">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Legal Name</Label><Input name="companyName" defaultValue={settings?.companyName} className="h-11 rounded-xl" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Slogan / Motto</Label><Input name="companySlogan" defaultValue={settings?.companySlogan} className="h-11 rounded-xl" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Official Email</Label><div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400"/><Input name="email" defaultValue={settings?.email} className="h-11 rounded-xl pl-9" /></div></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Connect Phone</Label><div className="relative"><Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400"/><Input name="phone" defaultValue={settings?.phone} className="h-11 rounded-xl pl-9" /></div></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Website URL</Label><div className="relative"><Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400"/><Input name="website" defaultValue={settings?.website} className="h-11 rounded-xl pl-9" /></div></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Currency</Label><Input name="currency" defaultValue={settings?.currency} className="h-11 rounded-xl" /></div>
+                 </div>
+                 <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Corporate Address</Label><div className="relative"><MapPin className="absolute left-3 top-4 h-3.5 w-3.5 text-slate-400"/><Textarea name="address" defaultValue={settings?.address} className="rounded-xl pl-9 min-h-[80px]" /></div></div>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="branding" className="space-y-6">
+            <Card className="p-8 rounded-[2rem] border-none shadow-sm ring-1 ring-slate-100 bg-white">
+              <CardHeader className="p-0 mb-6">
+                <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-700 flex items-center gap-2">
+                  <Palette className="h-4 w-4 text-blue-600" /> Sidebar UI Customization
+                </CardTitle>
+              </CardHeader>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-black uppercase text-slate-400">Background Color</Label>
+                  <div className="flex gap-2">
+                    <Input type="color" value={sidebarBg} onChange={e => setSidebarBg(e.target.value)} className="w-12 h-11 p-1" />
+                    <Input value={sidebarBg} onChange={e => setSidebarBg(e.target.value)} className="h-11 rounded-xl" />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-black uppercase text-slate-400">Text & Icon Color</Label>
+                  <div className="flex gap-2">
+                    <Input type="color" value={sidebarText} onChange={e => setSidebarText(e.target.value)} className="w-12 h-11 p-1" />
+                    <Input value={sidebarText} onChange={e => setSidebarText(e.target.value)} className="h-11 rounded-xl" />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-black uppercase text-slate-400">Hover Background</Label>
+                  <div className="flex gap-2">
+                    <Input type="color" value={sidebarHover} onChange={e => setSidebarHover(e.target.value)} className="w-12 h-11 p-1" />
+                    <Input value={sidebarHover} onChange={e => setSidebarHover(e.target.value)} className="h-11 rounded-xl" />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-black uppercase text-slate-400">Active Background</Label>
+                  <div className="flex gap-2">
+                    <Input type="color" value={sidebarActive} onChange={e => setSidebarActive(e.target.value)} className="w-12 h-11 p-1" />
+                    <Input value={sidebarActive} onChange={e => setSidebarActive(e.target.value)} className="h-11 rounded-xl" />
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="dashboard" className="space-y-6">
              <div className="flex items-center justify-between px-2">
@@ -220,43 +310,144 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 ))}
-                {kpiCards.length === 0 && (
-                  <div className="col-span-full p-20 text-center border-2 border-dashed rounded-[3rem] bg-slate-50 opacity-50">
-                     <BarChart3 className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-                     <p className="text-[10px] font-black uppercase tracking-[0.3em]">No Dynamic Cards Configured</p>
-                  </div>
-                )}
              </div>
           </TabsContent>
 
-          {/* ... existing tabs content ... */}
-          <TabsContent value="general" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="border-none shadow-sm rounded-2xl flex flex-col items-center justify-center p-6 text-center bg-white ring-1 ring-slate-100">
-                <Label className="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest">Company Logo</Label>
-                <div className="w-24 h-24 mb-4 relative group">
-                  {logoPreview ? (
-                    <img src={logoPreview} className="w-full h-full object-contain rounded-xl border p-2" />
-                  ) : (
-                    <div className="w-full h-full bg-slate-50 rounded-xl border-2 border-dashed flex items-center justify-center"><ImageIcon className="text-slate-300" /></div>
-                  )}
-                  <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onloadend = () => setLogoPreview(reader.result as string);
-                      reader.readAsDataURL(file);
-                    }
-                  }} />
+          <TabsContent value="documents" className="space-y-6">
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-6">
+                   <h3 className="text-xs font-black uppercase tracking-widest text-slate-700 flex items-center gap-2"><FileText className="h-4 w-4" /> Default Templates</h3>
+                   <div className="space-y-4">
+                      {["invoice", "po", "quotation"].map(type => (
+                        <div key={type} className="space-y-1.5">
+                           <Label className="text-[10px] font-black uppercase text-slate-400">Default {type.toUpperCase()}</Label>
+                           <Select name={`defaultTemplate_${type}`} defaultValue={settings?.[`defaultTemplate_${type}`] || "warrior"}>
+                              <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                 <SelectItem value="warrior">Warrior Official</SelectItem>
+                                 <SelectItem value="professional">Professional Classic</SelectItem>
+                                 <SelectItem value="erppro">ERP Pro Gradient</SelectItem>
+                                 <SelectItem value="modern">Modern Minimal</SelectItem>
+                              </SelectContent>
+                           </Select>
+                        </div>
+                      ))}
+                   </div>
+                </Card>
+
+                <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-6">
+                   <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">Digital Seal & Signature</h3>
+                   <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-2 text-center">
+                         <Label className="text-[10px] font-black uppercase text-slate-400">Authorized Seal</Label>
+                         <div className="h-24 w-full bg-slate-50 border-2 border-dashed rounded-xl relative group flex items-center justify-center">
+                            {sealPreview ? <img src={sealPreview} className="h-20 object-contain" /> : <ImageIcon className="text-slate-200" />}
+                            <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onloadend = () => setSealPreview(reader.result as string);
+                                reader.readAsDataURL(file);
+                              }
+                            }} />
+                         </div>
+                      </div>
+                      <div className="space-y-2 text-center">
+                         <Label className="text-[10px] font-black uppercase text-slate-400">Authorized Sign</Label>
+                         <div className="h-24 w-full bg-slate-50 border-2 border-dashed rounded-xl relative group flex items-center justify-center">
+                            {signPreview ? <img src={signPreview} className="h-20 object-contain" /> : <ImageIcon className="text-slate-200" />}
+                            <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onloadend = () => setSignPreview(reader.result as string);
+                                reader.readAsDataURL(file);
+                              }
+                            }} />
+                         </div>
+                      </div>
+                   </div>
+                </Card>
+
+                <Card className="md:col-span-2 p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-6">
+                   <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">Standard Footnotes</h3>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-2">
+                         <Label className="text-[10px] font-black uppercase text-slate-500">Document Terms & Conditions</Label>
+                         <Textarea name="pdfTerms" defaultValue={settings?.pdfTerms} className="min-h-[150px] rounded-2xl text-[11px] font-medium" />
+                      </div>
+                      <div className="space-y-2">
+                         <Label className="text-[10px] font-black uppercase text-slate-500">Footer Appreciation Message</Label>
+                         <Input name="footerHeartMsg" defaultValue={settings?.footerHeartMsg} className="h-12 rounded-xl" />
+                      </div>
+                   </div>
+                </Card>
+             </div>
+          </TabsContent>
+
+          <TabsContent value="navigation" className="space-y-6">
+            <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-6">
+              <CardHeader className="p-0">
+                <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-700">Sidebar Menu Ordering</CardTitle>
+                <CardDescription className="text-xs font-medium">Re-arrange the sequence of terminals in the main navigation sidebar.</CardDescription>
+              </CardHeader>
+              <div className="space-y-2 max-w-md">
+                {menuOrder.map((key, idx) => (
+                  <div key={key} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 group">
+                    <span className="text-[11px] font-black uppercase text-slate-600">{t(key as any)}</span>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                        const nextOrder = [...menuOrder];
+                        if (idx > 0) {
+                          [nextOrder[idx], nextOrder[idx - 1]] = [nextOrder[idx - 1], nextOrder[idx]];
+                          setMenuOrder(nextOrder);
+                        }
+                      }}><MoveUp className="h-3 w-3" /></Button>
+                      <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                        const nextOrder = [...menuOrder];
+                        if (idx < menuOrder.length - 1) {
+                          [nextOrder[idx], nextOrder[idx + 1]] = [nextOrder[idx + 1], nextOrder[idx]];
+                          setMenuOrder(nextOrder);
+                        }
+                      }}><MoveDown className="h-3 w-3" /></Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="security" className="space-y-6">
+            <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-orange-100 flex items-center justify-center text-orange-600 shadow-inner"><Clock className="h-6 w-6" /></div>
+                    <div><h3 className="text-sm font-black uppercase text-slate-700">Session Lifecycle</h3><p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Automatic Security Termination</p></div>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                      <Label className="text-[11px] font-black uppercase">Enable Auto Logout</Label>
+                      <Switch name="autoLogoutEnabled" defaultChecked={settings?.autoLogoutEnabled} className="data-[state=checked]:bg-orange-500" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Timeout Duration (Minutes)</Label>
+                      <Input name="sessionTimeout" type="number" defaultValue={settings?.sessionTimeout || 60} className="h-12 rounded-2xl" />
+                    </div>
+                  </div>
                 </div>
-              </Card>
-              <Card className="md:col-span-2 border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-8 space-y-6">
-                 <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Legal Name</Label><Input name="companyName" defaultValue={settings?.companyName} className="h-11 rounded-xl" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Currency</Label><Input name="currency" defaultValue={settings?.currency} className="h-11 rounded-xl" /></div>
-                 </div>
-              </Card>
-            </div>
+
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 shadow-inner"><ShieldCheck className="h-6 w-6" /></div>
+                    <div><h3 className="text-sm font-black uppercase text-slate-700">Audit Guard</h3><p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">System-wide transparency</p></div>
+                  </div>
+                  <div className="p-5 rounded-[2rem] bg-blue-50/50 border border-blue-100">
+                    <p className="text-[11px] font-medium leading-relaxed text-blue-700">Every configuration change is recorded in the immutable audit log for security verification and forensic analysis.</p>
+                  </div>
+                </div>
+              </div>
+            </Card>
           </TabsContent>
         </Tabs>
       </form>
