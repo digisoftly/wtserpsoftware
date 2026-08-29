@@ -25,7 +25,8 @@ import {
   Briefcase,
   GitPullRequest,
   ClipboardList,
-  BrainCircuit
+  BrainCircuit,
+  ShieldAlert
 } from "lucide-react"
 
 import { 
@@ -180,9 +181,11 @@ export function AppSidebar() {
                         item.color,
                         isActive && "text-blue-600"
                       )} />
-                      <span className="text-[12px] font-black uppercase tracking-tight">
-                        {t(item.name)}
-                      </span>
+                      {state === "expanded" && (
+                        <span className="text-[12px] font-black uppercase tracking-tight">
+                          {t(item.name)}
+                        </span>
+                      )}
                       {isActive && <div className="absolute left-0 top-2 bottom-2 w-1 bg-blue-600 rounded-r-full" />}
                     </Link>
                   </SidebarMenuButton>
@@ -212,8 +215,12 @@ export function AppSidebar() {
                           "text-orange-500",
                           isMasterActive && "text-orange-600"
                         )} />
-                        <span className="text-[12px] font-black uppercase tracking-tight">{t('master')}</span>
-                        <ChevronRight className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                        {state === "expanded" && (
+                          <>
+                            <span className="text-[12px] font-black uppercase tracking-tight">{t('master')}</span>
+                            <ChevronRight className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                          </>
+                        )}
                         {isMasterActive && <div className="absolute left-0 top-2 bottom-2 w-1 bg-orange-600 rounded-r-full" />}
                       </div>
                     </SidebarMenuButton>
@@ -252,19 +259,24 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter 
-        className="border-t border-slate-50 p-2"
+        className="border-t border-slate-100 p-3"
         style={{ backgroundColor: sidebarBg } as React.CSSProperties}
       >
-        <SidebarMenu className="px-2">
+        <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton 
               onClick={handleLogout} 
-              className="font-black h-10 px-3 rounded-xl transition-all group/logout hover:bg-red-600 hover:text-white"
+              tooltip="Logout"
+              className={cn(
+                "font-black h-11 px-3 rounded-xl transition-all group/logout hover:bg-red-600 hover:text-white border border-transparent hover:border-red-700",
+              )}
               style={{ color: sidebarText } as React.CSSProperties}
             >
-              <div className="flex items-center gap-3 w-full h-full rounded-xl">
+              <div className="flex items-center gap-3 w-full h-full">
                 <LogOut className="h-5 w-5 text-red-500 transition-transform group-hover/logout:scale-110 group-hover:text-white" />
-                <span className="text-[12px] font-black uppercase tracking-tight group-hover:text-white">Logout</span>
+                {state === "expanded" && (
+                  <span className="text-[12px] font-black uppercase tracking-tight">Logout</span>
+                )}
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
