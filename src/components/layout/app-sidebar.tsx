@@ -259,7 +259,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter 
-        className="border-t border-slate-100 p-3"
+        className="border-t border-slate-100 p-2 mt-auto"
         style={{ backgroundColor: sidebarBg } as React.CSSProperties}
       >
         <SidebarMenu>
@@ -268,16 +268,15 @@ export function AppSidebar() {
               onClick={handleLogout} 
               tooltip="Logout"
               className={cn(
-                "font-black h-11 px-3 rounded-xl transition-all group/logout hover:bg-red-600 hover:text-white border border-transparent hover:border-red-700",
+                "h-11 w-full rounded-xl transition-all duration-200 group/logout",
+                "hover:bg-red-600 hover:text-white"
               )}
               style={{ color: sidebarText } as React.CSSProperties}
             >
-              <div className="flex items-center gap-3 w-full h-full">
-                <LogOut className="h-5 w-5 text-red-500 transition-transform group-hover/logout:scale-110 group-hover:text-white" />
-                {state === "expanded" && (
-                  <span className="text-[12px] font-black uppercase tracking-tight">Logout</span>
-                )}
-              </div>
+              <LogOut className="h-5 w-5 text-red-500 group-hover/logout:text-white transition-colors shrink-0" />
+              <span className="text-[12px] font-black uppercase tracking-tight truncate group-data-[collapsible=icon]:hidden">
+                Logout
+              </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
