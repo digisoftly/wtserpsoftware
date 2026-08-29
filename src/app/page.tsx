@@ -17,7 +17,7 @@ import {
   Clock, 
   Receipt, 
   FolderOpen,
-  ArrowDownRight,
+  ArrowDownRight, 
   ArrowUpRight,
   RefreshCw,
   Box,
@@ -41,7 +41,8 @@ import {
   ShieldCheck,
   ShieldAlert,
   Archive,
-  Scan
+  Scan,
+  Wrench
 } from "lucide-react"
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { Card, CardContent } from "@/components/ui/card"
