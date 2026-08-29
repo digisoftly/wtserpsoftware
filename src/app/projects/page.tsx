@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -97,7 +98,7 @@ export default function ProjectBillingSystem() {
     if (!selectedRecord || !db || !companyId || !branchId) return;
     const docRef = doc(db, "companies", companyId, "branches", branchId, "projects", selectedRecord.id);
     deleteDocumentNonBlocking(docRef);
-    toast({ title: t('common.success') });
+    toast({ title: t('success') });
     setIsDeleteAlertOpen(false);
     setSelectedRecord(null);
   };
@@ -107,16 +108,16 @@ export default function ProjectBillingSystem() {
       {/* HEADER SECTION */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl md:text-2xl font-black font-headline text-teal-600 uppercase tracking-tight">{t('nav.projectBilling')}</h1>
-          <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{t('dashboard.happeningToday')}</p>
+          <h1 className="text-xl md:text-2xl font-black font-headline text-teal-600 uppercase tracking-tight">{t('projectBilling')}</h1>
+          <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{t('happeningToday')}</p>
         </div>
         <div className="flex flex-wrap gap-2">
            <Button className="bg-indigo-600 hover:bg-indigo-700 gap-2 rounded-full px-6 md:px-8 shadow-xl shadow-indigo-100 h-9 md:h-10 text-[10px] font-black uppercase transition-all active:scale-95" onClick={() => router.push('/projects/payment')}>
-              <Receipt className="h-4 w-4" /> {t('common.add')} {t('nav.payments')}
+              <Receipt className="h-4 w-4" /> {t('add')} {t('payments')}
            </Button>
            <Button className="bg-teal-600 hover:bg-teal-700 gap-2 rounded-full px-6 md:px-8 shadow-xl shadow-teal-100 h-9 md:h-10 text-[10px] font-black uppercase transition-all active:scale-95" asChild>
              <Link href="/projects/new">
-               <Plus className="h-4 w-4" /> {t('inventory.addProduct')}
+               <Plus className="h-4 w-4" /> {t('addProduct')}
              </Link>
            </Button>
         </div>
@@ -124,9 +125,9 @@ export default function ProjectBillingSystem() {
 
       {/* KPI SECTION */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title={t('common.status')} value={stats.running} icon={TrendingUp} colorClass="bg-teal-600" />
-        <KPICard title={t('forms.grandTotal')} value={`৳${stats.totalBudget.toLocaleString()}`} icon={DollarSign} colorClass="bg-blue-600" />
-        <KPICard title={t('forms.paidAmount')} value={`৳${stats.paidAmount.toLocaleString()}`} icon={CheckCircle2} colorClass="bg-green-600" />
+        <KPICard title={t('status')} value={stats.running} icon={TrendingUp} colorClass="bg-teal-600" />
+        <KPICard title={t('grandTotal')} value={`৳${stats.totalBudget.toLocaleString()}`} icon={DollarSign} colorClass="bg-blue-600" />
+        <KPICard title={t('paidAmount')} value={`৳${stats.paidAmount.toLocaleString()}`} icon={CheckCircle2} colorClass="bg-green-600" />
         <KPICard title="Revenue Net" value={`৳${(stats.paidAmount - stats.totalExpenses).toLocaleString()}`} icon={LineChart} colorClass="bg-purple-600" />
       </div>
 
@@ -135,19 +136,19 @@ export default function ProjectBillingSystem() {
         <div className="relative">
           <TabsList className="bg-white border p-1 rounded-2xl shadow-sm mb-6 flex h-auto overflow-x-auto no-scrollbar ring-1 ring-slate-100 justify-start">
             <TabsTrigger value="list" className="rounded-xl gap-2 flex-none md:flex-1 py-3 text-[10px] uppercase font-black tracking-widest min-w-[130px] data-[state=active]:bg-teal-50 data-[state=active]:text-teal-600">
-              <ClipboardCheck className="h-4 w-4" /> {t('nav.projectBilling')}
+              <ClipboardCheck className="h-4 w-4" /> {t('projectBilling')}
             </TabsTrigger>
             <TabsTrigger value="billing" className="rounded-xl gap-2 flex-none md:flex-1 py-3 text-[10px] uppercase font-black tracking-widest min-w-[130px] data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
-              <Receipt className="h-4 w-4" /> {t('nav.sales')}
+              <Receipt className="h-4 w-4" /> {t('sales')}
             </TabsTrigger>
             <TabsTrigger value="payments" className="rounded-xl gap-2 flex-none md:flex-1 py-3 text-[10px] uppercase font-black tracking-widest min-w-[130px] data-[state=active]:bg-green-50 data-[state=active]:text-green-600">
-              <Wallet className="h-4 w-4" /> {t('nav.payments')}
+              <Wallet className="h-4 w-4" /> {t('payments')}
             </TabsTrigger>
             <TabsTrigger value="expenses" className="rounded-xl gap-2 flex-none md:flex-1 py-3 text-[10px] uppercase font-black tracking-widest min-w-[130px] data-[state=active]:bg-red-50 data-[state=active]:text-red-600">
-              <Truck className="h-4 w-4" /> {t('nav.expenses')}
+              <Truck className="h-4 w-4" /> {t('expenses')}
             </TabsTrigger>
             <TabsTrigger value="progress" className="rounded-xl gap-2 flex-none md:flex-1 py-3 text-[10px] uppercase font-black tracking-widest min-w-[130px] data-[state=active]:bg-amber-50 data-[state=active]:text-amber-600">
-              <Wrench className="h-4 w-4" /> {t('nav.serialTracking')}
+              <Wrench className="h-4 w-4" /> {t('serialTracking')}
             </TabsTrigger>
           </TabsList>
         </div>
@@ -158,14 +159,14 @@ export default function ProjectBillingSystem() {
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <input 
-                placeholder={t('common.search')} 
+                placeholder={t('search')} 
                 className="pl-9 h-10 w-full rounded-xl bg-slate-50/50 border-none text-xs focus:ring-2 focus:ring-teal-500 outline-none font-bold" 
                 value={searchTerm} 
                 onChange={e => setSearchTerm(e.target.value)} 
               />
             </div>
             <Button variant="ghost" size="sm" className="h-10 px-4 gap-2 text-[10px] font-black uppercase text-slate-500">
-               <Filter className="h-3.5 w-3.5" /> {t('common.actions')}
+               <Filter className="h-3.5 w-3.5" /> {t('actions')}
             </Button>
           </div>
 
@@ -177,11 +178,11 @@ export default function ProjectBillingSystem() {
                 <Table>
                   <TableHeader className="bg-slate-50/50">
                     <TableRow>
-                      <TableHead className="h-12 text-[10px] uppercase font-black pl-8">{t('forms.project')}</TableHead>
-                      <TableHead className="h-12 text-[10px] uppercase font-black">{t('forms.customer')}</TableHead>
-                      <TableHead className="h-12 text-[10px] uppercase font-black text-center">{t('common.status')}</TableHead>
-                      <TableHead className="h-12 text-[10px] uppercase font-black text-right">{t('common.amount')}</TableHead>
-                      <TableHead className="h-12 text-right pr-8 sticky right-0 bg-white/95 backdrop-blur-sm z-20 w-[120px]">{t('common.actions')}</TableHead>
+                      <TableHead className="h-12 text-[10px] uppercase font-black pl-8">{t('project')}</TableHead>
+                      <TableHead className="h-12 text-[10px] uppercase font-black">{t('customer')}</TableHead>
+                      <TableHead className="h-12 text-[10px] uppercase font-black text-center">{t('status')}</TableHead>
+                      <TableHead className="h-12 text-[10px] uppercase font-black text-right">{t('amount')}</TableHead>
+                      <TableHead className="h-12 text-right pr-8 sticky right-0 bg-white/95 backdrop-blur-sm z-20 w-[120px]">{t('actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -264,11 +265,11 @@ export default function ProjectBillingSystem() {
               <Table>
                 <TableHeader className="bg-slate-50/50">
                   <TableRow>
-                    <TableHead className="h-12 text-[10px] uppercase font-black pl-8">{t('common.date')}</TableHead>
+                    <TableHead className="h-12 text-[10px] uppercase font-black pl-8">{t('date')}</TableHead>
                     <TableHead className="h-12 text-[10px] uppercase font-black">Receipt #</TableHead>
-                    <TableHead className="h-12 text-[10px] uppercase font-black">{t('forms.customer')}</TableHead>
-                    <TableHead className="h-12 text-[10px] uppercase font-black text-right">{t('common.amount')}</TableHead>
-                    <TableHead className="text-right pr-8">{t('common.actions')}</TableHead>
+                    <TableHead className="h-12 text-[10px] uppercase font-black">{t('customer')}</TableHead>
+                    <TableHead className="h-12 text-[10px] uppercase font-black text-right">{t('amount')}</TableHead>
+                    <TableHead className="text-right pr-8">{t('actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -333,15 +334,15 @@ export default function ProjectBillingSystem() {
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl w-[95vw] max-w-lg">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tight text-slate-900">{t('common.confirmDelete')}?</AlertDialogTitle>
+            <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tight text-slate-900">{t('confirmDelete')}?</AlertDialogTitle>
             <AlertDialogDescription className="text-sm font-medium leading-relaxed text-slate-500">
               This action will permanently remove the project record and its associated history. This operation is immutable.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-8 gap-3">
-            <AlertDialogCancel className="rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest flex-1 border-slate-200">{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest flex-1 border-slate-200">{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction className="bg-red-600 hover:bg-red-700 rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest flex-1 text-white shadow-xl shadow-red-100" onClick={handleDelete}>
-              {t('common.delete')} Record
+              {t('delete')} Record
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

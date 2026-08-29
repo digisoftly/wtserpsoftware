@@ -55,7 +55,7 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error: any) {
       setIsLoading(false);
-      setAuthError(t('auth.loginFailed'));
+      setAuthError(t('loginFailed'));
     }
   };
 
@@ -89,10 +89,10 @@ export default function LoginPage() {
           <div className="w-full max-w-md space-y-8 bg-white p-8 md:p-12 rounded-[3rem] shadow-2xl shadow-blue-100 border border-slate-100">
             <div className="text-center">
               <h2 className="text-2xl font-black font-headline text-slate-900 uppercase">
-                {t('auth.systemLogin')}
+                {t('systemLogin')}
               </h2>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-2">
-                {t('auth.authorizedAccess')}
+                {t('authorizedAccess')}
               </p>
             </div>
 
@@ -107,7 +107,7 @@ export default function LoginPage() {
               <div className="space-y-4">
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">
-                    {t('auth.email')}
+                    {t('email')}
                   </Label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -116,14 +116,14 @@ export default function LoginPage() {
                       value={email} 
                       onChange={(e) => setEmail(e.target.value)} 
                       className="h-14 pl-12 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 font-bold focus:ring-2 focus:ring-blue-600" 
-                      placeholder="admin@warrior com"
+                      placeholder="admin@warrior.com"
                       required 
                     />
                   </div>
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">
-                    {t('auth.password')}
+                    {t('password')}
                   </Label>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -143,7 +143,7 @@ export default function LoginPage() {
               </div>
 
               <Button type="submit" disabled={isLoading} className="w-full h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95">
-                {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><ArrowRight className="h-5 w-5 mr-2" /> {t('auth.signInTerminal')}</>}
+                {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><ArrowRight className="h-5 w-5 mr-2" /> {t('signInTerminal')}</>}
               </Button>
 
               <div className="pt-6 flex flex-col items-center gap-4 border-t border-slate-50">

@@ -143,10 +143,10 @@ export default function CombinedPaymentPage() {
         });
       });
 
-      toast({ title: t('common.success'), description: "Financial records synchronized successfully." });
+      toast({ title: t('success'), description: "Financial records synchronized successfully." });
       router.push("/projects");
     } catch (e: any) {
-      toast({ variant: "destructive", title: t('common.error'), description: e.message });
+      toast({ variant: "destructive", title: t('error'), description: e.message });
       setIsSubmitting(false);
     }
   };
@@ -166,11 +166,11 @@ export default function CombinedPaymentPage() {
         </div>
         <div className="flex items-center gap-3">
           <Button variant="ghost" className="rounded-full text-[10px] font-black uppercase tracking-widest px-6" onClick={() => router.back()}>
-            {t('common.cancel')}
+            {t('cancel')}
           </Button>
           <Button onClick={handleProcessPayment} disabled={isSubmitting || allocatedTotal <= 0} className="bg-indigo-600 hover:bg-indigo-700 rounded-full px-12 h-11 text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-indigo-100 gap-2 transition-all active:scale-95">
             {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />}
-            {t('common.save')}
+            {t('save')}
           </Button>
         </div>
       </div>
@@ -178,15 +178,15 @@ export default function CombinedPaymentPage() {
       <div className="max-w-[1400px] mx-auto w-full p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* LEFT COLUMN: SELECTION & FORM */}
         <div className="lg:col-span-8 space-y-6">
-          <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-8">
+          <Card className="p-8 rounded-[2rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-2">
-                  <User className="h-3.5 w-3.5 text-indigo-600" /> {t('forms.customer')}
+                  <User className="h-3.5 w-3.5 text-indigo-600" /> {t('customer')}
                 </Label>
                 <Select value={selectedCustomerId} onValueChange={(val) => { setSelectedCustomerId(val); setSelectedProjectIds([]); }}>
                   <SelectTrigger className="h-12 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold text-xs">
-                    <SelectValue placeholder={t('common.search')} />
+                    <SelectValue placeholder={t('search')} />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px] rounded-xl shadow-2xl">
                     {customers?.map(c => (
@@ -200,7 +200,7 @@ export default function CombinedPaymentPage() {
 
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-2">
-                  <Calculator className="h-3.5 w-3.5 text-indigo-600" /> {t('common.amount')} (৳)
+                  <Calculator className="h-3.5 w-3.5 text-indigo-600" /> {t('amount')} (৳)
                 </Label>
                 <Input 
                   type="number" 
@@ -213,14 +213,14 @@ export default function CombinedPaymentPage() {
 
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-2">
-                  <History className="h-3.5 w-3.5 text-indigo-600" /> {t('common.date')}
+                  <History className="h-3.5 w-3.5 text-indigo-600" /> {t('date')}
                 </Label>
                 <Input type="date" value={paymentDate} onChange={e => setPaymentDate(e.target.value)} className="h-12 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 font-black uppercase text-[10px]" />
               </div>
 
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-2">
-                  <FileText className="h-3.5 w-3.5 text-indigo-600" /> {t('forms.paymentMethod')}
+                  <FileText className="h-3.5 w-3.5 text-indigo-600" /> {t('paymentMethod')}
                 </Label>
                 <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                    <SelectTrigger className="h-12 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold text-xs uppercase"><SelectValue /></SelectTrigger>

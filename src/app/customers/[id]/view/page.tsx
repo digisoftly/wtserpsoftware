@@ -77,7 +77,7 @@ export default function CustomerProfilePage() {
   }), [invoices, projects]);
 
   if (isProfileLoading) return <div className="flex h-screen items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-cyan-600" /></div>;
-  if (!customer) return <div className="p-20 text-center uppercase font-black text-muted-foreground">{t('common_noData')}</div>;
+  if (!customer) return <div className="p-20 text-center uppercase font-black text-muted-foreground">{t('noData')}</div>;
 
   return (
     <div className="space-y-6 pb-20 max-w-[1600px] mx-auto">
@@ -113,9 +113,9 @@ export default function CustomerProfilePage() {
 
       {/* KPI CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title={t('dashboard_totalRevenue')} value={formatCurrency(stats.totalBilled)} icon={TrendingUp} colorClass="bg-blue-600" />
-        <KPICard title={t('forms_paidAmount')} value={formatCurrency(stats.totalPaid)} icon={Wallet} colorClass="bg-green-600" />
-        <KPICard title={t('forms_balanceDue')} value={formatCurrency(stats.totalDue)} icon={AlertCircle} colorClass="bg-red-600" trend={{ value: (stats.totalDue/stats.totalBilled)*100 || 0, isPositive: false }} />
+        <KPICard title={t('totalRevenue')} value={formatCurrency(stats.totalBilled)} icon={TrendingUp} colorClass="bg-blue-600" />
+        <KPICard title={t('paidAmount')} value={formatCurrency(stats.totalPaid)} icon={Wallet} colorClass="bg-green-600" />
+        <KPICard title={t('balanceDue')} value={formatCurrency(stats.totalDue)} icon={AlertCircle} colorClass="bg-red-600" />
         <KPICard title={t('running')} value={stats.activeProjects} icon={Folder} colorClass="bg-purple-600" />
       </div>
 
@@ -149,16 +149,16 @@ export default function CustomerProfilePage() {
               <TableHeader className="bg-slate-50/50">
                 <TableRow>
                   <TableHead className="h-12 pl-8 text-[10px] font-black uppercase">Ref #</TableHead>
-                  <TableHead className="h-12 text-[10px] font-black uppercase">{t('common_date')}</TableHead>
-                  <TableHead className="h-12 text-[10px] font-black uppercase text-right">{t('common_total')}</TableHead>
-                  <TableHead className="h-12 text-[10px] font-black uppercase text-right">{t('forms_balanceDue')}</TableHead>
-                  <TableHead className="h-12 text-[10px] font-black uppercase text-center">{t('common_status')}</TableHead>
+                  <TableHead className="h-12 text-[10px] font-black uppercase">{t('date')}</TableHead>
+                  <TableHead className="h-12 text-[10px] font-black uppercase text-right">{t('total')}</TableHead>
+                  <TableHead className="h-12 text-[10px] font-black uppercase text-right">{t('balanceDue')}</TableHead>
+                  <TableHead className="h-12 text-[10px] font-black uppercase text-center">{t('status')}</TableHead>
                   <TableHead className="h-12 text-right pr-8">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {invoices?.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="h-40 text-center opacity-30 italic font-black uppercase text-[10px]">{t('common_noData')}</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} className="h-40 text-center opacity-30 italic font-black uppercase text-[10px]">{t('noData')}</TableCell></TableRow>
                 ) : (
                   invoices?.map(inv => (
                     <TableRow key={inv.id} className="h-16 hover:bg-muted/5 group">
@@ -191,16 +191,16 @@ export default function CustomerProfilePage() {
             <Table>
               <TableHeader className="bg-slate-50/50">
                 <TableRow>
-                  <TableHead className="h-12 pl-8 text-[10px] font-black uppercase">{t('forms_sl')}</TableHead>
-                  <TableHead className="h-12 text-[10px] font-black uppercase">{t('common_date')}</TableHead>
-                  <TableHead className="h-12 text-[10px] font-black uppercase text-right">{t('common_total')}</TableHead>
-                  <TableHead className="h-12 text-[10px] font-black uppercase text-center">{t('common_status')}</TableHead>
+                  <TableHead className="h-12 pl-8 text-[10px] font-black uppercase">{t('sl')}</TableHead>
+                  <TableHead className="h-12 text-[10px] font-black uppercase">{t('date')}</TableHead>
+                  <TableHead className="h-12 text-[10px] font-black uppercase text-right">{t('total')}</TableHead>
+                  <TableHead className="h-12 text-[10px] font-black uppercase text-center">{t('status')}</TableHead>
                   <TableHead className="h-12 text-right pr-8">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {quotations?.length === 0 ? (
-                  <TableRow><TableCell colSpan={5} className="h-40 text-center opacity-30 italic font-black uppercase text-[10px]">{t('common_noData')}</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={5} className="h-40 text-center opacity-30 italic font-black uppercase text-[10px]">{t('noData')}</TableCell></TableRow>
                 ) : (
                   quotations?.map(q => (
                     <TableRow key={q.id} className="h-16 hover:bg-muted/5">
@@ -227,7 +227,7 @@ export default function CustomerProfilePage() {
         <TabsContent value="projects">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {projects?.length === 0 ? (
-              <div className="col-span-full py-20 text-center opacity-30 italic font-black uppercase text-[10px]">{t('common_noData')}</div>
+              <div className="col-span-full py-20 text-center opacity-30 italic font-black uppercase text-[10px]">{t('noData')}</div>
             ) : (
               projects?.map(p => (
                 <Card key={p.id} className="border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-6 space-y-4">
@@ -255,19 +255,19 @@ export default function CustomerProfilePage() {
         <TabsContent value="dispatch">
            <Card className="border-none shadow-sm rounded-[2rem] p-20 text-center ring-1 ring-slate-100 bg-white">
               <Truck className="h-10 w-10 text-slate-100 mx-auto mb-4" />
-              <p className="text-[10px] font-black uppercase text-slate-300 tracking-[0.3em]">{t('common_noData')}</p>
+              <p className="text-[10px] font-black uppercase text-slate-300 tracking-[0.3em]">{t('noData')}</p>
            </Card>
         </TabsContent>
         <TabsContent value="contracts">
            <Card className="border-none shadow-sm rounded-[2rem] p-20 text-center ring-1 ring-slate-100 bg-white">
               <Wrench className="h-10 w-10 text-slate-100 mx-auto mb-4" />
-              <p className="text-[10px] font-black uppercase text-slate-300 tracking-[0.3em]">{t('common_noData')}</p>
+              <p className="text-[10px] font-black uppercase text-slate-300 tracking-[0.3em]">{t('noData')}</p>
            </Card>
         </TabsContent>
         <TabsContent value="returns">
            <Card className="border-none shadow-sm rounded-[2rem] p-20 text-center ring-1 ring-slate-100 bg-white">
               <RotateCcw className="h-10 w-10 text-slate-100 mx-auto mb-4" />
-              <p className="text-[10px] font-black uppercase text-slate-300 tracking-[0.3em]">{t('common_noData')}</p>
+              <p className="text-[10px] font-black uppercase text-slate-300 tracking-[0.3em]">{t('noData')}</p>
            </Card>
         </TabsContent>
       </Tabs>
