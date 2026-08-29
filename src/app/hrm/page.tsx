@@ -16,6 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from "@/hooks/use-toast"
 import { useTranslation } from "@/hooks/use-translation"
 import Link from "next/link"
+import { cn } from "@/lib/utils"
 
 export default function HRMPage() {
   const { companyId, branchId } = useTenant();
@@ -90,8 +91,14 @@ export default function HRMPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredEmployees?.map((emp) => (
-                <TableRow key={emp.id} className="h-12 hover:bg-muted/10 transition-colors">
+              {filteredEmployees?.map((emp, idx) => (
+                <TableRow 
+                  key={emp.id} 
+                  className={cn(
+                    "h-14 transition-all border-b border-white/50",
+                    idx % 2 === 0 ? "bg-[#EAF6FF] hover:bg-[#D9EFFF]" : "bg-[#EEF9F1] hover:bg-[#E1F2E6]"
+                  )}
+                >
                   <TableCell>
                     <div className="font-bold text-xs">{emp.firstName} {emp.lastName}</div>
                     <div className="text-[9px] uppercase font-black text-muted-foreground">{emp.employeeIdNumber}</div>

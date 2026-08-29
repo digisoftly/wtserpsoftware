@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -83,9 +82,6 @@ export default function InventoryPage() {
             onChange={e => setSearchTerm(e.target.value)} 
           />
         </div>
-        <Button variant="ghost" size="sm" className="h-10 px-4 gap-2 text-[10px] font-black uppercase text-slate-500">
-          <Filter className="h-3.5 w-3.5" /> {t('actions')}
-        </Button>
       </div>
 
       <Card className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white ring-1 ring-slate-100">
@@ -109,8 +105,15 @@ export default function InventoryPage() {
               ) : filtered?.length === 0 ? (
                 <TableRow><TableCell colSpan={6} className="h-64 text-center text-slate-300 text-[10px] font-black uppercase tracking-[0.2em] italic">{t('noData')}</TableCell></TableRow>
               ) : (
-                filtered?.map((p) => (
-                  <TableRow key={p.id} className={cn("h-16 hover:bg-muted/5 transition-colors group border-slate-50", selectedIds.includes(p.id) && "bg-blue-50/30")}>
+                filtered?.map((p, idx) => (
+                  <TableRow 
+                    key={p.id} 
+                    className={cn(
+                      "h-16 transition-all border-b border-white/50",
+                      idx % 2 === 0 ? "bg-[#EAF6FF] hover:bg-[#D9EFFF]" : "bg-[#EEF9F1] hover:bg-[#E1F2E6]",
+                      selectedIds.includes(p.id) && "ring-2 ring-blue-500 ring-inset"
+                    )}
+                  >
                     <TableCell className="pl-8">
                       <Checkbox checked={selectedIds.includes(p.id)} onCheckedChange={() => toggleSelect(p.id)} className="h-4 w-4" />
                     </TableCell>
@@ -139,7 +142,7 @@ export default function InventoryPage() {
                        </div>
                     </TableCell>
                     <TableCell className="text-right text-xs font-black text-slate-900 tabular-nums">৳{p.unitPrice?.toLocaleString() || 0}</TableCell>
-                    <TableCell className="text-right pr-8 sticky right-0 bg-white group-hover:bg-slate-50/90 transition-colors shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                    <TableCell className="text-right pr-8 sticky right-0 bg-transparent group-hover:bg-slate-50/10 transition-colors">
                       <div className="flex justify-end gap-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-400 hover:text-blue-600" onClick={() => router.push(`/inventory/${p.id}/view`)}><Eye className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-400 hover:text-amber-600" onClick={() => router.push(`/inventory/${p.id}/edit`)}><Edit className="h-4 w-4" /></Button>

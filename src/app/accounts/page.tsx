@@ -65,8 +65,14 @@ export default function AccountsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transactions?.map((t_row) => (
-                  <TableRow key={t_row.id} className="h-12 hover:bg-muted/10 transition-colors">
+                {transactions?.map((t_row, idx) => (
+                  <TableRow 
+                    key={t_row.id} 
+                    className={cn(
+                      "h-14 transition-all border-b border-white/50",
+                      idx % 2 === 0 ? "bg-[#EAF6FF] hover:bg-[#D9EFFF]" : "bg-[#EEF9F1] hover:bg-[#E1F2E6]"
+                    )}
+                  >
                     <TableCell className="text-[10px] font-bold uppercase">{new Date(t_row.transactionDate).toLocaleDateString()}</TableCell>
                     <TableCell>
                       <div className="font-bold text-xs">{t_row.description}</div>

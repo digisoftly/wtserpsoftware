@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -13,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Label } from "@/components/ui/label"
 import { useTranslation } from "@/hooks/use-translation"
 import { toast } from "@/hooks/use-toast"
-import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
 
 export default function MasterBrandsPage() {
   const { companyId } = useTenant();
@@ -120,11 +119,17 @@ export default function MasterBrandsPage() {
                   <TableRow><TableCell colSpan={3} className="h-40 text-center"><Loader2 className="animate-spin h-6 w-6 mx-auto text-blue-200" /></TableCell></TableRow>
                 ) : filtered?.length === 0 ? (
                   <TableRow><TableCell colSpan={3} className="h-40 text-center text-slate-300 italic text-[10px] font-black uppercase tracking-widest">No brands found</TableCell></TableRow>
-                ) : filtered?.map((b) => (
-                  <TableRow key={b.id} className="h-14 hover:bg-muted/5 group border-slate-50 transition-colors">
+                ) : filtered?.map((b, idx) => (
+                  <TableRow 
+                    key={b.id} 
+                    className={cn(
+                      "h-14 transition-all border-b border-white/50",
+                      idx % 2 === 0 ? "bg-[#EAF6FF] hover:bg-[#D9EFFF]" : "bg-[#EEF9F1] hover:bg-[#E1F2E6]"
+                    )}
+                  >
                     <TableCell className="pl-8 font-black text-xs uppercase text-slate-900">{b.name}</TableCell>
                     <TableCell className="text-[10px] font-bold text-slate-400 uppercase">{b.description || "---"}</TableCell>
-                    <TableCell className="text-right pr-8 sticky right-0 bg-white group-hover:bg-slate-50 transition-colors">
+                    <TableCell className="text-right pr-8 sticky right-0 bg-transparent">
                       <div className="flex justify-end gap-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50 rounded-full" onClick={() => setSelectedRecord(b)}><Edit className="h-3.5 w-3.5" /></Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:bg-red-50 rounded-full" onClick={() => deleteDoc(doc(db!, "companies", companyId!, "master_brands", b.id))}><Trash2 className="h-3.5 w-3.5" /></Button>

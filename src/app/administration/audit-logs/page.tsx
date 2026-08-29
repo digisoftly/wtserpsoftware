@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -88,8 +87,14 @@ export default function AuditLogsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredLogs.map((log) => (
-                  <TableRow key={log.id} className="h-16 hover:bg-muted/5 transition-colors group">
+                {filteredLogs.map((log, idx) => (
+                  <TableRow 
+                    key={log.id} 
+                    className={cn(
+                      "h-16 transition-all border-b border-white/50",
+                      idx % 2 === 0 ? "bg-[#EAF6FF] hover:bg-[#D9EFFF]" : "bg-[#EEF9F1] hover:bg-[#E1F2E6]"
+                    )}
+                  >
                     <TableCell className="pl-8">
                        <div className="text-[10px] font-bold text-slate-600">
                          {log.timestamp?.toDate ? new Date(log.timestamp.toDate()).toLocaleString() : "---"}
@@ -114,7 +119,7 @@ export default function AuditLogsPage() {
                       {log.recordId || "---"}
                     </TableCell>
                     <TableCell className="text-right pr-8">
-                       <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-400 group-hover:text-violet-600 transition-colors">
+                       <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-400 hover:text-violet-600 transition-colors">
                          <Eye className="h-4 w-4" />
                        </Button>
                     </TableCell>

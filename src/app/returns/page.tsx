@@ -132,9 +132,6 @@ export default function ReturnsPage() {
     );
 
     filtered.forEach(r => {
-      // In returns, we don't always have a direct customerName at the top level
-      // but we can try to derive it from the parent document if needed.
-      // For now we'll group by Parent Document if customer isn't explicit
       const cId = r.parentNumber || 'unknown';
       const cName = r.parentNumber || t('unknownCustomer');
 
@@ -159,32 +156,6 @@ export default function ReturnsPage() {
 
     return Object.values(groups);
   }, [activeTab, salesReturns, purchaseReturns, searchTerm, t]);
-
-  const handleAddItemToReturn = (sourceItem: any) => {
-    const exists = lineItems.find(i => i.productId === sourceItem.productId);
-    if (exists) {
-      toast({ title: "Item Already Added", description: "You can adjust quantity in the table below." });
-      return;
-    }
-
-    setLineItems([...lineItems, {
-      productId: sourceItem.productId,
-      name: sourceItem.name,
-      qty: 1,
-      unit: sourceItem.unit || "Pcs",
-      price: Number(sourceItem.price || sourceItem.unitPrice || 0),
-      total: Number(sourceItem.price || sourceItem.unitPrice || 0)
-    }]);
-  };
-
-  const handleUpdateItem = (idx: number, field: keyof ReturnLineItem, val: any) => {
-    const updated = [...lineItems];
-    (updated[idx] as any)[field] = val;
-    if (field === 'qty' || field === 'price') {
-      updated[idx].total = Number(updated[idx].qty || 0) * Number(updated[idx].price || 0);
-    }
-    setLineItems(updated);
-  };
 
   const handleProcessReturn = async () => {
     if (!selectedParentId || lineItems.length === 0) return;
@@ -381,30 +352,6 @@ export default function ReturnsPage() {
                 </div>
               </div>
 
-              {selectedParentId && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-                   <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Available Items from Source</h3>
-                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {((activeTab === "sales" ? invoices : purchaseOrders)?.find((i: any) => i.id === selectedParentId)?.items || []).map((item: any, i: number) => (
-                        <div key={i} className="p-4 bg-slate-50 rounded-2xl ring-1 ring-slate-100 flex justify-between items-center group hover:bg-white hover:ring-red-200 transition-all">
-                           <div className="flex flex-col">
-                              <span className="text-[11px] font-black uppercase truncate max-w-[120px]">{item.name}</span>
-                              <span className="text-[9px] font-bold text-slate-400">Qty in Doc: {item.qty || item.quantity}</span>
-                           </div>
-                           <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8 w-8 rounded-full text-red-600 hover:bg-red-50"
-                            onClick={() => handleAddItemToReturn(item)}
-                           >
-                             <PlusCircle className="h-4 w-4" />
-                           </Button>
-                        </div>
-                      ))}
-                   </div>
-                </div>
-              )}
-
               <div className="rounded-[2rem] border shadow-sm overflow-hidden flex flex-col min-h-[300px]">
                 <Table>
                   <TableHeader className="bg-slate-50">
@@ -418,10 +365,16 @@ export default function ReturnsPage() {
                   </TableHeader>
                   <TableBody>
                     {lineItems.length === 0 ? (
-                      <TableRow><TableCell colSpan={5} className="h-64 text-center opacity-30 italic text-xs uppercase font-bold tracking-widest">Add items from the section above to initiate return</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={5} className="h-64 text-center opacity-30 italic text-xs uppercase font-bold tracking-widest">Add items to initiate return</TableCell></TableRow>
                     ) : (
                       lineItems.map((item, idx) => (
-                        <TableRow key={idx} className="h-16 group hover:bg-slate-50/20">
+                        <TableRow 
+                          key={idx} 
+                          className={cn(
+                            "h-16 transition-all border-b border-white/50",
+                            idx % 2 === 0 ? "bg-[#EAF6FF] hover:bg-[#D9EFFF]" : "bg-[#EEF9F1] hover:bg-[#E1F2E6]"
+                          )}
+                        >
                           <TableCell className="pl-8">
                             <span className="font-black text-xs uppercase tracking-tight text-slate-900">{item.name}</span>
                           </TableCell>
@@ -455,36 +408,6 @@ export default function ReturnsPage() {
                 </Table>
               </div>
             </Card>
-          </div>
-
-          <div className="w-full xl:w-[350px] space-y-6">
-             <Card className={cn("p-8 rounded-[2.5rem] shadow-2xl space-y-4 text-center text-white", activeTab === "sales" ? "bg-red-600" : "bg-blue-600")}>
-                <p className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em]">Net Return Value</p>
-                <h2 className="text-4xl font-headline font-black tracking-tighter">৳{totalReturnAmount.toLocaleString()}</h2>
-             </Card>
-
-             <Card className="p-6 rounded-[2rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-6">
-                <div className="p-5 bg-slate-50 rounded-3xl space-y-3">
-                   <div className="flex items-center gap-3">
-                     <Calculator className="h-4 w-4 text-slate-400" />
-                     <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Return Summary</p>
-                   </div>
-                   <div className="pt-3 border-t border-slate-200">
-                      <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-500">
-                        <span>Items Count</span>
-                        <span>{lineItems.length}</span>
-                      </div>
-                   </div>
-                </div>
-                <Button 
-                  className={cn("w-full h-16 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95 text-white", activeTab === "sales" ? "bg-red-600 hover:bg-red-700" : "bg-blue-600 hover:bg-blue-700")} 
-                  disabled={isSubmitting || !selectedParentId || lineItems.length === 0} 
-                  onClick={handleProcessReturn}
-                >
-                  {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <ArrowRight className="h-5 w-5" />}
-                  {formMode === 'edit' ? "Update Record" : "Synchronize Return"}
-                </Button>
-             </Card>
           </div>
         </div>
       </div>
@@ -580,8 +503,14 @@ export default function ReturnsPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {customer.records.map((r: any) => (
-                            <TableRow key={r.id} className="h-14 hover:bg-slate-50/30 transition-colors border-slate-50">
+                          {customer.records.map((r: any, rIdx: number) => (
+                            <TableRow 
+                              key={r.id} 
+                              className={cn(
+                                "h-14 transition-all border-b border-white/50",
+                                rIdx % 2 === 0 ? "bg-[#EAF6FF] hover:bg-[#D9EFFF]" : "bg-[#EEF9F1] hover:bg-[#E1F2E6]"
+                              )}
+                            >
                               <TableCell className="pl-8 text-[10px] font-bold uppercase text-slate-500">{new Date(r.returnDate).toLocaleDateString()}</TableCell>
                               <TableCell className="font-black text-[10px] text-red-600 uppercase tracking-tighter">{r.parentNumber}</TableCell>
                               <TableCell className="text-[10px] font-bold text-slate-600 truncate max-w-[200px]">{r.reason || "---"}</TableCell>

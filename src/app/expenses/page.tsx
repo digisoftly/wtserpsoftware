@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { useTranslation } from "@/hooks/use-translation"
 import Link from "next/link"
+import { cn } from "@/lib/utils"
 
 export default function ExpensesPage() {
   const { companyId, branchId } = useTenant();
@@ -75,12 +76,18 @@ export default function ExpensesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {expenses?.map((exp) => (
-                  <TableRow key={exp.id} className="h-12 hover:bg-muted/10 transition-colors">
+                {expenses?.map((exp, idx) => (
+                  <TableRow 
+                    key={exp.id} 
+                    className={cn(
+                      "h-14 transition-all border-b border-white/50",
+                      idx % 2 === 0 ? "bg-[#EAF6FF] hover:bg-[#D9EFFF]" : "bg-[#EEF9F1] hover:bg-[#E1F2E6]"
+                    )}
+                  >
                     <TableCell className="text-[10px] font-bold uppercase">{new Date(exp.expenseDate).toLocaleDateString()}</TableCell>
                     <TableCell>
                       <div className="font-bold text-xs">{exp.description}</div>
-                      <div className="text-[9px] uppercase text-muted-foreground font-black">{t(exp.category as any)}</div>
+                      <div className="text-[9px] uppercase font-black text-muted-foreground font-black">{t(exp.category as any)}</div>
                     </TableCell>
                     <TableCell className="text-right font-black text-xs text-red-600">৳{exp.amount?.toLocaleString()}</TableCell>
                   </TableRow>

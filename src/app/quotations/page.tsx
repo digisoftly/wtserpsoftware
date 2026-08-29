@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -126,7 +125,7 @@ export default function QuotationsPage() {
   };
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl md:text-2xl font-black font-headline text-blue-600 uppercase tracking-tight">{t('quotations')}</h1>
@@ -151,7 +150,7 @@ export default function QuotationsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <input 
             placeholder={t('search')} 
-            className="pl-9 h-10 w-full rounded-xl bg-slate-50/50 border-none text-xs focus:ring-2 focus:ring-blue-500 transition-all outline-none font-bold" 
+            className="pl-9 h-10 w-full rounded-xl bg-slate-50/50 border-none text-xs focus:ring-2 focus:ring-blue-500 outline-none font-bold" 
             value={searchTerm} 
             onChange={e => setSearchTerm(e.target.value)} 
           />
@@ -229,8 +228,14 @@ export default function QuotationsPage() {
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {docs.map((q: any) => (
-                                  <TableRow key={q.id} className="h-12 hover:bg-slate-50/30 transition-colors border-slate-50">
+                                {docs.map((q: any, qIdx: number) => (
+                                  <TableRow 
+                                    key={q.id} 
+                                    className={cn(
+                                      "h-14 transition-all border-b border-white/50",
+                                      qIdx % 2 === 0 ? "bg-[#EAF6FF] hover:bg-[#D9EFFF]" : "bg-[#EEF9F1] hover:bg-[#E1F2E6]"
+                                    )}
+                                  >
                                     <TableCell className="pl-6 font-black text-[10px] text-blue-600 uppercase tracking-tighter">{q.quotationNumber}</TableCell>
                                     <TableCell className="text-[10px] font-bold text-slate-500">{new Date(q.quotationDate).toLocaleDateString()}</TableCell>
                                     <TableCell className="text-right font-black text-[10px] text-slate-900">{formatCurrency(q.totalAmount)}</TableCell>
@@ -247,7 +252,7 @@ export default function QuotationsPage() {
                                         <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-blue-600" onClick={() => router.push(`/quotations/${q.id}/view`)}><Eye className="h-3.5 w-3.5" /></Button>
                                         <DropdownMenu>
                                           <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-slate-400"><MoreVertical className="h-3.5 w-3.5" /></Button>
+                                            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-slate-400"><MoreVertical className="h-4 w-4" /></Button>
                                           </DropdownMenuTrigger>
                                           <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-xl p-2">
                                             <DropdownMenuItem onClick={() => router.push(`/sales/new?copyFrom=${q.id}&sourceType=quotation`)} className="rounded-xl h-10 text-xs font-bold text-green-600 focus:text-green-700 focus:bg-green-50">

@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -17,6 +16,7 @@ import { toast } from "@/hooks/use-toast"
 import { useTranslation } from "@/hooks/use-translation"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { cn } from "@/lib/utils"
 
 export default function CustomersPage() {
   const { companyId, branchId } = useTenant();
@@ -109,10 +109,17 @@ export default function CustomersPage() {
                 {filteredCustomers?.length === 0 ? (
                   <TableRow><TableCell colSpan={4} className="h-40 text-center text-[10px] font-black uppercase text-slate-300">{t('noData')}</TableCell></TableRow>
                 ) : (
-                  filteredCustomers?.map((customer) => (
-                    <TableRow key={customer.id} className="h-16 hover:bg-muted/5 transition-colors group cursor-pointer" onClick={() => router.push(`/customers/${customer.id}/view`)}>
+                  filteredCustomers?.map((customer, idx) => (
+                    <TableRow 
+                      key={customer.id} 
+                      className={cn(
+                        "h-16 transition-all border-b border-white/50",
+                        idx % 2 === 0 ? "bg-[#EAF6FF] hover:bg-[#D9EFFF]" : "bg-[#EEF9F1] hover:bg-[#E1F2E6]"
+                      )}
+                      onClick={() => router.push(`/customers/${customer.id}/view`)}
+                    >
                       <TableCell className="pl-8">
-                        <Badge variant="outline" className="text-[8px] font-black h-5 px-2 bg-slate-100 border-none uppercase">
+                        <Badge variant="outline" className="text-[8px] font-black h-5 px-2 bg-white border-none uppercase">
                           {customer.customerType === "company" ? "Corp" : "Indiv"}
                         </Badge>
                       </TableCell>

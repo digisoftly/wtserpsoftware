@@ -111,9 +111,6 @@ export default function UsersPage() {
                 onChange={(e) => setSearchTerm(e.target.value)} 
                />
              </div>
-             <Button variant="outline" className="rounded-xl h-10 px-4 gap-2 text-[10px] font-black uppercase border-slate-200">
-                <Filter className="h-3.5 w-3.5" /> Filter
-             </Button>
           </div>
 
           {usersLoading ? (
@@ -132,8 +129,14 @@ export default function UsersPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredUsers?.map((u) => (
-                      <TableRow key={u.id} className="h-20 hover:bg-muted/5 transition-colors">
+                    {filteredUsers?.map((u, idx) => (
+                      <TableRow 
+                        key={u.id} 
+                        className={cn(
+                          "h-20 transition-all border-b border-white/50",
+                          idx % 2 === 0 ? "bg-[#EAF6FF] hover:bg-[#D9EFFF]" : "bg-[#EEF9F1] hover:bg-[#E1F2E6]"
+                        )}
+                      >
                         <TableCell className="pl-8">
                           <div className="flex flex-col">
                              <span className="font-black text-xs uppercase tracking-tight text-slate-900">{u.fullName}</span>
@@ -148,7 +151,7 @@ export default function UsersPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-1">
-                             <Badge variant="secondary" className="w-fit text-[8px] font-black h-4 px-1.5 bg-violet-50 text-violet-700 border-none uppercase">
+                             <Badge variant="secondary" className="w-fit text-[8px] font-black h-4 px-1.5 bg-white text-violet-700 border-none uppercase">
                                {roles?.find(r => r.id === u.roleId)?.name || "Restricted"}
                              </Badge>
                              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1"><Building className="h-2.5 w-2.5" /> {u.branchId || 'Global'}</span>
@@ -188,9 +191,15 @@ export default function UsersPage() {
             <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-violet-600" /></div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {roles?.map((role) => (
-                <Card key={role.id} className="border-none shadow-sm hover:shadow-md transition-all group overflow-hidden rounded-[2rem] bg-white ring-1 ring-slate-100">
-                  <div className={cn("h-1.5", role.isSuperAdmin ? "bg-violet-600" : "bg-slate-100")} />
+              {roles?.map((role, idx) => (
+                <Card 
+                  key={role.id} 
+                  className={cn(
+                    "border-none shadow-sm hover:shadow-md transition-all group overflow-hidden rounded-[2rem] ring-1 ring-slate-100",
+                    idx % 2 === 0 ? "bg-[#EAF6FF]" : "bg-[#EEF9F1]"
+                  )}
+                >
+                  <div className={cn("h-1.5", role.isSuperAdmin ? "bg-violet-600" : "bg-slate-300/30")} />
                   <CardHeader className="flex flex-row items-center justify-between p-6">
                     <div className="space-y-1">
                       <CardTitle className="text-sm font-black uppercase flex items-center gap-2 text-slate-900">
@@ -199,16 +208,6 @@ export default function UsersPage() {
                       </CardTitle>
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{Object.keys(role.permissions || {}).length} Active Modules</p>
                     </div>
-                    {!role.isSuperAdmin && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="rounded-full h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56 rounded-2xl shadow-2xl p-2 border-slate-100">
-                          <DropdownMenuItem className="h-10 rounded-xl text-xs font-bold" asChild><Link href={`/users/roles/${role.id}/edit`}><Settings2 className="h-4 w-4 mr-2" /> Adjust Auth Matrix</Link></DropdownMenuItem>
-                          <DropdownMenuSeparator className="my-1 bg-slate-50" />
-                          <DropdownMenuItem className="h-10 rounded-xl text-red-600 text-xs font-bold focus:bg-red-50" onClick={() => deleteDoc(doc(db!, "companies", companyId!, "roles", role.id))}><Trash2 className="h-4 w-4 mr-2" /> Decommission Role</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
                   </CardHeader>
                 </Card>
               ))}

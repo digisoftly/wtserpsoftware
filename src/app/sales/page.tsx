@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -32,7 +31,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, doc, limit, deleteDoc } from "firebase/firestore"
@@ -243,8 +242,14 @@ export default function SalesPage() {
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {docs.map((inv: any) => (
-                                  <TableRow key={inv.id} className="h-12 hover:bg-slate-50/30 transition-colors border-slate-50">
+                                {docs.map((inv: any, invIdx: number) => (
+                                  <TableRow 
+                                    key={inv.id} 
+                                    className={cn(
+                                      "h-14 transition-all border-b border-white/50",
+                                      invIdx % 2 === 0 ? "bg-[#EAF6FF] hover:bg-[#D9EFFF]" : "bg-[#EEF9F1] hover:bg-[#E1F2E6]"
+                                    )}
+                                  >
                                     <TableCell className="pl-6 font-black text-[10px] text-blue-600 uppercase tracking-tighter">{inv.invoiceNumber}</TableCell>
                                     <TableCell className="text-[10px] font-bold text-slate-500">{new Date(inv.invoiceDate).toLocaleDateString()}</TableCell>
                                     <TableCell className="text-right font-black text-[10px] text-slate-900">{formatCurrency(inv.totalAmount)}</TableCell>

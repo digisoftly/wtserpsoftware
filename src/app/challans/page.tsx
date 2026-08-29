@@ -201,8 +201,14 @@ export default function ChallansPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {customer.records.map((c: any) => (
-                        <TableRow key={c.id} className="h-14 hover:bg-slate-50/30 transition-colors border-slate-50">
+                      {customer.records.map((c: any, cIdx: number) => (
+                        <TableRow 
+                          key={c.id} 
+                          className={cn(
+                            "h-14 transition-all border-b border-white/50",
+                            cIdx % 2 === 0 ? "bg-[#EAF6FF] hover:bg-[#D9EFFF]" : "bg-[#EEF9F1] hover:bg-[#E1F2E6]"
+                          )}
+                        >
                           <TableCell className="pl-8 font-black text-[10px] text-amber-600 uppercase tracking-tighter">{c.challanNumber}</TableCell>
                           <TableCell className="text-[10px] font-bold text-slate-500">{new Date(c.dispatchDate).toLocaleDateString()}</TableCell>
                           <TableCell className="text-center">
