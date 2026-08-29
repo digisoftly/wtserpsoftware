@@ -9,7 +9,8 @@ import {
   Loader2, 
   AlertCircle,
   FileText,
-  Share2
+  Share2,
+  XCircle
 } from "lucide-react"
 import { useFirestore, useDoc, useMemoFirebase } from "@/firebase"
 import { doc } from "firebase/firestore"
