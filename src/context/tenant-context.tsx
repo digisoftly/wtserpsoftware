@@ -50,33 +50,44 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const [isInitializing, setIsInitializing] = React.useState(true);
   const [userRole, setUserRole] = React.useState<Role | null>(null);
   const [language, setLanguageState] = React.useState<Language>('BN');
-  const [branchId, setBranchId] = React.useState<string | null>('dhaka-main');
+  const [branchId, setBranchId] = React.useState<string | null>(null);
   const [allowedBranches, setAllowedBranches] = React.useState<string[]>(['dhaka-main']);
   const [settings, setSettings] = React.useState<any>(null);
   
   const companyId = PRODUCTION_COMPANY_ID;
 
-  // Optimized Language Setter that syncs with Firestore
+  // Stable reference for the current language to avoid stale closures in effects
+  const langRef = React.useRef<Language>(language);
+  React.useEffect(() => {
+    langRef.current = language;
+  }, [language]);
+
   const setLanguage = React.useCallback(async (lang: Language) => {
+    // 1. Immediate UI Update
     setLanguageState(lang);
+    
+    // 2. Sync to Database if authenticated
     if (user && db) {
       try {
         const userRef = doc(db, "companies", companyId, "users", user.uid);
-        await updateDoc(userRef, { preferredLanguage: lang });
+        // Use background sync to avoid blocking UI
+        updateDoc(userRef, { preferredLanguage: lang }).catch(err => {
+          console.error("Language sync failed:", err);
+        });
       } catch (e) {
-        console.error("Failed to sync language preference:", e);
+        console.error("Language sync prep failed:", e);
       }
     }
   }, [user, db, companyId]);
 
   React.useEffect(() => {
-    let unsubUser: () => void;
-    let unsubSettings: () => void;
+    let unsubUser: (() => void) | undefined;
+    let unsubSettings: (() => void) | undefined;
 
     if (!isUserLoading && !user) {
       setUserRole(null);
       setSettings(null);
-      setBranchId('dhaka-main');
+      setBranchId(null);
       setIsInitializing(false);
       return;
     }
@@ -85,7 +96,8 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       setIsInitializing(true);
 
       // 1. Fetch Global Settings
-      unsubSettings = onSnapshot(doc(db, "companies", companyId, "system", "config"), (snap) => {
+      const configRef = doc(db, "companies", companyId, "system", "config");
+      unsubSettings = onSnapshot(configRef, (snap) => {
         if (snap.exists()) setSettings(snap.data());
       }, (err) => {
         console.error("Settings listener failed:", err);
@@ -103,12 +115,17 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
             return;
           }
 
-          // Only update language if it's different to prevent loops
-          if (userData.preferredLanguage && userData.preferredLanguage !== language) {
-            setLanguageState(userData.preferredLanguage);
+          // Initial sync from DB - only update if local state hasn't diverged significantly
+          if (userData.preferredLanguage && userData.preferredLanguage !== langRef.current) {
+            setLanguageState(userData.preferredLanguage as Language);
           }
           
-          setBranchId(userData.branchId || 'dhaka-main');
+          if (userData.branchId) {
+            setBranchId(userData.branchId);
+          } else if (!branchId) {
+            setBranchId('dhaka-main');
+          }
+
           setAllowedBranches(userData.allowedBranches || ['dhaka-main']);
 
           const roleId = userData.roleId || "default-user";
@@ -127,6 +144,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           }
           setIsInitializing(false);
         } else {
+          setBranchId('dhaka-main');
           setIsInitializing(false);
         }
       }, (err) => {
@@ -143,7 +161,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
   const contextValue = React.useMemo(() => ({ 
     companyId, 
-    branchId, 
+    branchId: branchId || 'dhaka-main', 
     setBranchId: (id: string) => setBranchId(id),
     userRole,
     language,
