@@ -30,7 +30,8 @@ import {
   XCircle,
   BarChart3,
   Cake,
-  PartyPopper
+  PartyPopper,
+  Award
 } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, limit } from "firebase/firestore"
@@ -63,7 +64,7 @@ export default function HRMDashboard() {
   }, [db, companyId, branchId]);
   const { data: recentLeaves } = useCollection(leavesQuery);
 
-  // Aggregate Stats (In production, these would come from specialized aggregate collections or cloud functions)
+  // Aggregate Stats
   const stats = React.useMemo(() => {
     const total = employees?.length || 0;
     const active = employees?.filter(e => e.employmentStatus === 'active').length || 0;
@@ -85,7 +86,7 @@ export default function HRMDashboard() {
       presentToday: active - onLeave, 
       absentToday: total - active, 
       lateToday: 0,
-      totalDepts: 5, // Mock or from departments col
+      totalDepts: 5,
       totalDesignations: 8,
       openPositions: 2,
       pendingRecruitment: 3,
