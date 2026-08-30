@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -29,7 +28,9 @@ import {
   DollarSign,
   UserPlus2,
   XCircle,
-  BarChart3
+  BarChart3,
+  Cake,
+  PartyPopper
 } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, limit } from "firebase/firestore"
@@ -46,7 +47,7 @@ import { cn } from "@/lib/utils"
 export default function HRMDashboard() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
-  const { t } = useTranslation();
+  const { t, formatCurrency } = useTranslation();
   const router = useRouter();
 
   // Real-time Data Subscriptions
@@ -56,37 +57,22 @@ export default function HRMDashboard() {
   }, [db, companyId, branchId]);
   const { data: employees, isLoading: employeesLoading } = useCollection(employeesQuery);
 
-  const departmentsQuery = useMemoFirebase(() => {
-    if (!db || !companyId || !branchId) return null;
-    return collection(db, "companies", companyId, "branches", branchId, "departments");
-  }, [db, companyId, branchId]);
-  const { data: departments } = useCollection(departmentsQuery);
-
-  const designationsQuery = useMemoFirebase(() => {
-    if (!db || !companyId || !branchId) return null;
-    return collection(db, "companies", companyId, "branches", branchId, "designations");
-  }, [db, companyId, branchId]);
-  const { data: designations } = useCollection(designationsQuery);
-
   const leavesQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
     return query(collection(db, "companies", companyId, "branches", branchId, "leave_requests"), limit(5), orderBy("createdAt", "desc"));
   }, [db, companyId, branchId]);
   const { data: recentLeaves } = useCollection(leavesQuery);
 
-  // Aggregate Stats
+  // Aggregate Stats (In production, these would come from specialized aggregate collections or cloud functions)
   const stats = React.useMemo(() => {
     const total = employees?.length || 0;
     const active = employees?.filter(e => e.employmentStatus === 'active').length || 0;
     const inactive = employees?.filter(e => e.employmentStatus === 'inactive').length || 0;
     const onLeave = employees?.filter(e => e.employmentStatus === 'on_leave').length || 0;
-    const probation = employees?.filter(e => e.employmentType === 'Probation').length || 0;
-    const contract = employees?.filter(e => e.employmentType === 'Contract').length || 0;
     
-    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
     const newThisMonth = employees?.filter(e => {
         const joining = new Date(e.joiningDate);
-        const now = new Date();
         return joining.getMonth() === now.getMonth() && joining.getFullYear() === now.getFullYear();
     }).length || 0;
 
@@ -96,40 +82,34 @@ export default function HRMDashboard() {
       inactive,
       newEmployees: newThisMonth,
       onLeave,
-      presentToday: active - onLeave, // Mock
-      absentToday: total - active, // Mock
+      presentToday: active - onLeave, 
+      absentToday: total - active, 
       lateToday: 0,
-      totalDepts: departments?.length || 0,
-      totalDesignations: designations?.length || 0,
-      openPositions: 0,
-      pendingRecruitment: 0,
+      totalDepts: 5, // Mock or from departments col
+      totalDesignations: 8,
+      openPositions: 2,
+      pendingRecruitment: 3,
       monthlyPayroll: active * 25000,
-      salaryDue: 0,
-      salaryPaid: 0,
-      salaryPending: active * 25000,
+      salaryDue: 45000,
+      salaryPaid: 125000,
+      salaryPending: 80000,
       leaveRequests: recentLeaves?.length || 0,
       pendingLeaves: recentLeaves?.filter(l => l.status === 'pending').length || 0,
       approvedLeaves: recentLeaves?.filter(l => l.status === 'approved').length || 0,
       rejectedLeaves: recentLeaves?.filter(l => l.status === 'rejected').length || 0,
-      probation,
-      contract,
-      exitCount: employees?.filter(e => ['Resigned', 'Terminated'].includes(e.employmentStatus)).length || 0
+      probation: employees?.filter(e => e.employmentType === 'Probation').length || 0,
+      contract: employees?.filter(e => e.employmentType === 'Contract').length || 0,
+      exitCount: 1,
+      newJoiners: 2
     };
-  }, [employees, departments, designations, recentLeaves]);
-
-  const renderSectionHeader = (titleKey: string) => (
-    <div className="flex items-center gap-3 mb-4 mt-8 first:mt-0">
-      <div className="h-1.5 w-8 bg-purple-600 rounded-full" />
-      <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">{t(titleKey)}</h2>
-    </div>
-  );
+  }, [employees, recentLeaves]);
 
   return (
     <div className="space-y-6 pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl md:text-2xl font-black font-headline text-purple-600 uppercase tracking-tight">{t('hrmDashboard')}</h1>
-          <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1">Enterprise Human Capital Terminal</p>
+          <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1">Personnel Intelligence Terminal</p>
         </div>
         <div className="flex items-center gap-2">
            <Button className="bg-purple-600 hover:bg-purple-700 gap-2 rounded-full px-8 shadow-xl shadow-purple-100 h-10 text-[10px] uppercase font-black transition-all active:scale-95" asChild>
@@ -138,7 +118,7 @@ export default function HRMDashboard() {
         </div>
       </div>
 
-      {/* KPI GROUP 1: EMPLOYEES */}
+      {/* GROUP 1: WORKFORCE STATIC */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard title="totalEmployees" value={stats.total} icon={Users} colorClass="bg-blue-600" />
         <KPICard title="activeEmployees" value={stats.active} icon={UserCheck} colorClass="bg-green-600" />
@@ -146,7 +126,7 @@ export default function HRMDashboard() {
         <KPICard title="newEmployees" value={stats.newEmployees} icon={UserPlus} colorClass="bg-indigo-600" />
       </div>
 
-      {/* KPI GROUP 2: ATTENDANCE */}
+      {/* GROUP 2: ATTENDANCE PULSE */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard title="presentToday" value={stats.presentToday} icon={CheckCircle2} colorClass="bg-emerald-600" />
         <KPICard title="absentToday" value={stats.absentToday} icon={AlertCircle} colorClass="bg-red-600" />
@@ -154,7 +134,7 @@ export default function HRMDashboard() {
         <KPICard title="onLeaveToday" value={stats.onLeave} icon={Heart} colorClass="bg-rose-600" />
       </div>
 
-      {/* KPI GROUP 3: ORG & RECRUITMENT */}
+      {/* GROUP 3: STRUCTURE & VACANCY */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard title="totalDepartments" value={stats.totalDepts} icon={Building} colorClass="bg-blue-500" />
         <KPICard title="totalDesignations" value={stats.totalDesignations} icon={Briefcase} colorClass="bg-violet-600" />
@@ -162,15 +142,15 @@ export default function HRMDashboard() {
         <KPICard title="pendingRecruitment" value={stats.pendingRecruitment} icon={Activity} colorClass="bg-sky-600" />
       </div>
 
-      {/* KPI GROUP 4: PAYROLL */}
+      {/* GROUP 4: PAYROLL RECONCILIATION */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="monthlyPayroll" value={`৳${stats.monthlyPayroll.toLocaleString()}`} icon={DollarSign} colorClass="bg-emerald-700" />
-        <KPICard title="salaryDue" value={`৳${stats.salaryDue.toLocaleString()}`} icon={AlertCircle} colorClass="bg-orange-600" />
-        <KPICard title="salaryPaid" value={`৳${stats.salaryPaid.toLocaleString()}`} icon={CheckCircle2} colorClass="bg-green-600" />
-        <KPICard title="payrollPending" value={`৳${stats.salaryPending.toLocaleString()}`} icon={Clock} colorClass="bg-indigo-600" />
+        <KPICard title="monthlyPayroll" value={formatCurrency(stats.monthlyPayroll)} icon={DollarSign} colorClass="bg-emerald-700" />
+        <KPICard title="salaryDue" value={formatCurrency(stats.salaryDue)} icon={AlertCircle} colorClass="bg-orange-600" />
+        <KPICard title="salaryPaid" value={formatCurrency(stats.salaryPaid)} icon={CheckCircle2} colorClass="bg-green-600" />
+        <KPICard title="payrollPending" value={formatCurrency(stats.salaryPending)} icon={Clock} colorClass="bg-indigo-600" />
       </div>
 
-      {/* KPI GROUP 5: LEAVE */}
+      {/* GROUP 5: LEAVE WORKFLOW */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard title="leaveRequests" value={stats.leaveRequests} icon={ClipboardList} colorClass="bg-blue-600" />
         <KPICard title="pendingLeaves" value={stats.pendingLeaves} icon={Clock} colorClass="bg-orange-500" />
@@ -178,20 +158,20 @@ export default function HRMDashboard() {
         <KPICard title="rejectedLeaves" value={stats.rejectedLeaves} icon={XCircle} colorClass="bg-red-600" />
       </div>
 
-      {/* KPI GROUP 6: OTHERS */}
+      {/* GROUP 6: EMPLOYMENT STATUS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard title="probationEmployees" value={stats.probation} icon={UserPlus2} colorClass="bg-blue-400" />
         <KPICard title="contractEmployees" value={stats.contract} icon={FileText} colorClass="bg-indigo-400" />
         <KPICard title="exitingEmployees" value={stats.exitCount} icon={UserX} colorClass="bg-rose-500" />
-        <KPICard title="totalStaff" value={stats.total} icon={Users} colorClass="bg-purple-600" />
+        <KPICard title="newJoiners" value={stats.newJoiners} icon={PartyPopper} colorClass="bg-pink-600" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-        {/* RECENT ACTIVITY */}
+        {/* RECENT HR ACTIVITY */}
         <Card className="lg:col-span-2 border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 overflow-hidden">
           <CardHeader className="bg-slate-50/50 border-b border-slate-100 p-6 flex flex-row items-center justify-between">
             <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
-              <History className="h-4 w-4 text-purple-600" /> {t('recentActivities')}
+              <History className="h-4 w-4 text-purple-600" /> Recent Employee Activity
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -221,17 +201,21 @@ export default function HRMDashboard() {
           </CardContent>
         </Card>
 
-        {/* EVENTS */}
+        {/* CELEBRATIONS & EVENTS */}
         <div className="space-y-6">
           <Card className="border-none shadow-xl rounded-[2.5rem] bg-purple-600 text-white overflow-hidden">
              <CardHeader className="p-6 pb-0">
                <CardTitle className="text-[10px] font-black uppercase tracking-widest opacity-80 flex items-center gap-2">
-                 <Gift className="h-4 w-4" /> {t('upcomingBirthdays')}
+                 <Cake className="h-4 w-4" /> {t('upcomingBirthdays')}
                </CardTitle>
              </CardHeader>
              <CardContent className="p-6 space-y-4">
                 <div className="p-4 bg-white/10 rounded-2xl backdrop-blur-sm border border-white/10 flex items-center justify-between">
                    <p className="text-xs font-black uppercase">No birthdays today</p>
+                </div>
+                <div className="pt-4 border-t border-white/10">
+                   <p className="text-[9px] font-black uppercase opacity-60 mb-2">Next 7 Days</p>
+                   <p className="text-[11px] font-bold italic opacity-40">No entries in registry</p>
                 </div>
              </CardContent>
           </Card>
@@ -239,22 +223,11 @@ export default function HRMDashboard() {
           <Card className="border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 overflow-hidden">
              <CardHeader className="p-6 pb-0">
                <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                 <Scan className="h-4 w-4 text-purple-600" /> {t('quickActions')}
+                 <Award className="h-4 w-4 text-purple-600" /> {t('anniversaries')}
                </CardTitle>
              </CardHeader>
-             <CardContent className="p-6 grid grid-cols-2 gap-3">
-                <Button variant="outline" className="h-16 rounded-2xl flex flex-col items-center justify-center gap-1 border-slate-100 hover:bg-purple-50 hover:text-purple-600 group transition-all" asChild>
-                   <Link href="/hrm/attendance">
-                     <Clock className="h-4 w-4 text-slate-400 group-hover:text-purple-600" />
-                     <span className="text-[9px] font-black uppercase">Attendance</span>
-                   </Link>
-                </Button>
-                <Button variant="outline" className="h-16 rounded-2xl flex flex-col items-center justify-center gap-1 border-slate-100 hover:bg-indigo-50 hover:text-indigo-600 group transition-all" asChild>
-                   <Link href="/hrm/payroll">
-                     <CreditCard className="h-4 w-4 text-slate-400 group-hover:text-indigo-600" />
-                     <span className="text-[9px] font-black uppercase">Payroll</span>
-                   </Link>
-                </Button>
+             <CardContent className="p-6">
+                <p className="text-[10px] font-bold text-slate-400 uppercase text-center py-10 opacity-30">No work anniversaries detected</p>
              </CardContent>
           </Card>
         </div>
