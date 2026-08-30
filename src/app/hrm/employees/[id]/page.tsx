@@ -22,7 +22,14 @@ import {
   Heart,
   TrendingUp,
   Award,
-  AlertTriangle
+  AlertTriangle,
+  MapPin,
+  Landmark,
+  ShieldAlert,
+  Wrench,
+  Receipt,
+  Target,
+  BarChart3
 } from "lucide-react"
 import { useFirestore, useDoc, useMemoFirebase, useCollection } from "@/firebase"
 import { doc, collection, query, where, orderBy } from "firebase/firestore"
@@ -94,11 +101,18 @@ export default function EmployeeProfilePage() {
 
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="bg-white border p-1 rounded-2xl shadow-sm mb-6 flex h-auto overflow-x-auto no-scrollbar ring-1 ring-slate-100">
-           <TabsTrigger value="overview" className="rounded-xl flex-1 py-3 text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-purple-50 data-[state=active]:text-purple-600">Overview</TabsTrigger>
-           <TabsTrigger value="personal" className="rounded-xl flex-1 py-3 text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-purple-50 data-[state=active]:text-purple-600">Personal Info</TabsTrigger>
-           <TabsTrigger value="employment" className="rounded-xl flex-1 py-3 text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-purple-50 data-[state=active]:text-purple-600">Employment</TabsTrigger>
-           <TabsTrigger value="payroll" className="rounded-xl flex-1 py-3 text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-purple-50 data-[state=active]:text-purple-600">Salary & Bank</TabsTrigger>
-           <TabsTrigger value="documents" className="rounded-xl flex-1 py-3 text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-purple-50 data-[state=active]:text-purple-600">Documents</TabsTrigger>
+           <TabsTrigger value="overview" className="rounded-xl flex-none px-6 py-3 text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-purple-50 data-[state=active]:text-purple-600">{t('overview')}</TabsTrigger>
+           <TabsTrigger value="personal" className="rounded-xl flex-none px-6 py-3 text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-purple-50 data-[state=active]:text-purple-600">{t('personal')}</TabsTrigger>
+           <TabsTrigger value="employment" className="rounded-xl flex-none px-6 py-3 text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-purple-50 data-[state=active]:text-purple-600">{t('employment')}</TabsTrigger>
+           <TabsTrigger value="attendance" className="rounded-xl flex-none px-6 py-3 text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-purple-50 data-[state=active]:text-purple-600">{t('attendance')}</TabsTrigger>
+           <TabsTrigger value="leave" className="rounded-xl flex-none px-6 py-3 text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-purple-50 data-[state=active]:text-purple-600">{t('leave')}</TabsTrigger>
+           <TabsTrigger value="payroll" className="rounded-xl flex-none px-6 py-3 text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-purple-50 data-[state=active]:text-purple-600">{t('payroll')}</TabsTrigger>
+           <TabsTrigger value="documents" className="rounded-xl flex-none px-6 py-3 text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-purple-50 data-[state=active]:text-purple-600">{t('documents')}</TabsTrigger>
+           <TabsTrigger value="performance" className="rounded-xl flex-none px-6 py-3 text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-purple-50 data-[state=active]:text-purple-600">{t('performance')}</TabsTrigger>
+           <TabsTrigger value="training" className="rounded-xl flex-none px-6 py-3 text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-purple-50 data-[state=active]:text-purple-600">{t('training')}</TabsTrigger>
+           <TabsTrigger value="assets" className="rounded-xl flex-none px-6 py-3 text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-purple-50 data-[state=active]:text-purple-600">{t('assets')}</TabsTrigger>
+           <TabsTrigger value="expenses" className="rounded-xl flex-none px-6 py-3 text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-purple-50 data-[state=active]:text-purple-600">{t('expenses')}</TabsTrigger>
+           <TabsTrigger value="activity" className="rounded-xl flex-none px-6 py-3 text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-purple-50 data-[state=active]:text-purple-600">{t('activity')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -137,10 +151,22 @@ export default function EmployeeProfilePage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
                  <div className="space-y-1"><p className="text-[10px] font-black uppercase text-slate-400">Father's Name</p><p className="text-sm font-bold uppercase">{employee.fatherName || '---'}</p></div>
                  <div className="space-y-1"><p className="text-[10px] font-black uppercase text-slate-400">Mother's Name</p><p className="text-sm font-bold uppercase">{employee.motherName || '---'}</p></div>
-                 <div className="space-y-1"><p className="text-[10px) font-black uppercase text-slate-400">Date of Birth</p><p className="text-sm font-bold uppercase">{formatDate(employee.dob)}</p></div>
-                 <div className="space-y-1"><p className="text-[10px) font-black uppercase text-slate-400">Gender</p><p className="text-sm font-bold uppercase">{employee.gender || '---'}</p></div>
-                 <div className="space-y-1"><p className="text-[10px) font-black uppercase text-slate-400">Blood Group</p><p className="text-sm font-black text-red-600 uppercase">{employee.bloodGroup || '---'}</p></div>
-                 <div className="space-y-1"><p className="text-[10px) font-black uppercase text-slate-400">National ID</p><p className="text-sm font-mono font-bold uppercase">{employee.nid || '---'}</p></div>
+                 <div className="space-y-1"><p className="text-[10px] font-black uppercase text-slate-400">Date of Birth</p><p className="text-sm font-bold uppercase">{formatDate(employee.dob)}</p></div>
+                 <div className="space-y-1"><p className="text-[10px] font-black uppercase text-slate-400">Gender</p><p className="text-sm font-bold uppercase">{employee.gender || '---'}</p></div>
+                 <div className="space-y-1"><p className="text-[10px] font-black uppercase text-slate-400">Blood Group</p><p className="text-sm font-black text-red-600 uppercase">{employee.bloodGroup || '---'}</p></div>
+                 <div className="space-y-1"><p className="text-[10px] font-black uppercase text-slate-400">National ID</p><p className="text-sm font-mono font-bold uppercase">{employee.nid || '---'}</p></div>
+              </div>
+           </Card>
+        </TabsContent>
+
+        <TabsContent value="employment">
+           <Card className="border-none shadow-sm rounded-[2rem] p-10 bg-white ring-1 ring-slate-100">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center"><span className="text-[10px] font-black uppercase text-slate-500">Employment Type</span><Badge variant="outline" className="font-black uppercase text-[10px]">{employee.employmentType}</Badge></div>
+                  <div className="flex justify-between items-center"><span className="text-[10px] font-black uppercase text-slate-500">Probation End</span><span className="text-sm font-bold">{formatDate(employee.probationEndDate)}</span></div>
+                  <div className="flex justify-between items-center"><span className="text-[10px] font-black uppercase text-slate-500">Work Location</span><span className="text-sm font-bold uppercase">{employee.workLocation || 'Main Office'}</span></div>
+                </div>
               </div>
            </Card>
         </TabsContent>
@@ -160,8 +186,7 @@ export default function EmployeeProfilePage() {
                     <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest border-b pb-2">Standard Salary Components</h3>
                     <div className="space-y-4">
                        <div className="flex justify-between items-center"><span className="text-[10px] font-black uppercase text-slate-500">Basic Wage</span><span className="text-xs font-black text-slate-900">{formatCurrency(employee.basicSalary)}</span></div>
-                       <div className="flex justify-between items-center"><span className="text-[10px] font-black uppercase text-slate-500">House Allowance</span><span className="text-xs font-bold text-slate-700">{formatCurrency(employee.basicSalary * 0.4)}</span></div>
-                       <div className="flex justify-between items-center pt-2 border-t"><span className="text-[10px] font-black uppercase text-purple-600">Net Estimated Payable</span><span className="text-sm font-black text-purple-700">{formatCurrency(employee.basicSalary * 1.5)}</span></div>
+                       <div className="flex justify-between items-center pt-2 border-t"><span className="text-[10px] font-black uppercase text-purple-600">Gross Payable</span><span className="text-sm font-black text-purple-700">{formatCurrency(employee.basicSalary)}</span></div>
                     </div>
                  </div>
               </div>
@@ -173,6 +198,32 @@ export default function EmployeeProfilePage() {
               <FileText className="h-12 w-12 text-purple-200 mb-6" />
               <p className="text-[10px] uppercase font-black text-muted-foreground tracking-[0.3em]">Identity Document Vault Initializing...</p>
            </div>
+        </TabsContent>
+        
+        <TabsContent value="attendance">
+           <Card className="border-none shadow-sm rounded-3xl p-8 bg-white ring-1 ring-slate-100">
+             <div className="flex items-center justify-between mb-6">
+               <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest">Attendance Registry</h3>
+               <Button variant="outline" size="sm" className="h-8 rounded-xl text-[9px] font-black uppercase">View Calendar</Button>
+             </div>
+             <div className="p-20 text-center opacity-20">
+               <Clock className="h-12 w-12 mx-auto mb-4" />
+               <p className="text-[10px] font-black uppercase tracking-widest">Logs Loading...</p>
+             </div>
+           </Card>
+        </TabsContent>
+
+        <TabsContent value="activity">
+           <Card className="border-none shadow-sm rounded-3xl p-8 bg-white ring-1 ring-slate-100">
+             <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest mb-6">Staff Timeline</h3>
+             <div className="relative border-l-2 border-slate-100 ml-4 pl-8 space-y-8">
+                <div className="relative">
+                  <div className="absolute -left-[41px] top-0 w-5 h-5 rounded-full bg-purple-600 border-4 border-white shadow-sm" />
+                  <p className="text-[9px] font-black text-purple-600 uppercase">Joined Organization</p>
+                  <p className="text-xs font-bold text-slate-900">{formatDate(employee.joiningDate)}</p>
+                </div>
+             </div>
+           </Card>
         </TabsContent>
       </Tabs>
     </div>
