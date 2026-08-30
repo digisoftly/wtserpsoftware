@@ -132,7 +132,7 @@ export default function NewUserPage() {
             <TabsTrigger value="personal" className="rounded-xl gap-2 flex-1 text-[10px] font-black uppercase data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
               <User className="h-4 w-4" /> 1. Personal Details
             </TabsTrigger>
-            <TabsTrigger value="security" className="rounded-xl gap-2 flex-1 text-[100px] uppercase font-black data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
+            <TabsTrigger value="security" className="rounded-xl gap-2 flex-1 text-[10px] font-black uppercase data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
               <KeyRound className="h-4 w-4" /> 2. Auth & Access
             </TabsTrigger>
           </TabsList>
