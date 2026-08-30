@@ -22,7 +22,8 @@ import {
   MapPin,
   FileText,
   Clock,
-  ShieldCheck
+  ShieldCheck,
+  MousePointer2
 } from "lucide-react"
 import * as Icons from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -77,6 +78,8 @@ export default function SettingsPage() {
 
   // Global UI State
   const [logoPreview, setLogoPreview] = React.useState<string | null>(null);
+  const [faviconPreview, setFaviconPreview] = React.useState<string | null>(null);
+  const [loadingLogoPreview, setLoadingLogoPreview] = React.useState<string | null>(null);
   const [sealPreview, setSealPreview] = React.useState<string | null>(null);
   const [signPreview, setSignPreview] = React.useState<string | null>(null);
   const [menuOrder, setMenuOrder] = React.useState<string[]>(DEFAULT_MENU_ORDER);
@@ -97,6 +100,8 @@ export default function SettingsPage() {
   React.useEffect(() => {
     if (settings) {
       setLogoPreview(settings.companyLogo || null);
+      setFaviconPreview(settings.companyFavicon || null);
+      setLoadingLogoPreview(settings.loadingLogo || null);
       setSealPreview(settings.authorizedSeal || null);
       setSignPreview(settings.authorizedSignature || null);
       if (settings.sidebarMenuOrder) setMenuOrder(settings.sidebarMenuOrder);
@@ -158,6 +163,8 @@ export default function SettingsPage() {
     const updates: Record<string, any> = {
       updatedAt: serverTimestamp(),
       companyLogo: logoPreview,
+      companyFavicon: faviconPreview,
+      loadingLogo: loadingLogoPreview,
       authorizedSeal: sealPreview,
       authorizedSignature: signPreview,
       sidebarMenuOrder: menuOrder,
@@ -169,7 +176,7 @@ export default function SettingsPage() {
     };
 
     formData.forEach((value, key) => {
-      if (!["companyLogo", "authorizedSeal", "authorizedSignature", "sidebarMenuOrder", "dashboardKpiCards", "sidebarBgColor", "sidebarTextColor", "sidebarHoverColor", "sidebarActiveColor"].includes(key)) {
+      if (!["companyLogo", "companyFavicon", "loadingLogo", "authorizedSeal", "authorizedSignature", "sidebarMenuOrder", "dashboardKpiCards", "sidebarBgColor", "sidebarTextColor", "sidebarHoverColor", "sidebarActiveColor"].includes(key)) {
         updates[key] = value;
       }
     });
@@ -213,25 +220,71 @@ export default function SettingsPage() {
 
           <TabsContent value="general" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="border-none shadow-sm rounded-2xl flex flex-col items-center justify-center p-6 text-center bg-white ring-1 ring-slate-100">
-                <Label className="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest">Company Logo</Label>
-                <div className="w-32 h-32 mb-4 relative group">
-                  {logoPreview ? (
-                    <img src={logoPreview} className="w-full h-full object-contain rounded-xl border p-2 bg-slate-50" />
-                  ) : (
-                    <div className="w-full h-full bg-slate-50 rounded-xl border-2 border-dashed flex items-center justify-center"><ImageIcon className="text-slate-300" /></div>
-                  )}
-                  <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onloadend = () => setLogoPreview(reader.result as string);
-                      reader.readAsDataURL(file);
-                    }
-                  }} />
-                </div>
-                <p className="text-[9px] font-bold text-slate-400 uppercase">Click to change (PNG/JPG)</p>
-              </Card>
+              <div className="space-y-6">
+                <Card className="border-none shadow-sm rounded-2xl flex flex-col items-center justify-center p-6 text-center bg-white ring-1 ring-slate-100">
+                  <Label className="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest">Main Company Logo</Label>
+                  <div className="w-32 h-32 mb-4 relative group">
+                    {logoPreview ? (
+                      <img src={logoPreview} className="w-full h-full object-contain rounded-xl border p-2 bg-slate-50" />
+                    ) : (
+                      <div className="w-full h-full bg-slate-50 rounded-xl border-2 border-dashed flex items-center justify-center"><ImageIcon className="text-slate-300" /></div>
+                    )}
+                    <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => setLogoPreview(reader.result as string);
+                        reader.readAsDataURL(file);
+                      }
+                    }} />
+                  </div>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase">Primary Branding Logo</p>
+                </Card>
+
+                <Card className="border-none shadow-sm rounded-2xl flex flex-col items-center justify-center p-6 text-center bg-white ring-1 ring-slate-100">
+                  <Label className="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest">System Favicon</Label>
+                  <div className="w-16 h-16 mb-4 relative group">
+                    {faviconPreview ? (
+                      <img src={faviconPreview} className="w-full h-full object-contain rounded-lg border p-1 bg-slate-50" />
+                    ) : (
+                      <div className="w-full h-full bg-slate-50 rounded-lg border-2 border-dashed flex items-center justify-center text-slate-300">
+                        <MousePointer2 className="h-6 w-6" />
+                      </div>
+                    )}
+                    <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => setFaviconPreview(reader.result as string);
+                        reader.readAsDataURL(file);
+                      }
+                    }} />
+                  </div>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase">Browser Tab Icon (Square)</p>
+                </Card>
+
+                <Card className="border-none shadow-sm rounded-2xl flex flex-col items-center justify-center p-6 text-center bg-white ring-1 ring-slate-100">
+                  <Label className="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest">Loading Screen Logo</Label>
+                  <div className="w-24 h-24 mb-4 relative group">
+                    {loadingLogoPreview ? (
+                      <img src={loadingLogoPreview} className="w-full h-full object-contain rounded-xl border p-2 bg-slate-50" />
+                    ) : (
+                      <div className="w-full h-full bg-slate-50 rounded-xl border-2 border-dashed flex items-center justify-center text-slate-300">
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                      </div>
+                    )}
+                    <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => setLoadingLogoPreview(reader.result as string);
+                        reader.readAsDataURL(file);
+                      }
+                    }} />
+                  </div>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase">App Transition Icon</p>
+                </Card>
+              </div>
 
               <Card className="md:col-span-2 border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-8 space-y-6">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
