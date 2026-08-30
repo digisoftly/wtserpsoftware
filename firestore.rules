@@ -18,25 +18,27 @@ service cloud.firestore {
     }
 
     function isSuperAdmin(companyId) {
-      return isCompanyMember(companyId) && getUserData(companyId).roleId == 'super-admin';
+      let userData = getUserData(companyId);
+      return isCompanyMember(companyId) && (userData.roleId == 'super-admin' || request.auth.token.email == 'warriortechsystem@gmail.com');
     }
 
     function isCompanyAdmin(companyId) {
       let userData = getUserData(companyId);
-      return userData.roleId == 'super-admin' || userData.roleId == 'admin';
+      return isSuperAdmin(companyId) || userData.roleId == 'admin' || userData.roleId == 'manager';
     }
 
     function hasBranchAccess(companyId, branchId) {
+      if (isSuperAdmin(companyId)) return true;
       let userData = getUserData(companyId);
-      return userData.roleId == 'super-admin' || branchId in userData.allowedBranches;
+      return branchId in userData.allowedBranches;
     }
 
     // --- MODULE RULES ---
 
-    // 1. Audit Logs
-    match /companies/{companyId}/audit_logs/{logId} {
+    // 1. Audit & History
+    match /companies/{companyId}/audit_logs/{id} {
       allow read: if isCompanyAdmin(companyId);
-      allow create: if isSignedIn(); // Allow logging even during bootstrap
+      allow create: if isSignedIn();
     }
 
     match /companies/{companyId}/login_history/{id} {
@@ -44,35 +46,27 @@ service cloud.firestore {
       allow create: if isSignedIn();
     }
 
-    // 2. User & Role Management
+    // 2. User & Role Management (Crucial Fix for Admin Control)
     match /companies/{companyId}/users/{userId} {
       allow read: if isSignedIn() && (request.auth.uid == userId || isCompanyAdmin(companyId));
-      allow create: if isSignedIn() && request.auth.uid == userId;
-      allow update: if isSignedIn() && request.auth.uid == userId;
-      allow delete: if isCompanyAdmin(companyId);
+      allow create, update: if isSuperAdmin(companyId) || (isSignedIn() && request.auth.uid == userId);
+      allow delete: if isSuperAdmin(companyId);
     }
 
     match /companies/{companyId}/roles/{roleId} {
-      // Relaxed read for initial load and bootstrap
       allow read: if isSignedIn();
-      allow create: if isSignedIn(); 
-      allow update, delete: if isSuperAdmin(companyId);
+      allow write: if isSuperAdmin(companyId);
     }
 
-    // 3. Branch Specific Data
+    // 3. Branch Specific Data (Sales, Inventory, etc.)
     match /companies/{companyId}/branches/{branchId}/{allPaths=**} {
       allow read, write: if isCompanyMember(companyId) && hasBranchAccess(companyId, branchId);
     }
 
     // 4. Global Master Data & System Config
     match /companies/{companyId}/{collectionName}/{id} {
-      // Relaxed read for system initialization
       allow read: if isSignedIn();
-      
-      // Allow first-time setup
-      allow create: if isSignedIn() && (collectionName == 'system' || collectionName == 'master_data');
-      
-      allow write: if isCompanyAdmin(companyId);
+      allow write: if isSuperAdmin(companyId);
     }
 
     // 5. Default Deny

@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Save, Loader2, UserPlus, Lock, Mail, Shield, User, Building, ShieldCheck, Camera, Phone, MapPin, Calendar } from "lucide-react"
+import { ArrowLeft, Save, Loader2, UserPlus, Lock, Mail, Shield, User, Building, ShieldCheck, Camera, Phone, MapPin, Calendar, KeyRound } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -50,44 +50,37 @@ export default function NewUserPage() {
     const confirmPassword = formData.get("confirmPassword") as string;
 
     if (password !== confirmPassword) {
-      toast({ variant: "destructive", title: t('error'), description: "Passwords do not match." });
+      toast({ variant: "destructive", title: "Error", description: "Passwords do not match." });
       return;
     }
 
     setIsSubmitting(true);
     
     try {
-      // 1. Provision Firebase Auth Account via Secondary Instance
+      // 1. Provision Firebase Auth Account via Secondary Instance (Prevents logging out admin)
       const secondaryAppName = `provisioner-${Date.now()}`;
       const secondaryApp = initializeApp(firebaseConfig, secondaryAppName);
       const secondaryAuth = getAuth(secondaryApp);
       
       const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
       const newUid = userCredential.user.uid;
-      await signOut(secondaryAuth); // Cleanup
+      await signOut(secondaryAuth); 
 
-      // 2. Provision Firestore Document
+      // 2. Provision Firestore Document with Full Identity Schema
       const userData = {
         id: newUid,
         firstName: formData.get("firstName") as string,
         lastName: formData.get("lastName") as string,
         fullName: `${formData.get("firstName")} ${formData.get("lastName")}`,
-        employeeId: formData.get("employeeId") as string,
+        employeeId: formData.get("employeeId") as string || `WTS-UID-${newUid.slice(-4).toUpperCase()}`,
         email: email,
-        phoneNumber: formData.get("phoneNumber") as string,
-        dob: formData.get("dob") as string,
-        gender: formData.get("gender") as string,
-        address: formData.get("address") as string,
-        department: formData.get("department") as string,
-        designation: formData.get("designation") as string,
-        joiningDate: formData.get("joiningDate") as string,
-        employeeType: formData.get("employeeType") as string,
-        reportingManager: formData.get("reportingManager") as string,
+        phoneNumber: formData.get("phoneNumber") as string || "",
+        designation: formData.get("designation") as string || "Staff",
+        department: formData.get("department") as string || "General",
         roleId: formData.get("roleId") || "default-user",
-        branchId: formData.get("branchId") as string,
-        allowedBranches: [formData.get("branchId") as string],
+        branchId: formData.get("branchId") || "dhaka-main",
+        allowedBranches: [formData.get("branchId") || "dhaka-main"],
         status: "active",
-        forcePasswordChange: formData.get("forcePasswordChange") === "on",
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         createdBy: currentAdminRole?.id || "system"
@@ -95,138 +88,119 @@ export default function NewUserPage() {
 
       await setDoc(doc(db, "companies", companyId, "users", newUid), userData);
 
-      // 3. Log Audit
+      // 3. Log Immutable Audit
       await AuditService.logAction(db, companyId, {
         userId: currentAdminRole?.id || "admin",
         userName: currentAdminRole?.name || "Admin",
         action: 'CREATE',
         module: 'users',
         recordId: newUid,
-        details: `Provisioned identity for ${userData.fullName} (${email}) with role ${userData.roleId}`
+        details: `Identity Created: ${userData.fullName} (${email}). Assigned Role: ${userData.roleId}`
       });
 
-      toast({ title: t('success'), description: "User terminal provisioned successfully." });
+      toast({ title: "User Created", description: "Login credentials and profile successfully synchronized." });
       router.push("/users");
     } catch (err: any) {
-      toast({ variant: "destructive", title: t('error'), description: err.message });
+      toast({ variant: "destructive", title: "System Error", description: err.message });
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-20">
-      <div className="flex items-center justify-between bg-white p-4 rounded-2xl border shadow-sm sticky top-0 z-50">
+    <div className="max-w-5xl mx-auto space-y-6 pb-20">
+      <div className="flex items-center justify-between border-b pb-4 bg-white/50 backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-             <h1 className="text-xl font-black font-headline text-slate-900 uppercase tracking-tight">{t('addUser')}</h1>
-             <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Enterprise Identity Provisioning</p>
+             <h1 className="text-xl font-black font-headline text-slate-900 uppercase tracking-tight">Provision New Identity</h1>
+             <p className="text-[10px] font-black uppercase text-blue-600 tracking-widest mt-1">Terminal Auth & Profile Setup</p>
           </div>
         </div>
         <div className="flex gap-2">
-           <Button variant="ghost" className="rounded-full text-[10px] font-black uppercase" onClick={() => router.back()}>Cancel</Button>
            <Button type="submit" form="user-provision-form" disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700 rounded-full px-10 h-11 text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-100 gap-2">
              {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />}
-             Provision Identity
+             Finalize Identity
            </Button>
         </div>
       </div>
 
       <form id="user-provision-form" onSubmit={handleSaveUser}>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="bg-white border p-1 rounded-xl shadow-sm mb-6 flex h-14 ring-1 ring-slate-100">
-            <TabsTrigger value="personal" className="rounded-lg gap-2 flex-1 text-[10px] uppercase font-black data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
-              <User className="h-4 w-4" /> {t('personalInfo')}
+          <TabsList className="bg-white border p-1 rounded-2xl shadow-sm mb-8 flex h-14 ring-1 ring-slate-100">
+            <TabsTrigger value="personal" className="rounded-xl gap-2 flex-1 text-[10px] font-black uppercase data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
+              <User className="h-4 w-4" /> 1. Personal Details
             </TabsTrigger>
-            <TabsTrigger value="company" className="rounded-lg gap-2 flex-1 text-[10px] uppercase font-black data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
-              <Building className="h-4 w-4" /> {t('companyInfo')}
-            </TabsTrigger>
-            <TabsTrigger value="account" className="rounded-lg gap-2 flex-1 text-[10px] uppercase font-black data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
-              <ShieldCheck className="h-4 w-4" /> {t('accountInfo')}
+            <TabsTrigger value="security" className="rounded-xl gap-2 flex-1 text-[100px] uppercase font-black data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
+              <KeyRound className="h-4 w-4" /> 2. Auth & Access
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="personal" className="space-y-6">
-            <Card className="p-8 rounded-[2rem] border-none shadow-sm ring-1 ring-slate-100 bg-white">
+            <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">First Name</Label><Input name="firstName" required className="h-11 rounded-xl" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Last Name</Label><Input name="lastName" required className="h-11 rounded-xl" /></div>
-                  </div>
-                  <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Mobile Number</Label><Input name="phoneNumber" required className="h-11 rounded-xl" placeholder="+880..." /></div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Date of Birth</Label><Input name="dob" type="date" className="h-11 rounded-xl" /></div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase text-slate-500">Gender</Label>
-                      <Select name="gender" defaultValue="male">
-                        <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
-                        <SelectContent><SelectItem value="male">Male</SelectItem><SelectItem value="female">Female</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent>
-                      </Select>
+                 <div className="space-y-6">
+                    <div className="grid grid-cols-2 gap-4">
+                       <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">First Name *</Label><Input name="firstName" required className="h-11 rounded-xl" /></div>
+                       <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Last Name *</Label><Input name="lastName" required className="h-11 rounded-xl" /></div>
                     </div>
-                  </div>
-                </div>
-                <div className="space-y-6">
-                   <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Address</Label><textarea name="address" className="w-full min-h-[120px] rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 p-4 text-xs font-medium" /></div>
-                </div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Mobile / WhatsApp</Label><Input name="phoneNumber" className="h-11 rounded-xl" placeholder="+880..." /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Official Designation</Label><Input name="designation" className="h-11 rounded-xl" placeholder="e.g. Sales Executive" /></div>
+                 </div>
+                 <div className="space-y-6">
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Employee ID</Label><Input name="employeeId" className="h-11 rounded-xl font-mono uppercase" placeholder="WTS-001" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Department</Label><Input name="department" className="h-11 rounded-xl" placeholder="e.g. Support" /></div>
+                 </div>
               </div>
             </Card>
           </TabsContent>
 
-          <TabsContent value="company" className="space-y-6">
-            <Card className="p-8 rounded-[2rem] border-none shadow-sm ring-1 ring-slate-100 bg-white">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Employee ID</Label><Input name="employeeId" required className="h-11 rounded-xl font-mono uppercase" placeholder="WTS-001" /></div>
-                <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Department</Label><Input name="department" required className="h-11 rounded-xl" placeholder="e.g. Sales" /></div>
-                <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Designation</Label><Input name="designation" required className="h-11 rounded-xl" placeholder="e.g. Manager" /></div>
-                <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Joining Date</Label><Input name="joiningDate" type="date" className="h-11 rounded-xl" /></div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-slate-500">Employee Type</Label>
-                  <Select name="employeeType" defaultValue="full-time">
-                    <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
-                    <SelectContent><SelectItem value="full-time">Full Time</SelectItem><SelectItem value="part-time">Part Time</SelectItem><SelectItem value="contract">Contract</SelectItem></SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-slate-500">Branch</Label>
-                  <Select name="branchId" required>
-                    <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Select Branch" /></SelectTrigger>
-                    <SelectContent>{branches?.map(b => <SelectItem key={b.id} value={b.id}>{b.branchName}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="account" className="space-y-6">
-            <Card className="p-8 rounded-[2rem] border-none shadow-sm ring-1 ring-slate-100 bg-white">
+          <TabsContent value="security" className="space-y-6">
+            <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                 <div className="space-y-6">
-                  <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Login Email</Label><Input name="email" type="email" required className="h-11 rounded-xl font-bold" /></div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Password</Label><Input name="password" type="password" required className="h-11 rounded-xl" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Confirm Password</Label><Input name="confirmPassword" type="password" required className="h-11 rounded-xl" /></div>
-                  </div>
+                   <div className="bg-slate-50 p-6 rounded-3xl space-y-4">
+                      <div className="flex items-center gap-3 text-blue-600 mb-2">
+                        <Mail className="h-5 w-5" />
+                        <h3 className="text-xs font-black uppercase tracking-widest">Auth Identity</h3>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-black uppercase">Login Email Address *</Label>
+                        <Input name="email" type="email" required className="h-11 rounded-xl bg-white" placeholder="user@warrior.com" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 pt-2">
+                         <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">Password *</Label><Input name="password" type="password" required className="h-11 rounded-xl bg-white" /></div>
+                         <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">Confirm *</Label><Input name="confirmPassword" type="password" required className="h-11 rounded-xl bg-white" /></div>
+                      </div>
+                   </div>
                 </div>
+
                 <div className="space-y-6">
-                  <div className="space-y-1.5">
-                    <Label className="text-[10px] font-black uppercase text-slate-500">Assigned Role</Label>
-                    <Select name="roleId">
-                      <SelectTrigger className="h-11 rounded-xl font-bold uppercase"><SelectValue placeholder="Default User" /></SelectTrigger>
-                      <SelectContent className="max-h-[300px]">
-                        {roles?.map(r => <SelectItem key={r.id} value={r.id} className="text-xs font-black uppercase">{r.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
-                     <div>
-                       <Label className="text-xs font-black uppercase text-slate-900">Security Requirement</Label>
-                       <p className="text-[9px] font-bold text-slate-400 uppercase">User must reset password on first login</p>
-                     </div>
-                     <input type="checkbox" name="forcePasswordChange" className="h-5 w-5 accent-blue-600" />
-                  </div>
+                   <div className="bg-slate-50 p-6 rounded-3xl space-y-6">
+                      <div className="flex items-center gap-3 text-purple-600 mb-2">
+                        <ShieldCheck className="h-5 w-5" />
+                        <h3 className="text-xs font-black uppercase tracking-widest">Authority Level</h3>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-black uppercase">System Role</Label>
+                        <Select name="roleId" defaultValue="default-user">
+                          <SelectTrigger className="h-11 rounded-xl bg-white font-bold uppercase"><SelectValue /></SelectTrigger>
+                          <SelectContent className="rounded-xl shadow-2xl">
+                             {roles?.map(r => <SelectItem key={r.id} value={r.id} className="text-xs font-black uppercase">{r.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-black uppercase">Primary Branch</Label>
+                        <Select name="branchId" defaultValue="dhaka-main">
+                          <SelectTrigger className="h-11 rounded-xl bg-white font-bold uppercase"><SelectValue /></SelectTrigger>
+                          <SelectContent className="rounded-xl shadow-2xl">
+                             {branches?.map(b => <SelectItem key={b.id} value={b.id} className="text-xs font-bold uppercase">{b.branchName}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                   </div>
                 </div>
               </div>
             </Card>

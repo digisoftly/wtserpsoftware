@@ -2,6 +2,7 @@
 'use client';
 
 import { useTenant } from '@/context/tenant-context';
+import { useUser } from '@/firebase';
 
 export type PermissionAction = 
   | 'view' 
@@ -19,10 +20,13 @@ export type DataScope = 'own' | 'branch' | 'all';
 
 /**
  * usePermissions provides granular, role-based access control (RBAC).
- * It validates if a user can perform an action and what data they can see.
+ * Updated with Super Admin hard-coded bypass for the primary owner email.
  */
 export function usePermissions() {
-  const { userRole, isLoading, settings, branchId } = useTenant();
+  const { userRole, isLoading, branchId } = useTenant();
+  const { user } = useUser();
+
+  const isSuperOwner = user?.email === 'warriortechsystem@gmail.com';
 
   /**
    * Checks if the current user has permission for a specific module action.
@@ -30,10 +34,10 @@ export function usePermissions() {
   const can = (moduleKey: string, action: PermissionAction = 'view'): boolean => {
     if (isLoading) return false;
     
-    // Super Admin global bypass
-    if (userRole?.isSuperAdmin) return true;
+    // Global bypass for super owner email OR explicit super-admin role
+    if (isSuperOwner || userRole?.isSuperAdmin) return true;
 
-    // Check specific module permissions
+    // Check specific module permissions (including manual overrides)
     const modulePerms = userRole?.permissions?.[moduleKey];
     if (!modulePerms || !Array.isArray(modulePerms)) return false;
 
@@ -44,17 +48,17 @@ export function usePermissions() {
    * Determines the visibility scope for records in a module.
    */
   const getScope = (moduleKey: string): DataScope => {
-    if (userRole?.isSuperAdmin) return 'all';
+    if (isSuperOwner || userRole?.isSuperAdmin) return 'all';
     
     const scope = userRole?.dataScopes?.[moduleKey] as DataScope;
-    return scope || 'own'; // Default to most restrictive
+    return scope || 'own'; 
   };
 
   /**
    * Validates if a specific record is accessible based on branch and ownership.
    */
   const isAccessible = (record: any, moduleKey: string): boolean => {
-    if (userRole?.isSuperAdmin) return true;
+    if (isSuperOwner || userRole?.isSuperAdmin) return true;
 
     const scope = getScope(moduleKey);
 
@@ -76,7 +80,7 @@ export function usePermissions() {
     getScope, 
     isAccessible,
     isLoading, 
-    roleName: userRole?.name || 'Authorized User',
-    isSuperAdmin: !!userRole?.isSuperAdmin
+    roleName: userRole?.name || 'Authorized Terminal',
+    isSuperAdmin: isSuperOwner || !!userRole?.isSuperAdmin
   };
 }

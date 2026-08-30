@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -5,12 +6,13 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, AlertCircle, ZapOff } from 'lucide-react';
+import { ShieldAlert, AlertCircle, ZapOff, Fingerprint } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
 import { useRouter, usePathname } from 'next/navigation';
 
 /**
  * An intelligent listener that catches Firestore errors and displays a user-friendly modal.
+ * Now includes detailed context for super-admins to identify missing rules.
  */
 export function FirebaseErrorListener() {
   const [error, setError] = useState<FirestorePermissionError | null>(null);
@@ -54,47 +56,55 @@ export function FirebaseErrorListener() {
 
   return (
     <Dialog open={!!error} onOpenChange={() => setError(null)}>
-      <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-[2rem] bg-white">
-        <DialogHeader className={cn("p-6 text-white flex-row items-center gap-4 space-y-0", isQuotaError ? "bg-amber-600" : "bg-red-600")}>
-          <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center shrink-0">
-            {isQuotaError ? <ZapOff className="h-6 w-6" /> : <ShieldAlert className="h-6 w-6" />}
+      <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-[2.5rem] bg-white">
+        <DialogHeader className={cn("p-8 text-white flex-row items-center gap-5 space-y-0", isQuotaError ? "bg-amber-600" : "bg-slate-900")}>
+          <div className="w-16 h-16 rounded-3xl bg-white/10 backdrop-blur-md flex items-center justify-center shrink-0 border border-white/20">
+            {isQuotaError ? <ZapOff className="h-8 w-8" /> : <ShieldAlert className="h-8 w-8 text-red-500" />}
           </div>
           <div>
-            <DialogTitle className="text-xl font-bold font-headline uppercase tracking-tight">
-              {isQuotaError ? t('quotaExceeded') : t('accessRestricted')}
+            <DialogTitle className="text-2xl font-black font-headline uppercase tracking-tight">
+              {isQuotaError ? t('quotaExceeded') : "Gate Restricted"}
             </DialogTitle>
-            <DialogDescription className="text-[10px] font-black uppercase opacity-70 tracking-widest mt-0.5">
-              {isQuotaError ? "Service Limitation Active" : "Terminal Protection Active"}
+            <DialogDescription className="text-[10px] font-black uppercase opacity-60 tracking-[0.3em] mt-1">
+              Terminal Protection Active
             </DialogDescription>
           </div>
         </DialogHeader>
         
-        <div className="p-8 space-y-6">
-          <div className="text-center space-y-3">
-             <div className={cn("w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-2", isQuotaError ? "bg-amber-50 text-amber-500" : "bg-red-50 text-red-500")}>
-               <AlertCircle className="h-8 w-8" />
+        <div className="p-8 space-y-8">
+          <div className="text-center space-y-4">
+             <div className={cn("w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-2 shadow-inner", isQuotaError ? "bg-amber-50 text-amber-500" : "bg-red-50 text-red-500")}>
+               <Fingerprint className="h-10 w-10" />
              </div>
-             <h3 className="text-sm font-black text-slate-900 leading-tight uppercase px-4">
+             <h3 className="text-base font-black text-slate-900 leading-tight uppercase px-4">
                {t(messageKey)}
              </h3>
-             <p className="text-xs font-medium text-slate-500">
-               {isQuotaError ? t('quotaSub') : t('detailsSub')}
+             <p className="text-xs font-medium text-slate-500 leading-relaxed">
+               {isQuotaError ? t('quotaSub') : "Access to this database segment has been restricted by system policy. Please verify your administrative credentials."}
              </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 pt-4 border-t">
+          {!isQuotaError && (
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2">
+               <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Transaction Context</p>
+               <p className="text-[10px] font-mono font-bold text-slate-600 truncate">Path: {error.request?.path}</p>
+               <p className="text-[10px] font-mono font-bold text-slate-600">Method: {error.request?.method.toUpperCase()}</p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-4 pt-4">
             <Button 
               variant="outline"
               onClick={() => { setError(null); router.back(); }} 
-              className="h-12 rounded-2xl font-black uppercase text-[10px] tracking-widest border-slate-200"
+              className="h-14 rounded-2xl font-black uppercase text-[11px] tracking-widest border-slate-200 hover:bg-slate-50"
             >
               {t('back')}
             </Button>
             <Button 
               onClick={() => { setError(null); router.push('/'); }} 
-              className="bg-blue-600 hover:bg-blue-700 h-12 rounded-2xl font-black uppercase text-[10px] tracking-widest text-white shadow-xl shadow-blue-100"
+              className="bg-slate-900 hover:bg-slate-800 h-14 rounded-2xl font-black uppercase text-[11px] tracking-widest text-white shadow-2xl shadow-slate-200"
             >
-              {t('goDashboard')}
+              Terminal Root
             </Button>
           </div>
         </div>
