@@ -8,14 +8,6 @@ import {
   ArrowLeft, 
   Save, 
   Loader2, 
-  Settings2,
-  CheckCircle2,
-  XCircle,
-  Eye,
-  Edit,
-  Trash2,
-  FileDown,
-  Printer,
   ChevronRight
 } from "lucide-react"
 import { useFirestore, useDoc, useMemoFirebase } from "@/firebase"
@@ -24,7 +16,7 @@ import { useTenant } from "@/context/tenant-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useTranslation } from "@/hooks/use-translation"
@@ -34,7 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const ERP_MODULES = [
   "dashboard", "sales", "payments", "quotations", "dispatch", "purchases", "returns",
-  "inventory", "serialTracking", "project-billing", "contracts", "customers", 
+  "inventory", "serialTracking", "projectBilling", "contracts", "customers", 
   "suppliers", "accounts", "expenses", "masterManagement", "support", "crm", 
   "hrm", "branches", "reports", "ai", "settings", "users", "audit"
 ];
@@ -144,55 +136,57 @@ export default function RoleMatrixPage() {
         </Card>
 
         <Card className="rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white overflow-hidden">
-          <Table>
-            <TableHeader className="bg-slate-50">
-              <TableRow>
-                <TableHead className="h-14 text-[10px] uppercase font-black pl-8 w-[250px]">ERP Module</TableHead>
-                <TableHead className="h-14 text-[10px] uppercase font-black text-center">Data Scope</TableHead>
-                {ACTIONS.map(action => (
-                  <TableHead key={action} className="h-14 text-[10px] uppercase font-black text-center">{action}</TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {ERP_MODULES.map(module => (
-                <TableRow key={module} className="h-16 hover:bg-slate-50/50 transition-colors border-slate-50">
-                  <TableCell className="pl-8">
-                    <div className="flex items-center gap-3">
-                      <ChevronRight className="h-3 w-3 text-slate-300" />
-                      <span className="font-black text-[11px] uppercase tracking-tighter text-slate-900">{t(module as any)}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-center">
-                      <Select 
-                        value={dataScopes[module] || "own"} 
-                        onValueChange={(val) => setDataScopes(prev => ({ ...prev, [module]: val }))}
-                      >
-                        <SelectTrigger className="h-8 w-32 rounded-lg border-none bg-slate-100 font-bold text-[9px] uppercase">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl shadow-2xl">
-                          <SelectItem value="own" className="text-xs font-bold">Own Records</SelectItem>
-                          <SelectItem value="branch" className="text-xs font-bold">Branch Wide</SelectItem>
-                          <SelectItem value="all" className="text-xs font-bold">Org Wide</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-slate-50">
+                <TableRow>
+                  <TableHead className="h-14 text-[10px] uppercase font-black pl-8 w-[250px]">ERP Module</TableHead>
+                  <TableHead className="h-14 text-[10px] uppercase font-black text-center">Data Scope</TableHead>
                   {ACTIONS.map(action => (
-                    <TableCell key={`${module}-${action}`} className="text-center">
-                      <Checkbox 
-                        checked={permissions[module]?.includes(action)}
-                        onCheckedChange={() => togglePermission(module, action)}
-                        className="data-[state=checked]:bg-violet-600 border-slate-200"
-                      />
-                    </TableCell>
+                    <TableHead key={action} className="h-14 text-[10px] uppercase font-black text-center">{action}</TableHead>
                   ))}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {ERP_MODULES.map(module => (
+                  <TableRow key={module} className="h-16 hover:bg-slate-50/50 transition-colors border-slate-50">
+                    <TableCell className="pl-8">
+                      <div className="flex items-center gap-3">
+                        <ChevronRight className="h-3 w-3 text-slate-300" />
+                        <span className="font-black text-[11px] uppercase tracking-tighter text-slate-900">{t(module as any)}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-center">
+                        <Select 
+                          value={dataScopes[module] || "own"} 
+                          onValueChange={(val) => setDataScopes(prev => ({ ...prev, [module]: val }))}
+                        >
+                          <SelectTrigger className="h-8 w-32 rounded-lg border-none bg-slate-100 font-bold text-[9px] uppercase">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl shadow-2xl">
+                            <SelectItem value="own" className="text-xs font-bold">Own Records</SelectItem>
+                            <SelectItem value="branch" className="text-xs font-bold">Branch Wide</SelectItem>
+                            <SelectItem value="all" className="text-xs font-bold">Org Wide</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </TableCell>
+                    {ACTIONS.map(action => (
+                      <TableCell key={`${module}-${action}`} className="text-center">
+                        <Checkbox 
+                          checked={permissions[module]?.includes(action)}
+                          onCheckedChange={() => togglePermission(module, action)}
+                          className="data-[state=checked]:bg-violet-600 border-slate-200"
+                        />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </Card>
       </div>
     </div>

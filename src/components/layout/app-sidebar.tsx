@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -25,17 +26,9 @@ import {
   Briefcase,
   GitPullRequest,
   ClipboardList,
-  BrainCircuit,
-  ShieldAlert,
   Clock,
   Heart,
   CreditCard,
-  UserPlus,
-  Award,
-  GraduationCap,
-  HardDrive,
-  MessageSquare,
-  DoorOpen,
   FileBarChart
 } from "lucide-react"
 
@@ -83,6 +76,7 @@ const NAV_ITEMS_MAP: Record<string, NavItem> = {
   inventory: { name: "inventory", key: "inventory", icon: Boxes, path: "/inventory", color: "text-sky-600" },
   serialTracking: { name: "serialTracking", key: "serialTracking", icon: Scan, path: "/serial-inventory", color: "text-purple-600" },
   projectBilling: { name: "projectBilling", key: "projectBilling", icon: ClipboardList, path: "/projects", color: "text-teal-600" },
+  "project-billing": { name: "projectBilling", key: "projectBilling", icon: ClipboardList, path: "/projects", color: "text-teal-600" }, // Alias for compatibility
   contracts: { name: "contracts", key: "contracts", icon: Wrench, path: "/contracts", color: "text-indigo-600" },
   customers: { name: "customers", key: "customers", icon: Users, path: "/customers", color: "text-blue-500" },
   suppliers: { name: "suppliers", key: "suppliers", icon: Truck, path: "/suppliers", color: "text-rose-600" },
@@ -92,15 +86,14 @@ const NAV_ITEMS_MAP: Record<string, NavItem> = {
   crm: { name: "crm", key: "crm", icon: Target, path: "/crm", color: "text-rose-700" },
   branches: { name: "branches", key: "branches", icon: Building2, path: "/branches", color: "text-slate-700" },
   reports: { name: "reports", key: "reports", icon: BarChart3, path: "/reports", color: "text-blue-700" },
-  ai: { name: "ai", key: "ai", icon: BrainCircuit, path: "/ai-forecasting", color: "text-violet-700" },
   users: { name: "users", key: "users", icon: UserRoundCog, path: "/users", color: "text-violet-600" },
   settings: { name: "settings", key: "settings", icon: Settings, path: "/settings", color: "text-slate-600" },
 };
 
 const HRM_SUB_MENUS = [
-  { name: "hrm_dashboard", path: "/hrm", icon: LayoutDashboard },
+  { name: "hrmDashboard", path: "/hrm", icon: LayoutDashboard },
   { 
-    name: "employee_management", 
+    name: "employeeManagement", 
     icon: Users,
     items: [
       { name: "employees", path: "/hrm/employees" },
@@ -109,7 +102,7 @@ const HRM_SUB_MENUS = [
     ]
   },
   {
-    name: "attendance_management",
+    name: "attendanceManagement",
     icon: Clock,
     items: [
       { name: "dailyAttendance", path: "/hrm/attendance" },
@@ -117,32 +110,21 @@ const HRM_SUB_MENUS = [
     ]
   },
   {
-    name: "leave_management",
+    name: "leaveManagement",
     icon: Heart,
     items: [
       { name: "leaveRequests", path: "/hrm/leave" },
     ]
   },
   {
-    name: "payroll_salary",
+    name: "payrollSalary",
     icon: CreditCard,
     items: [
       { name: "monthlyPayroll", path: "/hrm/payroll" },
     ]
   },
-  { name: "hrm_reports", path: "/hrm/reports", icon: FileBarChart }
+  { name: "hrmReports", path: "/hrm/reports", icon: FileBarChart }
 ];
-
-const MASTER_DATA_ITEMS = [
-  { name: "units", path: "/master/units" },
-  { name: "categories", path: "/master/categories" },
-  { name: "brands", path: "/master/brands" },
-  { name: "models", path: "/master/models" },
-  { name: "productTypes", path: "/master/product-types" },
-  { name: "serviceTypes", path: "/master/service-types" },
-  { name: "warrantyTypes", path: "/master/warranty-types" },
-  { name: "customFields", path: "/master/custom-fields" },
-]
 
 export function AppSidebar() {
   const pathname = usePathname()
@@ -267,7 +249,7 @@ export function AppSidebar() {
                                 <CollapsibleTrigger asChild>
                                   <SidebarMenuButton className="h-9 px-4 hover:bg-slate-100 rounded-lg font-bold uppercase text-[10px]" style={{ color: sidebarText } as React.CSSProperties}>
                                     <sub.icon className="h-3.5 w-3.5 mr-2 opacity-70" />
-                                    {t(sub.name)}
+                                    <span style={{ color: sidebarText }}>{t(sub.name)}</span>
                                     <ChevronRight className="ml-auto h-2.5 w-2.5 transition-transform duration-200 group-data-[state=open]/sub:rotate-90" />
                                   </SidebarMenuButton>
                                 </CollapsibleTrigger>
@@ -280,7 +262,7 @@ export function AppSidebar() {
                                           isActive={pathname === item.path} 
                                           className="h-8 px-4 rounded-lg"
                                           style={{ 
-                                            color: pathname === item.path ? "blue" : sidebarText,
+                                            color: pathname === item.path ? "#0056B3" : sidebarText,
                                             backgroundColor: pathname === item.path ? sidebarActive : "transparent"
                                           } as React.CSSProperties}
                                         >
@@ -303,7 +285,7 @@ export function AppSidebar() {
                               isActive={pathname === sub.path} 
                               className="h-9 px-4 rounded-lg"
                               style={{ 
-                                color: pathname === sub.path ? "blue" : sidebarText,
+                                color: pathname === sub.path ? "#0056B3" : sidebarText,
                                 backgroundColor: pathname === sub.path ? sidebarActive : "transparent"
                               } as React.CSSProperties}
                             >
@@ -315,56 +297,6 @@ export function AppSidebar() {
                           </SidebarMenuItem>
                         );
                       })}
-                    </SidebarMenu>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
-            )}
-
-            {can('masterManagement', 'view') && (
-              <Collapsible defaultOpen={isMasterActive} className="group/collapsible">
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton 
-                      isActive={isMasterActive}
-                      tooltip={t('master')}
-                      className={cn("h-11 px-3 transition-all rounded-xl group", isMasterActive ? "font-black" : "")}
-                      style={{ 
-                        color: isMasterActive ? "#000000" : sidebarText,
-                        backgroundColor: isMasterActive ? sidebarActive : "transparent",
-                      } as React.CSSProperties}
-                    >
-                      <div className="flex items-center gap-3 w-full h-full">
-                        <Database className={cn("h-5 w-5 shrink-0", "text-orange-500", isMasterActive && "text-orange-600")} />
-                        {state === "expanded" && (
-                          <>
-                            <span className="text-[12px] font-black uppercase tracking-tight">{t('master')}</span>
-                            <ChevronRight className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                          </>
-                        )}
-                        {isMasterActive && <div className="absolute left-0 top-2 bottom-2 w-1 bg-orange-600 rounded-r-full" />}
-                      </div>
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenu className="mt-1 ml-4 border-l border-slate-100 gap-0.5">
-                      {MASTER_DATA_ITEMS.map((sub) => (
-                        <SidebarMenuItem key={sub.path}>
-                          <SidebarMenuButton 
-                            asChild 
-                            isActive={pathname === sub.path}
-                            className="h-8 px-4 rounded-lg transition-all"
-                            style={{ 
-                              color: pathname === sub.path ? "blue" : sidebarText,
-                              backgroundColor: pathname === sub.path ? sidebarActive : "transparent",
-                            } as React.CSSProperties}
-                          >
-                            <Link href={sub.path}>
-                              <span className="text-[11px] uppercase tracking-tighter">{t(sub.name)}</span>
-                            </Link>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      ))}
                     </SidebarMenu>
                   </CollapsibleContent>
                 </SidebarMenuItem>

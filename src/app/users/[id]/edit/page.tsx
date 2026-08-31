@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils"
 
 const SYSTEM_MODULES = [
   "dashboard", "sales", "payments", "quotations", "dispatch", "purchases", "returns",
-  "inventory", "serialTracking", "project-billing", "contracts", "customers", 
+  "inventory", "serialTracking", "projectBilling", "contracts", "customers", 
   "suppliers", "accounts", "expenses", "support", "crm", "hrm", "settings", "users"
 ];
 
@@ -132,7 +132,7 @@ export default function EditUserPage() {
           </div>
         </div>
         <div className="flex gap-2">
-           <Button form="user-edit-form" disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700 rounded-full px-12 h-11 text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-100 transition-all active:scale-95">
+           <Button form="user-edit-form" disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700 rounded-full px-10 h-11 text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-100 transition-all active:scale-95">
              {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />}
              Synchronize Identity
            </Button>
