@@ -9,22 +9,30 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Safely checks if the user is a super admin based on email or role
+    function isSuperAdmin(companyId) {
+      return isSignedIn() && (
+        request.auth.token.email == 'warriortechsystem@gmail.com' || 
+        (exists(/databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid)).data.roleId == 'super-admin')
+      );
+    }
+
+    function isCompanyMember(companyId) {
+      return isSignedIn() && (
+        isSuperAdmin(companyId) || 
+        exists(/databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid))
+      );
+    }
+
     function getUserData(companyId) {
       return get(/databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid)).data;
     }
 
-    function isCompanyMember(companyId) {
-      return isSignedIn() && exists(/databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid));
-    }
-
-    function isSuperAdmin(companyId) {
-      let userData = getUserData(companyId);
-      return isCompanyMember(companyId) && (userData.roleId == 'super-admin' || request.auth.token.email == 'warriortechsystem@gmail.com');
-    }
-
     function isCompanyAdmin(companyId) {
+      if (isSuperAdmin(companyId)) return true;
       let userData = getUserData(companyId);
-      return isSuperAdmin(companyId) || userData.roleId == 'admin' || userData.roleId == 'manager';
+      return userData.roleId == 'admin' || userData.roleId == 'manager';
     }
 
     function hasBranchAccess(companyId, branchId) {
@@ -46,7 +54,7 @@ service cloud.firestore {
       allow create: if isSignedIn();
     }
 
-    // 2. User & Role Management (Crucial Fix for Admin Control)
+    // 2. User & Role Management
     match /companies/{companyId}/users/{userId} {
       allow read: if isSignedIn() && (request.auth.uid == userId || isCompanyAdmin(companyId));
       allow create, update: if isSuperAdmin(companyId) || (isSignedIn() && request.auth.uid == userId);
@@ -58,7 +66,7 @@ service cloud.firestore {
       allow write: if isSuperAdmin(companyId);
     }
 
-    // 3. Branch Specific Data (Sales, Inventory, etc.)
+    // 3. Branch Specific Data (Sales, Inventory, Quotations etc.)
     match /companies/{companyId}/branches/{branchId}/{allPaths=**} {
       allow read, write: if isCompanyMember(companyId) && hasBranchAccess(companyId, branchId);
     }

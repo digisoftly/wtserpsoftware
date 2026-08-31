@@ -56,21 +56,16 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   
   const companyId = PRODUCTION_COMPANY_ID;
 
-  // Stable reference for the current language to avoid stale closures in effects
   const langRef = React.useRef<Language>(language);
   React.useEffect(() => {
     langRef.current = language;
   }, [language]);
 
   const setLanguage = React.useCallback(async (lang: Language) => {
-    // 1. Immediate UI Update
     setLanguageState(lang);
-    
-    // 2. Sync to Database if authenticated
     if (user && db) {
       try {
         const userRef = doc(db, "companies", companyId, "users", user.uid);
-        // Use background sync to avoid blocking UI
         updateDoc(userRef, { preferredLanguage: lang }).catch(err => {
           console.error("Language sync failed:", err);
         });
@@ -95,7 +90,6 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     if (!isUserLoading && user && db) {
       setIsInitializing(true);
 
-      // 1. Fetch Global Settings
       const configRef = doc(db, "companies", companyId, "system", "config");
       unsubSettings = onSnapshot(configRef, (snap) => {
         if (snap.exists()) setSettings(snap.data());
@@ -103,7 +97,6 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         console.error("Settings listener failed:", err);
       });
 
-      // 2. Fetch User Profile & Role
       const userRef = doc(db, "companies", companyId, "users", user.uid);
       unsubUser = onSnapshot(userRef, async (snap) => {
         if (snap.exists()) {
@@ -115,17 +108,12 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
             return;
           }
 
-          // Initial sync from DB - only update if local state hasn't diverged significantly
           if (userData.preferredLanguage && userData.preferredLanguage !== langRef.current) {
             setLanguageState(userData.preferredLanguage as Language);
           }
           
-          if (userData.branchId) {
-            setBranchId(userData.branchId);
-          } else if (!branchId) {
-            setBranchId('dhaka-main');
-          }
-
+          const currentBranch = userData.branchId || 'dhaka-main';
+          setBranchId(currentBranch);
           setAllowedBranches(userData.allowedBranches || ['dhaka-main']);
 
           const roleId = userData.roleId || "default-user";
@@ -144,7 +132,17 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           }
           setIsInitializing(false);
         } else {
-          setBranchId('dhaka-main');
+          // If no user document exists yet (e.g., first login of owner)
+          if (user.email === 'warriortechsystem@gmail.com') {
+             setUserRole({
+               id: 'super-admin',
+               name: 'Super Admin',
+               isSuperAdmin: true,
+               permissions: {}
+             });
+             setBranchId('dhaka-main');
+             setAllowedBranches(['dhaka-main']);
+          }
           setIsInitializing(false);
         }
       }, (err) => {
