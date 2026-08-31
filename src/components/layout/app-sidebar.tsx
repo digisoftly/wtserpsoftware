@@ -139,7 +139,18 @@ export function AppSidebar() {
     router.push('/login')
   }
 
-  const menuOrder = settings?.sidebarMenuOrder || Object.keys(NAV_ITEMS_MAP);
+  // SMARTER MENU ORDER: Merge saved order with NAV_ITEMS_MAP keys to ensure nothing is missed
+  const menuOrder = React.useMemo(() => {
+    const savedOrder = settings?.sidebarMenuOrder || [];
+    const allKeys = Object.keys(NAV_ITEMS_MAP);
+    
+    if (savedOrder.length === 0) return allKeys;
+    
+    const validSaved = savedOrder.filter(k => allKeys.includes(k));
+    const missing = allKeys.filter(k => !validSaved.includes(k));
+    
+    return [...validSaved, ...missing];
+  }, [settings?.sidebarMenuOrder]);
 
   return (
     <Sidebar 

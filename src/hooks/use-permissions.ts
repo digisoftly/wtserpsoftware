@@ -20,7 +20,7 @@ export type DataScope = 'own' | 'branch' | 'all';
 
 /**
  * usePermissions provides granular, role-based access control (RBAC).
- * Updated with Super Admin hard-coded bypass for the primary owner email.
+ * Updated with robust module key mapping and super admin bypass.
  */
 export function usePermissions() {
   const { userRole, isLoading, branchId } = useTenant();
@@ -38,7 +38,10 @@ export function usePermissions() {
     if (isSuperOwner || userRole?.isSuperAdmin) return true;
 
     // Check specific module permissions (including manual overrides)
-    const modulePerms = userRole?.permissions?.[moduleKey];
+    // Robust check: supports both camelCase (projectBilling) and kebab-case (project-billing) if any
+    const modulePerms = userRole?.permissions?.[moduleKey] || 
+                      userRole?.permissions?.[moduleKey.replace(/([A-Z])/g, "-$1").toLowerCase()];
+
     if (!modulePerms || !Array.isArray(modulePerms)) return false;
 
     return modulePerms.includes(action);
