@@ -10,21 +10,17 @@ import {
   User, 
   MapPin, 
   CreditCard, 
-  ShieldCheck, 
   AlertCircle,
   CheckCircle2,
   Phone,
   Mail,
   Building,
-  FileText,
-  Globe,
-  Tag,
-  Briefcase
+  Tag
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useFirestore } from "@/firebase"
@@ -71,17 +67,21 @@ export default function NewCustomerPage() {
     const formData = new FormData(e.currentTarget);
     const customerId = `CUST-${Date.now().toString().slice(-6)}`;
     
+    const firstName = (formData.get("firstName") as string) || "";
+    const lastName = (formData.get("lastName") as string) || "";
+    const companyName = (formData.get("companyName") as string) || "";
+
     const customerData = {
       id: customerId,
       companyId,
       branchId,
       customerType,
-      firstName: formData.get("firstName") as string,
-      lastName: formData.get("lastName") as string,
-      fullName: `${formData.get("firstName")} ${formData.get("lastName")}`,
-      companyName: customerType !== "individual" ? (formData.get("companyName") as string) : "",
-      contactPerson: formData.get("contactPerson") as string || "",
-      contactPersonDesignation: formData.get("contactPersonDesignation") as string || "",
+      firstName,
+      lastName,
+      fullName: customerType === "individual" ? `${firstName} ${lastName}`.trim() : companyName,
+      companyName: customerType !== "individual" ? companyName : "",
+      contactPerson: (formData.get("contactPerson") as string) || "",
+      contactPersonDesignation: (formData.get("contactPersonDesignation") as string) || "",
       
       // Contact
       phoneNumber: formData.get("phoneNumber") as string,
@@ -208,28 +208,37 @@ export default function NewCustomerPage() {
                   </div>
                   
                   <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {customerType !== 'individual' && (
-                      <div className="md:col-span-2 space-y-1.5">
-                        <Label className="text-[10px] font-black uppercase text-slate-500">Legal Company Name *</Label>
-                        <Input name="companyName" required className="h-11 rounded-xl" onBlur={(e) => handleDuplicateCheck('companyName', e.target.value)} />
-                      </div>
+                    {customerType !== 'individual' ? (
+                      <>
+                        <div className="md:col-span-2 space-y-1.5">
+                          <Label className="text-[10px] font-black uppercase text-slate-500">Legal Company Name *</Label>
+                          <Input name="companyName" required className="h-11 rounded-xl" onBlur={(e) => handleDuplicateCheck('companyName', e.target.value)} />
+                        </div>
+                        <div className="md:col-span-2 space-y-1.5">
+                          <Label className="text-[10px] font-black uppercase text-slate-500">Contact Person Name</Label>
+                          <Input name="contactPerson" className="h-11 rounded-xl" placeholder="Key contact person" />
+                        </div>
+                        <div className="md:col-span-2 space-y-1.5">
+                          <Label className="text-[10px] font-black uppercase text-slate-500">Designation</Label>
+                          <Input name="contactPersonDesignation" className="h-11 rounded-xl" placeholder="Manager, CEO, etc" />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="space-y-1.5">
+                          <Label className="text-[10px] font-black uppercase text-slate-500">First Name *</Label>
+                          <Input name="firstName" required className="h-11 rounded-xl" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-[10px] font-black uppercase text-slate-500">Last Name *</Label>
+                          <Input name="lastName" required className="h-11 rounded-xl" />
+                        </div>
+                        <div className="md:col-span-2 space-y-1.5">
+                          <Label className="text-[10px] font-black uppercase text-slate-500">Reference / Nickname</Label>
+                          <Input name="contactPerson" className="h-11 rounded-xl" placeholder="e.g. Home, Personal" />
+                        </div>
+                      </>
                     )}
-                    <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase text-slate-500">First Name *</Label>
-                      <Input name="firstName" required className="h-11 rounded-xl" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase text-slate-500">Last Name *</Label>
-                      <Input name="lastName" required className="h-11 rounded-xl" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase text-slate-500">Contact Person</Label>
-                      <Input name="contactPerson" className="h-11 rounded-xl" placeholder="Key contact person" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase text-slate-500">Designation</Label>
-                      <Input name="contactPersonDesignation" className="h-11 rounded-xl" placeholder="Manager, CEO, etc" />
-                    </div>
                   </div>
 
                   <div className="lg:col-span-4 bg-slate-50 p-6 rounded-3xl space-y-4">
