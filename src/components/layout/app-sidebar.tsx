@@ -297,6 +297,7 @@ export function AppSidebar() {
     const savedOrder = settings?.sidebarMenuOrder || [];
     const allKeys = Object.keys(NAV_ITEMS_MAP);
     
+    // STRICT DEFAULT ORDER
     const defaultOrder = [
       "dashboard", "sales", "quotations", "dispatch", "purchases", "returns", 
       "inventory", "serialTracking", "contracts", "projectBilling", "customers", 
@@ -304,12 +305,26 @@ export function AppSidebar() {
       "reports", "ai", "users", "settings", "audit"
     ];
 
-    if (savedOrder.length === 0) return defaultOrder.filter(k => allKeys.includes(k));
+    let currentOrder = savedOrder.length === 0 
+      ? defaultOrder.filter(k => allKeys.includes(k))
+      : [...savedOrder.filter(k => allKeys.includes(k)), ...allKeys.filter(k => !savedOrder.includes(k))];
     
-    const validSaved = savedOrder.filter(k => allKeys.includes(k));
-    const missing = allKeys.filter(k => !validSaved.includes(k));
-    
-    return [...validSaved, ...missing];
+    // FORCE PROJECT BILLING UNDER CONTRACTS REGARDLESS OF DB (For safety)
+    const contractIdx = currentOrder.indexOf("contracts");
+    const projectIdx = currentOrder.indexOf("projectBilling");
+    const customerIdx = currentOrder.indexOf("customers");
+
+    if (contractIdx !== -1 && projectIdx !== -1) {
+       // Only force if it's not already in the correct sequence
+       if (projectIdx !== contractIdx + 1) {
+          const newOrder = currentOrder.filter(k => k !== "projectBilling");
+          const targetIdx = newOrder.indexOf("contracts") + 1;
+          newOrder.splice(targetIdx, 0, "projectBilling");
+          currentOrder = newOrder;
+       }
+    }
+
+    return currentOrder;
   }, [settings?.sidebarMenuOrder]);
 
   return (
