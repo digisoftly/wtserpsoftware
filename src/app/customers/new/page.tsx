@@ -8,13 +8,10 @@ import {
   Save, 
   Loader2, 
   User, 
-  Phone, 
   MapPin, 
   CreditCard, 
-  Briefcase, 
   ShieldCheck, 
   AlertCircle,
-  Plus,
   CheckCircle2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -22,7 +19,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
 import { useFirestore } from "@/firebase"
 import { collection, doc, setDoc, serverTimestamp, query, where, getDocs, limit } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
@@ -38,24 +34,32 @@ export default function NewCustomerPage() {
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [customerType, setCustomerType] = React.useState<"individual" | "company" | "organization">("individual");
-  const [isSameAddress, setIsSameAddress] = React.useState(false);
   const [duplicateWarning, setDuplicateWarning] = React.useState<string | null>(null);
+  
+  // Controlled Select States
+  const [category, setCategory] = React.useState("Retail");
+  const [priority, setPriority] = React.useState("Normal");
+  const [paymentMethod, setPaymentMethod] = React.useState("Cash");
   const [officeAddress, setOfficeAddress] = React.useState("");
 
   const handleDuplicateCheck = async (field: string, value: string) => {
     if (!value || value.length < 5 || !db || !companyId || !branchId) return;
     
-    const q = query(
-      collection(db, "companies", companyId, "branches", branchId, "customers"),
-      where(field, "==", value),
-      limit(1)
-    );
-    
-    const snap = await getDocs(q);
-    if (!snap.empty) {
-      setDuplicateWarning(`${t('error')}: Duplicate ${field} (${value})`);
-    } else {
-      setDuplicateWarning(null);
+    try {
+      const q = query(
+        collection(db, "companies", companyId, "branches", branchId, "customers"),
+        where(field, "==", value),
+        limit(1)
+      );
+      
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        setDuplicateWarning(`Duplicate ${field} (${value}) detected.`);
+      } else {
+        setDuplicateWarning(null);
+      }
+    } catch (e) {
+      console.error("Duplicate check failed", e);
     }
   };
 
@@ -84,15 +88,17 @@ export default function NewCustomerPage() {
       creditLimit: Number(formData.get("creditLimit") || 0),
       openingDue: Number(formData.get("openingDue") || 0),
       openingAdvance: Number(formData.get("openingAdvance") || 0),
-      priority: formData.get("priority") as string || "Normal",
-      category: formData.get("category") as string || "Retail",
+      paymentMethod,
+      priority,
+      category,
       status: "active",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
 
     try {
-      await setDoc(doc(db, "companies", companyId, "branches", branchId, "customers", customerId), customerData);
+      const docRef = doc(db, "companies", companyId, "branches", branchId, "customers", customerId);
+      await setDoc(docRef, customerData);
       toast({ title: t('success') });
       router.push("/customers");
     } catch (err: any) {
@@ -109,15 +115,18 @@ export default function NewCustomerPage() {
           <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full h-10 w-10">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div>
-            <h1 className="text-lg md:text-xl font-black font-headline uppercase tracking-tight text-slate-900">{t('addCustomer')}</h1>
-          </div>
+          <h1 className="text-lg md:text-xl font-black font-headline uppercase tracking-tight text-slate-900">{t('addCustomer')}</h1>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="ghost" className="hidden sm:inline-flex rounded-full text-[10px] font-black uppercase tracking-widest px-6" onClick={() => router.back()}>
             {t('cancel')}
           </Button>
-          <Button type="submit" form="customer-form" className="bg-cyan-600 hover:bg-cyan-700 text-white rounded-full px-8 h-10 text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-cyan-100 gap-2 transition-all active:scale-95" disabled={isSubmitting}>
+          <Button 
+            type="submit" 
+            form="customer-form" 
+            className="bg-cyan-600 hover:bg-cyan-700 text-white rounded-full px-8 h-10 text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-cyan-100 gap-2 transition-all active:scale-95" 
+            disabled={isSubmitting}
+          >
             {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />}
             {t('save')}
           </Button>
@@ -135,30 +144,25 @@ export default function NewCustomerPage() {
           )}
 
           {/* IDENTITY TYPE SELECTION */}
-          <Card className="border-none shadow-sm ring-1 ring-slate-100 rounded-3xl overflow-hidden">
+          <Card className="border-none shadow-sm ring-1 ring-slate-100 rounded-3xl overflow-hidden bg-white">
             <CardContent className="p-6 md:p-8">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="space-y-1">
-                  <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Select Account Type</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {["individual", "company", "organization"].map((type) => (
-                      <Button 
-                        key={type}
-                        type="button" 
-                        variant={customerType === type ? 'default' : 'outline'} 
-                        className={cn(
-                          "h-10 rounded-xl text-[10px] font-black uppercase transition-all px-6",
-                          customerType === type ? "bg-slate-900 text-white border-slate-900" : "text-slate-400 border-slate-200"
-                        )} 
-                        onClick={() => setCustomerType(type as any)}
-                      >
-                        {type}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-                <div className="hidden md:block text-right">
-                   <p className="text-[10px] font-black uppercase text-slate-300 tracking-[0.3em]">Identity Terminal</p>
+              <div className="space-y-3">
+                <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Select Account Type</Label>
+                <div className="flex flex-wrap gap-2">
+                  {["individual", "company", "organization"].map((type) => (
+                    <Button 
+                      key={type}
+                      type="button" 
+                      variant={customerType === type ? 'default' : 'outline'} 
+                      className={cn(
+                        "h-10 rounded-xl text-[10px] font-black uppercase transition-all px-6",
+                        customerType === type ? "bg-slate-900 text-white border-slate-900" : "text-slate-400 border-slate-200"
+                      )} 
+                      onClick={() => setCustomerType(type as any)}
+                    >
+                      {type}
+                    </Button>
+                  ))}
                 </div>
               </div>
             </CardContent>
@@ -205,11 +209,12 @@ export default function NewCustomerPage() {
               </div>
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-slate-500">Address</Label>
+                  <Label className="text-[10px] font-black uppercase text-slate-500">Full Address</Label>
                   <textarea 
                     className="w-full min-h-[90px] rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 p-4 text-xs font-bold outline-none focus:ring-2 focus:ring-cyan-600 transition-all" 
                     value={officeAddress}
                     onChange={(e) => setOfficeAddress(e.target.value)}
+                    placeholder="Enter street, area, house number..."
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -235,9 +240,11 @@ export default function NewCustomerPage() {
                   <Input name="openingDue" type="number" className="h-11 rounded-xl bg-red-50/30 border-none ring-1 ring-red-100 font-black text-red-600" placeholder="0" />
                 </div>
                 <div className="space-y-1.5 md:col-span-2">
-                   <Label className="text-[10px] font-black uppercase text-slate-500">Preferred Method</Label>
-                   <Select name="paymentMethod" defaultValue="Cash">
-                      <SelectTrigger className="h-11 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 font-bold text-xs"><SelectValue /></SelectTrigger>
+                   <Label className="text-[10px] font-black uppercase text-slate-500">Preferred Payment Method</Label>
+                   <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                      <SelectTrigger className="h-11 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 font-bold text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent className="rounded-xl">
                         {["Cash", "Bank", "bKash", "Nagad"].map(m => <SelectItem key={m} value={m} className="text-xs font-bold">{m}</SelectItem>)}
                       </SelectContent>
@@ -250,13 +257,15 @@ export default function NewCustomerPage() {
             <Card className="border-none shadow-sm ring-1 ring-slate-100 rounded-3xl bg-white p-6 md:p-8 space-y-6">
               <div className="flex items-center gap-3 border-b pb-4">
                 <ShieldCheck className="h-4 w-4 text-purple-600" />
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-900">CRM Segmentation</h3>
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-900">Segmentation</h3>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-slate-500">Category</Label>
-                  <Select name="category" defaultValue="Retail">
-                    <SelectTrigger className="h-10 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 font-bold text-xs"><SelectValue /></SelectTrigger>
+                  <Select value={category} onValueChange={setCategory}>
+                    <SelectTrigger className="h-10 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 font-bold text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent className="rounded-xl">
                       {["Corporate", "Government", "Retail", "Dealer", "VIP"].map(c => <SelectItem key={c} value={c} className="text-xs font-bold">{c}</SelectItem>)}
                     </SelectContent>
@@ -264,8 +273,10 @@ export default function NewCustomerPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-slate-500">Priority</Label>
-                  <Select name="priority" defaultValue="Normal">
-                    <SelectTrigger className="h-10 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 font-bold text-xs"><SelectValue /></SelectTrigger>
+                  <Select value={priority} onValueChange={setPriority}>
+                    <SelectTrigger className="h-10 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 font-bold text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent className="rounded-xl">
                       <SelectItem value="Low" className="text-xs font-bold">Low</SelectItem>
                       <SelectItem value="Normal" className="text-xs font-bold">Normal</SelectItem>
@@ -278,15 +289,14 @@ export default function NewCustomerPage() {
             </Card>
           </div>
 
-          {/* STICKY ACTION BAR FOR MOBILE */}
-          <div className="pt-10 flex flex-col items-center gap-4 text-center">
-             <div className="flex items-center gap-2 opacity-30 group cursor-default">
-                <Plus className="h-4 w-4" />
-                <span className="text-[9px] font-black uppercase tracking-[0.4em]">Finalize Account Provisioning</span>
-             </div>
-             <Button type="submit" disabled={isSubmitting} className="w-full max-w-sm h-14 rounded-2xl bg-slate-900 hover:bg-black text-white font-black uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95">
+          <div className="pt-10 flex justify-center">
+             <Button 
+                type="submit" 
+                disabled={isSubmitting} 
+                className="w-full max-w-sm h-14 rounded-2xl bg-slate-900 hover:bg-black text-white font-black uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95"
+              >
                 {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <CheckCircle2 className="h-5 w-5 mr-2" />}
-                Create Client Account
+                Confirm Registration
              </Button>
           </div>
         </form>
