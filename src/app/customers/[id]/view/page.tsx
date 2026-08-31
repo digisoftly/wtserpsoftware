@@ -31,7 +31,7 @@ import {
   Briefcase
 } from "lucide-react"
 import { useFirestore, useDoc, useMemoFirebase, useCollection } from "@/firebase"
-import { doc, collection, query, where, orderBy } from "firebase/firestore"
+import { doc, collection, query, where } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { useTranslation } from "@/hooks/use-translation"
 import { Button } from "@/components/ui/button"
@@ -56,18 +56,46 @@ export default function CustomerProfilePage() {
   }, [db, companyId, branchId, id]);
   const { data: customer, isLoading: isProfileLoading } = useDoc(customerRef);
 
+  // Queries - Removed orderBy to avoid requiring composite indexes
   const getCustomerQuery = (col: string) => useMemoFirebase(() => {
     if (!db || !companyId || !branchId || !id) return null;
     return query(
       collection(db, "companies", companyId, "branches", branchId, col),
-      where("customerId", "==", id),
-      orderBy("createdAt", "desc")
+      where("customerId", "==", id)
     );
   }, [db, companyId, branchId, id, col]);
 
-  const { data: invoices } = useCollection(getCustomerQuery("sales_invoices"));
-  const { data: quotations } = useCollection(getCustomerQuery("quotations"));
-  const { data: projects } = useCollection(getCustomerQuery("projects"));
+  const { data: rawInvoices } = useCollection(getCustomerQuery("sales_invoices"));
+  const { data: rawQuotations } = useCollection(getCustomerQuery("quotations"));
+  const { data: rawProjects } = useCollection(getCustomerQuery("projects"));
+
+  // Client-side sorting for Newest First
+  const invoices = React.useMemo(() => {
+    if (!rawInvoices) return [];
+    return [...rawInvoices].sort((a, b) => {
+      const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+      const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+      return dateB.getTime() - dateA.getTime();
+    });
+  }, [rawInvoices]);
+
+  const quotations = React.useMemo(() => {
+    if (!rawQuotations) return [];
+    return [...rawQuotations].sort((a, b) => {
+      const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+      const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+      return dateB.getTime() - dateA.getTime();
+    });
+  }, [rawQuotations]);
+
+  const projects = React.useMemo(() => {
+    if (!rawProjects) return [];
+    return [...rawProjects].sort((a, b) => {
+      const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+      const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+      return dateB.getTime() - dateA.getTime();
+    });
+  }, [rawProjects]);
 
   const groupedDocuments = React.useMemo(() => {
     const groups: Record<string, any> = { "General": { items: [], id: 'general' } };
@@ -81,6 +109,14 @@ export default function CustomerProfilePage() {
       if (!groups[pName]) groups[pName] = { items: [], id: pName };
       groups[pName].items.push({ ...inv, docType: 'Invoice' });
     });
+    // Sort items within groups by date
+    Object.values(groups).forEach(g => {
+      g.items.sort((a: any, b: any) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+        return dateB.getTime() - dateA.getTime();
+      });
+    });
     return Object.values(groups).filter(g => g.items.length > 0);
   }, [quotations, invoices]);
 
@@ -88,7 +124,7 @@ export default function CustomerProfilePage() {
     totalBilled: invoices?.reduce((s, i) => s + (i.totalAmount || 0), 0) || 0,
     totalPaid: invoices?.reduce((s, i) => s + (i.paidAmount || 0), 0) || 0,
     totalDue: invoices?.reduce((s, i) => s + (i.balanceDue || 0), 0) || 0,
-    activeProjects: projects?.filter(p => p.status !== 'Completed').length || 0,
+    activeProjects: projects?.filter(p => !['Completed', 'completed'].includes(p.status)).length || 0,
   }), [invoices, projects]);
 
   if (isProfileLoading) return <div className="flex h-screen items-center justify-center bg-slate-50"><Loader2 className="h-10 w-10 animate-spin text-cyan-600" /></div>;
@@ -122,7 +158,7 @@ export default function CustomerProfilePage() {
            <Button variant="outline" className="rounded-full h-11 px-8 font-black text-[10px] uppercase gap-2 border-slate-200" onClick={() => router.push(`/customers/${id}/edit`)}>
               <Edit className="h-4 w-4" /> Edit Identity
            </Button>
-           <Button className="bg-cyan-600 hover:bg-cyan-700 text-white rounded-full h-11 px-10 font-black text-[10px] uppercase gap-2 shadow-xl shadow-cyan-100">
+           <Button className="bg-cyan-600 hover:bg-cyan-700 text-white rounded-full h-11 px-10 font-black text-[10px] uppercase gap-2 shadow-xl shadow-cyan-100" onClick={() => router.push('/sales/new')}>
               <Plus className="h-4 w-4" /> New Sale
            </Button>
         </div>
@@ -143,7 +179,12 @@ export default function CustomerProfilePage() {
         </TabsList>
 
         <TabsContent value="documents" className="space-y-4">
-           {groupedDocuments.map((group, gIdx) => (
+           {groupedDocuments.length === 0 ? (
+             <div className="p-20 bg-white rounded-[3rem] border border-dashed text-center flex flex-col items-center ring-1 ring-slate-100">
+               <FileText className="h-12 w-12 text-slate-200 mb-6" />
+               <p className="text-[10px] uppercase font-black text-muted-foreground tracking-[0.3em]">No documents found for this client</p>
+             </div>
+           ) : groupedDocuments.map((group, gIdx) => (
              <Card key={group.id} className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white ring-1 ring-slate-100">
                 <Collapsible defaultOpen={gIdx === 0}>
                   <CollapsibleTrigger asChild>
