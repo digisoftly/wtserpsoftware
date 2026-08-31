@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils"
 const SYSTEM_MODULES = [
   "dashboard", "sales", "payments", "quotations", "dispatch", "purchases", "returns",
   "inventory", "serialTracking", "projectBilling", "contracts", "customers", 
-  "suppliers", "accounts", "expenses", "support", "crm", "hrm", "settings", "users"
+  "suppliers", "accounts", "expenses", "masterManagement", "support", "crm", "hrm", "settings", "users", "audit"
 ];
 
 export default function EditUserPage() {
@@ -183,7 +183,7 @@ export default function EditUserPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">First Name</Label><Input name="firstName" defaultValue={userProfile?.firstName} className="h-11 rounded-xl" /></div>
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">Last Name</Label><Input name="lastName" defaultValue={userProfile?.lastName} className="h-11 rounded-xl" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">Employee Code</Label><Input name="employeeId" defaultValue={userProfile?.employeeId} className="h-11 rounded-xl font-mono uppercase" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">Employee Code</Label><Input name="employeeId" defaultValue={userProfile?.employeeId} className="h-11 rounded-xl font-mono uppercase" placeholder="WTS-001" /></div>
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">Functional Dept</Label><Input name="department" defaultValue={userProfile?.department} className="h-11 rounded-xl" /></div>
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">Primary Location</Label>
                       <Select name="primaryBranch" defaultValue={userProfile?.branchId}>

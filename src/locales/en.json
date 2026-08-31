@@ -70,7 +70,7 @@
   "suppliers": "Suppliers",
   "accounts": "Accounts",
   "expenses": "Expenses",
-  "master": "Master",
+  "master": "Master Data",
   "units": "Units",
   "categories": "Categories",
   "brands": "Brands",
@@ -87,6 +87,7 @@
   "ai": "AI",
   "settings": "Settings",
   "users": "Users",
+  "audit": "Audit Logs",
   "addCustomer": "Add New Client",
   "customerType": "Identity Type",
   "creditLimit": "Credit Limit",
@@ -103,5 +104,10 @@
   "website": "Company Website",
   "totalRevenue": "Total Sales",
   "totalBilled": "Gross Amount",
-  "running": "Active Projects"
+  "running": "Active Projects",
+  "hrmDashboard": "HRM Dashboard",
+  "employees": "Employees",
+  "attendance": "Attendance",
+  "leave": "Leave",
+  "payroll": "Payroll"
 }

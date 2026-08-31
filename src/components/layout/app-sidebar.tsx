@@ -29,7 +29,16 @@ import {
   Clock,
   Heart,
   CreditCard,
-  FileBarChart
+  FileBarChart,
+  Layers,
+  ListTree,
+  Tag,
+  Box,
+  Fingerprint,
+  ShieldCheck,
+  ShieldAlert,
+  Archive,
+  Zap
 } from "lucide-react"
 
 import { 
@@ -76,54 +85,39 @@ const NAV_ITEMS_MAP: Record<string, NavItem> = {
   inventory: { name: "inventory", key: "inventory", icon: Boxes, path: "/inventory", color: "text-sky-600" },
   serialTracking: { name: "serialTracking", key: "serialTracking", icon: Scan, path: "/serial-inventory", color: "text-purple-600" },
   projectBilling: { name: "projectBilling", key: "projectBilling", icon: ClipboardList, path: "/projects", color: "text-teal-600" },
-  "project-billing": { name: "projectBilling", key: "projectBilling", icon: ClipboardList, path: "/projects", color: "text-teal-600" }, // Alias for compatibility
   contracts: { name: "contracts", key: "contracts", icon: Wrench, path: "/contracts", color: "text-indigo-600" },
   customers: { name: "customers", key: "customers", icon: Users, path: "/customers", color: "text-blue-500" },
   suppliers: { name: "suppliers", key: "suppliers", icon: Truck, path: "/suppliers", color: "text-rose-600" },
   accounts: { name: "accounts", key: "accounts", icon: Wallet, path: "/accounts", color: "text-yellow-700" },
   expenses: { name: "expenses", key: "expenses", icon: Receipt, path: "/expenses", color: "text-red-500" },
+  masterManagement: { name: "master", key: "masterManagement", icon: Database, path: "/master", color: "text-slate-600" },
   support: { name: "support", key: "support", icon: GitPullRequest, path: "/support", color: "text-indigo-500" },
   crm: { name: "crm", key: "crm", icon: Target, path: "/crm", color: "text-rose-700" },
+  hrm: { name: "hrm", key: "hrm", icon: Briefcase, path: "/hrm", color: "text-purple-600" },
   branches: { name: "branches", key: "branches", icon: Building2, path: "/branches", color: "text-slate-700" },
   reports: { name: "reports", key: "reports", icon: BarChart3, path: "/reports", color: "text-blue-700" },
+  ai: { name: "ai", key: "ai", icon: Zap, path: "/ai-forecasting", color: "text-violet-600" },
   users: { name: "users", key: "users", icon: UserRoundCog, path: "/users", color: "text-violet-600" },
   settings: { name: "settings", key: "settings", icon: Settings, path: "/settings", color: "text-slate-600" },
 };
 
+const MASTER_SUB_MENUS = [
+  { name: "units", path: "/master/units", icon: Database },
+  { name: "categories", path: "/master/categories", icon: Layers },
+  { name: "brands", path: "/master/brands", icon: Tag },
+  { name: "models", path: "/master/models", icon: Box },
+  { name: "productTypes", path: "/master/product-types", icon: Boxes },
+  { name: "serviceTypes", path: "/master/service-types", icon: Wrench },
+  { name: "warrantyTypes", path: "/master/warranty-types", icon: ShieldCheck },
+  { name: "customFields", path: "/master/custom-fields", icon: Fingerprint },
+];
+
 const HRM_SUB_MENUS = [
   { name: "hrmDashboard", path: "/hrm", icon: LayoutDashboard },
-  { 
-    name: "employeeManagement", 
-    icon: Users,
-    items: [
-      { name: "employees", path: "/hrm/employees" },
-      { name: "departments", path: "/hrm/departments" },
-      { name: "designations", path: "/hrm/designations" },
-    ]
-  },
-  {
-    name: "attendanceManagement",
-    icon: Clock,
-    items: [
-      { name: "dailyAttendance", path: "/hrm/attendance" },
-      { name: "attendanceHistory", path: "/hrm/attendance/history" },
-    ]
-  },
-  {
-    name: "leaveManagement",
-    icon: Heart,
-    items: [
-      { name: "leaveRequests", path: "/hrm/leave" },
-    ]
-  },
-  {
-    name: "payrollSalary",
-    icon: CreditCard,
-    items: [
-      { name: "monthlyPayroll", path: "/hrm/payroll" },
-    ]
-  },
-  { name: "hrmReports", path: "/hrm/reports", icon: FileBarChart }
+  { name: "employees", path: "/hrm/employees", icon: Users },
+  { name: "attendance", path: "/hrm/attendance", icon: Clock },
+  { name: "leave", path: "/hrm/leave", icon: Heart },
+  { name: "payroll", path: "/hrm/payroll", icon: CreditCard },
 ];
 
 export function AppSidebar() {
@@ -145,8 +139,6 @@ export function AppSidebar() {
     router.push('/login')
   }
 
-  const isHrmActive = pathname.startsWith('/hrm')
-  const isMasterActive = pathname.startsWith('/master')
   const menuOrder = settings?.sidebarMenuOrder || Object.keys(NAV_ITEMS_MAP);
 
   return (
@@ -179,12 +171,68 @@ export function AppSidebar() {
         <SidebarGroup className="p-0">
           <SidebarMenu className="gap-1 px-3">
             {menuOrder.map((key) => {
-              if (key === 'hrm') return null; 
               const item = NAV_ITEMS_MAP[key];
               if (!item || !can(item.key, 'view')) return null;
 
+              const isHrm = item.key === 'hrm';
+              const isMaster = item.key === 'masterManagement';
               const isActive = pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path));
-              
+
+              if (isHrm || isMaster) {
+                const subItems = isHrm ? HRM_SUB_MENUS : MASTER_SUB_MENUS;
+                const sectionColor = isHrm ? "text-purple-600" : "text-slate-600";
+
+                return (
+                  <Collapsible key={item.key} defaultOpen={isActive} className="group/collapsible">
+                    <SidebarMenuItem>
+                      <CollapsibleTrigger asChild>
+                        <SidebarMenuButton 
+                          isActive={isActive}
+                          tooltip={t(item.name)}
+                          className={cn("h-11 px-3 transition-all rounded-xl group", isActive ? "font-black" : "")}
+                          style={{ 
+                            color: isActive ? "#0056B3" : sidebarText,
+                            backgroundColor: isActive ? sidebarActive : "transparent",
+                          } as React.CSSProperties}
+                        >
+                          <div className="flex items-center gap-3 w-full h-full">
+                            <item.icon className={cn("h-5 w-5 shrink-0", sectionColor, isActive && "text-blue-600")} />
+                            {state === "expanded" && (
+                              <>
+                                <span className="text-[12px] font-black uppercase tracking-tight">{t(item.name)}</span>
+                                <ChevronRight className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                              </>
+                            )}
+                          </div>
+                        </SidebarMenuButton>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <SidebarMenu className="mt-1 ml-4 border-l border-slate-100 gap-0.5">
+                          {subItems.map((sub) => (
+                            <SidebarMenuItem key={sub.path}>
+                              <SidebarMenuButton 
+                                asChild 
+                                isActive={pathname === sub.path} 
+                                className="h-9 px-4 rounded-lg"
+                                style={{ 
+                                  color: pathname === sub.path ? "#0056B3" : sidebarText,
+                                  backgroundColor: pathname === sub.path ? sidebarActive : "transparent"
+                                } as React.CSSProperties}
+                              >
+                                <Link href={sub.path}>
+                                  <sub.icon className="h-3.5 w-3.5 mr-2 opacity-70" />
+                                  <span className="text-[10px] font-black uppercase">{t(sub.name)}</span>
+                                </Link>
+                              </SidebarMenuButton>
+                            </SidebarMenuItem>
+                          ))}
+                        </SidebarMenu>
+                      </CollapsibleContent>
+                    </SidebarMenuItem>
+                  </Collapsible>
+                );
+              }
+
               return (
                 <SidebarMenuItem key={item.key}>
                   <SidebarMenuButton 
@@ -196,7 +244,7 @@ export function AppSidebar() {
                       isActive ? "font-black" : ""
                     )}
                     style={{ 
-                      color: isActive ? "#000000" : sidebarText,
+                      color: isActive ? "#0056B3" : sidebarText,
                       backgroundColor: isActive ? sidebarActive : "transparent",
                     } as React.CSSProperties}
                   >
@@ -207,101 +255,11 @@ export function AppSidebar() {
                           {t(item.name)}
                         </span>
                       )}
-                      {isActive && <div className="absolute left-0 top-2 bottom-2 w-1 bg-blue-600 rounded-r-full" />}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               );
             })}
-
-            {can('hrm', 'view') && (
-              <Collapsible defaultOpen={isHrmActive} className="group/collapsible">
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton 
-                      isActive={isHrmActive}
-                      tooltip={t('hrm')}
-                      className={cn("h-11 px-3 transition-all rounded-xl group", isHrmActive ? "font-black" : "")}
-                      style={{ 
-                        color: isHrmActive ? "#000000" : sidebarText,
-                        backgroundColor: isHrmActive ? sidebarActive : "transparent",
-                      } as React.CSSProperties}
-                    >
-                      <div className="flex items-center gap-3 w-full h-full">
-                        <Briefcase className={cn("h-5 w-5 shrink-0", "text-purple-600", isHrmActive && "text-purple-700")} />
-                        {state === "expanded" && (
-                          <>
-                            <span className="text-[12px] font-black uppercase tracking-tight">{t('hrm')}</span>
-                            <ChevronRight className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                          </>
-                        )}
-                        {isHrmActive && <div className="absolute left-0 top-2 bottom-2 w-1 bg-purple-600 rounded-r-full" />}
-                      </div>
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenu className="mt-1 ml-4 border-l border-slate-100 gap-0.5">
-                      {HRM_SUB_MENUS.map((sub) => {
-                        if (sub.items) {
-                          return (
-                            <Collapsible key={sub.name} className="group/sub">
-                              <SidebarMenuItem>
-                                <CollapsibleTrigger asChild>
-                                  <SidebarMenuButton className="h-9 px-4 hover:bg-slate-100 rounded-lg font-bold uppercase text-[10px]" style={{ color: sidebarText } as React.CSSProperties}>
-                                    <sub.icon className="h-3.5 w-3.5 mr-2 opacity-70" />
-                                    <span style={{ color: sidebarText }}>{t(sub.name)}</span>
-                                    <ChevronRight className="ml-auto h-2.5 w-2.5 transition-transform duration-200 group-data-[state=open]/sub:rotate-90" />
-                                  </SidebarMenuButton>
-                                </CollapsibleTrigger>
-                                <CollapsibleContent>
-                                  <SidebarMenu className="ml-4 border-l border-slate-100">
-                                    {sub.items.map(item => (
-                                      <SidebarMenuItem key={item.path}>
-                                        <SidebarMenuButton 
-                                          asChild 
-                                          isActive={pathname === item.path} 
-                                          className="h-8 px-4 rounded-lg"
-                                          style={{ 
-                                            color: pathname === item.path ? "#0056B3" : sidebarText,
-                                            backgroundColor: pathname === item.path ? sidebarActive : "transparent"
-                                          } as React.CSSProperties}
-                                        >
-                                          <Link href={item.path}>
-                                            <span className="text-[9px] uppercase font-black">{t(item.name)}</span>
-                                          </Link>
-                                        </SidebarMenuButton>
-                                      </SidebarMenuItem>
-                                    ))}
-                                  </SidebarMenu>
-                                </CollapsibleContent>
-                              </SidebarMenuItem>
-                            </Collapsible>
-                          );
-                        }
-                        return (
-                          <SidebarMenuItem key={sub.path}>
-                            <SidebarMenuButton 
-                              asChild 
-                              isActive={pathname === sub.path} 
-                              className="h-9 px-4 rounded-lg"
-                              style={{ 
-                                color: pathname === sub.path ? "#0056B3" : sidebarText,
-                                backgroundColor: pathname === sub.path ? sidebarActive : "transparent"
-                              } as React.CSSProperties}
-                            >
-                              <Link href={sub.path!}>
-                                <sub.icon className="h-3.5 w-3.5 mr-2 opacity-70" />
-                                <span className="text-[10px] uppercase font-black">{t(sub.name)}</span>
-                              </Link>
-                            </SidebarMenuButton>
-                          </SidebarMenuItem>
-                        );
-                      })}
-                    </SidebarMenu>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
-            )}
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>

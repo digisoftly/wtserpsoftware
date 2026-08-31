@@ -70,7 +70,7 @@
   "suppliers": "সরবরাহকারী",
   "accounts": "হিসাব",
   "expenses": "ব্যয়",
-  "master": "মাস্টার",
+  "master": "মাস্টার ডাটা",
   "units": "ইউনিটস",
   "categories": "ক্যাটেগরি",
   "brands": "ব্র্যান্ডস",
@@ -87,6 +87,7 @@
   "ai": "এআই",
   "settings": "সেটিংস",
   "users": "ইউজার",
+  "audit": "অডিট লগ",
   "addCustomer": "নতুন গ্রাহক যুক্ত করুন",
   "customerType": "গ্রাহকের ধরণ",
   "creditLimit": "ক্রেডিট লিমিট",
@@ -103,5 +104,10 @@
   "website": "ওয়েবসাইট",
   "totalRevenue": "মোট বিক্রয়",
   "totalBilled": "মোট বিল",
-  "running": "চলমান প্রকল্প"
+  "running": "চলমান প্রকল্প",
+  "hrmDashboard": "এইচআরএম ড্যাশবোর্ড",
+  "employees": "কর্মচারী",
+  "attendance": "উপস্থিতি",
+  "leave": "ছুটি",
+  "payroll": "বেতন"
 }

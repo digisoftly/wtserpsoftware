@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -44,7 +45,7 @@ import { Switch } from "@/components/ui/switch"
 const DEFAULT_MENU_ORDER = [
   "dashboard", "sales", "quotations", "dispatch", "purchases", "returns", 
   "inventory", "serialTracking", "projectBilling", "contracts", "customers", 
-  "suppliers", "accounts", "expenses", "support", "crm", "hrm", "branches", 
+  "suppliers", "accounts", "expenses", "masterManagement", "support", "crm", "hrm", "branches", 
   "reports", "ai", "users", "settings"
 ];
 
@@ -212,7 +213,7 @@ export default function SettingsPage() {
             <TabsTrigger value="general" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Company & Style</TabsTrigger>
             <TabsTrigger value="branding" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Sidebar UI</TabsTrigger>
             <TabsTrigger value="dashboard" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Dashboard Matrix</TabsTrigger>
-            <TabsTrigger value="documents" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px) font-black uppercase tracking-widest">Document Lab</TabsTrigger>
+            <TabsTrigger value="documents" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Document Lab</TabsTrigger>
             <TabsTrigger value="navigation" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Navigation</TabsTrigger>
             <TabsTrigger value="security" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Security</TabsTrigger>
           </TabsList>
