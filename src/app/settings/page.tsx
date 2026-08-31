@@ -23,7 +23,9 @@ import {
   FileText,
   Clock,
   ShieldCheck,
-  MousePointer2
+  MousePointer2,
+  RefreshCcw,
+  AlertTriangle
 } from "lucide-react"
 import * as Icons from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -33,7 +35,7 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useFirestore, useDoc, useMemoFirebase } from "@/firebase"
-import { doc, serverTimestamp, setDoc } from "firebase/firestore"
+import { doc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { toast } from "@/hooks/use-toast"
 import { useTranslation } from "@/hooks/use-translation"
@@ -44,9 +46,9 @@ import { Switch } from "@/components/ui/switch"
 
 const DEFAULT_MENU_ORDER = [
   "dashboard", "sales", "quotations", "dispatch", "purchases", "returns", 
-  "inventory", "serialTracking", "projectBilling", "contracts", "customers", 
+  "inventory", "serialTracking", "contracts", "projectBilling", "customers", 
   "suppliers", "accounts", "expenses", "masterManagement", "support", "crm", "hrm", "branches", 
-  "reports", "ai", "users", "settings"
+  "reports", "ai", "users", "settings", "audit"
 ];
 
 const DATA_SOURCES = [
@@ -104,16 +106,44 @@ export default function SettingsPage() {
       setLoadingLogoPreview(settings.loadingLogo || null);
       setSealPreview(settings.authorizedSeal || null);
       setSignPreview(settings.authorizedSignature || null);
-      if (settings.sidebarMenuOrder) setMenuOrder(settings.sidebarMenuOrder);
+      
+      if (settings.sidebarMenuOrder) {
+        const saved = settings.sidebarMenuOrder as string[];
+        const allKeys = DEFAULT_MENU_ORDER;
+        const validSaved = saved.filter(k => allKeys.includes(k));
+        const missing = allKeys.filter(k => !validSaved.includes(k));
+        setMenuOrder([...validSaved, ...missing]);
+      } else {
+        setMenuOrder(DEFAULT_MENU_ORDER);
+      }
+      
       if (settings.dashboardKpiCards) setKpiCards(settings.dashboardKpiCards);
       
-      // Load Colors
       if (settings.sidebarBgColor) setSidebarBg(settings.sidebarBgColor);
       if (settings.sidebarTextColor) setSidebarText(settings.sidebarTextColor);
       if (settings.sidebarHoverColor) setSidebarHover(settings.sidebarHoverColor);
       if (settings.sidebarActiveColor) setSidebarActive(settings.sidebarActiveColor);
     }
   }, [settings]);
+
+  const handleResetNavigation = async () => {
+    if (!settingsRef) return;
+    if (confirm("This will restore the original menu order (Projects under Contracts). Continue?")) {
+      setIsSaving(true);
+      try {
+        await updateDoc(settingsRef, {
+          sidebarMenuOrder: DEFAULT_MENU_ORDER,
+          updatedAt: serverTimestamp()
+        });
+        setMenuOrder(DEFAULT_MENU_ORDER);
+        toast({ title: "Navigation Reset", description: "Default order has been restored successfully." });
+      } catch (e) {
+        toast({ variant: "destructive", title: "Reset Failed" });
+      } finally {
+        setIsSaving(false);
+      }
+    }
+  };
 
   const handleSaveKpi = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -440,32 +470,71 @@ export default function SettingsPage() {
 
           <TabsContent value="navigation" className="space-y-6">
             <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-6">
-              <CardHeader className="p-0">
-                <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-700">Sidebar Menu Ordering</CardTitle>
-                <CardDescription className="text-xs font-medium">Re-arrange the sequence of terminals in the main navigation sidebar.</CardDescription>
+              <CardHeader className="p-0 flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-700">Sidebar Menu Ordering</CardTitle>
+                  <CardDescription className="text-xs font-medium">Re-arrange the sequence of terminals in the main navigation sidebar.</CardDescription>
+                </div>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={handleResetNavigation}
+                  className="rounded-full gap-2 text-[10px] font-black uppercase h-9 border-orange-200 text-orange-600 hover:bg-orange-50"
+                >
+                  <RefreshCcw className="h-3.5 w-3.5" /> Restore Default
+                </Button>
               </CardHeader>
-              <div className="space-y-2 max-w-md">
-                {menuOrder.map((key, idx) => (
-                  <div key={key} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 group">
-                    <span className="text-[11px] font-black uppercase text-slate-600">{t(key as any)}</span>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
-                        const nextOrder = [...menuOrder];
-                        if (idx > 0) {
-                          [nextOrder[idx], nextOrder[idx - 1]] = [nextOrder[idx - 1], nextOrder[idx]];
-                          setMenuOrder(nextOrder);
-                        }
-                      }}><MoveUp className="h-3 w-3" /></Button>
-                      <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
-                        const nextOrder = [...menuOrder];
-                        if (idx < menuOrder.length - 1) {
-                          [nextOrder[idx], nextOrder[idx + 1]] = [nextOrder[idx + 1], nextOrder[idx]];
-                          setMenuOrder(nextOrder);
-                        }
-                      }}><MoveDown className="h-3 w-3" /></Button>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-black uppercase text-slate-400 ml-1 mb-4 flex items-center gap-2">
+                    <MousePointer2 className="h-3 w-3" /> Active Navigation Sequence
+                  </h4>
+                  <div className="space-y-2 max-w-md">
+                    {menuOrder.map((key, idx) => (
+                      <div key={key} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 group hover:bg-white hover:shadow-md transition-all">
+                        <div className="flex items-center gap-3">
+                          <span className="text-[10px] font-black text-slate-300 w-4">{idx + 1}</span>
+                          <span className="text-[11px] font-black uppercase text-slate-600">{t(key as any)}</span>
+                        </div>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button type="button" size="icon" variant="ghost" className="h-7 w-7 rounded-lg" onClick={() => {
+                            const nextOrder = [...menuOrder];
+                            if (idx > 0) {
+                              [nextOrder[idx], nextOrder[idx - 1]] = [nextOrder[idx - 1], nextOrder[idx]];
+                              setMenuOrder(nextOrder);
+                            }
+                          }}><MoveUp className="h-3.5 w-3.5" /></Button>
+                          <Button type="button" size="icon" variant="ghost" className="h-7 w-7 rounded-lg" onClick={() => {
+                            const nextOrder = [...menuOrder];
+                            if (idx < menuOrder.length - 1) {
+                              [nextOrder[idx], nextOrder[idx + 1]] = [nextOrder[idx + 1], nextOrder[idx]];
+                              setMenuOrder(nextOrder);
+                            }
+                          }}><MoveDown className="h-3.5 w-3.5" /></Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="p-6 rounded-[2rem] bg-blue-50 border-2 border-dashed border-blue-100 space-y-4">
+                    <div className="flex items-center gap-3 text-blue-600">
+                      <ShieldCheck className="h-5 w-5" />
+                      <span className="text-xs font-black uppercase tracking-widest">Navigation Integrity</span>
+                    </div>
+                    <p className="text-[11px] font-medium leading-relaxed text-blue-700">
+                      The order defined here applies globally to all users. However, users will only see the menus they have specific permissions to access.
+                    </p>
+                    <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-blue-100">
+                      <AlertTriangle className="h-4 w-4 text-orange-500" />
+                      <p className="text-[9px] font-black uppercase text-slate-500">
+                        If Projects or Master Management is missing, use the "Restore Default" button to repair the structure.
+                      </p>
                     </div>
                   </div>
-                ))}
+                </div>
               </div>
             </Card>
           </TabsContent>

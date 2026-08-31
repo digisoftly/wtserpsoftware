@@ -38,7 +38,19 @@ import {
   ShieldCheck,
   ShieldAlert,
   Archive,
-  Zap
+  Zap,
+  Award,
+  History,
+  PartyPopper,
+  UserCheck,
+  PlaneTakeoff,
+  UserX,
+  FileSearch,
+  BookOpenCheck,
+  Megaphone,
+  UserMinus,
+  FileStack,
+  FolderOpen
 } from "lucide-react"
 
 import { 
@@ -84,8 +96,8 @@ const NAV_ITEMS_MAP: Record<string, NavItem> = {
   returns: { name: "returns", key: "returns", icon: RotateCcw, path: "/returns", color: "text-red-600" },
   inventory: { name: "inventory", key: "inventory", icon: Boxes, path: "/inventory", color: "text-sky-600" },
   serialTracking: { name: "serialTracking", key: "serialTracking", icon: Scan, path: "/serial-inventory", color: "text-purple-600" },
-  projectBilling: { name: "projectBilling", key: "projectBilling", icon: ClipboardList, path: "/projects", color: "text-teal-600" },
   contracts: { name: "contracts", key: "contracts", icon: Wrench, path: "/contracts", color: "text-indigo-600" },
+  projectBilling: { name: "projectBilling", key: "projectBilling", icon: ClipboardList, path: "/projects", color: "text-teal-600" },
   customers: { name: "customers", key: "customers", icon: Users, path: "/customers", color: "text-blue-500" },
   suppliers: { name: "suppliers", key: "suppliers", icon: Truck, path: "/suppliers", color: "text-rose-600" },
   accounts: { name: "accounts", key: "accounts", icon: Wallet, path: "/accounts", color: "text-yellow-700" },
@@ -93,12 +105,13 @@ const NAV_ITEMS_MAP: Record<string, NavItem> = {
   masterManagement: { name: "master", key: "masterManagement", icon: Database, path: "/master", color: "text-slate-600" },
   support: { name: "support", key: "support", icon: GitPullRequest, path: "/support", color: "text-indigo-500" },
   crm: { name: "crm", key: "crm", icon: Target, path: "/crm", color: "text-rose-700" },
-  hrm: { name: "hrm", key: "hrm", icon: Briefcase, path: "/hrm", color: "text-purple-600" },
+  hrm: { name: "hrmDashboard", key: "hrm", icon: Briefcase, path: "/hrm", color: "text-purple-600" },
   branches: { name: "branches", key: "branches", icon: Building2, path: "/branches", color: "text-slate-700" },
   reports: { name: "reports", key: "reports", icon: BarChart3, path: "/reports", color: "text-blue-700" },
   ai: { name: "ai", key: "ai", icon: Zap, path: "/ai-forecasting", color: "text-violet-600" },
   users: { name: "users", key: "users", icon: UserRoundCog, path: "/users", color: "text-violet-600" },
   settings: { name: "settings", key: "settings", icon: Settings, path: "/settings", color: "text-slate-600" },
+  audit: { name: "audit", key: "audit", icon: ShieldAlert, path: "/administration/audit-logs", color: "text-red-600" },
 };
 
 const MASTER_SUB_MENUS = [
@@ -113,11 +126,152 @@ const MASTER_SUB_MENUS = [
 ];
 
 const HRM_SUB_MENUS = [
-  { name: "hrmDashboard", path: "/hrm", icon: LayoutDashboard },
-  { name: "employees", path: "/hrm/employees", icon: Users },
-  { name: "attendance", path: "/hrm/attendance", icon: Clock },
-  { name: "leave", path: "/hrm/leave", icon: Heart },
-  { name: "payroll", path: "/hrm/payroll", icon: CreditCard },
+  { name: "dashboard", path: "/hrm", icon: LayoutDashboard },
+  { 
+    name: "employeeManagement", 
+    path: "/hrm/employees", 
+    icon: Users,
+    children: [
+      { name: "employees", path: "/hrm/employees" },
+      { name: "employeeProfile", path: "/hrm/employees/profile" },
+      { name: "departments", path: "/hrm/departments" },
+      { name: "designations", path: "/hrm/designations" },
+      { name: "branchOffice", path: "/hrm/branches" },
+      { name: "employeeDocuments", path: "/hrm/documents" },
+    ]
+  },
+  { 
+    name: "attendance", 
+    path: "/hrm/attendance", 
+    icon: Clock,
+    children: [
+      { name: "attendanceDashboard", path: "/hrm/attendance" },
+      { name: "dailyAttendance", path: "/hrm/attendance/daily" },
+      { name: "attendanceHistory", path: "/hrm/attendance/history" },
+      { name: "attendanceCalendar", path: "/hrm/attendance/calendar" },
+      { name: "attendanceCorrection", path: "/hrm/attendance/correction" },
+      { name: "shifts", path: "/hrm/shifts" },
+      { name: "holidays", path: "/hrm/holidays" },
+    ]
+  },
+  { 
+    name: "leaveManagement", 
+    path: "/hrm/leave", 
+    icon: Heart,
+    children: [
+      { name: "leaveDashboard", path: "/hrm/leave" },
+      { name: "leaveRequests", path: "/hrm/leave/requests" },
+      { name: "leaveTypes", path: "/hrm/leave/types" },
+      { name: "leaveBalance", path: "/hrm/leave/balance" },
+      { name: "leaveHistory", path: "/hrm/leave/history" },
+    ]
+  },
+  { 
+    name: "payrollSalary", 
+    path: "/hrm/payroll", 
+    icon: CreditCard,
+    children: [
+      { name: "payrollDashboard", path: "/hrm/payroll" },
+      { name: "monthlyPayroll", path: "/hrm/payroll/monthly" },
+      { name: "salaryStructure", path: "/hrm/salary/structure" },
+      { name: "salaryHistory", path: "/hrm/salary/history" },
+      { name: "salaryAdvance", path: "/hrm/salary/advance" },
+      { name: "employeeLoans", path: "/hrm/salary/loans" },
+      { name: "payslips", path: "/hrm/payroll/payslips" },
+    ]
+  },
+  { 
+    name: "recruitment", 
+    path: "/hrm/recruitment", 
+    icon: Target,
+    children: [
+      { name: "recruitmentDashboard", path: "/hrm/recruitment" },
+      { name: "jobPositions", path: "/hrm/recruitment/jobs" },
+      { name: "candidates", path: "/hrm/recruitment/candidates" },
+      { name: "interviews", path: "/hrm/recruitment/interviews" },
+      { name: "hiring", path: "/hrm/recruitment/hiring" },
+    ]
+  },
+  { 
+    name: "performance", 
+    path: "/hrm/performance", 
+    icon: Award,
+    children: [
+      { name: "performanceDashboard", path: "/hrm/performance" },
+      { name: "goalsKpi", path: "/hrm/performance/goals" },
+      { name: "performanceReviews", path: "/hrm/performance/reviews" },
+      { name: "performanceHistory", path: "/hrm/performance/history" },
+    ]
+  },
+  { 
+    name: "training", 
+    path: "/hrm/training", 
+    icon: History,
+    children: [
+      { name: "trainingPrograms", path: "/hrm/training" },
+      { name: "trainingSchedule", path: "/hrm/training/schedule" },
+      { name: "employeeTrainingHistory", path: "/hrm/training/history" },
+    ]
+  },
+  { 
+    name: "employeeAssets", 
+    path: "/hrm/assets", 
+    icon: FolderOpen,
+    children: [
+      { name: "assignedAssets", path: "/hrm/assets" },
+      { name: "assetAssignment", path: "/hrm/assets/assign" },
+      { name: "assetReturn", path: "/hrm/assets/return" },
+    ]
+  },
+  { 
+    name: "employeeExpenses", 
+    path: "/hrm/expenses", 
+    icon: FileStack,
+    children: [
+      { name: "expenseRequests", path: "/hrm/expenses" },
+      { name: "pendingApproval", path: "/hrm/expenses/pending" },
+      { name: "expenseHistory", path: "/hrm/expenses/history" },
+    ]
+  },
+  { 
+    name: "hrCommunication", 
+    path: "/hrm/communication", 
+    icon: Megaphone,
+    children: [
+      { name: "notices", path: "/hrm/communication/notices" },
+      { name: "announcements", path: "/hrm/communication/announcements" },
+      { name: "hrPolicies", path: "/hrm/communication/policies" },
+    ]
+  },
+  { 
+    name: "employeeExit", 
+    path: "/hrm/exit", 
+    icon: UserMinus,
+    children: [
+      { name: "resignation", path: "/hrm/exit/resignation" },
+      { name: "exitOffboarding", path: "/hrm/exit/offboarding" },
+      { name: "clearance", path: "/hrm/exit/clearance" },
+      { name: "finalSettlement", path: "/hrm/exit/settlement" },
+    ]
+  },
+  { 
+    name: "hrmReports", 
+    path: "/hrm/reports", 
+    icon: FileBarChart,
+    children: [
+      { name: "employeeReports", path: "/hrm/reports/employees" },
+      { name: "attendanceReports", path: "/hrm/reports/attendance" },
+      { name: "leaveReports", path: "/hrm/reports/leave" },
+      { name: "payrollReports", path: "/hrm/reports/payroll" },
+      { name: "recruitmentReports", path: "/hrm/reports/recruitment" },
+      { name: "performanceReports", path: "/hrm/reports/performance" },
+      { name: "trainingReports", path: "/hrm/reports/training" },
+      { name: "assetReports", path: "/hrm/reports/assets" },
+      { name: "expenseReports", path: "/hrm/reports/expenses" },
+      { name: "joiningReports", path: "/hrm/reports/joining" },
+      { name: "exitReports", path: "/hrm/reports/exit" },
+    ]
+  },
 ];
 
 export function AppSidebar() {
@@ -139,12 +293,18 @@ export function AppSidebar() {
     router.push('/login')
   }
 
-  // SMARTER MENU ORDER: Merge saved order with NAV_ITEMS_MAP keys to ensure nothing is missed
   const menuOrder = React.useMemo(() => {
     const savedOrder = settings?.sidebarMenuOrder || [];
     const allKeys = Object.keys(NAV_ITEMS_MAP);
     
-    if (savedOrder.length === 0) return allKeys;
+    const defaultOrder = [
+      "dashboard", "sales", "quotations", "dispatch", "purchases", "returns", 
+      "inventory", "serialTracking", "contracts", "projectBilling", "customers", 
+      "suppliers", "accounts", "expenses", "masterManagement", "support", "crm", "hrm", "branches", 
+      "reports", "ai", "users", "settings", "audit"
+    ];
+
+    if (savedOrder.length === 0) return defaultOrder.filter(k => allKeys.includes(k));
     
     const validSaved = savedOrder.filter(k => allKeys.includes(k));
     const missing = allKeys.filter(k => !validSaved.includes(k));
@@ -219,24 +379,69 @@ export function AppSidebar() {
                       </CollapsibleTrigger>
                       <CollapsibleContent>
                         <SidebarMenu className="mt-1 ml-4 border-l border-slate-100 gap-0.5">
-                          {subItems.map((sub) => (
-                            <SidebarMenuItem key={sub.path}>
-                              <SidebarMenuButton 
-                                asChild 
-                                isActive={pathname === sub.path} 
-                                className="h-9 px-4 rounded-lg"
-                                style={{ 
-                                  color: pathname === sub.path ? "#0056B3" : sidebarText,
-                                  backgroundColor: pathname === sub.path ? sidebarActive : "transparent"
-                                } as React.CSSProperties}
-                              >
-                                <Link href={sub.path}>
-                                  <sub.icon className="h-3.5 w-3.5 mr-2 opacity-70" />
-                                  <span className="text-[10px] font-black uppercase">{t(sub.name)}</span>
-                                </Link>
-                              </SidebarMenuButton>
-                            </SidebarMenuItem>
-                          ))}
+                          {subItems.map((sub) => {
+                             const hasChildren = (sub as any).children && (sub as any).children.length > 0;
+                             const isSubActive = pathname.startsWith(sub.path);
+
+                             if (hasChildren) {
+                               return (
+                                 <Collapsible key={sub.path} defaultOpen={isSubActive} className="group/sub-collapsible">
+                                    <SidebarMenuItem>
+                                      <CollapsibleTrigger asChild>
+                                        <SidebarMenuButton 
+                                          className="h-9 px-4 rounded-lg"
+                                          style={{ color: sidebarText } as React.CSSProperties}
+                                        >
+                                          <sub.icon className="h-3.5 w-3.5 mr-2 opacity-70" />
+                                          <span className="text-[10px] font-black uppercase flex-1">{t(sub.name)}</span>
+                                          <ChevronRight className="h-3 w-3 transition-transform duration-200 group-data-[state=open]/sub-collapsible:rotate-90" />
+                                        </SidebarMenuButton>
+                                      </CollapsibleTrigger>
+                                      <CollapsibleContent>
+                                        <SidebarMenu className="ml-4 mt-1 border-l border-slate-50 gap-0.5">
+                                          {(sub as any).children.map((child: any) => (
+                                            <SidebarMenuItem key={child.path}>
+                                              <SidebarMenuButton 
+                                                asChild 
+                                                isActive={pathname === child.path}
+                                                className="h-8 px-4 rounded-lg"
+                                                style={{ 
+                                                  color: pathname === child.path ? "#0056B3" : sidebarText,
+                                                  backgroundColor: pathname === child.path ? sidebarActive : "transparent"
+                                                } as React.CSSProperties}
+                                              >
+                                                <Link href={child.path}>
+                                                  <span className="text-[9px] font-bold uppercase">{t(child.name)}</span>
+                                                </Link>
+                                              </SidebarMenuButton>
+                                            </SidebarMenuItem>
+                                          ))}
+                                        </SidebarMenu>
+                                      </CollapsibleContent>
+                                    </SidebarMenuItem>
+                                 </Collapsible>
+                               )
+                             }
+
+                             return (
+                              <SidebarMenuItem key={sub.path}>
+                                <SidebarMenuButton 
+                                  asChild 
+                                  isActive={pathname === sub.path} 
+                                  className="h-9 px-4 rounded-lg"
+                                  style={{ 
+                                    color: pathname === sub.path ? "#0056B3" : sidebarText,
+                                    backgroundColor: pathname === sub.path ? sidebarActive : "transparent"
+                                  } as React.CSSProperties}
+                                >
+                                  <Link href={sub.path}>
+                                    <sub.icon className="h-3.5 w-3.5 mr-2 opacity-70" />
+                                    <span className="text-[10px] font-black uppercase">{t(sub.name)}</span>
+                                  </Link>
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                             )
+                          })}
                         </SidebarMenu>
                       </CollapsibleContent>
                     </SidebarMenuItem>
