@@ -1,4 +1,3 @@
-
 import { Firestore, collection, doc, writeBatch, serverTimestamp } from "firebase/firestore";
 
 /**
@@ -25,7 +24,7 @@ export async function seedMasterData(db: Firestore, companyId: string) {
           returns: ["view", "create", "edit", "delete", "approve", "export", "print"],
           inventory: ["view", "create", "edit", "delete", "export", "print"],
           serialTracking: ["view", "create", "edit", "delete", "export", "print"],
-          "project-billing": ["view", "create", "edit", "delete", "approve", "export", "print"],
+          projectBilling: ["view", "create", "edit", "delete", "approve", "export", "print"],
           contracts: ["view", "create", "edit", "delete", "approve", "export", "print"],
           customers: ["view", "create", "edit", "delete", "export", "print"],
           suppliers: ["view", "create", "edit", "delete", "export", "print"],
@@ -47,7 +46,7 @@ export async function seedMasterData(db: Firestore, companyId: string) {
           sales: "all",
           inventory: "all",
           users: "all",
-          "project-billing": "all",
+          projectBilling: "all",
           contracts: "all",
           audit: "all"
         } 

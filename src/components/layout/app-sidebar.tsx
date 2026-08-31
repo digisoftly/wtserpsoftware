@@ -63,6 +63,7 @@ import { usePermissions } from "@/hooks/use-permissions"
 import { useSettings } from "@/hooks/use-settings"
 import { useTranslation } from "@/hooks/use-translation"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 
 interface NavItem {
   name: string
@@ -105,7 +106,6 @@ const HRM_SUB_MENUS = [
       { name: "employees", path: "/hrm/employees" },
       { name: "departments", path: "/hrm/departments" },
       { name: "designations", path: "/hrm/designations" },
-      { name: "branches", path: "/branches" },
     ]
   },
   {
@@ -114,8 +114,6 @@ const HRM_SUB_MENUS = [
     items: [
       { name: "dailyAttendance", path: "/hrm/attendance" },
       { name: "attendanceHistory", path: "/hrm/attendance/history" },
-      { name: "shifts", path: "/hrm/shifts" },
-      { name: "holidays", path: "/hrm/holidays" },
     ]
   },
   {
@@ -123,7 +121,6 @@ const HRM_SUB_MENUS = [
     icon: Heart,
     items: [
       { name: "leaveRequests", path: "/hrm/leave" },
-      { name: "leaveBalance", path: "/hrm/leave/balance" },
     ]
   },
   {
@@ -131,24 +128,6 @@ const HRM_SUB_MENUS = [
     icon: CreditCard,
     items: [
       { name: "monthlyPayroll", path: "/hrm/payroll" },
-      { name: "salaryStructure", path: "/hrm/payroll/structure" },
-      { name: "salaryAdvances", path: "/hrm/payroll/advances" },
-    ]
-  },
-  {
-    name: "recruitment",
-    icon: UserPlus,
-    items: [
-      { name: "jobPositions", path: "/hrm/recruitment/jobs" },
-      { name: "candidates", path: "/hrm/recruitment/candidates" },
-    ]
-  },
-  {
-    name: "performance_management",
-    icon: Award,
-    items: [
-      { name: "performanceReviews", path: "/hrm/performance" },
-      { name: "goals_kpi", path: "/hrm/performance/goals" },
     ]
   },
   { name: "hrm_reports", path: "/hrm/reports", icon: FileBarChart }
@@ -218,7 +197,7 @@ export function AppSidebar() {
         <SidebarGroup className="p-0">
           <SidebarMenu className="gap-1 px-3">
             {menuOrder.map((key) => {
-              if (key === 'hrm') return null; // Handle HRM separately below
+              if (key === 'hrm') return null; 
               const item = NAV_ITEMS_MAP[key];
               if (!item || !can(item.key, 'view')) return null;
 
@@ -232,24 +211,15 @@ export function AppSidebar() {
                     tooltip={t(item.name)} 
                     className={cn(
                       "h-11 px-3 transition-all rounded-xl group relative overflow-hidden",
-                      isActive 
-                        ? "font-bold" 
-                        : "hover:bg-slate-200"
+                      isActive ? "font-black" : ""
                     )}
                     style={{ 
                       color: isActive ? "#000000" : sidebarText,
                       backgroundColor: isActive ? sidebarActive : "transparent",
                     } as React.CSSProperties}
                   >
-                    <Link 
-                      href={item.path} 
-                      className="flex items-center gap-3 w-full h-full"
-                    >
-                      <item.icon className={cn(
-                        "h-5 w-5 shrink-0 transition-colors", 
-                        item.color,
-                        isActive && "text-blue-600"
-                      )} />
+                    <Link href={item.path} className="flex items-center gap-3 w-full h-full">
+                      <item.icon className={cn("h-5 w-5 shrink-0", item.color, isActive && "text-blue-600")} />
                       {state === "expanded" && (
                         <span className="text-[12px] font-black uppercase tracking-tight">
                           {t(item.name)}
@@ -262,7 +232,6 @@ export function AppSidebar() {
               );
             })}
 
-            {/* EXPANDABLE HRM MENU */}
             {can('hrm', 'view') && (
               <Collapsible defaultOpen={isHrmActive} className="group/collapsible">
                 <SidebarMenuItem>
@@ -270,21 +239,14 @@ export function AppSidebar() {
                     <SidebarMenuButton 
                       isActive={isHrmActive}
                       tooltip={t('hrm')}
-                      className={cn(
-                        "h-11 px-3 transition-all rounded-xl group",
-                        isHrmActive ? "font-bold" : "hover:bg-slate-200"
-                      )}
+                      className={cn("h-11 px-3 transition-all rounded-xl group", isHrmActive ? "font-black" : "")}
                       style={{ 
                         color: isHrmActive ? "#000000" : sidebarText,
                         backgroundColor: isHrmActive ? sidebarActive : "transparent",
                       } as React.CSSProperties}
                     >
-                      <div className="flex items-center gap-3 w-full h-full rounded-xl">
-                        <Briefcase className={cn(
-                          "h-5 w-5 shrink-0 transition-colors", 
-                          "text-purple-600",
-                          isHrmActive && "text-purple-700"
-                        )} />
+                      <div className="flex items-center gap-3 w-full h-full">
+                        <Briefcase className={cn("h-5 w-5 shrink-0", "text-purple-600", isHrmActive && "text-purple-700")} />
                         {state === "expanded" && (
                           <>
                             <span className="text-[12px] font-black uppercase tracking-tight">{t('hrm')}</span>
@@ -303,7 +265,7 @@ export function AppSidebar() {
                             <Collapsible key={sub.name} className="group/sub">
                               <SidebarMenuItem>
                                 <CollapsibleTrigger asChild>
-                                  <SidebarMenuButton className="h-9 px-4 hover:bg-slate-100 rounded-lg text-slate-600 font-bold uppercase text-[10px]">
+                                  <SidebarMenuButton className="h-9 px-4 hover:bg-slate-100 rounded-lg font-bold uppercase text-[10px]" style={{ color: sidebarText } as React.CSSProperties}>
                                     <sub.icon className="h-3.5 w-3.5 mr-2 opacity-70" />
                                     {t(sub.name)}
                                     <ChevronRight className="ml-auto h-2.5 w-2.5 transition-transform duration-200 group-data-[state=open]/sub:rotate-90" />
@@ -313,7 +275,15 @@ export function AppSidebar() {
                                   <SidebarMenu className="ml-4 border-l border-slate-100">
                                     {sub.items.map(item => (
                                       <SidebarMenuItem key={item.path}>
-                                        <SidebarMenuButton asChild isActive={pathname === item.path} className="h-8 px-4 rounded-lg">
+                                        <SidebarMenuButton 
+                                          asChild 
+                                          isActive={pathname === item.path} 
+                                          className="h-8 px-4 rounded-lg"
+                                          style={{ 
+                                            color: pathname === item.path ? "blue" : sidebarText,
+                                            backgroundColor: pathname === item.path ? sidebarActive : "transparent"
+                                          } as React.CSSProperties}
+                                        >
                                           <Link href={item.path}>
                                             <span className="text-[9px] uppercase font-black">{t(item.name)}</span>
                                           </Link>
@@ -328,7 +298,15 @@ export function AppSidebar() {
                         }
                         return (
                           <SidebarMenuItem key={sub.path}>
-                            <SidebarMenuButton asChild isActive={pathname === sub.path} className="h-9 px-4 rounded-lg">
+                            <SidebarMenuButton 
+                              asChild 
+                              isActive={pathname === sub.path} 
+                              className="h-9 px-4 rounded-lg"
+                              style={{ 
+                                color: pathname === sub.path ? "blue" : sidebarText,
+                                backgroundColor: pathname === sub.path ? sidebarActive : "transparent"
+                              } as React.CSSProperties}
+                            >
                               <Link href={sub.path!}>
                                 <sub.icon className="h-3.5 w-3.5 mr-2 opacity-70" />
                                 <span className="text-[10px] uppercase font-black">{t(sub.name)}</span>
@@ -350,21 +328,14 @@ export function AppSidebar() {
                     <SidebarMenuButton 
                       isActive={isMasterActive}
                       tooltip={t('master')}
-                      className={cn(
-                        "h-11 px-3 transition-all rounded-xl group",
-                        isMasterActive ? "font-bold" : "hover:bg-slate-200"
-                      )}
+                      className={cn("h-11 px-3 transition-all rounded-xl group", isMasterActive ? "font-black" : "")}
                       style={{ 
                         color: isMasterActive ? "#000000" : sidebarText,
                         backgroundColor: isMasterActive ? sidebarActive : "transparent",
                       } as React.CSSProperties}
                     >
-                      <div className="flex items-center gap-3 w-full h-full rounded-xl">
-                        <Database className={cn(
-                          "h-5 w-5 shrink-0 transition-colors", 
-                          "text-orange-500",
-                          isMasterActive && "text-orange-600"
-                        )} />
+                      <div className="flex items-center gap-3 w-full h-full">
+                        <Database className={cn("h-5 w-5 shrink-0", "text-orange-500", isMasterActive && "text-orange-600")} />
                         {state === "expanded" && (
                           <>
                             <span className="text-[12px] font-black uppercase tracking-tight">{t('master')}</span>
@@ -382,12 +353,7 @@ export function AppSidebar() {
                           <SidebarMenuButton 
                             asChild 
                             isActive={pathname === sub.path}
-                            className={cn(
-                              "h-8 px-4 rounded-lg transition-all",
-                              pathname === sub.path 
-                                ? "text-blue-600 font-black" 
-                                : "hover:bg-slate-200"
-                            )}
+                            className="h-8 px-4 rounded-lg transition-all"
                             style={{ 
                               color: pathname === sub.path ? "blue" : sidebarText,
                               backgroundColor: pathname === sub.path ? sidebarActive : "transparent",
@@ -414,20 +380,19 @@ export function AppSidebar() {
       >
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton 
+            <Button 
+              variant="ghost" 
               onClick={handleLogout} 
-              tooltip="Logout"
               className={cn(
-                "h-11 w-full rounded-xl transition-all duration-200 group/logout",
-                "hover:bg-red-600 hover:text-white"
+                "h-11 w-full rounded-xl transition-all duration-200 group/logout justify-start px-3 gap-3",
+                "hover:bg-red-600 hover:text-white text-red-600"
               )}
-              style={{ color: sidebarText } as React.CSSProperties}
             >
-              <LogOut className="h-5 w-5 text-red-500 group-hover/logout:text-white transition-colors shrink-0" />
+              <LogOut className="h-5 w-5 shrink-0" />
               <span className="text-[12px] font-black uppercase tracking-tight truncate group-data-[collapsible=icon]:hidden">
                 Logout
               </span>
-            </SidebarMenuButton>
+            </Button>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
