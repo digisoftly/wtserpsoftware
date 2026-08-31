@@ -23,7 +23,12 @@ import {
   Building,
   CreditCard,
   Eye,
-  Printer
+  Printer,
+  ChevronDown,
+  ChevronRight,
+  MoreVertical,
+  LayoutGrid,
+  Edit
 } from "lucide-react"
 import { useFirestore, useDoc, useMemoFirebase, useCollection } from "@/firebase"
 import { doc, collection, query, where, orderBy } from "firebase/firestore"
@@ -36,6 +41,7 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { cn } from "@/lib/utils"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 
 export default function CustomerProfilePage() {
   const { id } = useParams();
@@ -64,213 +70,207 @@ export default function CustomerProfilePage() {
   const { data: invoices } = useCollection(getCustomerQuery("sales_invoices"));
   const { data: quotations } = useCollection(getCustomerQuery("quotations"));
   const { data: challans } = useCollection(getCustomerQuery("delivery_challans"));
-  const { data: returns } = useCollection(getCustomerQuery("sales_returns"));
   const { data: projects } = useCollection(getCustomerQuery("projects"));
   const { data: contracts } = useCollection(getCustomerQuery("service_contracts"));
 
-  // 3. Financial Summary Logic
+  // 3. Document Grouping Logic
+  const groupedDocuments = React.useMemo(() => {
+    const groups: Record<string, any> = {
+      "General / No Project": { items: [], id: 'general' }
+    };
+
+    quotations?.forEach(q => {
+      const pName = q.projectName || "General / No Project";
+      if (!groups[pName]) groups[pName] = { items: [], id: pName };
+      groups[pName].items.push({ ...q, docType: 'Quotation' });
+    });
+
+    invoices?.forEach(inv => {
+      const pName = inv.projectName || "General / No Project";
+      if (!groups[pName]) groups[pName] = { items: [], id: pName };
+      groups[pName].items.push({ ...inv, docType: 'Invoice' });
+    });
+
+    return Object.values(groups).filter(g => g.items.length > 0);
+  }, [quotations, invoices]);
+
+  // 4. Financial Summary
   const stats = React.useMemo(() => ({
     totalBilled: invoices?.reduce((s, i) => s + (i.totalAmount || 0), 0) || 0,
     totalPaid: invoices?.reduce((s, i) => s + (i.paidAmount || 0), 0) || 0,
     totalDue: invoices?.reduce((s, i) => s + (i.balanceDue || 0), 0) || 0,
-    activeProjects: projects?.filter(p => p.status !== 'Completed').length || 0
-  }), [invoices, projects]);
+    activeProjects: projects?.filter(p => p.status !== 'Completed').length || 0,
+    totalQuotes: quotations?.length || 0
+  }), [invoices, projects, quotations]);
 
-  if (isProfileLoading) return <div className="flex h-screen items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-cyan-600" /></div>;
+  if (isProfileLoading) return <div className="flex h-screen items-center justify-center bg-slate-50"><Loader2 className="h-10 w-10 animate-spin text-cyan-600" /></div>;
   if (!customer) return <div className="p-20 text-center uppercase font-black text-muted-foreground">{t('noData')}</div>;
 
   return (
     <div className="space-y-6 pb-20 max-w-[1600px] mx-auto">
       {/* HEADER SECTION */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-6 rounded-[2.5rem] border shadow-sm ring-1 ring-slate-100">
-        <div className="flex items-start gap-6">
-           <div className="w-20 h-20 rounded-[2rem] bg-cyan-50 flex items-center justify-center text-cyan-600 shadow-inner border border-cyan-100 shrink-0">
-              <User className="h-10 w-10" />
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-8 rounded-[3rem] border shadow-sm ring-1 ring-slate-100">
+        <div className="flex items-start gap-8">
+           <div className="w-24 h-24 rounded-[2.5rem] bg-gradient-to-br from-cyan-50 to-blue-50 flex items-center justify-center text-cyan-600 shadow-inner border border-cyan-100 shrink-0">
+              <User className="h-12 w-12" />
            </div>
-           <div className="space-y-1">
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-black font-headline uppercase tracking-tight text-slate-900">
-                  {customer.customerType === 'company' ? customer.companyName : `${customer.firstName} ${customer.lastName}`}
+           <div className="space-y-2">
+              <div className="flex items-center gap-4">
+                <h1 className="text-3xl font-black font-headline uppercase tracking-tight text-slate-900 leading-none">
+                  {customer.customerType === 'company' ? customer.companyName : customer.fullName}
                 </h1>
-                <Badge variant="outline" className="bg-slate-50 text-[9px] font-black uppercase border-none px-2">{customer.customerType}</Badge>
+                <Badge variant="outline" className="bg-cyan-50 text-cyan-700 text-[10px] font-black uppercase border-none px-3 h-6">
+                  {customer.customerType}
+                </Badge>
               </div>
-              <div className="flex flex-wrap gap-x-6 gap-y-2 text-[11px] font-bold text-slate-500 uppercase tracking-tighter mt-2">
-                 <span className="flex items-center gap-1.5"><Phone className="h-3 w-3 text-cyan-600" /> {customer.phoneNumber}</span>
-                 <span className="flex items-center gap-1.5"><Mail className="h-3 w-3 text-cyan-600" /> {customer.email || 'N/A'}</span>
-                 <span className="flex items-center gap-1.5"><MapPin className="h-3 w-3 text-cyan-600" /> {customer.city}, {customer.country}</span>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{customer.id} • Registered {formatDate(customer.createdAt)}</p>
+              <div className="flex flex-wrap gap-x-8 gap-y-2 text-[12px] font-bold text-slate-500 uppercase tracking-tighter mt-4">
+                 <span className="flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-full"><Phone className="h-3.5 w-3.5 text-cyan-600" /> {customer.phoneNumber}</span>
+                 <span className="flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-full"><Mail className="h-3.5 w-3.5 text-cyan-600" /> {customer.email || 'N/A'}</span>
+                 <span className="flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-full"><MapPin className="h-3.5 w-3.5 text-cyan-600" /> {customer.city || 'Dhaka'}</span>
               </div>
            </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-           <Button variant="outline" className="rounded-full h-10 px-6 font-black text-[10px] uppercase gap-2 border-slate-200" onClick={() => router.push(`/sales/new?customerId=${id}`)}>
-              <Plus className="h-3.5 w-3.5" /> {t('sales')}
+        <div className="flex flex-wrap gap-3">
+           <Button variant="outline" className="rounded-full h-11 px-8 font-black text-[10px] uppercase gap-2 border-slate-200 shadow-sm transition-all hover:bg-slate-50" onClick={() => router.push(`/customers/${id}/edit`)}>
+              <Edit className="h-4 w-4" /> {t('edit')} Identity
            </Button>
-           <Button className="bg-cyan-600 hover:bg-cyan-700 rounded-full h-10 px-8 font-black text-[10px] uppercase gap-2 shadow-xl shadow-cyan-100" onClick={() => router.push(`/payments/new?customerId=${id}`)}>
-              <CreditCard className="h-3.5 w-3.5" /> {t('payments')}
+           <Button className="bg-cyan-600 hover:bg-cyan-700 text-white rounded-full h-11 px-10 font-black text-[10px] uppercase gap-2 shadow-xl shadow-cyan-100 transition-all active:scale-95">
+              <Plus className="h-4 w-4" /> New Transaction
            </Button>
         </div>
       </div>
 
       {/* KPI CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title={t('totalRevenue')} value={formatCurrency(stats.totalBilled)} icon={TrendingUp} colorClass="bg-blue-600" />
-        <KPICard title={t('paidAmount')} value={formatCurrency(stats.totalPaid)} icon={Wallet} colorClass="bg-green-600" />
-        <KPICard title={t('balanceDue')} value={formatCurrency(stats.totalDue)} icon={AlertCircle} colorClass="bg-red-600" />
-        <KPICard title={t('running')} value={stats.activeProjects} icon={Folder} colorClass="bg-purple-600" />
+        <KPICard title="totalSales" value={formatCurrency(stats.totalBilled)} icon={TrendingUp} colorClass="bg-blue-600" />
+        <KPICard title="paidAmount" value={formatCurrency(stats.totalPaid)} icon={Wallet} colorClass="bg-green-600" />
+        <KPICard title="balanceDue" value={formatCurrency(stats.totalDue)} icon={AlertCircle} colorClass="bg-red-600" />
+        <KPICard title="running" value={stats.activeProjects} icon={Folder} colorClass="bg-teal-600" />
       </div>
 
       {/* TABS INTERFACE */}
-      <Tabs defaultValue="invoices" className="w-full">
-        <TabsList className="bg-white border p-1 rounded-2xl shadow-sm mb-6 flex h-auto overflow-x-auto no-scrollbar ring-1 ring-slate-100">
-          <TabsTrigger value="invoices" className="rounded-xl gap-2 flex-none md:flex-1 py-3 text-[10px] font-black uppercase tracking-widest min-w-[120px] data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
-            <Receipt className="h-4 w-4" /> {t('sales')}
+      <Tabs defaultValue="documents" className="w-full">
+        <TabsList className="bg-white border p-1.5 rounded-[1.5rem] shadow-sm mb-8 flex h-auto overflow-x-auto no-scrollbar ring-1 ring-slate-100 gap-1">
+          <TabsTrigger value="documents" className="rounded-xl gap-2 flex-none md:flex-1 py-3 text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-cyan-50 data-[state=active]:text-cyan-600">
+            <FileText className="h-4 w-4" /> Project Folders
           </TabsTrigger>
-          <TabsTrigger value="quotes" className="rounded-xl gap-2 flex-none md:flex-1 py-3 text-[10px] font-black uppercase tracking-widest min-w-[120px] data-[state=active]:bg-amber-50 data-[state=active]:text-amber-600">
-            <FileText className="h-4 w-4" /> {t('quotations')}
+          <TabsTrigger value="profile" className="rounded-xl gap-2 flex-none md:flex-1 py-3 text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
+            <User className="h-4 w-4" /> Business Info
           </TabsTrigger>
-          <TabsTrigger value="dispatch" className="rounded-xl gap-2 flex-none md:flex-1 py-3 text-[10px] font-black uppercase tracking-widest min-w-[120px] data-[state=active]:bg-cyan-50 data-[state=active]:text-cyan-600">
-            <Truck className="h-4 w-4" /> {t('dispatch')}
-          </TabsTrigger>
-          <TabsTrigger value="projects" className="rounded-xl gap-2 flex-none md:flex-1 py-3 text-[10px] font-black uppercase tracking-widest min-w-[120px] data-[state=active]:bg-teal-50 data-[state=active]:text-teal-600">
-            <Folder className="h-4 w-4" /> {t('projectBilling')}
-          </TabsTrigger>
-          <TabsTrigger value="contracts" className="rounded-xl gap-2 flex-none md:flex-1 py-3 text-[10px] font-black uppercase tracking-widest min-w-[120px] data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-600">
-            <Wrench className="h-4 w-4" /> {t('contracts')}
-          </TabsTrigger>
-          <TabsTrigger value="returns" className="rounded-xl gap-2 flex-none md:flex-1 py-3 text-[10px] font-black uppercase tracking-widest min-w-[120px] data-[state=active]:bg-red-50 data-[state=active]:text-red-600">
-            <RotateCcw className="h-4 w-4" /> {t('returns')}
+          <TabsTrigger value="ledger" className="rounded-xl gap-2 flex-none md:flex-1 py-3 text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-600">
+            <CreditCard className="h-4 w-4" /> Account Ledger
           </TabsTrigger>
         </TabsList>
 
-        {/* INVOICES TAB */}
-        <TabsContent value="invoices">
-          <Card className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white ring-1 ring-slate-100">
-            <Table>
-              <TableHeader className="bg-slate-50/50">
-                <TableRow>
-                  <TableHead className="h-12 pl-8 text-[10px] font-black uppercase">Ref #</TableHead>
-                  <TableHead className="h-12 text-[10px] font-black uppercase">{t('date')}</TableHead>
-                  <TableHead className="h-12 text-[10px] font-black uppercase text-right">{t('total')}</TableHead>
-                  <TableHead className="h-12 text-[10px] font-black uppercase text-right">{t('balanceDue')}</TableHead>
-                  <TableHead className="h-12 text-[10px] font-black uppercase text-center">{t('status')}</TableHead>
-                  <TableHead className="h-12 text-right pr-8">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {invoices?.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="h-40 text-center opacity-30 italic font-black uppercase text-[10px]">{t('noData')}</TableCell></TableRow>
-                ) : (
-                  invoices?.map(inv => (
-                    <TableRow key={inv.id} className="h-16 hover:bg-muted/5 group">
-                      <TableCell className="pl-8 font-black text-xs text-blue-600 uppercase">{inv.invoiceNumber}</TableCell>
-                      <TableCell className="text-xs font-bold text-slate-500">{formatDate(inv.invoiceDate)}</TableCell>
-                      <TableCell className="text-right font-black text-xs">{formatCurrency(inv.totalAmount)}</TableCell>
-                      <TableCell className="text-right font-black text-xs text-red-600">{formatCurrency(inv.balanceDue)}</TableCell>
-                      <TableCell className="text-center">
-                         <Badge className={cn("text-[8px] h-4 uppercase border-none px-2 font-black", inv.status === 'paid' ? "bg-green-50 text-green-700" : "bg-orange-50 text-orange-700")}>
-                           {inv.status}
-                         </Badge>
-                      </TableCell>
-                      <TableCell className="text-right pr-8">
-                         <div className="flex justify-end gap-1">
-                           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-blue-600" onClick={() => router.push(`/sales/${inv.id}/view`)}><Eye className="h-4 w-4" /></Button>
-                           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-400" onClick={() => router.push(`/sales/${inv.id}/view?print=true`)}><Printer className="h-4 w-4" /></Button>
-                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </Card>
-        </TabsContent>
-
-        {/* QUOTATIONS TAB */}
-        <TabsContent value="quotes">
-          <Card className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white ring-1 ring-slate-100">
-            <Table>
-              <TableHeader className="bg-slate-50/50">
-                <TableRow>
-                  <TableHead className="h-12 pl-8 text-[10px] font-black uppercase">{t('sl')}</TableHead>
-                  <TableHead className="h-12 text-[10px] font-black uppercase">{t('date')}</TableHead>
-                  <TableHead className="h-12 text-[10px] font-black uppercase text-right">{t('total')}</TableHead>
-                  <TableHead className="h-12 text-[10px] font-black uppercase text-center">{t('status')}</TableHead>
-                  <TableHead className="h-12 text-right pr-8">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {quotations?.length === 0 ? (
-                  <TableRow><TableCell colSpan={5} className="h-40 text-center opacity-30 italic font-black uppercase text-[10px]">{t('noData')}</TableCell></TableRow>
-                ) : (
-                  quotations?.map(q => (
-                    <TableRow key={q.id} className="h-16 hover:bg-muted/5">
-                      <TableCell className="pl-8 font-black text-xs text-amber-600 uppercase">{q.quotationNumber}</TableCell>
-                      <TableCell className="text-xs font-bold text-slate-500">{formatDate(q.quotationDate)}</TableCell>
-                      <TableCell className="text-right font-black text-xs">{formatCurrency(q.totalAmount)}</TableCell>
-                      <TableCell className="text-center">
-                         <Badge variant="outline" className="text-[8px] h-4 uppercase border-none px-2 font-black bg-slate-100">{q.status}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right pr-8">
-                         <div className="flex justify-end gap-1">
-                           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-blue-600" onClick={() => router.push(`/quotations/${q.id}/view`)}><Eye className="h-4 w-4" /></Button>
-                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </Card>
-        </TabsContent>
-
-        {/* PROJECTS TAB */}
-        <TabsContent value="projects">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects?.length === 0 ? (
-              <div className="col-span-full py-20 text-center opacity-30 italic font-black uppercase text-[10px]">{t('noData')}</div>
-            ) : (
-              projects?.map(p => (
-                <Card key={p.id} className="border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-6 space-y-4">
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-1">
-                      <h3 className="font-black text-xs uppercase tracking-tight text-slate-900 truncate max-w-[150px]">{p.name}</h3>
-                      <p className="text-[9px] font-mono text-teal-600 font-black">{p.projectCode}</p>
+        {/* DOCUMENTS TAB: PROJECT WISE GROUPING */}
+        <TabsContent value="documents" className="space-y-4">
+           {groupedDocuments.map((group, gIdx) => (
+             <Card key={group.id} className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white ring-1 ring-slate-100">
+                <Collapsible defaultOpen={gIdx === 0}>
+                  <CollapsibleTrigger asChild>
+                    <div className="p-6 bg-slate-50/50 border-b flex items-center justify-between cursor-pointer group">
+                       <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-white border flex items-center justify-center text-slate-400 group-hover:text-cyan-600 transition-colors">
+                             <Folder className="h-5 w-5" />
+                          </div>
+                          <div>
+                             <h3 className="text-xs font-black uppercase text-slate-900 tracking-tight">{group.id}</h3>
+                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{group.items.length} Secure Documents</p>
+                          </div>
+                       </div>
+                       <div className="flex items-center gap-4">
+                          <Badge variant="outline" className="bg-white text-[9px] font-black uppercase border-none px-2 h-5">Project Node</Badge>
+                          <ChevronDown className="h-5 w-5 text-slate-300 group-data-[state=open]:rotate-180 transition-transform" />
+                       </div>
                     </div>
-                    <Badge className="bg-teal-50 text-teal-600 text-[8px] uppercase border-none font-black">{p.status}</Badge>
-                  </div>
-                  <div className="pt-4 border-t border-slate-50 flex justify-between items-end">
-                     <div className="space-y-0.5">
-                        <p className="text-[8px] font-black text-slate-400 uppercase">Budget</p>
-                        <p className="text-sm font-black text-slate-900">{formatCurrency(p.budget)}</p>
-                     </div>
-                     <Button variant="ghost" size="sm" className="h-8 rounded-full text-[9px] font-black uppercase text-blue-600" onClick={() => router.push(`/projects/${p.id}/view`)}>View Project</Button>
-                  </div>
-                </Card>
-              ))
-            )}
-          </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                     <Table>
+                        <TableHeader className="bg-slate-50/30">
+                           <TableRow>
+                              <TableHead className="h-10 pl-8 text-[9px] font-black uppercase">Document ID</TableHead>
+                              <TableHead className="h-10 text-[9px] font-black uppercase text-center">Type</TableHead>
+                              <TableHead className="h-10 text-[9px] font-black uppercase text-right">Amount</TableHead>
+                              <TableHead className="h-10 text-[9px] font-black uppercase text-center">Status</TableHead>
+                              <TableHead className="h-10 text-right pr-8">Actions</TableHead>
+                           </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                           {group.items.map((item: any, iIdx: number) => (
+                             <TableRow key={`${item.id}-${iIdx}`} className="h-16 hover:bg-muted/5 group border-slate-50">
+                                <TableCell className="pl-8 font-black text-xs text-blue-600 uppercase tracking-tighter">
+                                  {item.invoiceNumber || item.quotationNumber}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                   <Badge variant="secondary" className="text-[8px] font-black uppercase bg-slate-100 text-slate-600 border-none px-2 h-4">{item.docType}</Badge>
+                                </TableCell>
+                                <TableCell className="text-right font-black text-xs text-slate-900">
+                                   {formatCurrency(item.totalAmount)}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                   <Badge className={cn("text-[8px] h-4 uppercase border-none px-2 font-black shadow-sm", 
+                                     item.status === 'paid' || item.status === 'approved' ? "bg-green-600 text-white" : "bg-orange-500 text-white")}>
+                                     {item.status?.toUpperCase() || 'DUE'}
+                                   </Badge>
+                                </TableCell>
+                                <TableCell className="text-right pr-8">
+                                   <div className="flex justify-end gap-1">
+                                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-blue-600 hover:bg-blue-50" onClick={() => router.push(`/${item.docType === 'Invoice' ? 'sales' : 'quotations'}/${item.id}/view`)}>
+                                         <Eye className="h-4 w-4" />
+                                      </Button>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-400 hover:bg-slate-100">
+                                         <Printer className="h-4 w-4" />
+                                      </Button>
+                                   </div>
+                                </TableCell>
+                             </TableRow>
+                           ))}
+                        </TableBody>
+                     </Table>
+                  </CollapsibleContent>
+                </Collapsible>
+             </Card>
+           ))}
         </TabsContent>
 
-        {/* OTHER TABS (Fallback Empty States) */}
-        <TabsContent value="dispatch">
-           <Card className="border-none shadow-sm rounded-[2rem] p-20 text-center ring-1 ring-slate-100 bg-white">
-              <Truck className="h-10 w-10 text-slate-100 mx-auto mb-4" />
-              <p className="text-[10px] font-black uppercase text-slate-300 tracking-[0.3em]">{t('noData')}</p>
+        {/* PROFILE INFO TAB */}
+        <TabsContent value="profile" className="grid grid-cols-1 md:grid-cols-2 gap-6">
+           <Card className="border-none shadow-sm rounded-[2rem] p-8 bg-white ring-1 ring-slate-100 space-y-8">
+              <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest border-b pb-4 flex items-center gap-2">
+                <Building className="h-4 w-4 text-cyan-600" /> Business Credentials
+              </h3>
+              <div className="grid grid-cols-2 gap-8">
+                 <div className="space-y-1"><p className="text-[9px] font-black uppercase text-slate-400">Trade License</p><p className="text-sm font-bold uppercase">{customer.tradeLicense || '---'}</p></div>
+                 <div className="space-y-1"><p className="text-[9px] font-black uppercase text-slate-400">BIN / VAT</p><p className="text-sm font-bold uppercase">{customer.bin || '---'}</p></div>
+                 <div className="space-y-1"><p className="text-[9px] font-black uppercase text-slate-400">TIN Number</p><p className="text-sm font-bold uppercase">{customer.tin || '---'}</p></div>
+                 <div className="space-y-1"><p className="text-[9px] font-black uppercase text-slate-400">Industry</p><Badge className="bg-slate-100 text-slate-600 text-[9px] uppercase border-none px-2">{customer.industry || 'General'}</Badge></div>
+              </div>
+           </Card>
+           <Card className="border-none shadow-sm rounded-[2rem] p-8 bg-white ring-1 ring-slate-100 space-y-8">
+              <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest border-b pb-4 flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-cyan-600" /> CRM Context
+              </h3>
+              <div className="grid grid-cols-2 gap-8">
+                 <div className="space-y-1"><p className="text-[9px] font-black uppercase text-slate-400">Priority Level</p><Badge className={cn("text-[9px] font-black uppercase border-none h-5 px-2", customer.priority === 'VIP' ? "bg-purple-600 text-white" : "bg-cyan-50 text-cyan-700")}>{customer.priority || 'Normal'}</Badge></div>
+                 <div className="space-y-1"><p className="text-[9px] font-black uppercase text-slate-400">Source</p><p className="text-sm font-bold uppercase">{customer.leadSource || 'Direct'}</p></div>
+                 <div className="space-y-1"><p className="text-[9px] font-black uppercase text-slate-400">Category</p><p className="text-sm font-bold uppercase">{customer.category || 'Retail'}</p></div>
+              </div>
            </Card>
         </TabsContent>
-        <TabsContent value="contracts">
-           <Card className="border-none shadow-sm rounded-[2rem] p-20 text-center ring-1 ring-slate-100 bg-white">
-              <Wrench className="h-10 w-10 text-slate-100 mx-auto mb-4" />
-              <p className="text-[10px] font-black uppercase text-slate-300 tracking-[0.3em]">{t('noData')}</p>
-           </Card>
-        </TabsContent>
-        <TabsContent value="returns">
-           <Card className="border-none shadow-sm rounded-[2rem] p-20 text-center ring-1 ring-slate-100 bg-white">
-              <RotateCcw className="h-10 w-10 text-slate-100 mx-auto mb-4" />
-              <p className="text-[10px] font-black uppercase text-slate-300 tracking-[0.3em]">{t('noData')}</p>
+
+        {/* LEDGER TAB */}
+        <TabsContent value="ledger">
+           <Card className="border-none shadow-sm rounded-[2rem] p-20 text-center ring-1 ring-slate-100 bg-white flex flex-col items-center">
+              <div className="w-20 h-20 rounded-[2rem] bg-emerald-50 flex items-center justify-center text-emerald-600 mb-6 shadow-inner animate-pulse">
+                <CreditCard className="h-10 w-10" />
+              </div>
+              <p className="text-[10px] font-black uppercase text-slate-300 tracking-[0.4em]">Unified Ledger Terminal Initializing...</p>
+              <Button variant="ghost" className="mt-8 rounded-full h-10 px-8 text-[10px] font-black uppercase text-blue-600 hover:bg-blue-50">View Detailed Statement</Button>
            </Card>
         </TabsContent>
       </Tabs>
     </div>
   );
 }
+
