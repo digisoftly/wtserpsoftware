@@ -185,7 +185,7 @@ export default function EditUserPage() {
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">Last Name</Label><Input name="lastName" defaultValue={userProfile?.lastName} className="h-11 rounded-xl" /></div>
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">Employee Code</Label><Input name="employeeId" defaultValue={userProfile?.employeeId} className="h-11 rounded-xl font-mono uppercase" placeholder="WTS-001" /></div>
                     <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">Functional Dept</Label><Input name="department" defaultValue={userProfile?.department} className="h-11 rounded-xl" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">Primary Location</Label>
+                    <div className="space-y-1.5"><Label className="text-[10px) font-black uppercase">Primary Location</Label>
                       <Select name="primaryBranch" defaultValue={userProfile?.branchId}>
                         <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
                         <SelectContent className="rounded-xl shadow-2xl">
