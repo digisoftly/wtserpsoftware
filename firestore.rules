@@ -9,7 +9,7 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Safely checks if the user is a super admin based on email or role
+    // Safely checks if the user is a super admin
     function isSuperAdmin(companyId) {
       return isSignedIn() && (
         request.auth.token.email == 'warriortechsystem@gmail.com' || 
@@ -31,8 +31,8 @@ service cloud.firestore {
 
     function isCompanyAdmin(companyId) {
       if (isSuperAdmin(companyId)) return true;
-      let userData = getUserData(companyId);
-      return userData.roleId == 'admin' || userData.roleId == 'manager';
+      return exists(/databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid)) && 
+             (getUserData(companyId).roleId == 'admin' || getUserData(companyId).roleId == 'manager');
     }
 
     function hasBranchAccess(companyId, branchId) {
