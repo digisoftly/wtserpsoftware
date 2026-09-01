@@ -24,7 +24,8 @@ import {
   ShieldCheck,
   Tag,
   Briefcase,
-  ExternalLink
+  ExternalLink,
+  UserCircle
 } from "lucide-react"
 import { useFirestore, useDoc, useMemoFirebase, useCollection } from "@/firebase"
 import { doc, collection, query, where } from "firebase/firestore"
@@ -135,7 +136,7 @@ export default function CustomerProfilePage() {
          <div className="px-6 md:px-10 pb-8 -mt-10 md:-mt-12 relative flex flex-col md:flex-row items-center md:items-end gap-4 md:gap-8">
             <div className="w-24 h-24 md:w-32 md:h-32 rounded-[2rem] md:rounded-[2.5rem] bg-white border-4 border-white shadow-2xl flex items-center justify-center overflow-hidden shrink-0">
                <div className="w-full h-full bg-blue-50 flex items-center justify-center text-blue-600 text-4xl font-black uppercase">
-                  {customer.customerType === 'individual' ? customer.fullName?.[0] : (customer.companyName?.[0] || 'C')}
+                  {customer.customerType === 'individual' ? (customer.fullName?.[0] || 'U') : (customer.companyName?.[0] || 'C')}
                </div>
             </div>
             <div className="flex-1 text-center md:text-left pb-1 space-y-1 overflow-hidden">
@@ -170,12 +171,11 @@ export default function CustomerProfilePage() {
             </div>
             <div className="flex items-center gap-3 group">
                <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:text-blue-600 transition-colors"><MapPin className="h-4 w-4" /></div>
-               <span className="text-[11px] font-bold text-slate-600 truncate">{customer.city || 'Location N/A'}</span>
+               <span className="text-[11px] font-bold text-slate-600 truncate">{customer.city || customer.address || 'Location N/A'}</span>
             </div>
          </div>
       </div>
 
-      {/* KPI STATS - 2/3/4 GRID LOGIC */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
         <KPICard title="totalRevenue" value={formatCurrency(stats.totalBilled)} icon={TrendingUp} colorClass="bg-blue-600" />
         <KPICard title="paidAmount" value={formatCurrency(stats.totalPaid)} icon={Wallet} colorClass="bg-green-600" />
@@ -253,7 +253,18 @@ export default function CustomerProfilePage() {
               <div className="grid grid-cols-2 gap-y-6 gap-x-4">
                  <div className="space-y-1"><p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Client Type</p><Badge className="bg-blue-50 text-blue-700 border-none uppercase font-black text-[9px]">{customer.customerType}</Badge></div>
                  <div className="space-y-1"><p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Industry</p><p className="text-xs font-black text-slate-900 uppercase">{customer.industry || '---'}</p></div>
-                 <div className="space-y-1"><p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">WhatsApp</p><p className="text-xs font-black text-slate-900 uppercase">{customer.whatsapp || '---'}</p></div>
+                 
+                 <div className="col-span-2 space-y-3 pt-2 border-t border-slate-50">
+                    <div className="flex items-start gap-3">
+                       <UserCircle className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+                       <div>
+                          <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Key Contact Person</p>
+                          <p className="text-sm font-black text-slate-900 uppercase">{customer.customerType === 'individual' ? customer.fullName : (customer.contactPerson || 'Proprietor/CEO')}</p>
+                       </div>
+                    </div>
+                 </div>
+
+                 <div className="space-y-1"><p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">WhatsApp</p><p className="text-xs font-black text-slate-900 uppercase">{customer.whatsapp || customer.phoneNumber || '---'}</p></div>
                  <div className="space-y-1"><p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Website</p><p className="text-xs font-black text-blue-600 uppercase flex items-center gap-1">{customer.website ? <><ExternalLink className="h-3 w-3" /> Visit</> : '---'}</p></div>
                  <div className="col-span-2 space-y-1"><p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Primary Address</p><p className="text-xs font-bold text-slate-700 leading-relaxed uppercase">{customer.address || 'Location Not Recorded'}</p></div>
               </div>

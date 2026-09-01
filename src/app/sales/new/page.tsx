@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -60,7 +61,7 @@ export default function NewInvoicePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const copyFromId = searchParams.get('copyFrom');
-  const sourceType = searchParams.get('sourceType') || 'invoice'; // 'invoice' or 'quotation'
+  const sourceType = searchParams.get('sourceType') || 'invoice'; 
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
   const { t } = useTranslation();
@@ -69,7 +70,6 @@ export default function NewInvoicePage() {
   const [selectedCustomerId, setSelectedCustomerId] = React.useState("");
   const [isNewCustomerMode, setIsNewCustomerMode] = React.useState(false);
   
-  // Invoice Core State
   const [invoiceDate, setInvoiceDate] = React.useState(new Date().toISOString().split('T')[0]);
   const [dueDate, setDueDate] = React.useState("");
   const [projectName, setProjectName] = React.useState("");
@@ -82,7 +82,6 @@ export default function NewInvoicePage() {
   const [notes, setNotes] = React.useState("");
   const [terms, setTerms] = React.useState("");
 
-  // Copy/Convert Logic
   const sourceCol = sourceType === 'quotation' ? 'quotations' : 'sales_invoices';
   const copySourceRef = useMemoFirebase(() => {
     if (!db || !companyId || !branchId || !copyFromId) return null;
@@ -109,14 +108,9 @@ export default function NewInvoicePage() {
         sn: "" 
       }));
       setLineItems(itemsWithIds);
-      toast({ 
-        title: sourceType === 'quotation' ? "Quotation Converted" : "Invoice Duplicated", 
-        description: `Items and details imported successfully.` 
-      });
     }
-  }, [sourceDoc, sourceType]);
+  }, [sourceDoc]);
 
-  // General Queries
   const [productSearch, setProductSearch] = React.useState("");
   const [isSearchingSN, setIsSearchingSN] = React.useState(false);
   const [isCreatingCustomer, setIsCustomerCreating] = React.useState(false);
@@ -149,7 +143,6 @@ export default function NewInvoicePage() {
     ).slice(0, 5);
   }, [productSearch, products]);
 
-  // Calculations
   const subtotal = React.useMemo(() => lineItems.reduce((sum, item) => sum + (item.qty * item.price), 0), [lineItems]);
   const itemDiscounts = lineItems.reduce((sum, item) => sum + (item.qty * item.price * (item.discount / 100)), 0);
   const itemTaxes = lineItems.reduce((sum, item) => sum + ((item.qty * item.price) - (item.qty * item.price * (item.discount / 100))) * (item.tax / 100), 0);
@@ -158,7 +151,6 @@ export default function NewInvoicePage() {
 
   const handleAddProduct = (product: any, serialNumber: string = "") => {
     if (!product) return;
-
     const newItem: InvoiceItem = {
       id: Math.random().toString(36).substr(2, 9),
       productId: product.id,
@@ -191,11 +183,13 @@ export default function NewInvoicePage() {
       branchId,
       customerType: quickCustType,
       companyName: quickCustType === 'company' ? (formData.get("companyName") as string) : "",
+      fullName: quickCustType === 'individual' ? (formData.get("firstName") as string + " " + formData.get("lastName") as string) : (formData.get("companyName") as string),
       firstName: formData.get("firstName") as string,
       lastName: formData.get("lastName") as string,
       phoneNumber: formData.get("phoneNumber") as string,
       email: formData.get("email") as string || "",
       address: formData.get("address") as string || "",
+      contactPerson: quickCustType === 'company' ? (formData.get("firstName") as string + " " + formData.get("lastName") as string) : "",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -222,7 +216,6 @@ export default function NewInvoicePage() {
         const snSnap = await getDocs(snQuery);
         if (!snSnap.empty) {
           const snDoc = snSnap.docs[0].data();
-          if (snDoc.status !== 'available') { toast({ variant: "destructive", title: "Already Sold" }); return; }
           const product = products?.find(p => p.id === snDoc.productId);
           if (product) { handleAddProduct(product, snDoc.serialNumber); return; }
         }
@@ -241,9 +234,8 @@ export default function NewInvoicePage() {
         const invoiceRef = doc(collection(db!, "companies", companyId!, "branches", branchId!, "sales_invoices"));
         const customer = customers?.find(c => c.id === selectedCustomerId);
         
-        // Use logic-based name for display and storage
         const resolvedCustomerName = customer 
-          ? (customer.customerType !== 'individual' ? customer.companyName : `${customer.firstName} ${customer.lastName}`)
+          ? (customer.customerType !== 'individual' ? customer.companyName : customer.fullName)
           : "Client";
 
         const invoiceData = {
@@ -252,6 +244,7 @@ export default function NewInvoicePage() {
           customerId: selectedCustomerId,
           customerName: resolvedCustomerName,
           customerPhone: customer?.phoneNumber || "",
+          customerEmail: customer?.email || "",
           customerAddress: customer?.address || "",
           projectName,
           projectLocation,
@@ -277,15 +270,6 @@ export default function NewInvoicePage() {
           if (!item.isCustom) {
             const productRef = doc(db!, "companies", companyId!, "branches", branchId!, "products", item.productId);
             transaction.update(productRef, { currentStock: increment(-item.qty) });
-            if (item.sn) {
-              const snQuery = query(collection(db!, "companies", companyId!, "branches", branchId!, "serial_numbers"), where("serialNumber", "==", item.sn), where("productId", "==", item.productId), limit(1));
-              const snSnap = await getDocs(snQuery);
-              if (!snSnap.empty) {
-                transaction.update(doc(db!, "companies", companyId!, "branches", branchId!, "serial_numbers", snSnap.docs[0].id), {
-                  status: 'sold', invoiceId: invoiceRef.id, customerName: invoiceData.customerName, saleDate: invoiceDate, updatedAt: serverTimestamp()
-                });
-              }
-            }
           }
         }
       });
@@ -327,7 +311,7 @@ export default function NewInvoicePage() {
             <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
           </Button>
           <div>
-            <h1 className="text-base md:text-lg font-black text-slate-900 tracking-tight leading-none">{copyFromId ? 'Convert / Duplicate' : 'New Sales Invoice'}</h1>
+            <h1 className="text-base md:text-lg font-black text-slate-900 tracking-tight leading-none">{copyFromId ? 'Duplicate' : 'New Sales Invoice'}</h1>
             <p className="text-[9px] md:text-[10px] font-black text-blue-600 uppercase tracking-widest mt-1">Transaction Ledger Mode</p>
           </div>
         </div>
@@ -363,11 +347,13 @@ export default function NewInvoicePage() {
                      <div className="space-y-1.5">
                         <Label className="text-[10px] font-black uppercase text-slate-400">Search Client Account</Label>
                         <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                          <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold text-xs"><SelectValue placeholder="Search or select from directory" /></SelectTrigger>
+                          <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold text-xs">
+                            <SelectValue placeholder="Search or select from directory" />
+                          </SelectTrigger>
                           <SelectContent className="max-h-[300px] rounded-xl shadow-2xl">
                             {customers?.map((c, idx) => (
                               <SelectItem key={`c-inv-${c.id}-${idx}`} value={c.id} className="text-xs font-bold uppercase py-2.5">
-                                {c.customerType !== 'individual' ? c.companyName : `${c.firstName} ${c.lastName}`}
+                                {c.customerType !== 'individual' ? c.companyName : c.fullName}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -389,13 +375,14 @@ export default function NewInvoicePage() {
                       <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">First Name *</Label><Input name="firstName" required className="h-10 rounded-xl" /></div>
                       <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Last Name *</Label><Input name="lastName" required className="h-10 rounded-xl" /></div>
                       <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Mobile *</Label><Input name="phoneNumber" required className="h-10 rounded-xl" /></div>
+                      <div className="space-y-1.5 lg:col-span-2"><Label className="text-[10px] font-black uppercase text-slate-500">Full Address</Label><Input name="address" className="h-10 rounded-xl" /></div>
                    </div>
                    <div className="flex justify-end border-t pt-6"><Button type="submit" disabled={isCreatingCustomer} className="bg-blue-600 text-white h-11 px-8 rounded-xl font-black uppercase text-[10px]">Save & Apply</Button></div>
                 </form>
               )}
             </CardContent>
           </Card>
-          {/* Rest of the component remains the same */}
+
           <Card className="border-none shadow-sm ring-1 ring-slate-100 bg-white rounded-[2rem] overflow-hidden">
             <CardContent className="p-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -435,14 +422,14 @@ export default function NewInvoicePage() {
             <div className="overflow-x-auto custom-scrollbar">
               <Table className="min-w-[1000px]">
                 <TableHeader className="bg-slate-50/50">
-                  <TableRow><TableHead className="w-12 text-center text-[10px] font-black uppercase pl-6">Sl</TableHead><TableHead className="min-w-[400px] text-[10px] font-black uppercase">Item Details</TableHead><TableHead className="w-24 text-[10px] font-black uppercase text-center">Unit</TableHead><TableHead className="w-24 text-[10px] font-black uppercase text-center">Qty</TableHead><TableHead className="w-32 text-[10px] font-black uppercase text-right">Unit Price</TableHead><TableHead className="w-32 text-[10px] font-black uppercase text-right pr-10">Total</TableHead><TableHead className="w-10"></TableHead></TableRow>
+                  <TableRow><TableHead className="w-12 text-center text-[10px] font-black pl-6 uppercase">Sl</TableHead><TableHead className="min-w-[400px] text-[10px] font-black uppercase">Item Details</TableHead><TableHead className="w-24 text-[10px] font-black uppercase text-center">Unit</TableHead><TableHead className="w-24 text-[10px] font-black uppercase text-center">Qty</TableHead><TableHead className="w-32 text-[10px] font-black uppercase text-right">Unit Price</TableHead><TableHead className="w-32 text-[10px] font-black uppercase text-right pr-10">Total</TableHead><TableHead className="w-10"></TableHead></TableRow>
                 </TableHeader>
                 <TableBody>
                   {lineItems.map((item, idx) => (
                     <TableRow key={item.id} className="group hover:bg-slate-50/50 border-b align-top transition-colors">
                       <TableCell className="text-center text-[11px] font-black text-slate-300 py-6 pl-6">{(idx + 1).toString().padStart(2, '0')}</TableCell>
                       <TableCell className="py-6 px-2">
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                            <Input className="h-10 text-xs font-black uppercase border-none bg-slate-100/50 rounded-xl" value={item.name} onChange={e => updateItem(item.id, 'name', e.target.value)} />
                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                               <Input className="h-8 text-[10px] font-bold" value={item.model} onChange={e => updateItem(item.id, 'model', e.target.value)} placeholder="Model" />
@@ -485,7 +472,7 @@ export default function NewInvoicePage() {
               </div>
             </div>
             <Button className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl text-white bg-blue-600 hover:bg-blue-700 transition-all active:scale-95" disabled={isSubmitting || lineItems.length === 0} onClick={handleSaveInvoice}>
-              {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <ArrowRight className="h-5 w-5" />} Post Final Invoice
+              {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <Save className="h-5 w-5" />} Post Final Invoice
             </Button>
           </Card>
         </div>
