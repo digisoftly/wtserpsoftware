@@ -13,7 +13,8 @@ import {
   Plus,
   Trash2,
   Palette,
-  Monitor
+  Monitor,
+  RefreshCw
 } from "lucide-react"
 import * as Icons from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -32,9 +33,44 @@ import { FirestorePermissionError } from "@/firebase/errors"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const ICON_OPTIONS = [
-  "ShoppingCart", "Boxes", "Users", "Wallet", "Package", "BarChart3", "LayoutGrid", "Shield", "Settings", 
-  "Database", "Truck", "Activity", "FileText", "RotateCcw", "Scan", "Handshake", "ClipboardList", 
-  "Store", "Receipt", "LifeBuoy", "Target", "Briefcase", "Building2", "Zap", "UserRoundCog", "ShieldAlert"
+  "LayoutDashboard", "ShoppingCart", "FileText", "Truck", "Package", "RotateCcw", "Boxes", "Database", 
+  "Scan", "ClipboardList", "Handshake", "Users", "Store", "Wallet", "Receipt", "LifeBuoy", "Target", 
+  "Briefcase", "Building2", "BarChart3", "Zap", "Settings", "UserRoundCog", "ShieldAlert"
+];
+
+// STRICT 24 ITEM DEFAULT LIST
+const DEFAULT_GRID_ITEMS = [
+  { label: "ড্যাশবোর্ড", icon: "LayoutDashboard", color: "bg-blue-500/20 text-blue-400" },
+  { label: "বিক্রয়", icon: "ShoppingCart", color: "bg-emerald-500/20 text-emerald-400" },
+  { label: "কোটেশন", icon: "FileText", color: "bg-amber-500/20 text-amber-400" },
+  { label: "চালান", icon: "Truck", color: "bg-orange-500/20 text-orange-400" },
+  { label: "ক্রয়", icon: "Package", color: "bg-rose-500/20 text-rose-400" },
+  { label: "রিটার্নস", icon: "RotateCcw", color: "bg-red-500/20 text-red-400" },
+  { label: "ইনভেন্টরি", icon: "Boxes", color: "bg-sky-500/20 text-sky-400" },
+  { label: "মাস্টার ডাটা", icon: "Database", color: "bg-slate-500/20 text-slate-400" },
+  { label: "সিরিয়াল", icon: "Scan", color: "bg-purple-500/20 text-purple-400" },
+  { label: "প্রকল্প", icon: "ClipboardList", color: "bg-teal-500/20 text-teal-400" },
+  { label: "সার্ভিস কন্ট্রাক্ট", icon: "Handshake", color: "bg-indigo-500/20 text-indigo-400" },
+  { label: "গ্রাহক", icon: "Users", color: "bg-blue-500/20 text-blue-400" },
+  { label: "সরবরাহকারী", icon: "Store", color: "bg-rose-600/20 text-rose-400" },
+  { label: "হিসাব", icon: "Wallet", color: "bg-amber-600/20 text-amber-500" },
+  { label: "ব্যয়", icon: "Receipt", color: "bg-red-600/20 text-red-500" },
+  { label: "সাপোর্ট", icon: "LifeBuoy", color: "bg-indigo-600/20 text-indigo-500" },
+  { label: "সিআরএম", icon: "Target", color: "bg-rose-700/20 text-rose-500" },
+  { label: "এইচআরএম", icon: "Briefcase", color: "bg-purple-600/20 text-purple-500" },
+  { label: "শাখা", icon: "Building2", color: "bg-slate-600/20 text-slate-500" },
+  { label: "রিপোর্ট", icon: "BarChart3", color: "bg-blue-700/20 text-blue-500" },
+  { label: "এআই", icon: "Zap", color: "bg-violet-600/20 text-violet-400" },
+  { label: "সেটিংস", icon: "Settings", color: "bg-slate-700/20 text-slate-500" },
+  { label: "ইউজার", icon: "UserRoundCog", color: "bg-violet-700/20 text-violet-500" },
+  { label: "অডিট লগ", icon: "ShieldAlert", color: "bg-red-800/20 text-red-600" },
+];
+
+const SIDEBAR_KEYS = [
+  "dashboard", "sales", "quotations", "dispatch", "purchases", "returns", 
+  "inventory", "masterManagement", "serialTracking", "projectBilling", 
+  "contracts", "customers", "suppliers", "accounts", "expenses", 
+  "support", "crm", "hrm", "branches", "reports", "ai", "settings", "users", "audit"
 ];
 
 export default function SettingsPage() {
@@ -56,9 +92,14 @@ export default function SettingsPage() {
   React.useEffect(() => {
     if (settings) {
       setLogoPreview(settings.companyLogo || null);
-      setLoginGrid(settings.loginGridItems || []);
+      setLoginGrid(settings.loginGridItems || DEFAULT_GRID_ITEMS);
     }
   }, [settings]);
+
+  const resetToDefault = () => {
+    setLoginGrid(DEFAULT_GRID_ITEMS);
+    toast({ title: "Order Reset", description: "Default module sequence has been restored." });
+  };
 
   const addGridItem = () => {
     setLoginGrid([...loginGrid, { label: "New Module", icon: "LayoutGrid", color: "bg-emerald-500/20 text-emerald-400" }]);
@@ -85,6 +126,7 @@ export default function SettingsPage() {
       updatedAt: serverTimestamp(),
       companyLogo: logoPreview,
       loginGridItems: loginGrid,
+      sidebarMenuOrder: SIDEBAR_KEYS, // Sync sidebar with strict list
     };
 
     formData.forEach((value, key) => {
@@ -172,7 +214,7 @@ export default function SettingsPage() {
                    <h3 className="text-sm font-black uppercase tracking-widest">Branding Text</h3>
                 </div>
                 <div className="space-y-4">
-                  <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">Grid Headline</Label><Input name="loginHeadline" defaultValue={settings?.loginHeadline || "২১টি মডিউল একটি প্ল্যাটফর্মে"} className="h-11 rounded-xl" /></div>
+                  <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">Grid Headline</Label><Input name="loginHeadline" defaultValue={settings?.loginHeadline || "২৪টি মডিউল একটি প্ল্যাটফর্মে"} className="h-11 rounded-xl" /></div>
                   <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">Grid Sub-headline</Label><Input name="loginSubHeadline" defaultValue={settings?.loginSubHeadline || "ব্যবসার প্রতিটি বিভাগ, এক জায়গা থেকেই নিয়ন্ত্রণ"} className="h-11 rounded-xl" /></div>
                 </div>
               </Card>
@@ -181,11 +223,16 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between border-b pb-4">
                   <div className="flex items-center gap-2">
                     <LayoutGrid className="h-5 w-5 text-emerald-600" />
-                    <h3 className="text-sm font-black uppercase tracking-widest">Login Grid Items</h3>
+                    <h3 className="text-sm font-black uppercase tracking-widest">Login & Navigation Order</h3>
                   </div>
-                  <Button type="button" variant="outline" size="sm" className="rounded-full h-8 px-4 text-[10px] font-black uppercase gap-2" onClick={addGridItem}>
-                    <Plus className="h-3 w-3" /> Add Item
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button type="button" variant="outline" size="sm" className="rounded-full h-8 px-4 text-[10px] font-black uppercase gap-2 border-amber-200 text-amber-700 bg-amber-50" onClick={resetToDefault}>
+                      <RefreshCw className="h-3 w-3" /> Reset to Default
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" className="rounded-full h-8 px-4 text-[10px] font-black uppercase gap-2" onClick={addGridItem}>
+                      <Plus className="h-3 w-3" /> Add Item
+                    </Button>
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">

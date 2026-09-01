@@ -51,7 +51,8 @@ import {
   UserMinus,
   FileStack,
   FolderOpen,
-  Handshake
+  Handshake,
+  LifeBuoy
 } from "lucide-react"
 
 import { 
@@ -96,22 +97,22 @@ const NAV_ITEMS_MAP: Record<string, NavItem> = {
   purchases: { name: "purchases", key: "purchases", icon: Package, path: "/purchases", color: "text-orange-700" },
   returns: { name: "returns", key: "returns", icon: RotateCcw, path: "/returns", color: "text-red-600" },
   inventory: { name: "inventory", key: "inventory", icon: Boxes, path: "/inventory", color: "text-sky-600" },
+  masterManagement: { name: "master", key: "masterManagement", icon: Database, path: "/master", color: "text-slate-600" },
   serialTracking: { name: "serialTracking", key: "serialTracking", icon: Scan, path: "/serial-inventory", color: "text-purple-600" },
-  contracts: { name: "contracts", key: "contracts", icon: Handshake, path: "/contracts", color: "text-indigo-600" },
   projectBilling: { name: "projectBilling", key: "projectBilling", icon: ClipboardList, path: "/projects", color: "text-teal-600" },
+  contracts: { name: "contracts", key: "contracts", icon: Handshake, path: "/contracts", color: "text-indigo-600" },
   customers: { name: "customers", key: "customers", icon: Users, path: "/customers", color: "text-blue-500" },
   suppliers: { name: "suppliers", key: "suppliers", icon: Truck, path: "/suppliers", color: "text-rose-600" },
   accounts: { name: "accounts", key: "accounts", icon: Wallet, path: "/accounts", color: "text-yellow-700" },
   expenses: { name: "expenses", key: "expenses", icon: Receipt, path: "/expenses", color: "text-red-500" },
-  masterManagement: { name: "master", key: "masterManagement", icon: Database, path: "/master", color: "text-slate-600" },
   support: { name: "support", key: "support", icon: GitPullRequest, path: "/support", color: "text-indigo-500" },
   crm: { name: "crm", key: "crm", icon: Target, path: "/crm", color: "text-rose-700" },
   hrm: { name: "hrm", key: "hrm", icon: Briefcase, path: "/hrm", color: "text-purple-600" },
   branches: { name: "branches", key: "branches", icon: Building2, path: "/branches", color: "text-slate-700" },
   reports: { name: "reports", key: "reports", icon: BarChart3, path: "/reports", color: "text-blue-700" },
   ai: { name: "ai", key: "ai", icon: Zap, path: "/ai-forecasting", color: "text-violet-600" },
-  users: { name: "users", key: "users", icon: UserRoundCog, path: "/users", color: "text-violet-600" },
   settings: { name: "settings", key: "settings", icon: Settings, path: "/settings", color: "text-slate-600" },
+  users: { name: "users", key: "users", icon: UserRoundCog, path: "/users", color: "text-violet-600" },
   audit: { name: "audit", key: "audit", icon: ShieldAlert, path: "/administration/audit-logs", color: "text-red-600" },
 };
 
@@ -218,11 +219,32 @@ export function AppSidebar() {
     const savedOrder = settings?.sidebarMenuOrder || [];
     const allKeys = Object.keys(NAV_ITEMS_MAP);
     
+    // STRICT 24 ITEM ORDER
     const defaultOrder = [
-      "dashboard", "sales", "quotations", "dispatch", "purchases", "returns", 
-      "inventory", "serialTracking", "contracts", "projectBilling", "customers", 
-      "suppliers", "accounts", "expenses", "masterManagement", "support", "crm", "hrm", "branches", 
-      "reports", "ai", "users", "settings", "audit"
+      "dashboard", 
+      "sales", 
+      "quotations", 
+      "dispatch", 
+      "purchases", 
+      "returns", 
+      "inventory", 
+      "masterManagement", 
+      "serialTracking", 
+      "projectBilling", 
+      "contracts", 
+      "customers", 
+      "suppliers", 
+      "accounts", 
+      "expenses", 
+      "support", 
+      "crm", 
+      "hrm", 
+      "branches", 
+      "reports", 
+      "ai", 
+      "settings", 
+      "users", 
+      "audit"
     ];
 
     return savedOrder.length === 0 

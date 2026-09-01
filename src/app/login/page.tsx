@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -63,7 +64,9 @@ export default function LoginPage() {
 
   if (!mounted) return null;
 
+  // STRICT 24 ITEM DEFAULT LIST
   const defaultGrid = [
+    { label: "ড্যাশবোর্ড", icon: "LayoutDashboard", color: "bg-blue-500/20 text-blue-400" },
     { label: "বিক্রয়", icon: "ShoppingCart", color: "bg-emerald-500/20 text-emerald-400" },
     { label: "কোটেশন", icon: "FileText", color: "bg-amber-500/20 text-amber-400" },
     { label: "চালান", icon: "Truck", color: "bg-orange-500/20 text-orange-400" },
@@ -73,7 +76,7 @@ export default function LoginPage() {
     { label: "মাস্টার ডাটা", icon: "Database", color: "bg-slate-500/20 text-slate-400" },
     { label: "সিরিয়াল", icon: "Scan", color: "bg-purple-500/20 text-purple-400" },
     { label: "প্রকল্প", icon: "ClipboardList", color: "bg-teal-500/20 text-teal-400" },
-    { label: "সার্ভিস চুক্তি", icon: "Handshake", color: "bg-indigo-500/20 text-indigo-400" },
+    { label: "সার্ভিস কন্ট্রাক্ট", icon: "Handshake", color: "bg-indigo-500/20 text-indigo-400" },
     { label: "গ্রাহক", icon: "Users", color: "bg-blue-500/20 text-blue-400" },
     { label: "সরবরাহকারী", icon: "Store", color: "bg-rose-600/20 text-rose-400" },
     { label: "হিসাব", icon: "Wallet", color: "bg-amber-600/20 text-amber-500" },
@@ -97,7 +100,7 @@ export default function LoginPage() {
       <div className="hidden lg:flex lg:w-3/5 relative bg-[#0F4C44] text-white p-6 flex-col justify-between overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[#0F4C44] via-[#136A5F] to-[#0A332E]" />
         
-        {/* Top Branding - Reduced Padding */}
+        {/* Top Branding */}
         <div className="relative z-10 flex items-center gap-3 animate-in fade-in duration-700">
           <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center p-2 border border-white/20 shadow-2xl">
             {settings?.companyLogo ? (
@@ -116,11 +119,11 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Content & Ultra-Compact Grid - Reduced Spacing */}
+        {/* Content & Ultra-Compact Grid */}
         <div className="relative z-10 space-y-3">
           <div className="space-y-0.5">
             <h2 className="text-2xl xl:text-4xl font-black font-headline tracking-tight leading-tight animate-in slide-in-from-left-4 duration-1000">
-              {settings?.loginHeadline || "২৩টি মডিউল একটি প্ল্যাটফর্মে"}
+              {settings?.loginHeadline || "২৪টি মডিউল একটি প্ল্যাটফর্মে"}
             </h2>
             <p className="text-[10px] font-medium text-emerald-100/60 uppercase tracking-[0.2em]">
               {settings?.loginSubHeadline || "ব্যবসার প্রতিটি বিভাগ, এক জায়গা থেকেই নিয়ন্ত্রণ"}
@@ -128,7 +131,7 @@ export default function LoginPage() {
           </div>
           
           <div className="max-h-[75vh] overflow-hidden animate-in zoom-in-95 duration-700 delay-300">
-            <div className="grid grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-2">
+            <div className="grid grid-cols-6 gap-2">
               {gridItems.map((item: any, idx: number) => {
                 const Icon = (Icons as any)[item.icon] || Icons.LayoutGrid;
                 return (
@@ -149,7 +152,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Bottom Footer - Reduced PT */}
+        {/* Bottom Footer */}
         <div className="relative z-10 pt-2 border-t border-white/10">
           <div className="flex flex-wrap gap-x-4 gap-y-1">
             <p className="text-[8px] font-bold text-emerald-400/50 uppercase tracking-widest">
@@ -162,7 +165,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* RIGHT SIDE: LOGIN FORM - Reduced Padding and Gaps */}
+      {/* RIGHT SIDE: LOGIN FORM */}
       <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 relative bg-white">
         <div className="w-full max-w-sm space-y-6 relative z-10 animate-in fade-in slide-in-from-right-4 duration-700">
           <div className="text-center space-y-2">
