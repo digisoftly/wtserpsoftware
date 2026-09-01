@@ -77,7 +77,6 @@ import { usePermissions } from "@/hooks/use-permissions"
 import { useSettings } from "@/hooks/use-settings"
 import { useTranslation } from "@/hooks/use-translation"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 
 interface NavItem {
   name: string
@@ -105,7 +104,7 @@ const NAV_ITEMS_MAP: Record<string, NavItem> = {
   masterManagement: { name: "master", key: "masterManagement", icon: Database, path: "/master", color: "text-slate-600" },
   support: { name: "support", key: "support", icon: GitPullRequest, path: "/support", color: "text-indigo-500" },
   crm: { name: "crm", key: "crm", icon: Target, path: "/crm", color: "text-rose-700" },
-  hrm: { name: "hrmDashboard", key: "hrm", icon: Briefcase, path: "/hrm", color: "text-purple-600" },
+  hrm: { name: "hrm", key: "hrm", icon: Briefcase, path: "/hrm", color: "text-purple-600" },
   branches: { name: "branches", key: "branches", icon: Building2, path: "/branches", color: "text-slate-700" },
   reports: { name: "reports", key: "reports", icon: BarChart3, path: "/reports", color: "text-blue-700" },
   ai: { name: "ai", key: "ai", icon: Zap, path: "/ai-forecasting", color: "text-violet-600" },
@@ -133,10 +132,8 @@ const HRM_SUB_MENUS = [
     icon: Users,
     children: [
       { name: "employees", path: "/hrm/employees" },
-      { name: "employeeProfile", path: "/hrm/employees/profile" },
       { name: "departments", path: "/hrm/departments" },
       { name: "designations", path: "/hrm/designations" },
-      { name: "branchOffice", path: "/hrm/branches" },
       { name: "employeeDocuments", path: "/hrm/documents" },
     ]
   },
@@ -147,9 +144,6 @@ const HRM_SUB_MENUS = [
     children: [
       { name: "attendanceDashboard", path: "/hrm/attendance" },
       { name: "dailyAttendance", path: "/hrm/attendance/daily" },
-      { name: "attendanceHistory", path: "/hrm/attendance/history" },
-      { name: "attendanceCalendar", path: "/hrm/attendance/calendar" },
-      { name: "attendanceCorrection", path: "/hrm/attendance/correction" },
       { name: "shifts", path: "/hrm/shifts" },
       { name: "holidays", path: "/hrm/holidays" },
     ]
@@ -162,8 +156,6 @@ const HRM_SUB_MENUS = [
       { name: "leaveDashboard", path: "/hrm/leave" },
       { name: "leaveRequests", path: "/hrm/leave/requests" },
       { name: "leaveTypes", path: "/hrm/leave/types" },
-      { name: "leaveBalance", path: "/hrm/leave/balance" },
-      { name: "leaveHistory", path: "/hrm/leave/history" },
     ]
   },
   { 
@@ -173,23 +165,7 @@ const HRM_SUB_MENUS = [
     children: [
       { name: "payrollDashboard", path: "/hrm/payroll" },
       { name: "monthlyPayroll", path: "/hrm/payroll/monthly" },
-      { name: "salaryStructure", path: "/hrm/salary/structure" },
-      { name: "salaryHistory", path: "/hrm/salary/history" },
-      { name: "salaryAdvance", path: "/hrm/salary/advance" },
-      { name: "employeeLoans", path: "/hrm/salary/loans" },
       { name: "payslips", path: "/hrm/payroll/payslips" },
-    ]
-  },
-  { 
-    name: "recruitment", 
-    path: "/hrm/recruitment", 
-    icon: Target,
-    children: [
-      { name: "recruitmentDashboard", path: "/hrm/recruitment" },
-      { name: "jobPositions", path: "/hrm/recruitment/jobs" },
-      { name: "candidates", path: "/hrm/recruitment/candidates" },
-      { name: "interviews", path: "/hrm/recruitment/interviews" },
-      { name: "hiring", path: "/hrm/recruitment/hiring" },
     ]
   },
   { 
@@ -197,10 +173,8 @@ const HRM_SUB_MENUS = [
     path: "/hrm/performance", 
     icon: Award,
     children: [
-      { name: "performanceDashboard", path: "/hrm/performance" },
       { name: "goalsKpi", path: "/hrm/performance/goals" },
       { name: "performanceReviews", path: "/hrm/performance/reviews" },
-      { name: "performanceHistory", path: "/hrm/performance/history" },
     ]
   },
   { 
@@ -209,67 +183,7 @@ const HRM_SUB_MENUS = [
     icon: History,
     children: [
       { name: "trainingPrograms", path: "/hrm/training" },
-      { name: "trainingSchedule", path: "/hrm/training/schedule" },
       { name: "employeeTrainingHistory", path: "/hrm/training/history" },
-    ]
-  },
-  { 
-    name: "employeeAssets", 
-    path: "/hrm/assets", 
-    icon: FolderOpen,
-    children: [
-      { name: "assignedAssets", path: "/hrm/assets" },
-      { name: "assetAssignment", path: "/hrm/assets/assign" },
-      { name: "assetReturn", path: "/hrm/assets/return" },
-    ]
-  },
-  { 
-    name: "employeeExpenses", 
-    path: "/hrm/expenses", 
-    icon: FileStack,
-    children: [
-      { name: "expenseRequests", path: "/hrm/expenses" },
-      { name: "pendingApproval", path: "/hrm/expenses/pending" },
-      { name: "expenseHistory", path: "/hrm/expenses/history" },
-    ]
-  },
-  { 
-    name: "hrCommunication", 
-    path: "/hrm/communication", 
-    icon: Megaphone,
-    children: [
-      { name: "notices", path: "/hrm/communication/notices" },
-      { name: "announcements", path: "/hrm/communication/announcements" },
-      { name: "hrPolicies", path: "/hrm/communication/policies" },
-    ]
-  },
-  { 
-    name: "employeeExit", 
-    path: "/hrm/exit", 
-    icon: UserMinus,
-    children: [
-      { name: "resignation", path: "/hrm/exit/resignation" },
-      { name: "exitOffboarding", path: "/hrm/exit/offboarding" },
-      { name: "clearance", path: "/hrm/exit/clearance" },
-      { name: "finalSettlement", path: "/hrm/exit/settlement" },
-    ]
-  },
-  { 
-    name: "hrmReports", 
-    path: "/hrm/reports", 
-    icon: FileBarChart,
-    children: [
-      { name: "employeeReports", path: "/hrm/reports/employees" },
-      { name: "attendanceReports", path: "/hrm/reports/attendance" },
-      { name: "leaveReports", path: "/hrm/reports/leave" },
-      { name: "payrollReports", path: "/hrm/reports/payroll" },
-      { name: "recruitmentReports", path: "/hrm/reports/recruitment" },
-      { name: "performanceReports", path: "/hrm/reports/performance" },
-      { name: "trainingReports", path: "/hrm/reports/training" },
-      { name: "assetReports", path: "/hrm/reports/assets" },
-      { name: "expenseReports", path: "/hrm/reports/expenses" },
-      { name: "joiningReports", path: "/hrm/reports/joining" },
-      { name: "exitReports", path: "/hrm/reports/exit" },
     ]
   },
 ];
@@ -285,7 +199,6 @@ export function AppSidebar() {
 
   const sidebarBg = settings?.sidebarBgColor || "#FFFFFF"
   const sidebarText = settings?.sidebarTextColor || "#000000"
-  const sidebarHover = settings?.sidebarHoverColor || "#E5E7EB" 
   const sidebarActive = settings?.sidebarActiveColor || "#E5E7EB"
 
   const handleLogout = async () => {
@@ -310,26 +223,11 @@ export function AppSidebar() {
       "reports", "ai", "users", "settings", "audit"
     ];
 
-    let currentOrder = savedOrder.length === 0 
+    return savedOrder.length === 0 
       ? defaultOrder.filter(k => allKeys.includes(k))
       : [...savedOrder.filter(k => allKeys.includes(k)), ...allKeys.filter(k => !savedOrder.includes(k))];
-    
-    const contractIdx = currentOrder.indexOf("contracts");
-    const projectIdx = currentOrder.indexOf("projectBilling");
-
-    if (contractIdx !== -1 && projectIdx !== -1) {
-       if (projectIdx !== contractIdx + 1) {
-          const newOrder = currentOrder.filter(k => k !== "projectBilling");
-          const targetIdx = newOrder.indexOf("contracts") + 1;
-          newOrder.splice(targetIdx, 0, "projectBilling");
-          currentOrder = newOrder;
-       }
-    }
-
-    return currentOrder;
   }, [settings?.sidebarMenuOrder]);
 
-  // Helper to determine if we should show labels/chevrons
   const isExpanded = state === "expanded" || isMobile;
 
   return (

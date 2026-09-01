@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -52,7 +53,6 @@ export default function InventoryPage() {
     value: products?.reduce((s, p) => s + ((p.currentStock || 0) * (p.costPrice || 0)), 0) || 0
   }), [products]);
 
-  // grid-cols-2 md:grid-cols-3 lg:grid-cols-4
   const gridClass = "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4";
 
   return (
@@ -74,7 +74,7 @@ export default function InventoryPage() {
 
       <div className={gridClass}>
         <KPICard title="totalProducts" value={stats.total} icon={Boxes} colorClass="bg-blue-600" />
-        <KPICard title="lowStockCount" value={stats.lowStock} icon={AlertCircle} colorClass="bg-red-600" />
+        <KPICard title="lowStockItems" value={stats.lowStock} icon={AlertCircle} colorClass="bg-red-600" />
         <KPICard title="stockValue" value={formatCurrency(stats.value)} icon={DollarSign} colorClass="bg-green-600" />
       </div>
 
@@ -82,7 +82,7 @@ export default function InventoryPage() {
         <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
           <input 
-            placeholder={t('search')} 
+            placeholder={t('searchPlaceholder')} 
             className="pl-10 h-10 w-full rounded-xl bg-slate-50/50 border-none text-xs font-bold outline-none" 
             value={searchTerm} 
             onChange={e => setSearchTerm(e.target.value)} 

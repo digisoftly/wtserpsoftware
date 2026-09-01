@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -70,9 +71,6 @@ export default function Dashboard() {
   const productsQuery = useMemoFirebase(() => (!db || !companyId || !branchId) ? null : collection(db, "companies", companyId, "branches", branchId, "products"), [db, companyId, branchId]);
   const { data: products, isLoading: prodLoading } = useCollection(productsQuery);
 
-  const customersQuery = useMemoFirebase(() => (!db || !companyId || !branchId) ? null : collection(db, "companies", companyId, "branches", branchId, "customers"), [db, companyId, branchId]);
-  const { data: customers } = useCollection(customersQuery);
-
   const projectsQuery = useMemoFirebase(() => (!db || !companyId || !branchId) ? null : collection(db, "companies", companyId, "branches", branchId, "projects"), [db, companyId, branchId]);
   const { data: projects } = useCollection(projectsQuery);
 
@@ -81,9 +79,6 @@ export default function Dashboard() {
 
   const purchasesQuery = useMemoFirebase(() => (!db || !companyId || !branchId) ? null : collection(db, "companies", companyId, "branches", branchId, "purchase_orders"), [db, companyId, branchId]);
   const { data: purchases } = useCollection(purchasesQuery);
-
-  const staffQuery = useMemoFirebase(() => (!db || !companyId || !branchId) ? null : collection(db, "companies", companyId, "branches", branchId, "employees"), [db, companyId, branchId]);
-  const { data: staff } = useCollection(staffQuery);
 
   const contractsQuery = useMemoFirebase(() => (!db || !companyId || !branchId) ? null : collection(db, "companies", companyId, "branches", branchId, "service_contracts"), [db, companyId, branchId]);
   const { data: contracts } = useCollection(contractsQuery);
@@ -105,20 +100,9 @@ export default function Dashboard() {
 
     // Purchase
     const totalPurchase = purchases?.reduce((sum, p) => sum + (p.totalAmount || 0), 0) || 0;
-    const todayPurchase = purchases?.filter(p => p.orderDate === today).reduce((sum, p) => sum + (p.totalAmount || 0), 0) || 0;
-    const monthlyPurchase = purchases?.filter(p => p.orderDate?.startsWith(thisMonth)).reduce((sum, i) => sum + (i.totalAmount || 0), 0) || 0;
 
     // Expenses
     const totalExpense = expenses?.reduce((sum, e) => sum + (e.amount || 0), 0) || 0;
-    const todayExpense = expenses?.filter(e => e.expenseDate === today).reduce((sum, e) => sum + (e.amount || 0), 0) || 0;
-    const monthlyExpense = expenses?.filter(e => e.expenseDate?.startsWith(thisMonth)).reduce((sum, e) => sum + (e.amount || 0), 0) || 0;
-
-    const totalIncome = invoices?.reduce((sum, i) => sum + (i.paidAmount || 0), 0) || 0;
-    const customerDue = invoices?.reduce((sum, i) => sum + (i.balanceDue || 0), 0) || 0;
-    const supplierDue = purchases?.reduce((sum, p) => sum + (p.balanceDue || 0), 0) || 0;
-
-    const projectBill = projects?.reduce((sum, p) => sum + (p.budget || 0), 0) || 0;
-    const projectPaid = projects?.reduce((sum, p) => sum + (p.paidAmount || 0), 0) || 0;
 
     return {
       todaySales,
@@ -129,24 +113,16 @@ export default function Dashboard() {
       activeQuotations: quotations?.filter(q => q.status === 'approved').length || 0,
       pendingQuotations: quotations?.filter(q => q.status === 'draft').length || 0,
       cancelledQuotations: quotations?.filter(q => q.status === 'rejected' || q.status === 'expired').length || 0,
-      todayPurchase,
-      monthlyPurchase,
+      todayPurchase: purchases?.filter(p => p.orderDate === today).reduce((sum, p) => sum + (p.totalAmount || 0), 0) || 0,
+      monthlyPurchase: purchases?.filter(p => p.orderDate?.startsWith(thisMonth)).reduce((sum, p) => sum + (p.totalAmount || 0), 0) || 0,
       totalPurchase,
       pendingPurchase: purchases?.filter(p => p.status === 'pending').length || 0,
-      totalIncome,
-      customerDue,
-      salesDue: customerDue,
-      purchaseDue: supplierDue,
-      supplierDue,
-      totalProjectBill: projectBill,
-      totalProjectPaid: projectPaid,
-      projectDue: projectBill - projectPaid,
-      activeProjects: projects?.filter(p => p.status === 'In Progress').length || 0,
       lowStockItems: products?.filter(p => (p.currentStock || 0) <= (p.minStockLevel || 5)).length || 0,
       serialInventory: serials?.length || 0,
       activeServiceContracts: contracts?.filter(c => c.status === 'active').length || 0,
+      activeProjects: projects?.filter(p => p.status === 'In Progress').length || 0,
     };
-  }, [invoices, purchases, expenses, quotations, products, projects, staff, contracts, serials]);
+  }, [invoices, purchases, expenses, quotations, products, projects, contracts, serials]);
 
   const QUICK_ACTIONS = [
     { label: t('sales'), icon: ShoppingCart, color: "bg-[#22C55E]", path: "/sales/new" },
@@ -156,13 +132,12 @@ export default function Dashboard() {
     { label: t('projectBilling'), icon: Briefcase, color: "bg-[#14B8A6]", path: "/projects/new" },
   ];
 
-  // Mobile: 2, Tablet: 3, Desktop: 4
   const gridClass = "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4";
 
-  const renderSectionHeader = (title: string) => (
+  const renderSectionHeader = (titleKey: string) => (
     <div className="flex items-center gap-2 mb-3 mt-6 first:mt-0 px-1">
       <div className="h-1 w-6 md:w-10 bg-blue-600 rounded-full" />
-      <h2 className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{t(title)}</h2>
+      <h2 className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{t(titleKey)}</h2>
     </div>
   );
 

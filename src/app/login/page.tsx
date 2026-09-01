@@ -116,7 +116,7 @@ export default function LoginPage() {
                       value={email} 
                       onChange={(e) => setEmail(e.target.value)} 
                       className="h-14 pl-12 rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 font-bold focus:ring-2 focus:ring-blue-600" 
-                      placeholder="admin@warrior.com"
+                      placeholder={t('email')}
                       required 
                     />
                   </div>
