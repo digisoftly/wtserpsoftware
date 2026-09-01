@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -6,33 +5,24 @@ import { useParams, useRouter } from "next/navigation"
 import { 
   ArrowLeft, 
   ShieldCheck, 
-  Calendar, 
-  DollarSign, 
   Loader2, 
-  AlertCircle,
+  Eye, 
+  Trash2, 
+  Edit, 
   Receipt,
-  Check,
-  Eye,
-  Trash2,
-  Wrench,
-  MapPin,
-  Building,
-  User,
-  GitPullRequest,
-  Briefcase,
+  FileText,
+  Clock,
   History,
-  ExternalLink,
-  ChevronRight,
   TrendingUp,
-  Box,
-  Edit,
+  MapPin,
+  Handshake,
+  User,
   LayoutDashboard
 } from "lucide-react"
 import { useFirestore, useDoc, useMemoFirebase, useCollection } from "@/firebase"
-import { doc, collection, query, where, deleteDoc, updateDoc, serverTimestamp } from "firebase/firestore"
+import { doc, collection, query, where, deleteDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -98,14 +88,14 @@ export default function ServiceContractDetailsPage() {
       .catch(() => toast({ variant: "destructive", title: t('error') }));
   };
 
-  if (isLoading) return <div className="flex h-screen items-center justify-center bg-slate-50"><Loader2 className="h-10 w-10 animate-spin text-indigo-600" /></div>;
+  if (isLoading) return <div className="flex h-screen items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-indigo-600" /></div>;
   if (!contract) return <div className="p-20 text-center uppercase font-black text-muted-foreground">{t('noData')}</div>;
 
   const currentStatus = getContractStatus(contract);
 
   return (
-    <div className="max-w-full mx-auto space-y-6 pb-20 px-2 md:px-0">
-      {/* STATIC UNIFIED HEADER */}
+    <div className="max-w-full mx-auto space-y-6 pb-20">
+      {/* UNIFIED HEADER BAR */}
       <div className="bg-white border p-6 rounded-2xl md:rounded-[2.5rem] flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm ring-1 ring-slate-100">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full h-10 w-10 shrink-0"><ArrowLeft className="h-5 w-5" /></Button>
@@ -122,22 +112,22 @@ export default function ServiceContractDetailsPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="flex-1 md:flex-none rounded-xl h-10 px-6 text-[10px] uppercase font-black border-slate-200 gap-2 bg-white" onClick={() => router.push(`/contracts/${id}/edit`)}>
-            <Edit className="h-3.5 w-3.5" /> Modify
+          <Button variant="outline" className="flex-1 md:flex-none rounded-xl h-10 px-6 font-black text-[10px] uppercase border-slate-200 gap-2 bg-white" onClick={() => router.push(`/contracts/${id}/edit`)}>
+            <Edit className="h-3.5 w-3.5" /> Edit
           </Button>
-          <Button className="flex-1 md:flex-none bg-rose-600 hover:bg-rose-700 text-white rounded-xl h-10 px-8 text-[10px] font-black uppercase shadow-xl shadow-rose-100 gap-2" onClick={() => setIsDeleteAlertOpen(true)}>
+          <Button className="flex-1 md:flex-none bg-rose-600 hover:bg-rose-700 text-white rounded-xl h-10 px-8 text-[10px] font-black uppercase shadow-xl transition-all active:scale-95 gap-2" onClick={() => setIsDeleteAlertOpen(true)}>
             <Trash2 className="h-4 w-4" /> Terminate
           </Button>
         </div>
       </div>
 
+      {/* UNIFIED DETAIL CONTAINER */}
       <div className="bg-white border rounded-2xl md:rounded-[2.5rem] shadow-sm overflow-hidden ring-1 ring-slate-100">
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className="bg-slate-50/50 p-2 h-auto flex flex-wrap md:flex-nowrap gap-2 border-b">
-            <TabsTrigger value="overview" className="rounded-lg flex-1 py-3 text-[10px] uppercase font-black data-[state=active]:bg-white data-[state=active]:shadow-sm">Overview</TabsTrigger>
+            <TabsTrigger value="overview" className="rounded-lg flex-1 py-3 text-[10px] uppercase font-black data-[state=active]:bg-white data-[state=active]:shadow-sm">Summary</TabsTrigger>
             <TabsTrigger value="services" className="rounded-lg flex-1 py-3 text-[10px] uppercase font-black data-[state=active]:bg-white data-[state=active]:shadow-sm">Matrix</TabsTrigger>
             <TabsTrigger value="billing" className="rounded-lg flex-1 py-3 text-[10px] uppercase font-black data-[state=active]:bg-white data-[state=active]:shadow-sm">Ledger</TabsTrigger>
-            <TabsTrigger value="activity" className="rounded-lg flex-1 py-3 text-[10px] uppercase font-black data-[state=active]:bg-white data-[state=active]:shadow-sm">Audit</TabsTrigger>
           </TabsList>
 
           <div className="p-6 md:p-10">
@@ -145,24 +135,24 @@ export default function ServiceContractDetailsPage() {
                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                   <div className="space-y-8">
                      <div className="space-y-4">
-                        <h3 className="text-[11px] font-black uppercase text-indigo-600 tracking-[0.2em] border-b pb-2">Client Profile</h3>
+                        <h3 className="text-[11px] font-black uppercase text-indigo-600 tracking-[0.2em] border-b pb-2">Client profile</h3>
                         <div className="space-y-2">
                            <p className="text-lg font-black uppercase text-slate-900">{contract.customerName}</p>
-                           <p className="text-[11px] font-bold text-slate-500 leading-relaxed">{contract.customerAddress || 'Address Not Set'}</p>
+                           <p className="text-[11px] font-bold text-slate-500 leading-relaxed">{contract.customerAddress || 'Address not recorded'}</p>
                         </div>
                      </div>
                      <div className="space-y-4">
-                        <h3 className="text-[11px] font-black uppercase text-indigo-600 tracking-[0.2em] border-b pb-2">Project Information</h3>
+                        <h3 className="text-[11px] font-black uppercase text-indigo-600 tracking-[0.2em] border-b pb-2">Project detail</h3>
                         <p className="text-sm font-bold uppercase text-slate-700">{contract.projectName || 'Standalone Support Agreement'}</p>
                      </div>
                   </div>
                   <div className="bg-slate-50/50 p-8 rounded-3xl ring-1 ring-slate-100 space-y-6">
                      <div className="flex justify-between items-center border-b border-slate-200 pb-4">
-                        <span className="text-[10px] font-black uppercase text-slate-400">Monthly Fee</span>
+                        <span className="text-[10px] font-black uppercase text-slate-400">Monthly charge</span>
                         <span className="text-xl font-black text-indigo-600">{formatCurrency(contract.monthlyAmount)}</span>
                      </div>
                      <div className="flex justify-between items-center border-b border-slate-200 pb-4">
-                        <span className="text-[10px] font-black uppercase text-slate-400">Agreement Term</span>
+                        <span className="text-[10px] font-black uppercase text-slate-400">Term period</span>
                         <span className="text-[11px] font-bold uppercase">{formatDate(contract.startDate)} - {formatDate(contract.endDate)}</span>
                      </div>
                      <div className="flex justify-between items-center">
@@ -201,7 +191,7 @@ export default function ServiceContractDetailsPage() {
                   <Table>
                     <TableHeader className="bg-slate-50">
                        <TableRow>
-                          <TableHead className="h-11 pl-6 text-[9px] font-black uppercase">Month</TableHead>
+                          <TableHead className="h-11 pl-6 text-[9px] font-black uppercase">Billing Month</TableHead>
                           <TableHead className="h-11 text-[9px] uppercase font-black text-right">Settlement</TableHead>
                           <TableHead className="h-11 text-[9px] uppercase font-black text-center">Status</TableHead>
                           <TableHead className="h-11"></TableHead>
@@ -227,16 +217,6 @@ export default function ServiceContractDetailsPage() {
                   </Table>
                </div>
             </TabsContent>
-
-            <TabsContent value="activity" className="mt-0 animate-in fade-in duration-500">
-               <div className="relative border-l-2 border-slate-100 ml-4 pl-10 space-y-10 py-4">
-                  <div className="relative">
-                     <div className="absolute -left-[49px] top-0 w-4 h-4 rounded-full bg-indigo-600 border-4 border-white shadow-md" />
-                     <p className="text-[10px] font-black uppercase text-indigo-600">Agreement Activation</p>
-                     <p className="text-xs font-bold text-slate-900">{formatDate(contract.createdAt)}</p>
-                  </div>
-               </div>
-            </TabsContent>
           </div>
         </Tabs>
       </div>
@@ -244,12 +224,12 @@ export default function ServiceContractDetailsPage() {
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl max-w-sm">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-black uppercase text-slate-900">Terminate Contract?</AlertDialogTitle>
-            <AlertDialogDescription className="text-[11px] font-bold text-slate-500 leading-relaxed">This operation will revoke all future service rights and billing schedules. This cannot be reversed.</AlertDialogDescription>
+            <AlertDialogTitle className="text-xl font-black uppercase text-slate-900">Terminate?</AlertDialogTitle>
+            <AlertDialogDescription className="text-[11px] font-bold text-slate-500 leading-relaxed">This operation will revoke all future service rights. This cannot be reversed.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-6 gap-2">
             <AlertDialogCancel className="h-11 rounded-xl font-black uppercase text-[10px]">Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700 h-11 rounded-xl font-black uppercase text-[10px] text-white" onClick={handleDelete}>Yes, Terminate</AlertDialogAction>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 h-11 rounded-xl font-black uppercase text-[10px] text-white" onClick={handleDelete}>Confirm</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
