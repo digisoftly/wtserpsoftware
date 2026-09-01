@@ -198,16 +198,16 @@ export default function ContractDetailsPage() {
                     <TableBody>
                        {group.points?.map((point: any, pIdx: number) => (
                          <TableRow key={pIdx} className="h-16 hover:bg-slate-50/50 border-slate-50">
-                            <td className="text-center text-[10px] font-black text-slate-300 pl-8">{(pIdx + 1).toString().padStart(2, '0')}</td>
-                            <td className="pl-4">
+                            <TableCell className="text-center text-[10px] font-black text-slate-300 pl-8">{(pIdx + 1).toString().padStart(2, '0')}</TableCell>
+                            <TableCell className="pl-4">
                                <div className="flex items-center gap-2">
                                   <MapPin className="h-3 w-3 text-blue-400" />
                                   <span className="text-[11px] font-black uppercase text-slate-700 tracking-tight">{point.location}</span>
                                </div>
-                            </td>
-                            <td className="pl-4 text-[10px] font-bold text-slate-500 uppercase">{point.description}</td>
-                            <td className="pl-4 text-[10px] font-black text-slate-400 uppercase tracking-tighter">{point.contactPerson || '---'}</td>
-                         </tr>
+                            </TableCell>
+                            <TableCell className="pl-4 text-[10px] font-bold text-slate-500 uppercase">{point.description}</TableCell>
+                            <TableCell className="pl-4 text-[10px] font-black text-slate-400 uppercase tracking-tighter">{point.contactPerson || '---'}</TableCell>
+                         </TableRow>
                        ))}
                     </TableBody>
                   </Table>
