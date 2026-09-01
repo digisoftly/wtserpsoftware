@@ -1,9 +1,9 @@
+
 "use client"
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { 
-  ShieldCheck, 
   ArrowLeft, 
   Save, 
   Loader2, 
@@ -12,7 +12,8 @@ import {
   MapPin,
   LayoutGrid,
   PlusCircle,
-  X
+  X,
+  ShieldCheck
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -60,15 +61,39 @@ export default function NewContractPage() {
   const router = useRouter();
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
-  const { t } = useTranslation();
+  const { t, formatCurrency } = useTranslation();
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  
+  // Header Info State
   const [selectedCustomerId, setSelectedCustomerId] = React.useState("");
+  const [agreementNo, setAgreementNo] = React.useState("");
   const [selectedProjectId, setSelectedProjectId] = React.useState("none");
+  const [serviceType, setServiceType] = React.useState("CCTV Maintenance");
+  const [startDate, setStartDate] = React.useState(new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = React.useState("");
+  const [billingCycle, setBillingCycle] = React.useState("Monthly");
+  const [billingDay, setBillingDay] = React.useState(1);
+  const [paymentTerms, setPaymentTerms] = React.useState("COD");
+
+  // Dynamic Service Matrix State
   const [serviceGroups, setServiceGroups] = React.useState<ServiceGroup[]>([
-    { id: 'g1', serviceName: 'MRC for Data', amount: 0, points: [{ id: 'p1', item: 'MRC for Data', description: '', location: '', siteCode: '', contactPerson: '', contactNumber: '' }] }
+    { 
+      id: 'g1', 
+      serviceName: 'MRC for Data', 
+      amount: 0, 
+      points: [
+        { id: 'p1', item: 'MRC for Data', description: '', location: '', siteCode: '', contactPerson: '', contactNumber: '' }
+      ] 
+    }
   ]);
 
+  // Financial State
+  const [vatPercent, setVatPercent] = React.useState(0);
+  const [discountAmount, setDiscountAmount] = React.useState(0);
+  const [notes, setNotes] = React.useState("");
+
+  // Queries
   const customersQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
     return collection(db, "companies", companyId, "branches", branchId, "customers");
@@ -81,6 +106,7 @@ export default function NewContractPage() {
   }, [db, companyId, branchId]);
   const { data: projects } = useCollection(projectsQuery);
 
+  // Group & Point Logic
   const addGroup = () => {
     setServiceGroups([...serviceGroups, { 
       id: Math.random().toString(36).substr(2, 9), 
@@ -114,11 +140,19 @@ export default function NewContractPage() {
     }));
   };
 
-  const updateGroup = (groupId: string, field: string, val: any) => {
-    setServiceGroups(serviceGroups.map(g => g.id === groupId ? { ...g, [field]: val } : g));
+  const updateGroup = (groupId: string, field: keyof ServiceGroup, val: any) => {
+    setServiceGroups(serviceGroups.map(g => {
+      if (g.id !== groupId) return g;
+      const updated = { ...g, [field]: val };
+      // If group name changes, update all points' item name
+      if (field === 'serviceName') {
+        updated.points = updated.points.map(p => ({ ...p, item: val }));
+      }
+      return updated;
+    }));
   };
 
-  const updatePoint = (groupId: string, pointId: string, field: string, val: any) => {
+  const updatePoint = (groupId: string, pointId: string, field: keyof ServicePoint, val: any) => {
     setServiceGroups(serviceGroups.map(g => {
       if (g.id !== groupId) return g;
       return {
@@ -128,38 +162,44 @@ export default function NewContractPage() {
     }));
   };
 
-  const totalAmount = serviceGroups.reduce((s, g) => s + Number(g.amount || 0), 0);
+  // Calculations
+  const grossSubtotal = React.useMemo(() => serviceGroups.reduce((s, g) => s + (Number(g.amount) || 0), 0), [serviceGroups]);
+  const vatAmount = (grossSubtotal * vatPercent) / 100;
+  const netMonthlyTotal = grossSubtotal + vatAmount - discountAmount;
 
-  const handleAddContract = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAddContract = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!db || !companyId || !branchId || !selectedCustomerId || isSubmitting) return;
+    if (!db || !companyId || !branchId || !selectedCustomerId || isSubmitting) {
+      toast({ variant: "destructive", title: "Missing Data", description: "Please select a client and add service details." });
+      return;
+    }
 
     setIsSubmitting(true);
-    const formData = new FormData(e.currentTarget);
     const customer = customers?.find(c => c.id === selectedCustomerId);
 
     const contractData = {
       companyId,
       branchId,
       contractNumber: `SLA-${Date.now().toString().slice(-6)}`,
-      agreementNo: formData.get("agreementNo") as string,
+      agreementNo: agreementNo,
       customerId: selectedCustomerId,
       customerCode: customer?.id || "",
       customerName: customer ? (customer.customerType !== 'individual' ? customer.companyName : `${customer.firstName} ${customer.lastName}`) : "Client",
       projectId: selectedProjectId,
-      serviceType: formData.get("serviceType"),
-      startDate: formData.get("startDate"),
-      endDate: formData.get("endDate"),
-      billingCycle: formData.get("billingCycle"),
-      billingDay: Number(formData.get("billingDay") || 1),
+      serviceType,
+      startDate,
+      endDate,
+      billingCycle,
+      billingDay: Number(billingDay),
       groups: serviceGroups,
-      monthlyAmount: totalAmount,
-      vatPercent: Number(formData.get("vatPercent") || 0),
-      discountAmount: Number(formData.get("discountAmount") || 0),
-      netMonthlyAmount: totalAmount + (totalAmount * Number(formData.get("vatPercent") || 0) / 100) - Number(formData.get("discountAmount") || 0),
-      paymentTerms: formData.get("paymentTerms"),
+      monthlyAmount: grossSubtotal,
+      vatPercent: Number(vatPercent),
+      vatAmount: vatAmount,
+      discountAmount: Number(discountAmount),
+      netMonthlyAmount: netMonthlyTotal,
+      paymentTerms,
       status: "active",
-      notes: formData.get("notes") as string,
+      notes,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -167,7 +207,7 @@ export default function NewContractPage() {
     try {
       const contractRef = doc(collection(db, "companies", companyId, "branches", branchId, "service_contracts"));
       await setDoc(contractRef, { ...contractData, id: contractRef.id });
-      toast({ title: t('success') });
+      toast({ title: t('success'), description: "Monthly service agreement provisioned successfully." });
       router.push("/contracts");
     } catch (err: any) {
       toast({ variant: "destructive", title: t('error'), description: err.message });
@@ -177,9 +217,9 @@ export default function NewContractPage() {
 
   return (
     <div className="flex flex-col h-full bg-slate-50 min-h-screen pb-20">
-      <div className="sticky top-0 z-30 bg-white border-b px-4 py-3 flex items-center justify-between shadow-sm">
+      <div className="sticky top-0 z-30 bg-white border-b px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full">
+          <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full h-10 w-10">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
@@ -191,15 +231,15 @@ export default function NewContractPage() {
           <Button variant="ghost" className="rounded-full text-[10px] font-black uppercase tracking-widest px-6" onClick={() => router.back()}>
             {t('cancel')}
           </Button>
-          <Button type="submit" form="contract-form" className="bg-emerald-600 hover:bg-emerald-700 rounded-full px-8 h-10 text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-emerald-100 gap-2" disabled={isSubmitting}>
+          <Button onClick={handleAddContract} disabled={isSubmitting} className="bg-emerald-600 hover:bg-emerald-700 rounded-full px-10 h-11 text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-emerald-100 gap-2">
             {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />}
             Provision Service
           </Button>
         </div>
       </div>
 
-      <div className="max-w-[1400px] mx-auto w-full p-4 md:p-8">
-        <form id="contract-form" onSubmit={handleAddContract} className="space-y-8">
+      <div className="max-w-[1500px] mx-auto w-full p-4 md:p-8">
+        <form onSubmit={handleAddContract} className="space-y-8">
           <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="space-y-1.5">
@@ -218,7 +258,7 @@ export default function NewContractPage() {
 
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Agreement / Service No.</Label>
-                <Input name="agreementNo" required className="h-11 rounded-xl border-none ring-1 ring-slate-200 font-bold" placeholder="e.g. SLA-2024-001" />
+                <Input value={agreementNo} onChange={e => setAgreementNo(e.target.value)} required className="h-11 rounded-xl border-none ring-1 ring-slate-200 font-bold" placeholder="e.g. SLA-2024-001" />
               </div>
 
               <div className="space-y-1.5">
@@ -234,7 +274,7 @@ export default function NewContractPage() {
 
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Service Classification</Label>
-                <Select name="serviceType" defaultValue="CCTV Maintenance">
+                <Select value={serviceType} onValueChange={setServiceType}>
                   <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent className="rounded-xl">
                     {SERVICE_TYPES.map(type => <SelectItem key={type} value={type} className="text-xs font-bold">{type}</SelectItem>)}
@@ -244,7 +284,7 @@ export default function NewContractPage() {
 
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Billing Cycle</Label>
-                <Select name="billingCycle" defaultValue="Monthly">
+                <Select value={billingCycle} onValueChange={setBillingCycle}>
                   <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent className="rounded-xl"><SelectItem value="Monthly">Monthly</SelectItem><SelectItem value="Quarterly">Quarterly</SelectItem><SelectItem value="Half-Yearly">Half-Yearly</SelectItem><SelectItem value="Yearly">Yearly</SelectItem></SelectContent>
                 </Select>
@@ -252,17 +292,17 @@ export default function NewContractPage() {
 
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Billing Day (Date)</Label>
-                <Input name="billingDay" type="number" min="1" max="31" defaultValue="1" className="h-11 rounded-xl border-none ring-1 ring-slate-200 font-bold" />
+                <Input type="number" min="1" max="31" value={billingDay} onChange={e => setBillingDay(Number(e.target.value))} className="h-11 rounded-xl border-none ring-1 ring-slate-200 font-bold" />
               </div>
 
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Start Date</Label>
-                <Input name="startDate" type="date" required className="h-11 rounded-xl border-none ring-1 ring-slate-200 font-bold uppercase" />
+                <Input type="date" required value={startDate} onChange={e => setStartDate(e.target.value)} className="h-11 rounded-xl border-none ring-1 ring-slate-200 font-bold uppercase" />
               </div>
 
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">End Date (Optional)</Label>
-                <Input name="endDate" type="date" className="h-11 rounded-xl border-none ring-1 ring-slate-200 font-bold uppercase" />
+                <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="h-11 rounded-xl border-none ring-1 ring-slate-200 font-bold uppercase" />
               </div>
             </div>
           </Card>
@@ -289,7 +329,7 @@ export default function NewContractPage() {
                          placeholder="Item Name"
                        />
                     </div>
-                    <div className="space-y-1 w-40">
+                    <div className="space-y-1 w-44">
                        <Label className="text-[9px] font-black uppercase text-slate-400">Monthly Group Fee (৳)</Label>
                        <Input 
                          type="number"
@@ -309,7 +349,7 @@ export default function NewContractPage() {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between mb-2">
                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><MapPin className="h-3.5 w-3.5" /> Service Points / Locations</p>
-                       <Button type="button" size="sm" onClick={() => addPoint(group.id)} className="h-8 rounded-lg gap-2 text-[9px] font-black uppercase bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-none transition-all">
+                       <Button type="button" size="sm" onClick={() => addPoint(group.id)} className="h-8 rounded-lg gap-2 text-[9px] font-black uppercase bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-none transition-all px-4">
                          <Plus className="h-3.5 w-3.5" /> Add Point
                        </Button>
                     </div>
@@ -327,7 +367,7 @@ export default function NewContractPage() {
                         </thead>
                         <tbody>
                           {group.points.map((point, pIdx) => (
-                            <tr key={point.id} className="border-t border-slate-50 h-14 group">
+                            <tr key={point.id} className="border-t border-slate-50 h-14 group bg-white/40">
                               <td className="text-center text-[10px] font-black text-slate-300">{(pIdx + 1).toString().padStart(2, '0')}</td>
                               <td className="pl-4">
                                 <Input 
@@ -378,33 +418,38 @@ export default function NewContractPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-6">
               <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Additional Remarks</h3>
-              <Textarea name="notes" className="min-h-[120px] rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 p-4 text-[11px] font-bold text-slate-600" placeholder="Special billing instructions or contract terms..." />
+              <Textarea value={notes} onChange={e => setNotes(e.target.value)} className="min-h-[120px] rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 p-4 text-[11px] font-bold text-slate-600" placeholder="Special billing instructions or contract terms..." />
             </Card>
 
             <Card className="p-8 rounded-[2.5rem] border-none shadow-xl bg-slate-900 text-white space-y-6">
                <div className="flex justify-between items-end pb-4 border-b border-white/10">
                   <div className="space-y-1">
                     <p className="text-[10px] font-black uppercase opacity-60 tracking-[0.2em]">Gross Monthly Fee</p>
-                    <h2 className="text-4xl font-black tracking-tighter text-emerald-400">৳{totalAmount.toLocaleString()}</h2>
+                    <h2 className="text-4xl font-black tracking-tighter text-emerald-400">৳{grossSubtotal.toLocaleString()}</h2>
                   </div>
                   <div className="text-right space-y-1">
                     <p className="text-[10px] font-black uppercase opacity-60">Billing Cycle</p>
-                    <Badge className="bg-emerald-600 text-white border-none font-black text-[10px] h-6 px-4">MONTHLY</Badge>
+                    <Badge className="bg-emerald-600 text-white border-none font-black text-[10px] h-6 px-4 uppercase">{billingCycle}</Badge>
                   </div>
                </div>
                
                <div className="grid grid-cols-2 gap-6 pt-4">
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase opacity-40">VAT %</Label>
-                    <Input name="vatPercent" type="number" defaultValue="0" className="h-10 bg-white/5 border-none ring-1 ring-white/10 font-black text-white" />
+                    <Input type="number" value={vatPercent || ''} onChange={e => setVatPercent(Number(e.target.value))} className="h-10 bg-white/5 border-none ring-1 ring-white/10 font-black text-white" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase opacity-40">Extra Discount (৳)</Label>
-                    <Input name="discountAmount" type="number" defaultValue="0" className="h-10 bg-white/5 border-none ring-1 ring-white/10 font-black text-white" />
+                    <Input type="number" value={discountAmount || ''} onChange={e => setDiscountAmount(Number(e.target.value))} className="h-10 bg-white/5 border-none ring-1 ring-white/10 font-black text-white" />
                   </div>
                </div>
 
-               <div className="pt-6 flex items-center gap-4">
+               <div className="pt-6 flex justify-between items-center border-t border-white/10">
+                  <p className="text-xs font-black uppercase text-slate-400 tracking-widest">Net Payable</p>
+                  <p className="text-2xl font-black text-blue-400">৳{netMonthlyTotal.toLocaleString()}</p>
+               </div>
+
+               <div className="pt-4 flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
                     <ShieldCheck className="h-6 w-6 text-emerald-400" />
                   </div>
