@@ -67,10 +67,10 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       try {
         const userRef = doc(db, "companies", companyId, "users", user.uid);
         updateDoc(userRef, { preferredLanguage: lang }).catch(err => {
-          console.error("Language sync failed:", err);
+          // Silent catch to avoid console noise during auth transitions
         });
       } catch (e) {
-        console.error("Language sync prep failed:", e);
+        // Prep fail usually means session ending
       }
     }
   }, [user, db, companyId]);
@@ -79,7 +79,10 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     let unsubUser: (() => void) | undefined;
     let unsubSettings: (() => void) | undefined;
 
+    // 1. Session Guard: If no user, immediately kill all listeners and reset state
     if (!isUserLoading && !user) {
+      if (unsubUser) unsubUser();
+      if (unsubSettings) unsubSettings();
       setUserRole(null);
       setSettings(null);
       setBranchId(null);
@@ -87,18 +90,25 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (!isUserLoading && user && db) {
+    // 2. Initialize Listeners only if User exists and we have an Auth Instance
+    if (!isUserLoading && user && db && auth.currentUser) {
       setIsInitializing(true);
 
       const configRef = doc(db, "companies", companyId, "system", "config");
       unsubSettings = onSnapshot(configRef, (snap) => {
+        // Secondary guard: prevent processing if user signed out between fire
+        if (!auth.currentUser) return;
         if (snap.exists()) setSettings(snap.data());
       }, (err) => {
-        console.error("Settings listener failed:", err);
+        if (err.code !== 'permission-denied') {
+          console.error("Settings listener failed:", err);
+        }
       });
 
       const userRef = doc(db, "companies", companyId, "users", user.uid);
       unsubUser = onSnapshot(userRef, async (snap) => {
+        if (!auth.currentUser) return;
+        
         if (snap.exists()) {
           const userData = snap.data();
           
@@ -119,7 +129,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           const roleId = userData.roleId || "default-user";
           try {
             const roleSnap = await getDoc(doc(db, "companies", companyId, "roles", roleId));
-            if (roleSnap.exists()) {
+            if (roleSnap.exists() && auth.currentUser) {
               const roleData = roleSnap.data();
               setUserRole({ 
                 id: roleSnap.id, 
@@ -128,11 +138,11 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
               } as Role);
             }
           } catch (e) {
-            console.error("Role fetch failed:", e);
+             // Silence permission errors during logout redirect
           }
           setIsInitializing(false);
         } else {
-          // If no user document exists yet (e.g., first login of owner)
+          // Super Admin Fallback for first-time login
           if (user.email === 'warriortechsystem@gmail.com') {
              setUserRole({
                id: 'super-admin',
@@ -146,7 +156,9 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           setIsInitializing(false);
         }
       }, (err) => {
-        console.error("User profile listener failed:", err);
+        if (err.code !== 'permission-denied') {
+          console.error("User profile listener failed:", err);
+        }
         setIsInitializing(false);
       });
     }

@@ -6,31 +6,38 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, AlertCircle, ZapOff, Fingerprint, ArrowLeft, Home } from 'lucide-react';
+import { ShieldAlert, ZapOff, Fingerprint, ArrowLeft, Home } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
 import { useRouter, usePathname } from 'next/navigation';
+import { useAuth } from '@/firebase';
 import { cn } from '@/lib/utils';
 
 /**
  * An intelligent listener that catches Firestore errors and displays a user-friendly modal.
  * Optimized for high-density mobile and tablet screens.
+ * Silent during logout and on login pages to prevent permission-error noise.
  */
 export function FirebaseErrorListener() {
   const [error, setError] = useState<FirestorePermissionError | null>(null);
   const { t } = useTranslation();
+  const auth = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
     const handleError = (error: FirestorePermissionError) => {
-      // Don't show on login page to avoid interrupting auth flow
-      if (pathname === '/login' || pathname === '/login/') return;
+      // 1. Global Silence: If no user is logged in, or we are on login page, ignore permission errors
+      // This specifically fixes the "FirebaseError: Missing or insufficient permissions" on logout.
+      if (!auth.currentUser) return;
+      const normalizedPath = pathname?.replace(/\/$/, '') || '';
+      if (normalizedPath === '/login') return;
+
       setError(error);
     };
 
     errorEmitter.on('permission-error', handleError);
     return () => errorEmitter.off('permission-error', handleError);
-  }, [pathname]);
+  }, [pathname, auth.currentUser]);
 
   if (!error) return null;
 
