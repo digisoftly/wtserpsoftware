@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -23,6 +22,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { KPICard } from "@/components/dashboard/kpi-card"
 import { cn } from "@/lib/utils"
 
@@ -36,13 +36,23 @@ export default function AttendanceManagementPage() {
 
   const attendanceQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
+    // Removed orderBy to prevent index error
     return query(
       collection(db, "companies", companyId, "branches", branchId, "attendance"),
-      where("date", "==", selectedDate),
-      orderBy("checkIn", "desc")
+      where("date", "==", selectedDate)
     );
   }, [db, companyId, branchId, selectedDate]);
-  const { data: attendance, isLoading } = useCollection(attendanceQuery);
+  const { data: rawAttendance, isLoading } = useCollection(attendanceQuery);
+
+  // Sort attendance in memory
+  const attendance = React.useMemo(() => {
+    if (!rawAttendance) return [];
+    return [...rawAttendance].sort((a, b) => {
+      const timeA = a.checkIn || "";
+      const timeB = b.checkIn || "";
+      return timeB.localeCompare(timeA);
+    });
+  }, [rawAttendance]);
 
   const stats = React.useMemo(() => ({
     present: attendance?.filter(a => a.status === 'present').length || 0,

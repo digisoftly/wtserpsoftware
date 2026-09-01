@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -43,13 +42,23 @@ export default function PaymentHistoryPage() {
 
   const paymentsQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId || !id) return null;
+    // Removed orderBy to prevent index error
     return query(
       collection(db, "companies", companyId, "branches", branchId, "payments"),
-      where("invoiceId", "==", id),
-      orderBy("createdAt", "desc")
+      where("invoiceId", "==", id)
     );
   }, [db, companyId, branchId, id]);
-  const { data: payments, isLoading } = useCollection(paymentsQuery);
+  const { data: rawPayments, isLoading } = useCollection(paymentsQuery);
+
+  // Sort payments in memory
+  const payments = React.useMemo(() => {
+    if (!rawPayments) return [];
+    return [...rawPayments].sort((a, b) => {
+      const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : new Date(a.createdAt || 0).getTime();
+      const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : new Date(b.createdAt || 0).getTime();
+      return timeB - timeA;
+    });
+  }, [rawPayments]);
 
   const handleDelete = async () => {
     if (!db || !companyId || !branchId || !selectedPayment) return;

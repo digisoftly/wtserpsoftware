@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -72,7 +71,7 @@ export default function NewServiceContractPage() {
   const [billingCycle, setBillingCycle] = React.useState("Monthly");
   const [billingDay, setBillingDay] = React.useState(1);
 
-  // Initialize with 1 group containing 13 empty points (as requested previously)
+  // Initialize with 1 group containing 13 empty points
   const [serviceGroups, setServiceGroups] = React.useState<ServiceGroup[]>([
     { 
       id: 'g1', 
@@ -95,13 +94,23 @@ export default function NewServiceContractPage() {
 
   const projectsQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId || !selectedCustomerId) return null;
+    // Removed orderBy to prevent index error
     return query(
       collection(db, "companies", companyId, "branches", branchId, "projects"), 
-      where("customerId", "==", selectedCustomerId),
-      orderBy("createdAt", "desc")
+      where("customerId", "==", selectedCustomerId)
     );
   }, [db, companyId, branchId, selectedCustomerId]);
-  const { data: projects } = useCollection(projectsQuery);
+  const { data: rawProjects } = useCollection(projectsQuery);
+
+  // Sort projects in memory to avoid Firebase index error
+  const projects = React.useMemo(() => {
+    if (!rawProjects) return [];
+    return [...rawProjects].sort((a, b) => {
+      const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : new Date(a.createdAt || 0).getTime();
+      const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : new Date(b.createdAt || 0).getTime();
+      return timeB - timeA;
+    });
+  }, [rawProjects]);
 
   const addGroup = () => {
     setServiceGroups([...serviceGroups, { 
@@ -124,7 +133,7 @@ export default function NewServiceContractPage() {
     setServiceGroups(serviceGroups.map(g => g.id === groupId ? { ...g, points: g.points.map(p => p.id === pointId ? { ...p, [field]: val } : p) } : g));
   };
 
-  const grossSubtotal = React.useMemo(() => serviceGroups.reduce((s, g) => s + (Number(g.amount) || 0), [serviceGroups]) as any, [serviceGroups]);
+  const grossSubtotal = React.useMemo(() => serviceGroups.reduce((s, g) => s + (Number(g.amount) || 0), 0), [serviceGroups]);
   const vatAmount = (Number(grossSubtotal) * vatPercent) / 100;
   const netMonthlyTotal = Number(grossSubtotal) + vatAmount - discountAmount;
 
@@ -138,7 +147,6 @@ export default function NewServiceContractPage() {
     
     const customerName = customer ? (customer.customerType !== 'individual' ? customer.companyName : `${customer.firstName} ${customer.lastName}`) : "Client";
     
-    // Filter out empty points before saving
     const cleanedGroups = serviceGroups.map(g => ({
       ...g,
       points: g.points.filter(p => p.location.trim() !== "")
@@ -212,7 +220,6 @@ export default function NewServiceContractPage() {
       <div className="max-w-[1500px] mx-auto w-full p-4 md:p-8 space-y-8">
         <form onSubmit={handleAddContract} className="space-y-8">
           
-          {/* SECTION 1: IDENTITY & LINKS */}
           <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-8">
             <div className="flex items-center gap-3 border-b pb-4">
                <GitPullRequest className="h-5 w-5 text-indigo-600" />
@@ -258,7 +265,6 @@ export default function NewServiceContractPage() {
             </div>
           </Card>
 
-          {/* SECTION 2: DURATION & TYPE */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
              <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-6">
                 <div className="flex items-center gap-3 border-b pb-4">
@@ -306,7 +312,6 @@ export default function NewServiceContractPage() {
              </Card>
           </div>
 
-          {/* SECTION 3: SERVICE MATRIX */}
           <div className="space-y-6">
             <div className="flex items-center justify-between px-2">
                <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2"><LayoutGrid className="h-4 w-4 text-indigo-600" /> Technical Service Manifest</h3>
@@ -368,7 +373,6 @@ export default function NewServiceContractPage() {
             ))}
           </div>
 
-          {/* SECTION 4: FINANCIALS */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <Card className="p-8 rounded-[2.5rem] bg-white space-y-6">
               <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Financial Tuning & Cycle</h3>

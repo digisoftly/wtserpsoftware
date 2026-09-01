@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -91,13 +90,23 @@ export default function EditServiceContractPage() {
 
   const projectsQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId || !selectedCustomerId) return null;
+    // Removed orderBy to prevent index error
     return query(
       collection(db, "companies", companyId, "branches", branchId, "projects"), 
-      where("customerId", "==", selectedCustomerId),
-      orderBy("createdAt", "desc")
+      where("customerId", "==", selectedCustomerId)
     );
   }, [db, companyId, branchId, selectedCustomerId]);
-  const { data: projects } = useCollection(projectsQuery);
+  const { data: rawProjects } = useCollection(projectsQuery);
+
+  // Sort projects in memory
+  const projects = React.useMemo(() => {
+    if (!rawProjects) return [];
+    return [...rawProjects].sort((a, b) => {
+      const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : new Date(a.createdAt || 0).getTime();
+      const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : new Date(b.createdAt || 0).getTime();
+      return timeB - timeA;
+    });
+  }, [rawProjects]);
 
   // Sync state with contract data
   React.useEffect(() => {
