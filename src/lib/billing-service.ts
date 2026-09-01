@@ -1,3 +1,4 @@
+
 import { 
   Firestore, 
   collection, 
@@ -11,7 +12,7 @@ import {
 
 /**
  * Core business logic for generating monthly contract invoices.
- * Includes duplicate prevention and safe data fallbacks.
+ * Includes support for multiple service groups and location points.
  */
 export async function runBillingCycle(
   db: Firestore, 
@@ -20,14 +21,13 @@ export async function runBillingCycle(
   year: number, 
   month: number
 ) {
-  // 1. Identify Target Billing Month Label (e.g., "February 2026")
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
   ];
   const billingMonthLabel = `${monthNames[month - 1]} ${year}`;
 
-  // 2. Fetch Active Service Contracts
+  // 1. Fetch Active Service Contracts
   const contractsRef = collection(db, "companies", companyId, "branches", branchId, "service_contracts");
   const activeQuery = query(contractsRef, where("status", "==", "active"));
   const contractsSnap = await getDocs(activeQuery);
@@ -46,8 +46,7 @@ export async function runBillingCycle(
     const contract = contractDoc.data();
     const contractId = contractDoc.id;
 
-    // 3. CRITICAL: Duplicate Check
-    // We check if an invoice already exists for this contract in this specific month/year
+    // 2. Duplicate Check
     const dupQuery = query(
       invoicesRef,
       where("contractId", "==", contractId),
@@ -59,22 +58,28 @@ export async function runBillingCycle(
     if (dupSnap.empty) {
       const invRef = doc(invoicesRef);
       
-      // 4. FIX: Strict Fallbacks for Undefined Values
-      const customerName = contract.customerName || "Unknown Customer";
-      const serviceName = contract.serviceName || "Monthly Maintenance Service";
-      const monthlyAmount = Number(contract.monthlyAmount) || 0;
+      const subtotal = Number(contract.monthlyAmount || 0);
+      const vatPercent = Number(contract.vatPercent || 0);
+      const discountAmount = Number(contract.discountAmount || 0);
+      const vatAmount = (subtotal * vatPercent) / 100;
+      const netAmount = subtotal + vatAmount - discountAmount;
 
       batch.set(invRef, {
         id: invRef.id,
         contractId: contractId,
         contractNumber: contract.contractNumber || "N/A",
-        customerName: customerName,
-        serviceName: serviceName,
-        billingMonth: billingMonthLabel, // For UI display
-        billMonth: month,               // For Logic/Filtering
-        billYear: year,                 // For Logic/Filtering
-        amount: monthlyAmount,
-        status: "due",
+        agreementNo: contract.agreementNo || "",
+        customerName: contract.customerName || "Unknown Customer",
+        serviceName: contract.serviceType || "Monthly Maintenance",
+        billingMonth: billingMonthLabel,
+        billMonth: month,
+        billYear: year,
+        subtotal: subtotal,
+        vatAmount: vatAmount,
+        discountAmount: discountAmount,
+        amount: netAmount,
+        status: "unpaid",
+        groups: contract.groups || [], // Pass the point details for PDF generation
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -92,6 +97,6 @@ export async function runBillingCycle(
     success: true,
     generated: generatedCount,
     skipped: skippedCount,
-    message: `Cycle Complete. Generated: ${generatedCount}, Skipped (Duplicates): ${skippedCount}`
+    message: `Cycle Complete. Generated: ${generatedCount}, Skipped: ${skippedCount}`
   };
 }

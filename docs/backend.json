@@ -116,9 +116,44 @@
       "properties": {
         "id": { "type": "string" },
         "contractNumber": { "type": "string" },
+        "agreementNo": { "type": "string" },
         "customerId": { "type": "string" },
-        "status": { "type": "string" },
-        "monthlyAmount": { "type": "number" }
+        "customerCode": { "type": "string" },
+        "projectId": { "type": "string" },
+        "serviceType": { "type": "string" },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "billingCycle": { "type": "string" },
+        "billingDay": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "pending", "suspended", "expired", "cancelled"] },
+        "groups": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "serviceName": { "type": "string" },
+              "amount": { "type": "number" },
+              "points": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "item": { "type": "string" },
+                    "description": { "type": "string" },
+                    "location": { "type": "string" },
+                    "siteCode": { "type": "string" },
+                    "contactPerson": { "type": "string" },
+                    "contactNumber": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "monthlyAmount": { "type": "number" },
+        "vatPercent": { "type": "number" },
+        "discountAmount": { "type": "number" },
+        "netMonthlyAmount": { "type": "number" }
       }
     },
     "ContractInvoice": {
@@ -129,7 +164,7 @@
         "contractId": { "type": "string" },
         "billingMonth": { "type": "string" },
         "amount": { "type": "number" },
-        "status": { "type": "string" }
+        "status": { "type": "string", "enum": ["paid", "partial", "unpaid", "overdue"] }
       }
     },
     "Employee": {
