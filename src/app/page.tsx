@@ -112,11 +112,9 @@ export default function Dashboard() {
       totalQuotations: quotations?.length || 0,
       activeQuotations: quotations?.filter(q => q.status === 'approved').length || 0,
       pendingQuotations: quotations?.filter(q => q.status === 'draft').length || 0,
-      cancelledQuotations: quotations?.filter(q => q.status === 'rejected' || q.status === 'expired').length || 0,
       todayPurchase: purchases?.filter(p => p.orderDate === today).reduce((sum, p) => sum + (p.totalAmount || 0), 0) || 0,
       monthlyPurchase: purchases?.filter(p => p.orderDate?.startsWith(thisMonth)).reduce((sum, p) => sum + (p.totalAmount || 0), 0) || 0,
       totalPurchase,
-      pendingPurchase: purchases?.filter(p => p.status === 'pending').length || 0,
       lowStockItems: products?.filter(p => (p.currentStock || 0) <= (p.minStockLevel || 5)).length || 0,
       serialInventory: serials?.length || 0,
       activeServiceContracts: contracts?.filter(c => c.status === 'active').length || 0,
@@ -135,21 +133,21 @@ export default function Dashboard() {
   const gridClass = "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4";
 
   const renderSectionHeader = (titleKey: string) => (
-    <div className="flex items-center gap-2 mb-3 mt-6 first:mt-0 px-1">
-      <div className="h-1 w-6 md:w-10 bg-blue-600 rounded-full" />
-      <h2 className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{t(titleKey)}</h2>
+    <div className="flex items-center gap-2 mb-2 md:mb-3 mt-4 first:mt-0 px-1">
+      <div className="h-0.5 md:h-1 w-4 md:w-8 bg-blue-600 rounded-full" />
+      <h2 className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{t(titleKey)}</h2>
     </div>
   );
 
   return (
-    <div className="relative space-y-4 pb-24 touch-scroll">
+    <div className="relative space-y-3 md:space-y-4 pb-24 touch-scroll">
       <div className="flex items-center justify-between gap-4 px-1">
         <div>
-          <h1 className="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tight">{t('dashboard')}</h1>
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">{t('happeningToday')}</p>
+          <h1 className="text-lg md:text-2xl font-black text-slate-900 uppercase tracking-tight leading-none">{t('dashboard')}</h1>
+          <p className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{t('happeningToday')}</p>
         </div>
-        <Button variant="outline" size="sm" className="h-9 rounded-full gap-2 font-black text-[10px] uppercase bg-white shadow-sm" onClick={() => window.location.reload()}>
-          <RefreshCw className={cn("h-3.5 w-3.5 text-blue-600", isLoading && "animate-spin")} />
+        <Button variant="outline" size="sm" className="h-8 rounded-full gap-2 font-black text-[9px] uppercase bg-white shadow-sm" onClick={() => window.location.reload()}>
+          <RefreshCw className={cn("h-3 w-3 text-blue-600", isLoading && "animate-spin")} />
         </Button>
       </div>
 
@@ -162,27 +160,24 @@ export default function Dashboard() {
       </div>
 
       {renderSectionHeader('quotationOverview')}
-      <div className={gridClass}>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 md:gap-4">
         <KPICard isLoading={isLoading} title="totalQuotations" value={stats.totalQuotations} icon={FileText} colorClass="bg-amber-600" />
         <KPICard isLoading={isLoading} title="activeQuotations" value={stats.activeQuotations} icon={CheckCircle2} colorClass="bg-green-600" />
         <KPICard isLoading={isLoading} title="pendingQuotations" value={stats.pendingQuotations} icon={Clock} colorClass="bg-orange-600" />
-        <KPICard isLoading={isLoading} title="cancelledQuotations" value={stats.cancelledQuotations} icon={XCircle} colorClass="bg-red-600" />
       </div>
 
       {renderSectionHeader('purchaseOverview')}
-      <div className={gridClass}>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 md:gap-4">
         <KPICard isLoading={isLoading} title="todayPurchase" value={formatCurrency(stats.todayPurchase)} icon={Package} colorClass="bg-blue-600" />
         <KPICard isLoading={isLoading} title="monthlyPurchase" value={formatCurrency(stats.monthlyPurchase)} icon={Calendar} colorClass="bg-indigo-600" />
         <KPICard isLoading={isLoading} title="totalPurchase" value={formatCurrency(stats.totalPurchase)} icon={Archive} colorClass="bg-blue-700" />
-        <KPICard isLoading={isLoading} title="pendingPurchase" value={stats.pendingPurchase} icon={History} colorClass="bg-orange-600" />
       </div>
 
       {renderSectionHeader('operationsOverview')}
-      <div className={gridClass}>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 md:gap-4">
         <KPICard isLoading={isLoading} title="lowStockItems" value={stats.lowStockItems} icon={Box} colorClass="bg-red-600" />
         <KPICard isLoading={isLoading} title="serialInventory" value={stats.serialInventory} icon={Scan} colorClass="bg-purple-600" />
         <KPICard isLoading={isLoading} title="activeServiceContracts" value={stats.activeServiceContracts} icon={Wrench} colorClass="bg-teal-600" />
-        <KPICard isLoading={isLoading} title="activeProjects" value={stats.activeProjects} icon={Briefcase} colorClass="bg-indigo-600" />
       </div>
 
       <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-4">
