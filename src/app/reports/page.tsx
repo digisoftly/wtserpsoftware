@@ -23,7 +23,7 @@ import { KPICard } from "@/components/dashboard/kpi-card"
 export default function ReportsPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
-  const { t } = useTranslation();
+  const { t, formatCurrency } = useTranslation();
 
   const invoicesQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
@@ -66,9 +66,9 @@ export default function ReportsPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title={t('annualRevenue')} value={`৳${totalAnnual.toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-600" />
+        <KPICard title={t('annualRevenue')} value={formatCurrency(totalAnnual)} icon={TrendingUp} colorClass="bg-green-600" />
         <KPICard title={t('totalOrders')} value={invoices?.length || 0} icon={Download} colorClass="bg-blue-600" />
-        <KPICard title={t('avgOrderValue')} value={`৳${avgOrder.toFixed(0)}`} icon={TrendingUp} colorClass="bg-purple-600" />
+        <KPICard title={t('avgOrderValue')} value={formatCurrency(avgOrder)} icon={TrendingUp} colorClass="bg-purple-600" />
         <KPICard title={t('netMargin')} value="28.4%" icon={TrendingUp} colorClass="bg-indigo-600" />
       </div>
 
@@ -95,7 +95,7 @@ export default function ReportsPage() {
                   fontSize={10}
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(value) => `৳${value}`}
+                  tickFormatter={(value) => `${value}`}
                   tick={{ fontWeight: 700 }}
                 />
                 <Tooltip 

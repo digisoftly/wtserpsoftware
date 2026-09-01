@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils"
 export default function ExpensesPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
-  const { t } = useTranslation();
+  const { t, formatCurrency } = useTranslation();
   const [searchTerm, setSearchTerm] = React.useState("");
 
   const expensesQuery = useMemoFirebase(() => {
@@ -50,9 +50,9 @@ export default function ExpensesPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <KPICard title={t('todayExpense')} value={`৳${stats.today.toLocaleString()}`} icon={CreditCard} colorClass="bg-red-600" />
-        <KPICard title={t('monthlyExpense')} value={`৳${stats.monthly.toLocaleString()}`} icon={Calendar} colorClass="bg-blue-600" />
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <KPICard title={t('todayExpense')} value={formatCurrency(stats.today)} icon={CreditCard} colorClass="bg-red-600" />
+        <KPICard title={t('monthlyExpense')} value={formatCurrency(stats.monthly)} icon={Calendar} colorClass="bg-blue-600" />
       </div>
 
       <div className="flex gap-2">
@@ -89,7 +89,7 @@ export default function ExpensesPage() {
                       <div className="font-bold text-xs">{exp.description}</div>
                       <div className="text-[9px] uppercase font-black text-muted-foreground font-black">{t(exp.category as any)}</div>
                     </TableCell>
-                    <TableCell className="text-right font-black text-xs text-red-600">৳{exp.amount?.toLocaleString()}</TableCell>
+                    <TableCell className="text-right font-black text-xs text-red-600">{formatCurrency(exp.amount || 0)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

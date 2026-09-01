@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -17,7 +16,7 @@ import Link from "next/link"
 export default function AccountsPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
-  const { t } = useTranslation();
+  const { t, formatCurrency } = useTranslation();
 
   const txQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
@@ -47,9 +46,9 @@ export default function AccountsPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        <KPICard title={t('cashBalance')} value={`৳${stats.balance.toLocaleString()}`} icon={Wallet} colorClass="bg-blue-600" />
-        <KPICard title={t('totalIncome')} value={`৳${stats.income.toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-600" />
-        <KPICard title={t('totalExpense')} value={`৳${stats.expense.toLocaleString()}`} icon={TrendingDown} colorClass="bg-red-600" />
+        <KPICard title={t('cashBalance')} value={formatCurrency(stats.balance)} icon={Wallet} colorClass="bg-blue-600" />
+        <KPICard title={t('totalIncome')} value={formatCurrency(stats.income)} icon={TrendingUp} colorClass="bg-green-600" />
+        <KPICard title={t('totalExpense')} value={formatCurrency(stats.expense)} icon={TrendingDown} colorClass="bg-red-600" />
       </div>
 
       {isLoading ? (
@@ -82,7 +81,7 @@ export default function AccountsPage() {
                     <TableCell>
                       <span className={cn("font-black text-xs flex items-center gap-1", t_row.transactionType === 'income' ? 'text-green-600' : 'text-red-600')}>
                         {t_row.transactionType === 'income' ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownLeft className="h-3 w-3" />}
-                        ৳{t_row.amount?.toLocaleString()}
+                        {formatCurrency(t_row.amount || 0)}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">

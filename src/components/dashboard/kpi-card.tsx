@@ -10,7 +10,7 @@ import { Line, LineChart, ResponsiveContainer } from "recharts"
 
 interface KPICardProps {
   title: string
-  value: string | number
+  value: React.ReactNode | string | number
   subtext?: string
   iconName?: string
   icon?: LucideIcon
@@ -33,6 +33,8 @@ export const KPICard = React.memo(function KPICard(props: KPICardProps) {
   const { formatNumber, t } = useTranslation();
   
   const Icon = DirectIcon || (iconName ? (Icons as any)[iconName] : Icons.Activity);
+  
+  // Format numeric values, but allow ReactNodes for responsive currency
   const displayValue = typeof value === 'number' ? formatNumber(value) : value;
 
   // App-like feel spacing

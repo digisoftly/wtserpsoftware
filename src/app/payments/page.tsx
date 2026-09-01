@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -41,7 +40,7 @@ import { useRouter } from "next/navigation"
 export default function GlobalPaymentsPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
-  const { t } = useTranslation();
+  const { t, formatCurrency } = useTranslation();
   const router = useRouter();
   
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
@@ -110,9 +109,9 @@ export default function GlobalPaymentsPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        <KPICard title="Collected Today" value={`৳${stats.today.toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-600" />
-        <KPICard title="Collected This Month" value={`৳${stats.monthly.toLocaleString()}`} icon={Calendar} colorClass="bg-blue-600" />
-        <KPICard title="Total Collection" value={`৳${stats.total.toLocaleString()}`} icon={CreditCard} colorClass="bg-emerald-600" />
+        <KPICard title="Collected Today" value={formatCurrency(stats.today)} icon={TrendingUp} colorClass="bg-green-600" />
+        <KPICard title="Collected This Month" value={formatCurrency(stats.monthly)} icon={Calendar} colorClass="bg-blue-600" />
+        <KPICard title="Total Collection" value={formatCurrency(stats.total)} icon={CreditCard} colorClass="bg-emerald-600" />
       </div>
 
       <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row gap-3 items-center justify-between ring-1 ring-slate-100">
@@ -139,7 +138,7 @@ export default function GlobalPaymentsPage() {
                 <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12">Customer</TableHead>
                 <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12">Invoice Link</TableHead>
                 <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12 text-center">Method</TableHead>
-                <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12 text-right pr-8">Amount Collected</TableHead>
+                <TableHead className="text-[10px] uppercase font-black text-slate-500 text-right pr-8">Amount Collected</TableHead>
                 <TableHead className="text-[10px] uppercase font-black text-slate-500 text-right pr-8 sticky right-0 bg-white/95 h-12 w-24">{t('actions')}</TableHead>
               </TableRow>
             </TableHeader>
@@ -170,7 +169,7 @@ export default function GlobalPaymentsPage() {
                       <Badge variant="outline" className="text-[8px] font-black bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full border-none uppercase">{p.paymentMethod}</Badge>
                     </TableCell>
                     <TableCell className="text-right pr-8">
-                       <span className="text-sm font-black text-slate-900 tabular-nums">৳{p.amount?.toLocaleString()}</span>
+                       <span className="text-sm font-black text-slate-900 tabular-nums">{formatCurrency(p.amount || 0)}</span>
                        <p className="text-[8px] font-bold text-slate-400 mt-0.5 uppercase">Reference: {p.reference || 'N/A'}</p>
                     </TableCell>
                     <TableCell className="text-right pr-8 sticky right-0 bg-white group-hover:bg-slate-50/90 transition-colors z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)]">

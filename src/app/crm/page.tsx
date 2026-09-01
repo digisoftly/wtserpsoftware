@@ -17,7 +17,7 @@ import Link from "next/link"
 export default function CRMPage() {
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
-  const { t } = useTranslation();
+  const { t, formatCurrency } = useTranslation();
   const [searchTerm, setSearchTerm] = React.useState("");
 
   const leadsQuery = useMemoFirebase(() => {
@@ -48,7 +48,7 @@ export default function CRMPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <KPICard title={t('totalLeads')} value={stats.total} icon={Target} colorClass="bg-blue-600" />
         <KPICard title={t('convertedLeads')} value={stats.converted} icon={CheckCircle2} colorClass="bg-green-600" />
-        <KPICard title={t('pipelineValue')} value={`৳${stats.pipeline.toLocaleString()}`} icon={DollarSign} colorClass="bg-purple-600" />
+        <KPICard title={t('pipelineValue')} value={formatCurrency(stats.pipeline)} icon={DollarSign} colorClass="bg-purple-600" />
       </div>
 
       <div className="flex gap-2">
