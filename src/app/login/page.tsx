@@ -95,7 +95,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-stretch bg-[#F3F4F6] overflow-hidden">
       {/* LEFT SIDE: BRANDING & SCROLLABLE GRID */}
-      <div className="hidden lg:flex lg:w-3/5 relative bg-[#0F4C44] text-white p-12 flex-col justify-between overflow-hidden">
+      <div className="hidden lg:flex lg:w-3/5 relative bg-[#0F4C44] text-white p-10 flex-col justify-between overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[#0F4C44] via-[#136A5F] to-[#0A332E]" />
         
         {/* Top Branding */}
@@ -118,30 +118,30 @@ export default function LoginPage() {
         </div>
 
         {/* Content & Scrollable Grid */}
-        <div className="relative z-10 space-y-10 mt-8">
-          <div className="space-y-3">
-            <h2 className="text-3xl lg:text-4xl font-black font-headline tracking-tight leading-tight animate-in slide-in-from-left-4 duration-1000">
+        <div className="relative z-10 space-y-8 mt-6">
+          <div className="space-y-2">
+            <h2 className="text-3xl xl:text-4xl font-black font-headline tracking-tight leading-tight animate-in slide-in-from-left-4 duration-1000">
               {settings?.loginHeadline || "২৩টি মডিউল একটি প্ল্যাটফর্মে"}
             </h2>
-            <p className="text-sm font-medium text-emerald-100/60 uppercase tracking-[0.2em]">
+            <p className="text-[11px] font-medium text-emerald-100/60 uppercase tracking-[0.2em]">
               {settings?.loginSubHeadline || "ব্যবসার প্রতিটি বিভাগ, এক জায়গা থেকেই নিয়ন্ত্রণ"}
             </p>
           </div>
           
-          {/* Scrollable Container for 23 Modules */}
-          <div className="max-h-[55vh] overflow-y-auto no-scrollbar pr-4 animate-in zoom-in-95 duration-700 delay-300">
-            <div className="grid grid-cols-3 xl:grid-cols-4 gap-4">
+          {/* 6-Column Grid Layout */}
+          <div className="max-h-[60vh] overflow-y-auto no-scrollbar pr-4 animate-in zoom-in-95 duration-700 delay-300">
+            <div className="grid grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3">
               {gridItems.map((item: any, idx: number) => {
                 const Icon = (Icons as any)[item.icon] || Icons.LayoutGrid;
                 return (
-                  <div key={idx} className="bg-white/5 backdrop-blur-md rounded-2xl p-6 flex flex-col items-center justify-center gap-3 border border-white/10 group hover:bg-white/10 hover:scale-[1.05] transition-all cursor-default aspect-square shadow-xl">
+                  <div key={idx} className="bg-white/5 backdrop-blur-md rounded-2xl p-4 flex flex-col items-center justify-center gap-2 border border-white/10 group hover:bg-white/10 hover:scale-[1.05] transition-all cursor-default aspect-square shadow-xl">
                     <div className={cn(
-                      "p-3 rounded-xl shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-2xl", 
+                      "p-2.5 rounded-xl shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-2xl", 
                       item.color || "bg-emerald-500/20 text-emerald-400"
                     )}>
-                      <Icon className="h-6 w-6" />
+                      <Icon className="h-5 w-5" />
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60 group-hover:opacity-100 transition-opacity text-center leading-tight">
+                    <span className="text-[9px] font-black uppercase tracking-widest opacity-60 group-hover:opacity-100 transition-opacity text-center leading-tight">
                       {item.label}
                     </span>
                   </div>
@@ -152,7 +152,7 @@ export default function LoginPage() {
         </div>
 
         {/* Bottom Footer */}
-        <div className="relative z-10 pt-6 border-t border-white/10">
+        <div className="relative z-10 pt-4 border-t border-white/10">
           <p className="text-[9px] font-black uppercase tracking-[0.5em] opacity-30 mb-1">
             Standard Enterprise Stack
           </p>
