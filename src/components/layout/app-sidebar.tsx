@@ -69,6 +69,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
+import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useAuth } from "@/firebase"
@@ -417,7 +418,7 @@ export function AppSidebar() {
             >
               <LogOut className="h-5 w-5 shrink-0" />
               <span className={cn("text-[12px] font-black uppercase tracking-tight truncate", !isExpanded && "hidden")}>
-                Logout
+                {t('logout')}
               </span>
             </Button>
           </SidebarMenuItem>
