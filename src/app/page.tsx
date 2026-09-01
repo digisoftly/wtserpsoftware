@@ -100,6 +100,8 @@ export default function Dashboard() {
 
     // Purchase
     const totalPurchase = purchases?.reduce((sum, p) => sum + (p.totalAmount || 0), 0) || 0;
+    const todayPurchase = purchases?.filter(p => p.orderDate === today).reduce((sum, p) => sum + (p.totalAmount || 0), 0) || 0;
+    const monthlyPurchase = purchases?.filter(p => p.orderDate?.startsWith(thisMonth)).reduce((sum, p) => sum + (p.totalAmount || 0), 0) || 0;
 
     // Expenses
     const totalExpense = expenses?.reduce((sum, e) => sum + (e.amount || 0), 0) || 0;
@@ -112,9 +114,11 @@ export default function Dashboard() {
       totalQuotations: quotations?.length || 0,
       activeQuotations: quotations?.filter(q => q.status === 'approved').length || 0,
       pendingQuotations: quotations?.filter(q => q.status === 'draft').length || 0,
-      todayPurchase: purchases?.filter(p => p.orderDate === today).reduce((sum, p) => sum + (p.totalAmount || 0), 0) || 0,
-      monthlyPurchase: purchases?.filter(p => p.orderDate?.startsWith(thisMonth)).reduce((sum, p) => sum + (p.totalAmount || 0), 0) || 0,
+      cancelledQuotations: quotations?.filter(q => q.status === 'expired' || q.status === 'rejected').length || 0,
+      todayPurchase,
+      monthlyPurchase,
       totalPurchase,
+      pendingPurchase: purchases?.filter(p => p.status === 'pending').length || 0,
       lowStockItems: products?.filter(p => (p.currentStock || 0) <= (p.minStockLevel || 5)).length || 0,
       serialInventory: serials?.length || 0,
       activeServiceContracts: contracts?.filter(c => c.status === 'active').length || 0,
@@ -130,54 +134,57 @@ export default function Dashboard() {
     { label: t('projectBilling'), icon: Briefcase, color: "bg-[#14B8A6]", path: "/projects/new" },
   ];
 
-  const gridClass = "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4";
+  const gridClass = "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-3.5";
 
   const renderSectionHeader = (titleKey: string) => (
-    <div className="flex items-center gap-2 mb-2 md:mb-3 mt-4 first:mt-0 px-1">
-      <div className="h-0.5 md:h-1 w-4 md:w-8 bg-blue-600 rounded-full" />
-      <h2 className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{t(titleKey)}</h2>
+    <div className="flex items-center gap-2 mb-2 md:mb-2.5 mt-3 first:mt-0 px-1">
+      <div className="h-0.5 md:h-1 w-4 md:w-6 bg-blue-600 rounded-full" />
+      <h2 className="text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">{t(titleKey)}</h2>
     </div>
   );
 
   return (
-    <div className="relative space-y-3 md:space-y-4 pb-24 touch-scroll">
+    <div className="relative space-y-2 md:space-y-3 pb-24 touch-scroll">
       <div className="flex items-center justify-between gap-4 px-1">
         <div>
-          <h1 className="text-lg md:text-2xl font-black text-slate-900 uppercase tracking-tight leading-none">{t('dashboard')}</h1>
-          <p className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{t('happeningToday')}</p>
+          <h1 className="text-lg md:text-xl font-black text-slate-900 uppercase tracking-tight leading-none">{t('dashboard')}</h1>
+          <p className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">{t('happeningToday')}</p>
         </div>
-        <Button variant="outline" size="sm" className="h-8 rounded-full gap-2 font-black text-[9px] uppercase bg-white shadow-sm" onClick={() => window.location.reload()}>
+        <Button variant="outline" size="sm" className="h-7 rounded-full gap-2 font-black text-[9px] uppercase bg-white shadow-sm px-3" onClick={() => window.location.reload()}>
           <RefreshCw className={cn("h-3 w-3 text-blue-600", isLoading && "animate-spin")} />
         </Button>
       </div>
 
       {renderSectionHeader('salesOverview')}
       <div className={gridClass}>
-        <KPICard isLoading={isLoading} title="todaySales" value={formatCurrency(stats.todaySales)} icon={ShoppingCart} colorClass="bg-green-600" />
-        <KPICard isLoading={isLoading} title="monthlySales" value={formatCurrency(stats.monthlySales)} icon={TrendingUp} colorClass="bg-blue-600" />
-        <KPICard isLoading={isLoading} title="totalSales" value={formatCurrency(stats.totalSales)} icon={BarChart3} colorClass="bg-indigo-600" />
-        <KPICard isLoading={isLoading} title="netProfit" value={formatCurrency(stats.netProfit)} icon={DollarSign} colorClass="bg-emerald-600" />
+        <KPICard isLoading={isLoading} size="sm" title="todaySales" value={formatCurrency(stats.todaySales)} icon={ShoppingCart} colorClass="bg-green-600" />
+        <KPICard isLoading={isLoading} size="sm" title="monthlySales" value={formatCurrency(stats.monthlySales)} icon={TrendingUp} colorClass="bg-blue-600" />
+        <KPICard isLoading={isLoading} size="sm" title="totalSales" value={formatCurrency(stats.totalSales)} icon={BarChart3} colorClass="bg-indigo-600" />
+        <KPICard isLoading={isLoading} size="sm" title="netProfit" value={formatCurrency(stats.netProfit)} icon={DollarSign} colorClass="bg-emerald-600" />
       </div>
 
       {renderSectionHeader('quotationOverview')}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 md:gap-4">
-        <KPICard isLoading={isLoading} title="totalQuotations" value={stats.totalQuotations} icon={FileText} colorClass="bg-amber-600" />
-        <KPICard isLoading={isLoading} title="activeQuotations" value={stats.activeQuotations} icon={CheckCircle2} colorClass="bg-green-600" />
-        <KPICard isLoading={isLoading} title="pendingQuotations" value={stats.pendingQuotations} icon={Clock} colorClass="bg-orange-600" />
+      <div className={gridClass}>
+        <KPICard isLoading={isLoading} size="sm" title="totalQuotations" value={stats.totalQuotations} icon={FileText} colorClass="bg-amber-600" />
+        <KPICard isLoading={isLoading} size="sm" title="activeQuotations" value={stats.activeQuotations} icon={CheckCircle2} colorClass="bg-green-600" />
+        <KPICard isLoading={isLoading} size="sm" title="pendingQuotations" value={stats.pendingQuotations} icon={Clock} colorClass="bg-orange-600" />
+        <KPICard isLoading={isLoading} size="sm" title="cancelledQuotations" value={stats.cancelledQuotations} icon={XCircle} colorClass="bg-red-600" />
       </div>
 
       {renderSectionHeader('purchaseOverview')}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 md:gap-4">
-        <KPICard isLoading={isLoading} title="todayPurchase" value={formatCurrency(stats.todayPurchase)} icon={Package} colorClass="bg-blue-600" />
-        <KPICard isLoading={isLoading} title="monthlyPurchase" value={formatCurrency(stats.monthlyPurchase)} icon={Calendar} colorClass="bg-indigo-600" />
-        <KPICard isLoading={isLoading} title="totalPurchase" value={formatCurrency(stats.totalPurchase)} icon={Archive} colorClass="bg-blue-700" />
+      <div className={gridClass}>
+        <KPICard isLoading={isLoading} size="sm" title="todayPurchase" value={formatCurrency(stats.todayPurchase)} icon={Package} colorClass="bg-blue-600" />
+        <KPICard isLoading={isLoading} size="sm" title="monthlyPurchase" value={formatCurrency(stats.monthlyPurchase)} icon={Calendar} colorClass="bg-indigo-600" />
+        <KPICard isLoading={isLoading} size="sm" title="totalPurchase" value={formatCurrency(stats.totalPurchase)} icon={Archive} colorClass="bg-blue-700" />
+        <KPICard isLoading={isLoading} size="sm" title="pendingPurchase" value={stats.pendingPurchase} icon={Clock} colorClass="bg-orange-700" />
       </div>
 
       {renderSectionHeader('operationsOverview')}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 md:gap-4">
-        <KPICard isLoading={isLoading} title="lowStockItems" value={stats.lowStockItems} icon={Box} colorClass="bg-red-600" />
-        <KPICard isLoading={isLoading} title="serialInventory" value={stats.serialInventory} icon={Scan} colorClass="bg-purple-600" />
-        <KPICard isLoading={isLoading} title="activeServiceContracts" value={stats.activeServiceContracts} icon={Wrench} colorClass="bg-teal-600" />
+      <div className={gridClass}>
+        <KPICard isLoading={isLoading} size="sm" title="lowStockItems" value={stats.lowStockItems} icon={Box} colorClass="bg-red-600" />
+        <KPICard isLoading={isLoading} size="sm" title="serialInventory" value={stats.serialInventory} icon={Scan} colorClass="bg-purple-600" />
+        <KPICard isLoading={isLoading} size="sm" title="activeServiceContracts" value={stats.activeServiceContracts} icon={Wrench} colorClass="bg-teal-600" />
+        <KPICard isLoading={isLoading} size="sm" title="activeProjects" value={stats.activeProjects} icon={ClipboardList} colorClass="bg-indigo-500" />
       </div>
 
       <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-4">
