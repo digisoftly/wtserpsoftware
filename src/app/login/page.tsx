@@ -1,9 +1,9 @@
-
 'use client';
 
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useAuth, useUser } from '@/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
@@ -63,7 +63,7 @@ export default function LoginPage() {
 
   if (!mounted) return null;
 
-  // Default Extended Grid Items (23 Modules)
+  // Default Extended Grid Items (23 Modules) with Premium Colors
   const defaultGrid = [
     { label: "বিক্রয়", icon: "ShoppingCart", color: "bg-emerald-500/20 text-emerald-400" },
     { label: "কোটেশন", icon: "FileText", color: "bg-amber-500/20 text-amber-400" },
@@ -121,7 +121,7 @@ export default function LoginPage() {
         <div className="relative z-10 space-y-10 mt-8">
           <div className="space-y-3">
             <h2 className="text-3xl lg:text-4xl font-black font-headline tracking-tight leading-tight animate-in slide-in-from-left-4 duration-1000">
-              {settings?.loginHeadline || "২১টি মডিউল একটি প্ল্যাটফর্মে"}
+              {settings?.loginHeadline || "২৩টি মডিউল একটি প্ল্যাটফর্মে"}
             </h2>
             <p className="text-sm font-medium text-emerald-100/60 uppercase tracking-[0.2em]">
               {settings?.loginSubHeadline || "ব্যবসার প্রতিটি বিভাগ, এক জায়গা থেকেই নিয়ন্ত্রণ"}
