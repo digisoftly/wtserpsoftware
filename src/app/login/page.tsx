@@ -8,37 +8,37 @@ import { useAuth, useUser } from '@/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { 
-  Building2, 
   Lock, 
   Mail, 
-  Languages, 
   AlertCircle, 
   Eye, 
   EyeOff, 
   Loader2, 
-  ArrowRight, 
-  Phone, 
-  MapPin 
+  LayoutGrid,
+  ShoppingCart,
+  Boxes,
+  Users,
+  Wallet,
+  Package,
+  BarChart3,
+  Shield
 } from 'lucide-react';
-import { useSettings } from '@/hooks/use-settings';
+import * as Icons from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
 import { useTenant } from '@/context/tenant-context';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { cn } from '@/lib/utils';
 
 export default function LoginPage() {
   const auth = useAuth();
   const { user } = useUser();
-  const { settings } = useSettings();
   const { t, language } = useTranslation();
-  const { setLanguage, userRole } = useTenant();
+  const { settings, userRole } = useTenant();
   const router = useRouter();
   
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [showPassword, setShowPassword] = React.useState(false);
-  
   const [isLoading, setIsLoading] = React.useState(false);
   const [isRedirecting, setIsRedirecting] = React.useState(false);
   const [authError, setAuthError] = React.useState<string | null>(null);
@@ -58,10 +58,8 @@ export default function LoginPage() {
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
-    
     setIsLoading(true);
     setAuthError(null);
-
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error: any) {
@@ -71,189 +69,129 @@ export default function LoginPage() {
   };
 
   if (!mounted) return null;
-  const loginHero = PlaceHolderImages.find(img => img.id === 'login-hero');
+
+  // Default Grid Items if settings are empty
+  const defaultGrid = [
+    { label: "বিক্রয়", icon: "ShoppingCart", color: "bg-emerald-500/20 text-emerald-400" },
+    { label: "ইনভেন্টরি", icon: "Boxes", color: "bg-orange-500/20 text-orange-400" },
+    { label: "এইচআর", icon: "Users", color: "bg-blue-500/20 text-blue-400" },
+    { label: "হিসাব", icon: "Wallet", color: "bg-purple-500/20 text-purple-400" },
+    { label: "ক্রয়", icon: "Package", color: "bg-red-500/20 text-red-400" },
+    { label: "রিপোর্ট", icon: "BarChart3", color: "bg-sky-500/20 text-sky-400" },
+  ];
+
+  const gridItems = settings?.loginGridItems || defaultGrid;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] overflow-x-hidden">
-      <div className="flex flex-col min-h-screen lg:flex-row items-stretch">
-        {/* LEFT SIDE: HERO & COMPANY INFO (Desktop Only) */}
-        <div className="hidden lg:flex lg:w-1/2 bg-blue-600 relative overflow-hidden items-center justify-center p-12 xl:p-16">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-700 via-blue-800 to-indigo-950" />
-          {loginHero && (
-            <div className="absolute inset-0 opacity-10 mix-blend-overlay">
-              <Image 
-                src={loginHero.imageUrl} 
-                alt="Warrior ERP Background" 
-                fill 
-                className="object-cover" 
-                priority 
-                data-ai-hint="business analytics" 
-              />
-            </div>
-          )}
-          <div className="relative z-10 text-white text-center space-y-8 w-full max-w-lg">
-            <div className="w-28 h-28 xl:w-32 xl:h-32 rounded-[2.5rem] bg-white p-4 shadow-2xl mx-auto animate-in zoom-in duration-700">
-               {settings?.companyLogo ? (
-                 <img src={settings.companyLogo} alt="Logo" className="w-full h-full object-contain" />
-               ) : (
-                 <div className="w-full h-full bg-blue-600 flex items-center justify-center rounded-2xl text-4xl font-black italic">W</div>
-               )}
-            </div>
-            <div className="space-y-3">
-              <h1 className="text-4xl xl:text-5xl font-black font-headline tracking-tighter leading-tight uppercase">
-                {settings?.companyName || "WarriorERP"}
-              </h1>
-              <p className="text-base xl:text-lg text-blue-100/80 font-bold tracking-widest uppercase italic">
-                {settings?.companySlogan || "Innovative Security, Reliable Communication"}
-              </p>
-            </div>
+    <div className="min-h-screen flex items-stretch bg-[#F3F4F6] overflow-hidden">
+      {/* LEFT SIDE: BRANDING & GRID (Visible on LG) */}
+      <div className="hidden lg:flex lg:w-3/5 relative bg-[#0F4C44] text-white p-16 flex-col justify-between overflow-hidden">
+        {/* Dynamic Background Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0F4C44] via-[#136A5F] to-[#0A332E]" />
+        
+        {/* Top Branding */}
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="w-4 h-4 bg-emerald-400 rounded-sm" />
+          <h1 className="text-2xl font-black font-headline tracking-tighter uppercase">
+            <span className="text-white">WARRIOR</span>
+            <span className="text-emerald-400 ml-1">TECH</span>
+          </h1>
+        </div>
 
-            {/* CONTACT INFO GRID */}
-            <div className="pt-8 border-t border-white/10 grid grid-cols-1 gap-4 text-[10px] xl:text-[11px] font-black uppercase tracking-[0.15em] text-left">
-               <div className="flex items-start gap-4 group">
-                  <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0 group-hover:bg-white/20 transition-colors">
-                    <Phone className="h-4 w-4 text-blue-300" />
+        {/* Content & Grid */}
+        <div className="relative z-10 space-y-12">
+          <h2 className="text-3xl font-black font-headline tracking-tight max-w-md">
+            {settings?.loginHeadline || "২১টি মডিউল একটি প্ল্যাটফর্মে"}
+          </h2>
+          
+          <div className="grid grid-cols-3 gap-6 max-w-3xl">
+            {gridItems.map((item: any, idx: number) => {
+              const Icon = (Icons as any)[item.icon] || Icons.LayoutGrid;
+              return (
+                <div key={idx} className="bg-white/10 backdrop-blur-md rounded-2xl p-8 flex flex-col items-center justify-center gap-4 border border-white/5 group hover:bg-white/20 transition-all cursor-default aspect-square">
+                  <div className={cn("p-3 rounded-xl shadow-lg transition-transform group-hover:scale-110", item.color || "bg-emerald-500/20 text-emerald-400")}>
+                    <Icon className="h-8 w-8" />
                   </div>
-                  <div className="space-y-0.5">
-                    <p className="text-[9px] text-white/40">Connect Hotline</p>
-                    <p className="text-blue-50">{settings?.phone || "+880 1753-646372"}</p>
-                  </div>
-               </div>
-               <div className="flex items-start gap-4 group">
-                  <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0 group-hover:bg-white/20 transition-colors">
-                    <Mail className="h-4 w-4 text-blue-300" />
-                  </div>
-                  <div className="space-y-0.5">
-                    <p className="text-[9px] text-white/40">Official Support</p>
-                    <p className="text-blue-50">{settings?.email || "warriortechsystem@gmail.com"}</p>
-                  </div>
-               </div>
-               <div className="flex items-start gap-4 group">
-                  <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0 group-hover:bg-white/20 transition-colors">
-                    <MapPin className="h-4 w-4 text-blue-300" />
-                  </div>
-                  <div className="space-y-0.5">
-                    <p className="text-[9px] text-white/40">Corporate Address</p>
-                    <p className="text-blue-50 leading-relaxed whitespace-pre-wrap max-w-[300px]">
-                      {settings?.address || "GP Ja-66/2 Gojnabi Rd Wireless Gate Mohakhali Gulshan Dhaka-1212"}
-                    </p>
-                  </div>
-               </div>
-            </div>
+                  <span className="text-sm font-black uppercase tracking-widest opacity-80">{item.label}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* RIGHT SIDE: LOGIN FORM */}
-        <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 md:p-12">
-          {/* Mobile Branding Header (Only visible on small screens) */}
-          <div className="lg:hidden text-center mb-8 space-y-4 animate-in fade-in slide-in-from-top-4 duration-500 w-full max-w-md px-2">
-             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white p-2 shadow-xl mx-auto ring-1 ring-slate-100 flex items-center justify-center">
-                {settings?.companyLogo ? (
-                  <img src={settings.companyLogo} alt="Logo" className="w-full h-full object-contain" />
-                ) : (
-                  <div className="w-full h-full bg-blue-600 rounded-xl flex items-center justify-center text-white text-xl font-black italic">W</div>
-                )}
+        {/* Bottom Footer */}
+        <div className="relative z-10">
+          <p className="text-xs font-bold uppercase tracking-widest opacity-40">
+            {settings?.loginSubHeadline || "ব্যবসার প্রতিটি বিভাগ, এক জায়গা থেকেই নিয়ন্ত্রণ"}
+          </p>
+        </div>
+      </div>
+
+      {/* RIGHT SIDE: LOGIN FORM */}
+      <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12">
+        <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05)] p-10 md:p-14 space-y-8 relative overflow-hidden">
+          <div className="text-center space-y-4">
+             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center mx-auto shadow-xl shadow-emerald-100">
+                <Shield className="h-8 w-8 text-white" />
              </div>
-             <div>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 uppercase tracking-tight truncate">
-                  {settings?.companyName || "WarriorERP"}
-                </h2>
-                <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1 line-clamp-1">
-                  {settings?.companySlogan}
-                </p>
+             <div className="space-y-1">
+                <h2 className="text-2xl font-black font-headline text-[#0F4C44] uppercase tracking-tight">স্বাগতম</h2>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Warrior Tech ERP</p>
              </div>
           </div>
 
-          <div className="w-full max-w-md space-y-6 sm:space-y-8 bg-white p-6 sm:p-10 md:p-12 rounded-[2rem] sm:rounded-[3rem] shadow-2xl shadow-blue-100 border border-slate-100">
-            <div className="text-center">
-              <h2 className="text-xl sm:text-2xl font-black font-headline text-slate-900 uppercase tracking-tight">
-                {t('systemLogin')}
-              </h2>
-              <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-2">
-                {t('authorizedAccess')}
-              </p>
-            </div>
+          {authError && (
+            <Alert variant="destructive" className="rounded-xl border-none bg-red-50 text-red-600">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-xs font-bold">{authError}</AlertDescription>
+            </Alert>
+          )}
 
-            {authError && (
-              <Alert variant="destructive" className="rounded-2xl border-none bg-red-50 text-red-600 animate-in shake duration-300">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                <AlertDescription className="text-[11px] sm:text-xs font-bold">{authError}</AlertDescription>
-              </Alert>
-            )}
-
-            <form onSubmit={handleAuth} className="space-y-5 sm:space-y-6">
-              <div className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label className="text-[9px] sm:text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">
-                    {t('email')}
-                  </Label>
+          <form onSubmit={handleAuth} className="space-y-5">
+            <div className="space-y-4">
+               <div className="space-y-1.5">
                   <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <Input 
                       type="email" 
                       value={email} 
                       onChange={(e) => setEmail(e.target.value)} 
-                      className="h-12 sm:h-14 pl-12 rounded-xl sm:rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 font-bold text-sm focus:ring-2 focus:ring-blue-600 transition-all" 
-                      placeholder="user@example.com"
+                      className="h-12 px-5 rounded-xl bg-slate-50 border-none ring-1 ring-slate-100 font-bold text-sm focus:ring-2 focus:ring-emerald-500 transition-all placeholder:text-slate-300" 
+                      placeholder="ইউজারনেম"
                       required 
                     />
                   </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[9px] sm:text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">
-                    {t('password')}
-                  </Label>
+               </div>
+               <div className="space-y-1.5">
                   <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <Input 
                       type={showPassword ? "text" : "password"} 
                       value={password} 
                       onChange={(e) => setPassword(e.target.value)} 
-                      className="h-12 sm:h-14 pl-12 pr-12 rounded-xl sm:rounded-2xl bg-slate-50 border-none ring-1 ring-slate-100 font-bold text-sm focus:ring-2 focus:ring-blue-600 transition-all" 
-                      placeholder="••••••••"
+                      className="h-12 px-5 pr-12 rounded-xl bg-slate-50 border-none ring-1 ring-slate-100 font-bold text-sm focus:ring-2 focus:ring-emerald-500 transition-all placeholder:text-slate-300" 
+                      placeholder="পাসওয়ার্ড"
                       required 
                     />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 hover:text-blue-600 transition-colors">
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-emerald-600 transition-colors">
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                </div>
-              </div>
+               </div>
+            </div>
 
-              <Button type="submit" disabled={isLoading} className="w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-200 transition-all active:scale-95 text-[10px] sm:text-xs">
-                {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 mr-2" /> {t('signInTerminal')}</>}
-              </Button>
+            <div className="flex justify-end">
+               <button type="button" className="text-[11px] font-black text-blue-500 uppercase tracking-widest hover:underline">পাসওয়ার্ড ভুলে গেছেন?</button>
+            </div>
 
-              <div className="pt-4 flex flex-col items-center gap-4 border-t border-slate-50">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  type="button" 
-                  className="rounded-full gap-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 px-4 sm:px-6 transition-all" 
-                  onClick={() => setLanguage(language === 'EN' ? 'BN' : 'EN')}
-                >
-                  <Languages className="h-4 w-4" />
-                  <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest">
-                    {language === 'EN' ? 'বাংলা সংস্করণ' : 'English Interface'}
-                  </span>
-                </Button>
-              </div>
-            </form>
+            <Button type="submit" disabled={isLoading} className="w-full h-14 rounded-xl bg-[#0F4C44] hover:bg-[#136A5F] text-white font-black uppercase tracking-[0.2em] shadow-xl shadow-emerald-900/10 transition-all active:scale-95 text-xs">
+              {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "লগইন"}
+            </Button>
+          </form>
+
+          <div className="text-center">
+             <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">
+                &copy; ২০২৪ Warrior Tech ERP, সর্বস্বত্ব সংরক্ষিত
+             </p>
           </div>
-          
-          <div className="mt-8 text-center space-y-4 lg:hidden px-4">
-             <div className="flex flex-col items-center gap-2 text-[9px] font-black uppercase text-slate-400 tracking-widest">
-                <div className="flex items-center gap-4">
-                   <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {settings?.phone || "+880..."}</span>
-                   <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> Support</span>
-                </div>
-                <p className="line-clamp-2 max-w-[250px] opacity-60">{settings?.address}</p>
-             </div>
-          </div>
-
-          <p className="mt-8 text-[8px] sm:text-[9px] font-black uppercase text-slate-300 tracking-[0.4em] sm:tracking-[0.5em] text-center">
-             Powered by Warrior Tech System &copy; {new Date().getFullYear()}
-          </p>
         </div>
       </div>
     </div>

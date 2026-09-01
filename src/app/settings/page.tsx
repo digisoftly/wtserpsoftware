@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -8,8 +7,14 @@ import {
   Loader2,
   ImageIcon,
   Save,
-  Type
+  Type,
+  LayoutGrid,
+  Plus,
+  Trash2,
+  Palette,
+  Monitor
 } from "lucide-react"
+import * as Icons from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,6 +28,7 @@ import { useTranslation } from "@/hooks/use-translation"
 import { Textarea } from "@/components/ui/textarea"
 import { errorEmitter } from "@/firebase/error-emitter"
 import { FirestorePermissionError } from "@/firebase/errors"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const DEFAULT_MENU_ORDER = [
   "dashboard", "sales", "quotations", "dispatch", "purchases", "returns", 
@@ -31,24 +37,16 @@ const DEFAULT_MENU_ORDER = [
   "hrm", "branches", "reports", "ai", "users", "settings", "audit"
 ];
 
+const ICON_OPTIONS = ["ShoppingCart", "Boxes", "Users", "Wallet", "Package", "BarChart3", "LayoutGrid", "Shield", "Settings", "Database", "Truck", "Activity"];
+
 export default function SettingsPage() {
   const { companyId } = useTenant();
   const db = useFirestore();
   const { t } = useTranslation();
   const [isSaving, setIsSaving] = React.useState(false);
   
-  const [kpiCards, setKpiCards] = React.useState<any[]>([]);
   const [logoPreview, setLogoPreview] = React.useState<string | null>(null);
-  const [faviconPreview, setFaviconPreview] = React.useState<string | null>(null);
-  const [loadingLogoPreview, setLoadingLogoPreview] = React.useState<string | null>(null);
-  const [sealPreview, setSealPreview] = React.useState<string | null>(null);
-  const [signPreview, setSignPreview] = React.useState<string | null>(null);
-  const [menuOrder, setMenuOrder] = React.useState<string[]>(DEFAULT_MENU_ORDER);
-
-  const [sidebarBg, setSidebarBg] = React.useState("#FFFFFF");
-  const [sidebarText, setSidebarText] = React.useState("#000000");
-  const [sidebarHover, setSidebarHover] = React.useState("#F1F5F9");
-  const [sidebarActive, setSidebarActive] = React.useState("#E2E8F0");
+  const [loginGrid, setLoginGrid] = React.useState<any[]>([]);
 
   const settingsRef = useMemoFirebase(() => {
     if (!db || !companyId) return null;
@@ -60,18 +58,23 @@ export default function SettingsPage() {
   React.useEffect(() => {
     if (settings) {
       setLogoPreview(settings.companyLogo || null);
-      setFaviconPreview(settings.companyFavicon || null);
-      setLoadingLogoPreview(settings.loadingLogo || null);
-      setSealPreview(settings.authorizedSeal || null);
-      setSignPreview(settings.authorizedSignature || null);
-      if (settings.sidebarMenuOrder) setMenuOrder(settings.sidebarMenuOrder);
-      if (settings.dashboardKpiCards) setKpiCards(settings.dashboardKpiCards);
-      if (settings.sidebarBgColor) setSidebarBg(settings.sidebarBgColor);
-      if (settings.sidebarTextColor) setSidebarText(settings.sidebarTextColor);
-      if (settings.sidebarHoverColor) setSidebarHover(settings.sidebarHoverColor);
-      if (settings.sidebarActiveColor) setSidebarActive(settings.sidebarActiveColor);
+      setLoginGrid(settings.loginGridItems || []);
     }
   }, [settings]);
+
+  const addGridItem = () => {
+    setLoginGrid([...loginGrid, { label: "New Module", icon: "LayoutGrid", color: "bg-emerald-500/20 text-emerald-400" }]);
+  };
+
+  const updateGridItem = (idx: number, field: string, value: string) => {
+    const next = [...loginGrid];
+    next[idx] = { ...next[idx], [field]: value };
+    setLoginGrid(next);
+  };
+
+  const removeGridItem = (idx: number) => {
+    setLoginGrid(loginGrid.filter((_, i) => i !== idx));
+  };
 
   const handleSaveSettings = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -83,23 +86,13 @@ export default function SettingsPage() {
     const updates: Record<string, any> = {
       updatedAt: serverTimestamp(),
       companyLogo: logoPreview,
-      companyFavicon: faviconPreview,
-      loadingLogo: loadingLogoPreview,
-      authorizedSeal: sealPreview,
-      authorizedSignature: signPreview,
-      sidebarMenuOrder: menuOrder,
-      dashboardKpiCards: kpiCards,
-      sidebarBgColor: sidebarBg,
-      sidebarTextColor: sidebarText,
-      sidebarHoverColor: sidebarHover,
-      sidebarActiveColor: sidebarActive,
+      loginGridItems: loginGrid,
     };
 
     formData.forEach((value, key) => {
       updates[key] = value;
     });
 
-    // Patterns: NO await, chain .catch with Contextual Error
     setDoc(settingsRef, updates, { merge: true })
       .then(() => {
         toast({ title: t('success') });
@@ -136,31 +129,30 @@ export default function SettingsPage() {
         <Tabs defaultValue="general" className="w-full">
           <TabsList className="bg-white border rounded-xl p-1 mb-6 shadow-sm flex overflow-x-auto h-auto no-scrollbar ring-1 ring-slate-100">
             <TabsTrigger value="general" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Company & Style</TabsTrigger>
+            <TabsTrigger value="login" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Login UI Lab</TabsTrigger>
             <TabsTrigger value="documents" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Document Lab</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-6">
-                <Card className="border-none shadow-sm rounded-2xl flex flex-col items-center justify-center p-6 text-center bg-white ring-1 ring-slate-100">
-                  <Label className="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest">Main Company Logo</Label>
-                  <div className="w-32 h-32 mb-4 relative group">
-                    {logoPreview ? (
-                      <img src={logoPreview} className="w-full h-full object-contain rounded-xl border p-2 bg-slate-50" />
-                    ) : (
-                      <div className="w-full h-full bg-slate-50 rounded-xl border-2 border-dashed flex items-center justify-center"><ImageIcon className="text-slate-300" /></div>
-                    )}
-                    <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onloadend = () => setLogoPreview(reader.result as string);
-                        reader.readAsDataURL(file);
-                      }
-                    }} />
-                  </div>
-                </Card>
-              </div>
+              <Card className="border-none shadow-sm rounded-2xl flex flex-col items-center justify-center p-6 text-center bg-white ring-1 ring-slate-100">
+                <Label className="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest">Main Company Logo</Label>
+                <div className="w-32 h-32 mb-4 relative group">
+                  {logoPreview ? (
+                    <img src={logoPreview} className="w-full h-full object-contain rounded-xl border p-2 bg-slate-50" />
+                  ) : (
+                    <div className="w-full h-full bg-slate-50 rounded-xl border-2 border-dashed flex items-center justify-center"><ImageIcon className="text-slate-300" /></div>
+                  )}
+                  <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => setLogoPreview(reader.result as string);
+                      reader.readAsDataURL(file);
+                    }
+                  }} />
+                </div>
+              </Card>
 
               <Card className="md:col-span-2 border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-8 space-y-6">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -174,13 +166,68 @@ export default function SettingsPage() {
             </div>
           </TabsContent>
 
+          <TabsContent value="login" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-8 space-y-6">
+                <div className="flex items-center gap-2 mb-4">
+                   <Monitor className="h-5 w-5 text-emerald-600" />
+                   <h3 className="text-sm font-black uppercase tracking-widest">Branding Text</h3>
+                </div>
+                <div className="space-y-4">
+                  <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">Grid Headline</Label><Input name="loginHeadline" defaultValue={settings?.loginHeadline || "২১টি মডিউল একটি প্ল্যাটফর্মে"} className="h-11 rounded-xl" /></div>
+                  <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">Grid Sub-headline</Label><Input name="loginSubHeadline" defaultValue={settings?.loginSubHeadline || "ব্যবসার প্রতিটি বিভাগ, এক জায়গা থেকেই নিয়ন্ত্রণ"} className="h-11 rounded-xl" /></div>
+                </div>
+              </Card>
+
+              <Card className="md:col-span-2 border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-8 space-y-6">
+                <div className="flex items-center justify-between border-b pb-4">
+                  <div className="flex items-center gap-2">
+                    <LayoutGrid className="h-5 w-5 text-emerald-600" />
+                    <h3 className="text-sm font-black uppercase tracking-widest">Login Grid Items</h3>
+                  </div>
+                  <Button type="button" variant="outline" size="sm" className="rounded-full h-8 px-4 text-[10px] font-black uppercase gap-2" onClick={addGridItem}>
+                    <Plus className="h-3 w-3" /> Add Item
+                  </Button>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                  {loginGrid.map((item, i) => (
+                    <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3 relative group">
+                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7 absolute top-2 right-2 text-slate-300 hover:text-red-600" onClick={() => removeGridItem(i)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                      <div className="space-y-1">
+                        <Label className="text-[9px] font-black uppercase">Item Label</Label>
+                        <Input value={item.label} onChange={e => updateGridItem(i, 'label', e.target.value)} className="h-9 rounded-lg bg-white" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                         <div className="space-y-1">
+                            <Label className="text-[9px] font-black uppercase">Icon</Label>
+                            <Select value={item.icon} onValueChange={val => updateGridItem(i, 'icon', val)}>
+                               <SelectTrigger className="h-9 rounded-lg bg-white text-[10px]"><SelectValue /></SelectTrigger>
+                               <SelectContent>
+                                  {ICON_OPTIONS.map(opt => <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>)}
+                               </SelectContent>
+                            </Select>
+                         </div>
+                         <div className="space-y-1">
+                            <Label className="text-[9px] font-black uppercase">Tailwind Color</Label>
+                            <Input value={item.color} onChange={e => updateGridItem(i, 'color', e.target.value)} className="h-9 rounded-lg bg-white text-[9px]" placeholder="bg-blue-500/20 text-blue-400" />
+                         </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
+          </TabsContent>
+
           <TabsContent value="documents" className="space-y-6">
              <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-8">
                 <div className="flex items-center gap-3 border-b pb-4">
                    <Type className="h-5 w-5 text-blue-600" />
                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-700">Contract & Service Bill Labels</h3>
                 </div>
-                
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                    <div className="space-y-4">
                      <h4 className="text-[10px] font-black uppercase text-blue-600 tracking-widest">Header Labels</h4>
@@ -189,26 +236,6 @@ export default function SettingsPage() {
                        <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Bill Date Label</Label><Input name="pdfLabel_billDate" defaultValue={settings?.pdfLabel_billDate || "Bill Date"} className="h-9 text-xs rounded-xl" /></div>
                        <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">SLA Ref Label</Label><Input name="pdfLabel_slaRef" defaultValue={settings?.pdfLabel_slaRef || "SLA Ref"} className="h-9 text-xs rounded-xl" /></div>
                        <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Status Label</Label><Input name="pdfLabel_status" defaultValue={settings?.pdfLabel_status || "Status"} className="h-9 text-xs rounded-xl" /></div>
-                     </div>
-                   </div>
-
-                   <div className="space-y-4">
-                     <h4 className="text-[10px] font-black uppercase text-blue-600 tracking-widest">Table Headers</h4>
-                     <div className="space-y-3">
-                       <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">SL Column</Label><Input name="pdfTable_sl" defaultValue={settings?.pdfTable_sl || "SL"} className="h-9 text-xs rounded-xl" /></div>
-                       <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Service Name Column</Label><Input name="pdfTable_serviceName" defaultValue={settings?.pdfTable_serviceName || "Service Name"} className="h-9 text-xs rounded-xl" /></div>
-                       <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Description Column</Label><Input name="pdfTable_description" defaultValue={settings?.pdfTable_description || "Description / Location"} className="h-9 text-xs rounded-xl" /></div>
-                       <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Unit Price Column</Label><Input name="pdfTable_unitPrice" defaultValue={settings?.pdfTable_unitPrice || "Unit Price"} className="h-9 text-xs rounded-xl" /></div>
-                       <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Amount Column</Label><Input name="pdfTable_amount" defaultValue={settings?.pdfTable_amount || "Amount"} className="h-9 text-xs rounded-xl" /></div>
-                     </div>
-                   </div>
-
-                   <div className="space-y-4">
-                     <h4 className="text-[10px] font-black uppercase text-blue-600 tracking-widest">Summary Labels</h4>
-                     <div className="space-y-3">
-                       <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Total BDT Label</Label><Input name="pdfLabel_totalBdt" defaultValue={settings?.pdfLabel_totalBdt || "Total (BDT)"} className="h-9 text-xs rounded-xl" /></div>
-                       <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">In Words Label</Label><Input name="pdfLabel_inWords" defaultValue={settings?.pdfLabel_inWords || "Amount in Words"} className="h-9 text-xs rounded-xl" /></div>
-                       <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Footer Heart Message</Label><Input name="footerHeartMsg" defaultValue={settings?.footerHeartMsg || "Thank You For Your Business"} className="h-10 text-xs rounded-xl" /></div>
                      </div>
                    </div>
                 </div>
