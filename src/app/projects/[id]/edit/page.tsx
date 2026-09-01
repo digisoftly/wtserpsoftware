@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -27,6 +28,16 @@ export default function EditProjectPage() {
   const { t } = useTranslation();
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [formData, setFormData] = React.useState({
+    name: "",
+    customerId: "",
+    startDate: "",
+    deadline: "",
+    budget: 0,
+    status: "Pending",
+    progress: 0,
+    description: ""
+  });
 
   const projectRef = useMemoFirebase(() => {
     if (!db || !companyId || !branchId || !id) return null;
@@ -41,30 +52,45 @@ export default function EditProjectPage() {
   }, [db, companyId, branchId]);
   const { data: customers } = useCollection(customersQuery);
 
-  const handleSaveProject = async (e: React.FormEvent<HTMLFormElement>) => {
+  React.useEffect(() => {
+    if (project) {
+      setFormData({
+        name: project.name || "",
+        customerId: project.customerId || "",
+        startDate: project.startDate || "",
+        deadline: project.deadline || "",
+        budget: Number(project.budget || 0),
+        status: project.status || "Pending",
+        progress: Number(project.progress || 0),
+        description: project.description || ""
+      });
+    }
+  }, [project]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveProject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!projectRef || isSubmitting) return;
 
     setIsSubmitting(true);
-    const formData = new FormData(e.currentTarget);
-    const custId = formData.get("customerId") as string;
-    const customer = customers?.find(c => c.id === custId);
+    const customer = customers?.find(c => c.id === formData.customerId);
 
-    const projectData = {
-      name: formData.get("name") as string,
-      customerId: custId,
-      customerName: customer ? `${customer.firstName} ${customer.lastName}` : "Client",
-      startDate: formData.get("startDate") as string,
-      deadline: formData.get("deadline") as string,
-      budget: Number(formData.get("budget")),
-      status: formData.get("status") as string,
-      progress: Number(formData.get("progress") || 0),
-      description: formData.get("description") || "",
+    const updateData = {
+      ...formData,
+      customerName: customer ? (customer.customerType === 'company' ? customer.companyName : `${customer.firstName} ${customer.lastName}`) : (project?.customerName || "Client"),
       updatedAt: serverTimestamp(),
     };
 
     try {
-      await updateDoc(projectRef, projectData);
+      await updateDoc(projectRef, updateData);
       toast({ title: t('success') });
       router.push("/projects");
     } catch (err: any) {
@@ -73,7 +99,7 @@ export default function EditProjectPage() {
     }
   };
 
-  if (isProjectLoading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-teal-600" /></div>;
+  if (isProjectLoading || !project) return <div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-teal-600" /></div>;
 
   return (
     <div className="flex flex-col h-full bg-slate-50 min-h-screen pb-20">
@@ -91,7 +117,7 @@ export default function EditProjectPage() {
           <Button variant="ghost" className="rounded-full text-[10px] font-black uppercase tracking-widest px-6" onClick={() => router.back()}>
             {t('cancel')}
           </Button>
-          <Button type="submit" form="project-form" className="bg-teal-600 hover:bg-teal-700 rounded-full px-8 h-10 text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-teal-100 gap-2" disabled={isSubmitting}>
+          <Button onClick={handleSaveProject} className="bg-teal-600 hover:bg-teal-700 rounded-full px-8 h-10 text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-teal-100 gap-2" disabled={isSubmitting}>
             {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />}
             {t('save')}
           </Button>
@@ -99,35 +125,35 @@ export default function EditProjectPage() {
       </div>
 
       <div className="max-w-5xl mx-auto w-full p-4 md:p-10">
-        <form id="project-form" onSubmit={handleSaveProject} className="space-y-8">
+        <form onSubmit={handleSaveProject} className="space-y-8">
           <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('project')} Name *</Label>
-                <Input name="name" required defaultValue={project?.name} className="h-12 rounded-xl" />
+                <Input name="name" required value={formData.name} onChange={handleChange} className="h-12 rounded-xl" />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('customer')} *</Label>
-                <Select name="customerId" defaultValue={project?.customerId}>
+                <Select value={formData.customerId} onValueChange={(v) => handleSelectChange('customerId', v)}>
                   <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Select Client" /></SelectTrigger>
-                  <SelectContent>{customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-bold">{c.firstName} {c.lastName}</SelectItem>)}</SelectContent>
+                  <SelectContent>{customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-bold">{c.customerType === 'company' ? c.companyName : `${c.firstName} ${c.lastName}`}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('startDate')}</Label>
-                <Input name="startDate" type="date" required defaultValue={project?.startDate} className="h-12 rounded-xl" />
+                <Input name="startDate" type="date" required value={formData.startDate} onChange={handleChange} className="h-12 rounded-xl" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('deadline')}</Label>
-                <Input name="deadline" type="date" required defaultValue={project?.deadline} className="h-12 rounded-xl" />
+                <Label className="text-[10px) font-black uppercase text-muted-foreground">{t('deadline')}</Label>
+                <Input name="deadline" type="date" required value={formData.deadline} onChange={handleChange} className="h-12 rounded-xl" />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('estimatedBudget')} (৳) *</Label>
-                <Input name="budget" type="number" required defaultValue={project?.budget} className="h-12 rounded-xl font-black text-blue-600" />
+                <Input name="budget" type="number" required value={formData.budget} onChange={handleChange} className="h-12 rounded-xl font-black text-blue-600" />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('status')}</Label>
-                <Select name="status" defaultValue={project?.status}>
+                <Select value={formData.status} onValueChange={(v) => handleSelectChange('status', v)}>
                   <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Pending" className="text-xs font-bold">{t('pending')}</SelectItem>
@@ -139,13 +165,13 @@ export default function EditProjectPage() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-muted-foreground">Progress %</Label>
-                <Input name="progress" type="number" defaultValue={project?.progress} className="h-12 rounded-xl" />
+                <Input name="progress" type="number" value={formData.progress} onChange={handleChange} className="h-12 rounded-xl" />
               </div>
             </div>
 
             <div className="space-y-1.5">
               <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('details')}</Label>
-              <textarea name="description" defaultValue={project?.description} className="w-full min-h-[120px] rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 p-4 text-xs resize-none outline-none focus:ring-2 focus:ring-teal-500 transition-all" />
+              <textarea name="description" value={formData.description} onChange={handleChange} className="w-full min-h-[120px] rounded-2xl bg-slate-50 border-none ring-1 ring-slate-200 p-4 text-xs resize-none outline-none focus:ring-2 focus:ring-teal-500 transition-all" />
             </div>
           </Card>
         </form>

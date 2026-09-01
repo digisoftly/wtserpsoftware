@@ -13,13 +13,12 @@ import {
   Mail,
   MapPin,
   CreditCard,
-  Tag,
   CheckCircle2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useFirestore, useDoc, useMemoFirebase } from "@/firebase"
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore"
@@ -36,7 +35,20 @@ export default function EditCustomerPage() {
   const { t } = useTranslation();
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [customerType, setCustomerType] = React.useState<"individual" | "company" | "organization">("individual");
+  const [formData, setFormData] = React.useState({
+    customerType: "individual",
+    fullName: "",
+    companyName: "",
+    contactPerson: "",
+    phoneNumber: "",
+    email: "",
+    address: "",
+    creditLimit: 0,
+    openingDue: 0,
+    paymentTerms: "Cash",
+    category: "Retail",
+    priority: "Normal"
+  });
   
   const customerRef = useMemoFirebase(() => {
     if (!db || !companyId || !branchId || !id) return null;
@@ -45,44 +57,48 @@ export default function EditCustomerPage() {
 
   const { data: customer, isLoading } = useDoc(customerRef);
 
+  // Sync data to state once it loads
   React.useEffect(() => {
     if (customer) {
-      setCustomerType(customer.customerType || "individual");
+      setFormData({
+        customerType: customer.customerType || "individual",
+        fullName: customer.fullName || "",
+        companyName: customer.companyName || "",
+        contactPerson: customer.contactPerson || "",
+        phoneNumber: customer.phoneNumber || "",
+        email: customer.email || "",
+        address: customer.address || "",
+        creditLimit: Number(customer.creditLimit || 0),
+        openingDue: Number(customer.openingDue || 0),
+        paymentTerms: customer.paymentTerms || "Cash",
+        category: customer.category || "Retail",
+        priority: customer.priority || "Normal"
+      });
     }
   }, [customer]);
 
-  const handleSaveCustomer = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerRef || isSubmitting) return;
 
     setIsSubmitting(true);
-    const formData = new FormData(e.currentTarget);
-    
-    const fullName = (formData.get("fullName") as string) || "";
-    const companyName = (formData.get("companyName") as string) || "";
-    const contactPerson = (formData.get("contactPerson") as string) || "";
-
-    const customerData = {
-      customerType,
-      fullName: customerType === 'individual' ? fullName : companyName,
-      companyName,
-      contactPerson,
-      phoneNumber: formData.get("phoneNumber") as string,
-      email: formData.get("email") as string || "",
-      address: formData.get("address") as string || "",
-      
-      // Account & CRM
-      creditLimit: Number(formData.get("creditLimit") || 0),
-      openingDue: Number(formData.get("openingDue") || 0),
-      paymentTerms: formData.get("paymentTerms") || "Cash",
-      category: formData.get("category") || "Retail",
-      priority: formData.get("priority") || "Normal",
-      
+    const updateData = {
+      ...formData,
+      fullName: formData.customerType === 'individual' ? formData.fullName : formData.companyName,
       updatedAt: serverTimestamp(),
     };
 
     try {
-      await updateDoc(customerRef, customerData);
+      await updateDoc(customerRef, updateData);
       toast({ title: t('success') });
       router.push(`/customers/${id}/view`);
     } catch (err: any) {
@@ -91,7 +107,7 @@ export default function EditCustomerPage() {
     }
   };
 
-  if (isLoading) return <div className="flex h-screen items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-blue-600" /></div>;
+  if (isLoading || !customer) return <div className="flex h-screen items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-blue-600" /></div>;
 
   return (
     <div className="flex flex-col h-full bg-[#F8FAFC] min-h-screen pb-20">
@@ -102,12 +118,12 @@ export default function EditCustomerPage() {
           </Button>
           <div>
             <h1 className="text-lg md:text-xl font-black font-headline uppercase tracking-tight text-slate-900">Edit Identity</h1>
-            <p className="text-[9px] font-black uppercase text-blue-600 tracking-widest mt-1">Ref: {customer?.id}</p>
+            <p className="text-[9px] font-black uppercase text-blue-600 tracking-widest mt-1">Ref: {id}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="ghost" className="hidden sm:inline-flex rounded-full text-[10px] font-black uppercase tracking-widest px-6" onClick={() => router.back()}>Cancel</Button>
-          <Button type="submit" form="customer-edit-form" className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-10 h-11 text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-blue-100 gap-2 transition-all active:scale-95" disabled={isSubmitting}>
+          <Button onClick={handleSaveCustomer} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-10 h-11 text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-blue-100 gap-2 transition-all active:scale-95" disabled={isSubmitting}>
             {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />}
             Save Changes
           </Button>
@@ -115,9 +131,8 @@ export default function EditCustomerPage() {
       </div>
 
       <div className="max-w-4xl mx-auto w-full p-4 md:p-8">
-        <form id="customer-edit-form" onSubmit={handleSaveCustomer} className="space-y-8">
+        <form onSubmit={handleSaveCustomer} className="space-y-8">
           
-          {/* Identity Section */}
           <Card className="border-none shadow-sm ring-1 ring-slate-100 rounded-[2rem] bg-white overflow-hidden">
             <div className="p-6 md:p-8 space-y-8">
               <div className="space-y-4">
@@ -127,10 +142,10 @@ export default function EditCustomerPage() {
                     <Button 
                       key={type}
                       type="button" 
-                      variant={customerType === type ? 'default' : 'outline'} 
+                      variant={formData.customerType === type ? 'default' : 'outline'} 
                       className={cn("h-10 rounded-xl text-[10px] font-black uppercase px-8 transition-all", 
-                        customerType === type ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-100" : "text-slate-500 border-slate-200 hover:bg-slate-50")} 
-                      onClick={() => setCustomerType(type as any)}
+                        formData.customerType === type ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-100" : "text-slate-500 border-slate-200 hover:bg-slate-50")} 
+                      onClick={() => handleSelectChange('customerType', type)}
                     >
                       {type === 'individual' ? <User className="h-3.5 w-3.5 mr-2" /> : <Building className="h-3.5 w-3.5 mr-2" />}
                       {type}
@@ -140,26 +155,26 @@ export default function EditCustomerPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {customerType === 'individual' ? (
+                {formData.customerType === 'individual' ? (
                   <>
                     <div className="space-y-1.5 md:col-span-2">
                       <Label className="text-[10px] font-black uppercase text-slate-500">Full Name *</Label>
-                      <Input name="fullName" required defaultValue={customer?.fullName} className="h-11 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-bold" />
+                      <Input name="fullName" value={formData.fullName} onChange={handleChange} required className="h-11 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-bold" />
                     </div>
                     <div className="space-y-1.5 md:col-span-2">
                       <Label className="text-[10px] font-black uppercase text-slate-500">Company/Organization Name</Label>
-                      <Input name="companyName" defaultValue={customer?.companyName} className="h-11 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-bold" />
+                      <Input name="companyName" value={formData.companyName} onChange={handleChange} className="h-11 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-bold" />
                     </div>
                   </>
                 ) : (
                   <>
                     <div className="space-y-1.5 md:col-span-2">
                       <Label className="text-[10px] font-black uppercase text-slate-500">Company/Organization Name *</Label>
-                      <Input name="companyName" required defaultValue={customer?.companyName} className="h-11 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-bold uppercase" />
+                      <Input name="companyName" value={formData.companyName} onChange={handleChange} required className="h-11 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-bold uppercase" />
                     </div>
                     <div className="space-y-1.5 md:col-span-2">
                       <Label className="text-[10px] font-black uppercase text-slate-500">Contact Person Name</Label>
-                      <Input name="contactPerson" defaultValue={customer?.contactPerson} className="h-11 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-bold" />
+                      <Input name="contactPerson" value={formData.contactPerson} onChange={handleChange} className="h-11 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-bold" />
                     </div>
                   </>
                 )}
@@ -168,7 +183,7 @@ export default function EditCustomerPage() {
                   <Label className="text-[10px] font-black uppercase text-slate-500">Contact Number *</Label>
                   <div className="relative">
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                    <Input name="phoneNumber" required defaultValue={customer?.phoneNumber} className="h-11 pl-11 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-bold" />
+                    <Input name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} required className="h-11 pl-11 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-bold" />
                   </div>
                 </div>
 
@@ -176,7 +191,7 @@ export default function EditCustomerPage() {
                   <Label className="text-[10px] font-black uppercase text-slate-500">E-mail Address</Label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                    <Input name="email" type="email" defaultValue={customer?.email} className="h-11 pl-11 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-bold" />
+                    <Input name="email" type="email" value={formData.email} onChange={handleChange} className="h-11 pl-11 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-bold" />
                   </div>
                 </div>
 
@@ -184,14 +199,13 @@ export default function EditCustomerPage() {
                   <Label className="text-[10px] font-black uppercase text-slate-500">Full Address</Label>
                   <div className="relative">
                     <MapPin className="absolute left-4 top-4 h-3.5 w-3.5 text-slate-400" />
-                    <textarea name="address" defaultValue={customer?.address} className="w-full min-h-[100px] pl-11 p-4 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-bold text-xs resize-none outline-none" />
+                    <textarea name="address" value={formData.address} onChange={handleChange} className="w-full min-h-[100px] pl-11 p-4 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-bold text-xs resize-none outline-none" />
                   </div>
                 </div>
               </div>
             </div>
           </Card>
 
-          {/* Account & CRM Section */}
           <Card className="border-none shadow-sm ring-1 ring-slate-100 rounded-[2rem] bg-white overflow-hidden">
             <div className="p-6 md:p-8 space-y-6">
               <div className="flex items-center gap-3 border-b pb-4">
@@ -204,17 +218,17 @@ export default function EditCustomerPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-slate-500">Credit Limit (৳)</Label>
-                  <Input name="creditLimit" type="number" defaultValue={customer?.creditLimit} className="h-11 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-black text-blue-600" />
+                  <Input name="creditLimit" type="number" value={formData.creditLimit} onChange={handleChange} className="h-11 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-black text-blue-600" />
                 </div>
 
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-slate-500">Opening Due (৳)</Label>
-                  <Input name="openingDue" type="number" defaultValue={customer?.openingDue} className="h-11 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-black text-red-600" />
+                  <Input name="openingDue" type="number" value={formData.openingDue} onChange={handleChange} className="h-11 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 font-black text-red-600" />
                 </div>
 
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-slate-500">Payment Terms</Label>
-                  <Select name="paymentTerms" defaultValue={customer?.paymentTerms || "Cash"}>
+                  <Select value={formData.paymentTerms} onValueChange={(v) => handleSelectChange('paymentTerms', v)}>
                     <SelectTrigger className="h-11 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 font-bold text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-xl">
                       {["Cash", "Advance", "7 Days", "15 Days", "30 Days"].map(m => <SelectItem key={m} value={m} className="text-xs font-bold">{m}</SelectItem>)}
@@ -224,7 +238,7 @@ export default function EditCustomerPage() {
 
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-slate-500">Category</Label>
-                  <Select name="category" defaultValue={customer?.category || "Retail"}>
+                  <Select value={formData.category} onValueChange={(v) => handleSelectChange('category', v)}>
                     <SelectTrigger className="h-11 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 font-bold text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-xl">
                       {["Corporate", "Government", "Retail", "Dealer", "VIP"].map(c => <SelectItem key={c} value={c} className="text-xs font-bold">{c}</SelectItem>)}
@@ -234,7 +248,7 @@ export default function EditCustomerPage() {
 
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-slate-500">Priority Level</Label>
-                  <Select name="priority" defaultValue={customer?.priority || "Normal"}>
+                  <Select value={formData.priority} onValueChange={(v) => handleSelectChange('priority', v)}>
                     <SelectTrigger className="h-11 rounded-xl bg-slate-50/50 border-none ring-1 ring-slate-200 font-bold text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent className="rounded-xl">
                       {["Low", "Normal", "High", "VIP"].map(p => <SelectItem key={p} value={p} className="text-xs font-bold uppercase">{p}</SelectItem>)}
