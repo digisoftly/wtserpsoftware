@@ -276,7 +276,7 @@ const HRM_SUB_MENUS = [
 
 export function AppSidebar() {
   const pathname = usePathname()
-  const { state } = useSidebar()
+  const { state, setOpenMobile, isMobile } = useSidebar()
   const auth = useAuth()
   const router = useRouter()
   const { can } = usePermissions()
@@ -291,6 +291,12 @@ export function AppSidebar() {
   const handleLogout = async () => {
     await signOut(auth)
     router.push('/login')
+  }
+
+  const closeSidebarOnMobile = () => {
+    if (isMobile) {
+      setOpenMobile(false)
+    }
   }
 
   const menuOrder = React.useMemo(() => {
@@ -312,10 +318,8 @@ export function AppSidebar() {
     // FORCE PROJECT BILLING UNDER CONTRACTS REGARDLESS OF DB (For safety)
     const contractIdx = currentOrder.indexOf("contracts");
     const projectIdx = currentOrder.indexOf("projectBilling");
-    const customerIdx = currentOrder.indexOf("customers");
 
     if (contractIdx !== -1 && projectIdx !== -1) {
-       // Only force if it's not already in the correct sequence
        if (projectIdx !== contractIdx + 1) {
           const newOrder = currentOrder.filter(k => k !== "projectBilling");
           const targetIdx = newOrder.indexOf("contracts") + 1;
@@ -419,6 +423,7 @@ export function AppSidebar() {
                                               <SidebarMenuButton 
                                                 asChild 
                                                 isActive={pathname === child.path}
+                                                onClick={closeSidebarOnMobile}
                                                 className="h-8 px-4 rounded-lg"
                                                 style={{ 
                                                   color: pathname === child.path ? "#0056B3" : sidebarText,
@@ -443,6 +448,7 @@ export function AppSidebar() {
                                 <SidebarMenuButton 
                                   asChild 
                                   isActive={pathname === sub.path} 
+                                  onClick={closeSidebarOnMobile}
                                   className="h-9 px-4 rounded-lg"
                                   style={{ 
                                     color: pathname === sub.path ? "#0056B3" : sidebarText,
@@ -470,6 +476,7 @@ export function AppSidebar() {
                     asChild 
                     isActive={isActive} 
                     tooltip={t(item.name)} 
+                    onClick={closeSidebarOnMobile}
                     className={cn(
                       "h-11 px-3 transition-all rounded-xl group relative overflow-hidden",
                       isActive ? "font-black" : ""
