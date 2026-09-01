@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -30,14 +31,11 @@ import { errorEmitter } from "@/firebase/error-emitter"
 import { FirestorePermissionError } from "@/firebase/errors"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-const DEFAULT_MENU_ORDER = [
-  "dashboard", "sales", "quotations", "dispatch", "purchases", "returns", 
-  "inventory", "serialTracking", "contracts", "projectBilling", "customers", 
-  "suppliers", "accounts", "expenses", "masterManagement", "support", "crm", 
-  "hrm", "branches", "reports", "ai", "users", "settings", "audit"
+const ICON_OPTIONS = [
+  "ShoppingCart", "Boxes", "Users", "Wallet", "Package", "BarChart3", "LayoutGrid", "Shield", "Settings", 
+  "Database", "Truck", "Activity", "FileText", "RotateCcw", "Scan", "Handshake", "ClipboardList", 
+  "Store", "Receipt", "LifeBuoy", "Target", "Briefcase", "Building2", "Zap", "UserRoundCog", "ShieldAlert"
 ];
-
-const ICON_OPTIONS = ["ShoppingCart", "Boxes", "Users", "Wallet", "Package", "BarChart3", "LayoutGrid", "Shield", "Settings", "Database", "Truck", "Activity"];
 
 export default function SettingsPage() {
   const { companyId } = useTenant();
@@ -122,7 +120,7 @@ export default function SettingsPage() {
             <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mt-1">Enterprise UI & Branding Terminal</p>
           </div>
           <Button type="submit" disabled={isSaving} className="bg-blue-600 hover:bg-blue-700 rounded-full px-12 h-12 font-bold shadow-xl shadow-blue-100 transition-all active:scale-95">
-            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} {t('save')}
+            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t('save')}
           </Button>
         </div>
 
