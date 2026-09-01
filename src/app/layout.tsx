@@ -49,15 +49,15 @@ export default function RootLayout({
       <body className="font-body antialiased bg-background min-h-screen">
         <ErrorBoundary>
           <FirebaseClientProvider>
-            <AuthGate>
-              <TenantProvider>
+            <TenantProvider>
+              <AuthGate>
                 <FaviconManager />
                 <ClientLayout>
                   {children}
                 </ClientLayout>
                 <Toaster />
-              </TenantProvider>
-            </AuthGate>
+              </AuthGate>
+            </TenantProvider>
           </FirebaseClientProvider>
         </ErrorBoundary>
       </body>

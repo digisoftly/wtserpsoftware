@@ -75,35 +75,26 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user, db, companyId]);
 
+  // Public Settings Listener (Logo/Name for Login)
+  React.useEffect(() => {
+    if (!db) return;
+    const configRef = doc(db, "companies", companyId, "system", "config");
+    const unsubSettings = onSnapshot(configRef, (snap) => {
+      if (snap.exists()) setSettings(snap.data());
+    }, (err) => {
+      if (err.code !== 'permission-denied') {
+        console.error("Settings listener failed:", err);
+      }
+    });
+    return () => unsubSettings();
+  }, [db, companyId]);
+
+  // Auth-based User/Role Listener
   React.useEffect(() => {
     let unsubUser: (() => void) | undefined;
-    let unsubSettings: (() => void) | undefined;
 
-    // 1. Session Guard: If no user, immediately kill all listeners and reset state
-    if (!isUserLoading && !user) {
-      if (unsubUser) unsubUser();
-      if (unsubSettings) unsubSettings();
-      setUserRole(null);
-      setSettings(null);
-      setBranchId(null);
-      setIsInitializing(false);
-      return;
-    }
-
-    // 2. Initialize Listeners only if User exists and we have an Auth Instance
     if (!isUserLoading && user && db && auth.currentUser) {
       setIsInitializing(true);
-
-      const configRef = doc(db, "companies", companyId, "system", "config");
-      unsubSettings = onSnapshot(configRef, (snap) => {
-        // Secondary guard: prevent processing if user signed out between fire
-        if (!auth.currentUser) return;
-        if (snap.exists()) setSettings(snap.data());
-      }, (err) => {
-        if (err.code !== 'permission-denied') {
-          console.error("Settings listener failed:", err);
-        }
-      });
 
       const userRef = doc(db, "companies", companyId, "users", user.uid);
       unsubUser = onSnapshot(userRef, async (snap) => {
@@ -161,11 +152,14 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         }
         setIsInitializing(false);
       });
+    } else if (!isUserLoading && !user) {
+      setUserRole(null);
+      setBranchId(null);
+      setIsInitializing(false);
     }
 
     return () => {
       if (unsubUser) unsubUser();
-      if (unsubSettings) unsubSettings();
     };
   }, [user, isUserLoading, db, auth, companyId]);
 
@@ -176,10 +170,10 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     userRole,
     language,
     setLanguage,
-    isLoading: isUserLoading || isInitializing,
+    isLoading: isUserLoading || (user ? isInitializing : false),
     settings,
     allowedBranches
-  }), [branchId, userRole, language, isUserLoading, isInitializing, companyId, settings, allowedBranches, setLanguage]);
+  }), [branchId, userRole, language, isUserLoading, isInitializing, companyId, settings, allowedBranches, setLanguage, user]);
 
   return <TenantContext.Provider value={contextValue}>{children}</TenantContext.Provider>;
 }

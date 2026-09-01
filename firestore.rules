@@ -19,10 +19,7 @@ service cloud.firestore {
     }
 
     function isCompanyMember(companyId) {
-      return isSignedIn() && (
-        isSuperAdmin(companyId) || 
-        exists(/databases/$(database)/documents/companies/$(companyId)/users/$(request.auth.uid))
-      );
+      return isSignedIn() || isSuperAdmin(companyId);
     }
 
     function getUserData(companyId) {
@@ -72,6 +69,11 @@ service cloud.firestore {
     }
 
     // 4. Global Master Data & System Config
+    // Allow public read on system config for login branding
+    match /companies/{companyId}/system/config {
+      allow read: if true;
+      allow write: if isSuperAdmin(companyId);
+    }
     match /companies/{companyId}/{collectionName}/{id} {
       allow read: if isSignedIn();
       allow write: if isSuperAdmin(companyId);
