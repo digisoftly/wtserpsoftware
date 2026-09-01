@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -66,7 +67,7 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         <KPICard title={t('totalProducts')} value={products?.length || 0} icon={Boxes} colorClass="bg-blue-600" />
         <KPICard title={t('lowStockCount')} value={products?.filter(p => (p.currentStock || 0) <= 5).length || 0} icon={AlertCircle} colorClass="bg-red-600" />
         <KPICard title={t('stockValue')} value={`৳0`} icon={DollarSign} colorClass="bg-green-600" />

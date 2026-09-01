@@ -75,7 +75,7 @@ export default function CustomersPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         <KPICard title={t('activeCustomers')} value={stats.total} icon={Users} colorClass="bg-blue-600" />
         <KPICard title={t('all')} value={stats.active} icon={UserCheck} colorClass="bg-green-600" />
         <KPICard title={t('pendingInvoices')} value={stats.due} icon={UserX} colorClass="bg-red-600" />
@@ -129,20 +129,12 @@ export default function CustomersPage() {
                         <div className="font-bold text-xs uppercase text-slate-900">
                           {customer.customerType !== 'individual' ? customer.companyName : customer.fullName}
                         </div>
-                        {customer.customerType !== 'individual' && customer.contactPerson && (
-                          <div className="text-[9px] text-muted-foreground font-black uppercase tracking-tighter mt-0.5">Attn: {customer.contactPerson}</div>
-                        )}
                       </TableCell>
                       <TableCell>
                          <div className="flex flex-col gap-0.5">
                             <span className="flex items-center gap-1.5 text-[10px] font-black text-slate-700">
                                <Phone className="h-3 w-3 text-cyan-600" /> {customer.phoneNumber}
                             </span>
-                            {customer.email && (
-                              <span className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400">
-                                <Mail className="h-2.5 w-2.5" /> {customer.email}
-                              </span>
-                            )}
                          </div>
                       </TableCell>
                       <TableCell className="text-right pr-8" onClick={(e) => e.stopPropagation()}>
@@ -165,7 +157,7 @@ export default function CustomersPage() {
         <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tight text-slate-900">{t('confirmDelete')}?</AlertDialogTitle>
-            <AlertDialogDescription className="text-xs font-medium leading-relaxed">Record will be permanently deleted.</AlertDialogDescription>
+            <AlertDialogDescription className="text-sm font-medium leading-relaxed">Record will be permanently deleted.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-8 gap-3">
             <AlertDialogCancel className="rounded-2xl h-12 text-[10px] font-black uppercase tracking-widest">{t('cancel')}</AlertDialogCancel>

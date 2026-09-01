@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -45,7 +46,7 @@ export default function AccountsPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         <KPICard title={t('cashBalance')} value={`৳${stats.balance.toLocaleString()}`} icon={Wallet} colorClass="bg-blue-600" />
         <KPICard title={t('totalIncome')} value={`৳${stats.income.toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-600" />
         <KPICard title={t('totalExpense')} value={`৳${stats.expense.toLocaleString()}`} icon={TrendingDown} colorClass="bg-red-600" />
@@ -55,6 +56,7 @@ export default function AccountsPage() {
         <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
       ) : transactions && transactions.length > 0 ? (
         <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white ring-1 ring-slate-100">
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader className="bg-muted/20">
                 <TableRow>
@@ -90,6 +92,7 @@ export default function AccountsPage() {
                 ))}
               </TableBody>
             </Table>
+          </div>
         </Card>
       ) : (
         <div className="p-16 bg-white rounded-[2rem] border border-dashed text-center flex flex-col items-center ring-1 ring-slate-100">

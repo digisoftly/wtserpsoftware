@@ -110,7 +110,7 @@ export default function Dashboard() {
     // Purchase
     const totalPurchase = purchases?.reduce((sum, p) => sum + (p.totalAmount || 0), 0) || 0;
     const todayPurchase = purchases?.filter(p => p.orderDate === today).reduce((sum, p) => sum + (p.totalAmount || 0), 0) || 0;
-    const monthlyPurchase = purchases?.filter(p => p.orderDate?.startsWith(thisMonth)).reduce((sum, p) => sum + (p.totalAmount || 0), 0) || 0;
+    const monthlyPurchase = purchases?.filter(p => p.orderDate?.startsWith(thisMonth)).reduce((sum, i) => sum + (i.totalAmount || 0), 0) || 0;
 
     // Expenses
     const totalExpense = expenses?.reduce((sum, e) => sum + (e.amount || 0), 0) || 0;
@@ -154,7 +154,7 @@ export default function Dashboard() {
       todayExpense,
       monthlyExpense,
       totalExpense,
-      pendingExpense: 0, // Mock or from a specific logic
+      pendingExpense: 0, 
 
       customerDue,
       salesDue: customerDue,
@@ -171,7 +171,7 @@ export default function Dashboard() {
       pendingProjects: projects?.filter(p => p.status === 'Pending').length || 0,
       activeServiceContracts: contracts?.filter(c => c.status === 'active').length || 0,
 
-      staffPresent: staff?.length || 0, // Mock
+      staffPresent: staff?.length || 0, 
       staffAbsent: 0,
       staffLate: 0,
       staffOnLeave: 0
@@ -191,15 +191,15 @@ export default function Dashboard() {
   const renderSectionHeader = (title: string) => (
     <div className="flex items-center gap-3 mb-4 mt-8 first:mt-0">
       <div className="h-1 w-12 bg-blue-600 rounded-full" />
-      <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">{t(title)}</h2>
+      <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{t(title)}</h2>
     </div>
   );
 
-  const gridClass = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4";
+  const gridClass = "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4";
 
   return (
     <div className="relative space-y-6 pb-20">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tight">{t('dashboard')}</h1>
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{t('happeningToday')}</p>

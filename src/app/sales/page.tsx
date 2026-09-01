@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -151,7 +152,7 @@ export default function SalesPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         <KPICard title="totalSales" value={formatCurrency(stats.totalSales)} icon={ShoppingCart} colorClass="bg-blue-600" />
         <KPICard title="todayIncome" value={formatCurrency(stats.collectedToday)} icon={TrendingUp} colorClass="bg-green-600" />
         <KPICard title="salesDue" value={formatCurrency(stats.receivable)} icon={AlertCircle} colorClass="bg-red-600" />
@@ -313,7 +314,7 @@ export default function SalesPage() {
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 mt-6">
             <AlertDialogCancel className="h-12 rounded-2xl font-black uppercase text-[10px] tracking-widest border-slate-200">{t('cancel')}</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700 h-12 rounded-2xl font-black uppercase text-[10px] tracking-widest" onClick={handleDelete}>{t('delete')}</AlertDialogAction>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 h-12 text-[10px] font-black uppercase text-[10px] tracking-widest" onClick={handleDelete}>{t('delete')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

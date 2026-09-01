@@ -106,6 +106,8 @@ export default function HRMDashboard() {
     };
   }, [employees, recentLeaves]);
 
+  const gridClass = "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4";
+
   return (
     <div className="space-y-6 pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -121,7 +123,7 @@ export default function HRMDashboard() {
       </div>
 
       {/* GROUP 1: WORKFORCE STATIC */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className={gridClass}>
         <KPICard title="totalEmployees" value={stats.total} icon={Users} colorClass="bg-blue-600" />
         <KPICard title="activeEmployees" value={stats.active} icon={UserCheck} colorClass="bg-green-600" />
         <KPICard title="inactiveEmployees" value={stats.inactive} icon={UserX} colorClass="bg-slate-500" />
@@ -129,7 +131,7 @@ export default function HRMDashboard() {
       </div>
 
       {/* GROUP 2: ATTENDANCE PULSE */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className={gridClass}>
         <KPICard title="presentToday" value={stats.presentToday} icon={CheckCircle2} colorClass="bg-emerald-600" />
         <KPICard title="absentToday" value={stats.absentToday} icon={AlertCircle} colorClass="bg-red-600" />
         <KPICard title="lateToday" value={stats.lateToday} icon={Clock} colorClass="bg-amber-600" />
@@ -137,7 +139,7 @@ export default function HRMDashboard() {
       </div>
 
       {/* GROUP 3: STRUCTURE & VACANCY */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className={gridClass}>
         <KPICard title="totalDepartments" value={stats.totalDepts} icon={Building} colorClass="bg-blue-500" />
         <KPICard title="totalDesignations" value={stats.totalDesignations} icon={Briefcase} colorClass="bg-violet-600" />
         <KPICard title="openPositions" value={stats.openPositions} icon={Target} colorClass="bg-purple-500" />
@@ -145,7 +147,7 @@ export default function HRMDashboard() {
       </div>
 
       {/* GROUP 4: PAYROLL RECONCILIATION */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className={gridClass}>
         <KPICard title="monthlyPayroll" value={formatCurrency(stats.monthlyPayroll)} icon={DollarSign} colorClass="bg-emerald-700" />
         <KPICard title="salaryDue" value={formatCurrency(stats.salaryDue)} icon={AlertCircle} colorClass="bg-orange-600" />
         <KPICard title="salaryPaid" value={formatCurrency(stats.salaryPaid)} icon={CheckCircle2} colorClass="bg-green-600" />
@@ -153,7 +155,7 @@ export default function HRMDashboard() {
       </div>
 
       {/* GROUP 5: LEAVE WORKFLOW */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className={gridClass}>
         <KPICard title="leaveRequests" value={stats.leaveRequests} icon={ClipboardList} colorClass="bg-blue-600" />
         <KPICard title="pendingLeaves" value={stats.pendingLeaves} icon={Clock} colorClass="bg-orange-500" />
         <KPICard title="approvedLeaves" value={stats.approvedLeaves} icon={CheckCircle2} colorClass="bg-green-600" />
@@ -161,7 +163,7 @@ export default function HRMDashboard() {
       </div>
 
       {/* GROUP 6: EMPLOYMENT STATUS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className={gridClass}>
         <KPICard title="probationEmployees" value={stats.probation} icon={UserPlus2} colorClass="bg-blue-400" />
         <KPICard title="contractEmployees" value={stats.contract} icon={FileText} colorClass="bg-indigo-400" />
         <KPICard title="exitingEmployees" value={stats.exitCount} icon={UserX} colorClass="bg-rose-500" />
@@ -215,21 +217,6 @@ export default function HRMDashboard() {
                 <div className="p-4 bg-white/10 rounded-2xl backdrop-blur-sm border border-white/10 flex items-center justify-between">
                    <p className="text-xs font-black uppercase">No birthdays today</p>
                 </div>
-                <div className="pt-4 border-t border-white/10">
-                   <p className="text-[9px] font-black uppercase opacity-60 mb-2">Next 7 Days</p>
-                   <p className="text-[11px] font-bold italic opacity-40">No entries in registry</p>
-                </div>
-             </CardContent>
-          </Card>
-
-          <Card className="border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 overflow-hidden">
-             <CardHeader className="p-6 pb-0">
-               <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                 <Award className="h-4 w-4 text-purple-600" /> {t('anniversaries')}
-               </CardTitle>
-             </CardHeader>
-             <CardContent className="p-6">
-                <p className="text-[10px] font-bold text-slate-400 uppercase text-center py-10 opacity-30">No work anniversaries detected</p>
              </CardContent>
           </Card>
         </div>

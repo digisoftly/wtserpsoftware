@@ -101,9 +101,6 @@ export default function GlobalPaymentsPage() {
           <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">Global Collection Terminal</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="h-10 rounded-full gap-2 text-[10px] font-black uppercase tracking-widest border-slate-200" onClick={() => router.push('/sales')}>
-             Receive from Invoice
-          </Button>
           <Button size="sm" className="h-10 rounded-full gap-2 px-8 font-black text-[10px] uppercase tracking-[0.2em] bg-emerald-600 hover:bg-emerald-700 shadow-xl shadow-emerald-100 transition-all active:scale-95" asChild>
             <Link href="/payments/new">
               <Plus className="h-4 w-4" /> {t('addPayment')}
@@ -112,7 +109,7 @@ export default function GlobalPaymentsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         <KPICard title="Collected Today" value={`৳${stats.today.toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-600" />
         <KPICard title="Collected This Month" value={`৳${stats.monthly.toLocaleString()}`} icon={Calendar} colorClass="bg-blue-600" />
         <KPICard title="Total Collection" value={`৳${stats.total.toLocaleString()}`} icon={CreditCard} colorClass="bg-emerald-600" />
@@ -128,12 +125,9 @@ export default function GlobalPaymentsPage() {
             onChange={e => setSearchTerm(e.target.value)} 
           />
         </div>
-        <Button variant="ghost" size="sm" className="h-10 px-4 gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50">
-          <Filter className="h-3.5 w-3.5" /> {t('filter')}
-        </Button>
       </div>
 
-      <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-white ring-1 ring-slate-100">
+      <Card className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white ring-1 ring-slate-100">
         <div className="overflow-x-auto custom-scrollbar">
           <Table>
             <TableHeader className="bg-slate-50/50">
@@ -146,7 +140,7 @@ export default function GlobalPaymentsPage() {
                 <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12">Invoice Link</TableHead>
                 <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12 text-center">Method</TableHead>
                 <TableHead className="text-[10px] uppercase font-black text-slate-500 h-12 text-right pr-8">Amount Collected</TableHead>
-                <TableHead className="text-[10px] uppercase font-black text-slate-500 text-right pr-8 sticky right-0 bg-white/95 h-12 w-24">Action</TableHead>
+                <TableHead className="text-[10px] uppercase font-black text-slate-500 text-right pr-8 sticky right-0 bg-white/95 h-12 w-24">{t('actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -188,8 +182,6 @@ export default function GlobalPaymentsPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-56 rounded-2xl shadow-2xl p-2 border-slate-100">
                             <DropdownMenuItem onClick={() => router.push(`/sales/payments/receipt/${p.id}`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><Eye className="mr-2 h-4 w-4" /> View Receipt</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => router.push(`/sales/payments/history/${p.invoiceId}`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><History className="mr-2 h-4 w-4" /> Payment History</DropdownMenuItem>
-                            <DropdownMenuSeparator className="my-1 bg-slate-50" />
                             <DropdownMenuItem onClick={() => { setSelectedRecord(p); setIsDeleteAlertOpen(true); }} className="rounded-xl h-10 text-red-600 text-xs font-bold py-1.5 focus:bg-red-50 focus:text-red-700"><Trash2 className="mr-2 h-4 w-4" /> Reverse Payment</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -209,7 +201,7 @@ export default function GlobalPaymentsPage() {
         <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl max-w-sm">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-xl font-black uppercase tracking-tight text-slate-900">Reverse Payment?</AlertDialogTitle>
-            <AlertDialogDescription className="text-xs font-bold text-slate-500">This will revert the invoice balance and remove the corresponding journal entry. This action cannot be undone.</AlertDialogDescription>
+            <AlertDialogDescription className="text-xs font-bold text-slate-500">This action cannot be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 mt-6">
             <AlertDialogCancel className="h-12 rounded-2xl font-black uppercase text-[10px] tracking-widest border-slate-200">Cancel</AlertDialogCancel>

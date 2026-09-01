@@ -123,8 +123,8 @@ export default function ProjectBillingSystem() {
         </div>
       </div>
 
-      {/* KPI SECTION */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPI SECTION - Updated for 2/3/4 grid */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         <KPICard title={t('status')} value={stats.running} icon={TrendingUp} colorClass="bg-teal-600" />
         <KPICard title={t('grandTotal')} value={`৳${stats.totalBudget.toLocaleString()}`} icon={DollarSign} colorClass="bg-blue-600" />
         <KPICard title={t('paidAmount')} value={`৳${stats.paidAmount.toLocaleString()}`} icon={CheckCircle2} colorClass="bg-green-600" />
@@ -147,9 +147,6 @@ export default function ProjectBillingSystem() {
             <TabsTrigger value="expenses" className="rounded-xl gap-2 flex-none md:flex-1 py-3 text-[10px] uppercase font-black tracking-widest min-w-[130px] data-[state=active]:bg-red-50 data-[state=active]:text-red-600">
               <Truck className="h-4 w-4" /> {t('expenses')}
             </TabsTrigger>
-            <TabsTrigger value="progress" className="rounded-xl gap-2 flex-none md:flex-1 py-3 text-[10px] uppercase font-black tracking-widest min-w-[130px] data-[state=active]:bg-amber-50 data-[state=active]:text-amber-600">
-              <Wrench className="h-4 w-4" /> {t('serialTracking')}
-            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -165,9 +162,6 @@ export default function ProjectBillingSystem() {
                 onChange={e => setSearchTerm(e.target.value)} 
               />
             </div>
-            <Button variant="ghost" size="sm" className="h-10 px-4 gap-2 text-[10px] font-black uppercase text-slate-500">
-               <Filter className="h-3.5 w-3.5" /> {t('actions')}
-            </Button>
           </div>
 
           {isProjectsLoading ? (
@@ -191,7 +185,7 @@ export default function ProjectBillingSystem() {
                         <TableCell className="pl-8">
                           <div className="flex flex-col min-w-[150px]">
                             <span className="font-black text-xs uppercase tracking-tight text-slate-900 truncate">{p.name}</span>
-                            <span className="text-[9px] font-mono text-teal-600 font-bold mt-1 uppercase">CODE: {p.projectCode}</span>
+                            <span className="text-[9px] font-mono text-teal-600 font-black mt-1 uppercase">CODE: {p.projectCode}</span>
                           </div>
                         </TableCell>
                         <TableCell className="text-xs font-bold text-slate-700 truncate max-w-[200px] uppercase">{p.customerName}</TableCell>
@@ -217,117 +211,6 @@ export default function ProjectBillingSystem() {
             </Card>
           )}
         </TabsContent>
-
-        {/* BILLING & INVOICES TAB */}
-        <TabsContent value="billing" className="space-y-4">
-          <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-white ring-1 ring-slate-100">
-             <div className="overflow-x-auto">
-               <Table>
-                 <TableHeader className="bg-slate-50/50">
-                    <TableRow>
-                      <TableHead className="h-12 pl-8 text-[10px] font-black uppercase">Ref #</TableHead>
-                      <TableHead className="h-12 text-[10px] font-black uppercase">Customer</TableHead>
-                      <TableHead className="h-12 text-[10px] font-black uppercase text-right">Total</TableHead>
-                      <TableHead className="h-12 text-[10px] font-black uppercase text-center">Status</TableHead>
-                      <TableHead className="h-12 text-right pr-8">Actions</TableHead>
-                    </TableRow>
-                 </TableHeader>
-                 <TableBody>
-                    {invoices?.length === 0 ? (
-                      <TableRow><TableCell colSpan={5} className="h-40 text-center opacity-30 italic text-xs uppercase font-bold tracking-widest">No project invoices generated</TableCell></TableRow>
-                    ) : (
-                      invoices?.map(inv => (
-                        <TableRow key={inv.id} className="h-16 hover:bg-muted/5">
-                           <TableCell className="pl-8 font-black text-xs text-blue-600 uppercase">{inv.invoiceNumber}</TableCell>
-                           <TableCell className="text-xs font-bold text-slate-700">{inv.customerName}</TableCell>
-                           <TableCell className="text-right font-black text-xs">৳{inv.totalAmount?.toLocaleString()}</TableCell>
-                           <TableCell className="text-center">
-                              <Badge className={cn("text-[8px] h-4 uppercase border-none px-2 font-black", inv.status === 'paid' ? "bg-green-50 text-green-700" : "bg-orange-50 text-orange-700")}>
-                                {inv.status}
-                              </Badge>
-                           </TableCell>
-                           <TableCell className="text-right pr-8">
-                             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-blue-600" onClick={() => router.push(`/sales/${inv.id}/view`)}><Eye className="h-4 w-4" /></Button>
-                           </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                 </TableBody>
-               </Table>
-             </div>
-          </Card>
-        </TabsContent>
-
-        {/* PAYMENTS TAB */}
-        <TabsContent value="payments" className="space-y-4">
-          <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-white ring-1 ring-slate-100">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader className="bg-slate-50/50">
-                  <TableRow>
-                    <TableHead className="h-12 text-[10px] uppercase font-black pl-8">{t('date')}</TableHead>
-                    <TableHead className="h-12 text-[10px] uppercase font-black">Receipt #</TableHead>
-                    <TableHead className="h-12 text-[10px] uppercase font-black">{t('customer')}</TableHead>
-                    <TableHead className="h-12 text-[10px] uppercase font-black text-right">{t('amount')}</TableHead>
-                    <TableHead className="text-right pr-8">{t('actions')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {payments?.length === 0 ? (
-                    <TableRow><TableCell colSpan={5} className="h-40 text-center opacity-30 italic text-xs uppercase font-bold tracking-widest">No payment records found</TableCell></TableRow>
-                  ) : (
-                    payments?.map((pay) => (
-                      <TableRow key={pay.id} className="h-16 hover:bg-muted/5 transition-colors">
-                        <TableCell className="pl-8 text-[10px] font-bold text-slate-500 uppercase">{new Date(pay.paymentDate).toLocaleDateString()}</TableCell>
-                        <TableCell className="font-mono text-[10px] font-black text-indigo-600 uppercase">{pay.receiptNumber}</TableCell>
-                        <TableCell className="text-xs font-bold text-slate-700 truncate max-w-[150px] uppercase">{pay.customerName}</TableCell>
-                        <TableCell className="text-right font-black text-xs text-green-600 tabular-nums">৳{pay.totalPaid?.toLocaleString()}</TableCell>
-                        <TableCell className="text-right pr-8">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-indigo-600 hover:bg-indigo-50"><Eye className="h-4 w-4" /></Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </Card>
-        </TabsContent>
-
-        {/* PROGRESS TRACKING TAB */}
-        <TabsContent value="progress" className="space-y-6">
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-             {projects?.filter(p => p.status !== 'Completed').map(p => (
-               <Card key={p.id} className="border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-6 space-y-4">
-                 <div className="flex justify-between items-start gap-2">
-                   <div className="space-y-0.5">
-                     <h3 className="font-black text-sm uppercase tracking-tight truncate max-w-[180px]">{p.name}</h3>
-                     <p className="text-[9px] font-mono text-teal-600 font-black">{p.projectCode}</p>
-                   </div>
-                   <Badge className="bg-teal-50 text-teal-600 text-[8px] uppercase border-none font-black shrink-0 shadow-sm">{p.status}</Badge>
-                 </div>
-                 <div className="space-y-2">
-                   <div className="flex justify-between text-[9px] font-black uppercase text-muted-foreground tracking-widest">
-                     <span>Deployment Progress</span>
-                     <span className="text-teal-600">{p.progress || 0}%</span>
-                   </div>
-                   <Progress value={p.progress || 0} className="h-2 bg-slate-100" />
-                 </div>
-                 <div className="pt-4 border-t border-slate-50 flex items-center justify-between">
-                    <div className="flex -space-x-2">
-                       {[1,2,3].map(i => <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[8px] font-black text-slate-400">U{i}</div>)}
-                    </div>
-                    <Button variant="ghost" size="sm" className="h-7 px-3 text-[9px] font-black uppercase text-teal-600 hover:bg-teal-50 rounded-full transition-all group" onClick={() => router.push(`/projects/${p.id}/edit`)}>
-                      Update Status <ChevronRight className="h-3 w-3 ml-1 group-hover:translate-x-0.5 transition-transform" />
-                    </Button>
-                 </div>
-               </Card>
-             ))}
-             {projects?.filter(p => p.status !== 'Completed').length === 0 && (
-               <div className="col-span-full py-20 text-center opacity-30 italic text-xs uppercase font-bold tracking-[0.3em]">No active deployments to track</div>
-             )}
-           </div>
-        </TabsContent>
       </Tabs>
 
       {/* DELETE DIALOG */}
@@ -336,7 +219,7 @@ export default function ProjectBillingSystem() {
           <AlertDialogHeader>
             <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tight text-slate-900">{t('confirmDelete')}?</AlertDialogTitle>
             <AlertDialogDescription className="text-sm font-medium leading-relaxed text-slate-500">
-              This action will permanently remove the project record and its associated history. This operation is immutable.
+              This action will permanently remove the project record.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-8 gap-3">
