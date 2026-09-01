@@ -14,7 +14,9 @@ import {
   X, 
   Calculator, 
   Calendar, 
-  ArrowRight
+  ArrowRight,
+  User,
+  Package
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -108,7 +110,6 @@ export default function EditQuotationPage() {
     }
   }, [quote]);
 
-  // Queries
   const customersQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId) return null;
     return collection(db, "companies", companyId, "branches", branchId, "customers");
@@ -121,7 +122,6 @@ export default function EditQuotationPage() {
   }, [db, companyId]);
   const { data: masterUnits } = useCollection(unitsQuery);
 
-  // Calculations
   const calculations = React.useMemo(() => {
     const itemSubtotal = lineItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
     const itemDiscounts = lineItems.reduce((sum, item) => {
@@ -134,10 +134,8 @@ export default function EditQuotationPage() {
       const discountedPrice = (item.quantity * item.unitPrice) - (item.discountType === 'percent' ? (item.quantity * item.unitPrice * (item.discountValue / 100)) : item.discountValue);
       return sum + (discountedPrice * (item.taxPercent / 100));
     }, 0);
-
     const subtotalCalc = itemSubtotal - itemDiscounts;
     const finalTotal = subtotalCalc + itemTaxes - globalDiscount;
-
     return { rawSubtotal: itemSubtotal, discounts: itemDiscounts, taxes: itemTaxes, subtotal: subtotalCalc, finalTotal };
   }, [lineItems, globalDiscount]);
 
@@ -156,9 +154,7 @@ export default function EditQuotationPage() {
   const handleSaveUpdate = async () => {
     if (!quoteRef || isSubmitting) return;
     setIsSubmitting(true);
-    
     const clientData = customers?.find(c => c.id === selectedCustomerId) || {};
-
     const updatedData = {
       customerId: selectedCustomerId,
       customerName: quote?.customerId === 'manual' ? quote.customerName : `${clientData.firstName || ''} ${clientData.lastName || ''}`,
@@ -175,7 +171,6 @@ export default function EditQuotationPage() {
       expiryDate,
       updatedAt: serverTimestamp(),
     };
-
     try {
       await updateDoc(quoteRef, updatedData);
       toast({ title: t('success') });
@@ -186,166 +181,109 @@ export default function EditQuotationPage() {
     }
   };
 
-  if (isQuoteLoading) return <div className="flex h-[70vh] items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-blue-600" /></div>;
+  if (isQuoteLoading || !quote) return <div className="flex h-[70vh] items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-blue-600" /></div>;
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 min-h-screen pb-20 overflow-x-hidden">
-      <div className="sticky top-0 z-30 bg-white border-b px-4 py-3 flex items-center justify-between shadow-sm">
+    <div className="max-w-full mx-auto space-y-6 pb-20 overflow-x-hidden">
+      <div className="flex items-center justify-between border-b pb-4 bg-white sticky top-0 z-50 px-2 sm:px-4">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-lg font-bold text-blue-600 uppercase tracking-tight">{t('edit')} Proposal</h1>
-            <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">{quote?.quotationNumber}</p>
-          </div>
+          <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full"><ArrowLeft className="h-5 w-5" /></Button>
+          <div><h1 className="text-lg font-black text-blue-600 uppercase">Modify Proposal</h1><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{quote?.quotationNumber}</p></div>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" className="rounded-full text-[10px] font-black uppercase tracking-widest px-6" onClick={() => router.back()}>
-            {t('cancel')}
-          </Button>
-          <Button className="bg-blue-600 hover:bg-blue-700 rounded-full px-8 h-10 text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-100 gap-2" disabled={isSubmitting} onClick={handleSaveUpdate}>
-            {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />}
-            {t('save')}
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="font-bold text-xs" onClick={() => router.back()}>{t('cancel')}</Button>
+          <Button className="bg-blue-600 hover:bg-blue-700 rounded-full px-8 h-10 text-[10px] font-black uppercase shadow-xl" disabled={isSubmitting} onClick={handleSaveUpdate}>
+            {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />} {t('save')} Changes
           </Button>
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 p-4 md:p-6">
-        <div className="flex-1 space-y-6">
-          <Card className="p-6 rounded-[2rem] border-none shadow-sm ring-1 ring-slate-100 bg-white">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               <div className="space-y-2">
-                 <Label className="text-[10px] font-black uppercase text-slate-400">Client</Label>
-                 <Input disabled value={quote?.customerName || ''} className="h-10 rounded-xl bg-slate-50 border-none font-bold text-xs" />
+      <div className="bg-white rounded-[2rem] border shadow-sm ring-1 ring-slate-100 overflow-hidden">
+        <div className="p-6 md:p-10 space-y-12">
+          
+          <section className="space-y-6">
+            <div className="flex items-center gap-2 border-b pb-4">
+              <User className="h-4 w-4 text-blue-600" />
+              <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900">Prospect Identity</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+               <div className="space-y-1.5 lg:col-span-2">
+                 <Label className="text-[10px] font-black uppercase text-slate-400">Client Account</Label>
+                 <Input disabled value={quote?.customerName || ''} className="h-11 rounded-xl bg-slate-50 border-none font-bold text-xs" />
                </div>
-               <div className="space-y-2">
-                 <Label className="text-[10px) font-black uppercase text-slate-400">Project Name</Label>
-                 <Input value={projectName || ''} onChange={e => setProjectName(e.target.value)} className="h-10 rounded-xl font-bold text-xs" />
-               </div>
-               <div className="space-y-2">
-                 <Label className="text-[10px] font-black uppercase text-slate-400">Location</Label>
-                 <Input value={projectLocation || ''} onChange={e => setProjectLocation(e.target.value)} className="h-10 rounded-xl font-bold text-xs" />
+               <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Project Name</Label><Input value={projectName || ''} onChange={e => setProjectName(e.target.value)} className="h-11 rounded-xl" /></div>
+               <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Location</Label><Input value={projectLocation || ''} onChange={e => setProjectLocation(e.target.value)} className="h-11 rounded-xl" /></div>
+               <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Expiry Date</Label><Input type="date" value={expiryDate || ''} onChange={e => setExpiryDate(e.target.value)} className="h-11 rounded-xl uppercase" /></div>
+               <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Proposal Status</Label>
+                 <Select value={status || 'draft'} onValueChange={setStatus}>
+                    <SelectTrigger className="h-11 rounded-xl font-black text-[10px] uppercase"><SelectValue /></SelectTrigger>
+                    <SelectContent className="rounded-xl"><SelectItem value="draft" className="text-xs font-black">DRAFT</SelectItem><SelectItem value="sent" className="text-xs font-black">SENT</SelectItem><SelectItem value="approved" className="text-xs font-black text-green-600">APPROVED</SelectItem><SelectItem value="rejected" className="text-xs font-black text-red-600">REJECTED</SelectItem></SelectContent>
+                 </Select>
                </div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 border-t pt-4">
-                <div className="space-y-2">
-                   <Label className="text-[10px] font-black uppercase text-slate-400">Expiry</Label>
-                   <Input type="date" value={expiryDate || ''} onChange={e => setExpiryDate(e.target.value)} className="h-10 rounded-xl text-xs font-black uppercase" />
-                </div>
-                <div className="space-y-2">
-                   <Label className="text-[10px] font-black uppercase text-slate-400">Status</Label>
-                   <Select value={status || 'draft'} onValueChange={setStatus}>
-                      <SelectTrigger className="h-10 rounded-xl font-black text-[10px] uppercase"><SelectValue /></SelectTrigger>
-                      <SelectContent className="rounded-xl">
-                         <SelectItem value="draft" className="text-xs font-black">DRAFT</SelectItem>
-                         <SelectItem value="sent" className="text-xs font-black">SENT</SelectItem>
-                         <SelectItem value="approved" className="text-xs font-black text-green-600">APPROVED</SelectItem>
-                         <SelectItem value="rejected" className="text-xs font-black text-red-600">REJECTED</SelectItem>
-                      </SelectContent>
-                   </Select>
-                </div>
-            </div>
-          </Card>
+          </section>
 
-          <Card className="rounded-[2rem] border-none shadow-sm ring-1 ring-slate-100 bg-white overflow-hidden flex flex-col">
-            <div className="p-4 border-b bg-slate-50/50 flex flex-wrap items-center justify-between gap-2">
+          <section className="space-y-6">
+            <div className="flex items-center justify-between border-b pb-4">
                <div className="flex items-center gap-3">
-                 <LayoutGrid className="h-4 w-4 text-blue-600" />
-                 <h3 className="text-[10px] font-black uppercase text-slate-900 tracking-widest">Proposal Matrix</h3>
+                 <Package className="h-4 w-4 text-blue-600" />
+                 <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900">Proposal Matrix</h3>
                </div>
-               <Button variant="outline" size="sm" className="rounded-full gap-2 border-blue-100 text-blue-700 bg-white h-9 px-4 font-black text-[10px] uppercase shadow-sm" onClick={() => setLineItems([...lineItems, { id: Math.random().toString(36).substr(2, 9), productId: 'custom', name: '', description: '', brand: '', model: '', specs: '', warranty: '', sn: '', quantity: 1, unit: 'Pcs', unitPrice: 0, discountValue: 0, discountType: 'percent', taxPercent: 0, total: 0, isCustom: true }])}>
+               <Button variant="outline" size="sm" className="h-10 rounded-xl gap-2 text-[10px] font-black uppercase border-slate-200" onClick={() => setLineItems([...lineItems, { id: Math.random().toString(36).substr(2, 9), productId: 'custom', name: '', description: '', brand: '', model: '', specs: '', warranty: '1 Year', sn: '', quantity: 1, unit: 'Pcs', unitPrice: 0, discountValue: 0, discountType: 'percent', taxPercent: 0, total: 0, isCustom: true }])}>
                  <PackagePlus className="h-4 w-4" /> New Row
                </Button>
             </div>
             <div className="overflow-x-auto custom-scrollbar">
-              <Table className="min-w-[800px]">
-                <TableHeader className="bg-slate-50/30">
-                  <TableRow>
-                    <TableHead className="w-10 text-center text-[9px] font-black uppercase py-4 pl-6">Sl.</TableHead>
-                    <TableHead className="min-w-[350px] text-[9px] font-black uppercase py-4">Product Details & Attributes</TableHead>
-                    <TableHead className="text-[9px] font-black uppercase text-center w-20">Unit</TableHead>
-                    <TableHead className="text-[9px] font-black uppercase text-center w-20">Qty</TableHead>
-                    <TableHead className="text-[9px] font-black uppercase text-right w-24">Price</TableHead>
-                    <TableHead className="text-[9px] font-black uppercase text-right pr-6 w-24">Total</TableHead>
-                    <TableHead className="w-10"></TableHead>
-                  </TableRow>
+              <Table className="min-w-[1000px]">
+                <TableHeader className="bg-slate-50/50">
+                  <TableRow><TableHead className="w-12 text-center text-[10px] font-black pl-6 uppercase">Sl</TableHead><TableHead className="min-w-[400px] text-[10px] font-black uppercase">Technical Specs & Details</TableHead><TableHead className="w-24 text-center text-[10px] font-black uppercase">Unit</TableHead><TableHead className="w-24 text-center text-[10px] font-black uppercase">Qty</TableHead><TableHead className="w-32 text-right text-[10px] font-black uppercase">Price</TableHead><TableHead className="w-32 text-right pr-10 text-[10px] font-black uppercase">Total</TableHead><TableHead className="w-10"></TableHead></TableRow>
                 </TableHeader>
                 <TableBody>
                   {lineItems.map((item, idx) => (
-                    <TableRow key={item.id} className="group hover:bg-slate-50/50 transition-colors border-b border-slate-50 align-top">
-                      <TableCell className="pl-6 text-center text-[10px] font-bold text-slate-400 py-3">{(idx + 1).toString().padStart(2, '0')}</TableCell>
-                      <TableCell className="py-3 px-2">
-                        <div className="space-y-2">
-                          <Input 
-                            className="h-8 text-[11px] font-black uppercase border-none bg-slate-100/50 focus:bg-white focus:ring-1 focus:ring-blue-500 transition-all" 
-                            value={item.name || ''} 
-                            onChange={e => handleUpdateLineItem(item.id, 'name', e.target.value)} 
-                            placeholder="Item Name" 
-                          />
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-1.5">
-                             <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.model || ''} onChange={e => handleUpdateLineItem(item.id, 'model', e.target.value)} placeholder="Model" />
-                             <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.brand || ''} onChange={e => handleUpdateLineItem(item.id, 'brand', e.target.value)} placeholder="Brand" />
-                             <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.sn || ''} onChange={e => handleUpdateLineItem(item.id, 'sn', e.target.value)} placeholder="S/N" />
-                             <Input className="h-7 text-[9px] font-bold border-slate-200" value={item.warranty || ''} onChange={e => handleUpdateLineItem(item.id, 'warranty', e.target.value)} placeholder="Warranty" />
-                          </div>
-                          <textarea 
-                            className="w-full text-[9px] font-medium bg-slate-50 border border-slate-200 rounded p-1.5 min-h-[40px] resize-none outline-none focus:bg-white focus:ring-1 focus:ring-blue-500 transition-all" 
-                            value={item.specs || ''} 
-                            onChange={e => handleUpdateLineItem(item.id, 'specs', e.target.value)} 
-                            placeholder="Specification" 
-                          />
+                    <TableRow key={item.id} className="group hover:bg-slate-50 transition-colors border-b align-top">
+                      <TableCell className="text-center text-[11px] font-black text-slate-300 py-6 pl-6">{(idx + 1).toString().padStart(2, '0')}</TableCell>
+                      <TableCell className="py-6 px-2">
+                        <div className="space-y-4">
+                           <Input className="h-10 text-xs font-black uppercase border-none bg-slate-50 rounded-xl focus:bg-white focus:ring-1 focus:ring-blue-500" value={item.name} onChange={e => handleUpdateLineItem(item.id, 'name', e.target.value)} />
+                           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                              <Input className="h-8 text-[10px] font-bold bg-white" value={item.model} onChange={e => handleUpdateLineItem(item.id, 'model', e.target.value)} placeholder="Model" />
+                              <Input className="h-8 text-[10px] font-bold bg-white" value={item.brand} onChange={e => handleUpdateLineItem(item.id, 'brand', e.target.value)} placeholder="Brand" />
+                              <Input className="h-8 text-[10px] font-bold bg-white" value={item.warranty} onChange={e => handleUpdateLineItem(item.id, 'warranty', e.target.value)} placeholder="Warranty" />
+                           </div>
+                           <textarea className="w-full text-[10px] font-medium bg-slate-50 border rounded-xl p-3 min-h-[60px]" value={item.specs} onChange={e => handleUpdateLineItem(item.id, 'specs', e.target.value)} placeholder="Specs..." />
                         </div>
                       </TableCell>
-                      <TableCell className="py-3">
-                        <Select value={item.unit || 'Pcs'} onValueChange={(val) => handleUpdateLineItem(item.id, 'unit', val)}>
-                          <SelectTrigger className="h-7 border-none bg-slate-50 text-[10px] font-bold uppercase w-14 mx-auto"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {masterUnits?.map(u => <SelectItem key={u.id} value={u.shortName} className="text-xs font-bold">{u.shortName}</SelectItem>)}
-                            {!masterUnits?.length && <SelectItem value="Pcs">Pcs</SelectItem>}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell className="py-3 text-center">
-                         <Input type="number" className="h-8 text-center font-black text-xs rounded-lg w-14 bg-slate-50 border-none mx-auto focus:ring-1 focus:ring-blue-500" value={item.quantity || ''} onChange={e => handleUpdateLineItem(item.id, 'quantity', Number(e.target.value))} />
-                      </TableCell>
-                      <TableCell className="py-3 text-right">
-                         <Input type="number" className="h-8 text-right font-black text-xs rounded-lg w-20 bg-slate-50 border-none ml-auto focus:ring-1 focus:ring-blue-500" value={item.unitPrice || ''} onChange={e => handleUpdateLineItem(item.id, 'unitPrice', Number(e.target.value))} />
-                      </TableCell>
-                      <TableCell className="py-3 text-right pr-6"><span className="font-black text-xs text-blue-600">৳{(item.total || 0).toLocaleString()}</span></TableCell>
-                      <TableCell className="py-3 pr-4"><Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 rounded-full" onClick={() => setLineItems(lineItems.filter(i => i.id !== item.id))}><X className="h-4 w-4" /></Button></TableCell>
+                      <TableCell className="py-6"><Select value={item.unit} onValueChange={v => handleUpdateLineItem(item.id, 'unit', v)}><SelectTrigger className="h-9 w-20 mx-auto rounded-xl"><SelectValue /></SelectTrigger><SelectContent>{masterUnits?.map(u => <SelectItem key={u.id} value={u.shortName}>{u.shortName}</SelectItem>)}</SelectContent></Select></TableCell>
+                      <TableCell className="py-6 text-center"><Input type="number" className="h-10 text-center font-black text-xs w-16 bg-slate-50 border-none mx-auto rounded-xl" value={item.quantity || ''} onChange={e => handleUpdateLineItem(item.id, 'quantity', Number(e.target.value))} /></TableCell>
+                      <TableCell className="py-6 text-right"><Input type="number" className="h-10 text-right font-black text-xs w-24 bg-slate-100 border-none ml-auto rounded-xl" value={item.unitPrice || ''} onChange={e => handleUpdateLineItem(item.id, 'unitPrice', Number(e.target.value))} /></TableCell>
+                      <TableCell className="py-6 text-right pr-10 font-black text-xs text-slate-900">৳{item.total.toLocaleString()}</TableCell>
+                      <TableCell className="py-6 pr-4"><Button variant="ghost" size="icon" className="h-9 w-9 text-slate-300 hover:text-red-600 rounded-full" onClick={() => setLineItems(lineItems.filter(i => i.id !== item.id))}><X className="h-4 w-4" /></Button></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </div>
-          </Card>
-        </div>
+          </section>
 
-        <div className="w-full lg:w-[380px] space-y-6">
-          <Card className="p-8 rounded-[2.5rem] shadow-2xl space-y-6 text-center text-white bg-blue-600">
-            <p className="text-[9px] font-black uppercase opacity-60 tracking-[0.2em]">Net Proposal Value</p>
-            <h2 className="text-3xl md:text-4xl font-headline font-black tracking-tighter">৳{(calculations.finalTotal || 0).toLocaleString()}</h2>
-            <div className="pt-6 space-y-2 border-t border-white/10 text-[10px] font-bold uppercase tracking-wider">
-              <div className="flex justify-between opacity-70"><span>Gross Subtotal</span><span>৳{(calculations.rawSubtotal || 0).toLocaleString()}</span></div>
-              <div className="flex justify-between text-blue-100"><span>Accrued VAT</span><span>+ ৳{(calculations.taxes || 0).toLocaleString()}</span></div>
+          <section className="grid grid-cols-1 xl:grid-cols-2 gap-12 pt-8 border-t">
+            <div className="space-y-6">
+              <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-400">Quotation Remarks</h3>
+              <Textarea className="min-h-[150px] rounded-2xl bg-slate-50 border-none p-6 text-xs font-medium" placeholder="Special terms, notes..." value={notes} onChange={e => setNotes(e.target.value)} />
             </div>
-          </Card>
 
-          <Card className="p-6 rounded-[2rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-6">
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Global Discount (৳)</Label>
-              <Input type="number" className="h-11 rounded-2xl bg-slate-50 border-none font-black text-sm text-red-600" value={globalDiscount || ''} onChange={e => setGlobalDiscount(Number(e.target.value))} />
+            <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white space-y-8 shadow-2xl">
+               <div className="flex flex-col items-center text-center space-y-2">
+                 <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Net Proposal Value</p>
+                 <h2 className="text-5xl font-headline font-black text-blue-400 tracking-tighter">৳{calculations.finalTotal.toLocaleString()}</h2>
+               </div>
+               <div className="grid grid-cols-2 gap-4 border-t border-white/5 pt-8">
+                  <div className="space-y-3"><div className="flex justify-between text-[10px] font-black uppercase opacity-40"><span>Subtotal</span><span>৳{calculations.rawSubtotal.toLocaleString()}</span></div><div className="flex justify-between text-[10px] font-black uppercase text-blue-300"><span>VAT 15%</span><span>+৳{calculations.taxes.toLocaleString()}</span></div></div>
+                  <div className="space-y-3 border-l border-white/5 pl-4"><div className="flex justify-between text-[10px] font-black uppercase text-red-400"><span>Adjustment</span><span>-৳{globalDiscount.toLocaleString()}</span></div></div>
+               </div>
+               <div className="pt-4"><Label className="text-[9px] font-black uppercase opacity-40">Global Discount ৳</Label><Input type="number" className="h-10 bg-white/5 border-white/10 rounded-xl text-xs font-black text-red-400 mt-1" value={globalDiscount || ''} onChange={e => setGlobalDiscount(Number(e.target.value))} /></div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Notes & Terms</Label>
-              <textarea className="w-full min-h-[150px] rounded-2xl bg-slate-50 border-none p-4 text-[10px] font-bold text-slate-600 resize-none outline-none focus:ring-1 focus:ring-blue-500 transition-all" value={notes || ''} onChange={e => setNotes(e.target.value)} />
-            </div>
-            <Button className="w-full h-16 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl text-white bg-blue-600 hover:bg-blue-700 transition-all active:scale-95" disabled={isSubmitting || lineItems.length === 0} onClick={handleSaveUpdate}>
-              {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : <ArrowRight className="h-5 w-5" />}
-              Update Proposal
-            </Button>
-          </Card>
+          </section>
+
         </div>
       </div>
     </div>
