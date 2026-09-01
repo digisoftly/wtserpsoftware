@@ -58,16 +58,26 @@ export default function ContractDetailsPage() {
 
   const { data: contract, isLoading } = useDoc(contractRef)
 
+  // Query without orderBy to avoid index requirement
   const invoicesQuery = useMemoFirebase(() => {
     if (!db || !companyId || !branchId || !id) return null
     return query(
       collection(db, "companies", companyId, "branches", branchId, "contract_invoices"),
-      where("contractId", "==", id),
-      orderBy("createdAt", "desc")
+      where("contractId", "==", id)
     )
   }, [db, companyId, branchId, id])
 
-  const { data: invoices, isLoading: isInvoicesLoading } = useCollection(invoicesQuery)
+  const { data: rawInvoices, isLoading: isInvoicesLoading } = useCollection(invoicesQuery)
+
+  // Client-side sorting: Newest first
+  const sortedInvoices = React.useMemo(() => {
+    if (!rawInvoices) return []
+    return [...rawInvoices].sort((a, b) => {
+      const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0)
+      const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0)
+      return dateB.getTime() - dateA.getTime()
+    })
+  }, [rawInvoices])
 
   const handleDelete = async () => {
     if (!contractRef) return;
@@ -150,7 +160,7 @@ export default function ContractDetailsPage() {
         <KPICard title="Monthly Fee" value={formatCurrency(contract.monthlyAmount)} icon={DollarSign} colorClass="bg-emerald-600" />
         <KPICard title="Service Points" value={totalPoints} icon={MapPin} colorClass="bg-blue-600" />
         <KPICard title="Commencement" value={contract.startDate ? new Date(contract.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : "---"} icon={Calendar} colorClass="bg-purple-600" />
-        <KPICard title="Outstanding Due" value={formatCurrency(invoices?.filter(i => i.status !== 'paid').reduce((s, i) => s + (Number(i.amount) || 0), 0) || 0)} icon={AlertCircle} colorClass="bg-rose-600" />
+        <KPICard title="Outstanding Due" value={formatCurrency(sortedInvoices?.filter(i => i.status !== 'paid').reduce((s, i) => s + (Number(i.amount) || 0), 0) || 0)} icon={AlertCircle} colorClass="bg-rose-600" />
       </div>
 
       <Tabs defaultValue="matrix" className="w-full">
@@ -252,7 +262,7 @@ export default function ContractDetailsPage() {
         <TabsContent value="billing" className="space-y-4">
           {isInvoicesLoading ? (
             <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
-          ) : invoices && invoices.length > 0 ? (
+          ) : sortedInvoices.length > 0 ? (
             <Card className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white ring-1 ring-slate-100">
               <Table>
                 <TableHeader className="bg-slate-50/50">
@@ -265,7 +275,7 @@ export default function ContractDetailsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {invoices.map((inv) => (
+                  {sortedInvoices.map((inv) => (
                     <TableRow key={inv.id} className="h-16 hover:bg-slate-50/50 transition-colors group border-slate-50">
                       <TableCell className="pl-8 text-[11px] font-black text-blue-600 uppercase tracking-tight">{inv.billingMonth}</TableCell>
                       <TableCell className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{inv.contractNumber}</TableCell>
