@@ -13,13 +13,12 @@ import {
   Mail,
   MapPin,
   CreditCard,
-  Tag,
   CheckCircle2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useFirestore } from "@/firebase"
 import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore"
@@ -54,6 +53,7 @@ export default function NewCustomerPage() {
       companyId,
       branchId,
       customerType,
+      // For individual, fullName is the name. For companies, companyName is the main identity.
       fullName: customerType === 'individual' ? fullName : companyName,
       companyName,
       contactPerson,
@@ -85,15 +85,15 @@ export default function NewCustomerPage() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#F8FAFC] min-h-screen pb-20">
-      <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b px-4 md:px-8 py-4 flex items-center justify-between shadow-sm">
+    <div className="space-y-8 pb-20">
+      <div className="flex items-center justify-between border-b pb-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full h-10 w-10">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-lg md:text-xl font-black font-headline uppercase tracking-tight text-slate-900">Add New Client</h1>
-            <p className="text-[9px] font-black uppercase text-blue-600 tracking-widest mt-1">Identity & Credit Profile</p>
+            <h1 className="text-xl font-black font-headline uppercase tracking-tight text-slate-900">Add New Client</h1>
+            <p className="text-[10px] font-black uppercase text-blue-600 tracking-widest mt-1">Identity & Credit Profile</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -105,10 +105,9 @@ export default function NewCustomerPage() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto w-full p-4 md:p-8">
+      <div className="max-w-4xl mx-auto w-full">
         <form id="customer-form" onSubmit={handleSaveCustomer} className="space-y-8">
           
-          {/* Identity Section */}
           <Card className="border-none shadow-sm ring-1 ring-slate-100 rounded-[2rem] bg-white overflow-hidden">
             <div className="p-6 md:p-8 space-y-8">
               <div className="space-y-4">
@@ -182,7 +181,6 @@ export default function NewCustomerPage() {
             </div>
           </Card>
 
-          {/* Account & CRM Section */}
           <Card className="border-none shadow-sm ring-1 ring-slate-100 rounded-[2rem] bg-white overflow-hidden">
             <div className="p-6 md:p-8 space-y-6">
               <div className="flex items-center gap-3 border-b pb-4">

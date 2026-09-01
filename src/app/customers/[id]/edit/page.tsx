@@ -62,7 +62,7 @@ export default function EditCustomerPage() {
     if (customer) {
       setFormData({
         customerType: customer.customerType || "individual",
-        fullName: customer.fullName || "",
+        fullName: customer.customerType === 'individual' ? (customer.fullName || "") : "",
         companyName: customer.companyName || "",
         contactPerson: customer.contactPerson || "",
         phoneNumber: customer.phoneNumber || "",
@@ -91,6 +91,8 @@ export default function EditCustomerPage() {
     if (!customerRef || isSubmitting) return;
 
     setIsSubmitting(true);
+    
+    // Logic mapping for saving
     const updateData = {
       ...formData,
       fullName: formData.customerType === 'individual' ? formData.fullName : formData.companyName,
@@ -107,11 +109,20 @@ export default function EditCustomerPage() {
     }
   };
 
-  if (isLoading || !customer) return <div className="flex h-screen items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-blue-600" /></div>;
+  if (isLoading) {
+    return (
+      <div className="flex h-[70vh] items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading Profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col h-full bg-[#F8FAFC] min-h-screen pb-20">
-      <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b px-4 md:px-8 py-4 flex items-center justify-between shadow-sm">
+    <div className="space-y-8 pb-20">
+      <div className="flex items-center justify-between border-b pb-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full h-10 w-10">
             <ArrowLeft className="h-5 w-5" />
@@ -130,7 +141,7 @@ export default function EditCustomerPage() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto w-full p-4 md:p-8">
+      <div className="max-w-4xl mx-auto w-full">
         <form onSubmit={handleSaveCustomer} className="space-y-8">
           
           <Card className="border-none shadow-sm ring-1 ring-slate-100 rounded-[2rem] bg-white overflow-hidden">
