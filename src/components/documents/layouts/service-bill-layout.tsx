@@ -10,7 +10,7 @@ import { DocumentTemplateProps } from "../document-template"
 /**
  * Service Bill Layout - Warrior Official Edition
  * Optimized Table structure: SL, Service Name, Description/Location, Unit Price, Amount.
- * Matches corporate Pad design with vertical price/amount merging.
+ * Repetitive Service Name on every row as requested.
  */
 export function ServiceBillLayout(props: DocumentTemplateProps) {
   const { 
@@ -124,7 +124,7 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
                         {globalSl.toString().padStart(2, '0')}
                       </td>
                       <td className="border border-black px-4 text-[10px] font-black text-slate-900 text-left uppercase">
-                        {pIdx === 0 ? group.serviceName : ''}
+                        {group.serviceName}
                       </td>
                       <td className="border border-black px-4 text-[10px] text-slate-700 font-bold text-left uppercase py-2 leading-normal">
                         {point.location} 
@@ -185,6 +185,10 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
           <div className="text-center"><div className="border-t border-black pt-1 text-[9px] font-black uppercase">Prepared By</div></div>
           <div className="text-center"><div className="border-t border-black pt-1 text-[9px] font-black uppercase">Finance Checked</div></div>
           <div className="text-center relative">
+            <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex items-center justify-center h-20 w-40 gap-2">
+              {settings?.authorizedSeal && <img src={settings.authorizedSeal} className="h-20 w-20 object-contain opacity-80" alt="Seal" />}
+              {settings?.authorizedSignature && <img src={settings.authorizedSignature} className="h-16 w-32 object-contain absolute bottom-2" alt="Signature" />}
+            </div>
             <div className="border-t-2 border-blue-700 pt-1 text-[10px] font-black uppercase text-blue-800">Authorized Signature</div>
           </div>
         </div>

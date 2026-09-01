@@ -189,23 +189,35 @@ export default function ContractDetailsPage() {
                     <TableHeader className="bg-slate-50/30">
                        <TableRow>
                           <TableHead className="w-16 text-center text-[9px] font-black uppercase pl-8">SL</TableHead>
+                          <TableHead className="text-[9px] font-black uppercase pl-4">Service Name</TableHead>
                           <TableHead className="text-[9px] font-black uppercase pl-4">Description / Location</TableHead>
-                          <TableHead className="text-[9px] font-black uppercase pl-4">Remarks</TableHead>
+                          <TableHead className="text-[9px] font-black uppercase text-right pr-8">Unit Price</TableHead>
                        </TableRow>
                     </TableHeader>
                     <TableBody>
-                       {group.points?.map((point: any, pIdx: number) => (
-                         <TableRow key={pIdx} className="h-16 hover:bg-slate-50/50 border-slate-50">
-                            <TableCell className="text-center text-[10px] font-black text-slate-300 pl-8">{(pIdx + 1).toString().padStart(2, '0')}</TableCell>
-                            <TableCell className="pl-4">
-                               <div className="flex items-center gap-2">
-                                  <MapPin className="h-3 w-3 text-blue-400" />
-                                  <span className="text-[11px] font-black uppercase text-slate-700 tracking-tight">{point.location}</span>
-                               </div>
-                            </TableCell>
-                            <TableCell className="pl-4 text-[10px] font-bold text-slate-500 uppercase">{point.description || '---'}</TableCell>
-                         </TableRow>
-                       ))}
+                       {group.points?.map((point: any, pIdx: number) => {
+                         const globalSl = contract.groups.slice(0, gIdx).reduce((acc: number, prevG: any) => acc + prevG.points.length, 0) + pIdx + 1;
+                         return (
+                           <TableRow key={pIdx} className="h-16 hover:bg-slate-50/50 border-slate-50">
+                              <TableCell className="text-center text-[10px] font-black text-slate-300 pl-8">{globalSl.toString().padStart(2, '0')}</TableCell>
+                              <TableCell className="pl-4">
+                                 <span className="text-[11px] font-black uppercase text-slate-900">{group.serviceName}</span>
+                              </TableCell>
+                              <TableCell className="pl-4">
+                                 <div className="flex items-center gap-2">
+                                    <MapPin className="h-3 w-3 text-blue-400" />
+                                    <span className="text-[11px] font-bold uppercase text-slate-700 tracking-tight">{point.location}</span>
+                                 </div>
+                                 {point.description && <p className="text-[9px] text-slate-400 italic mt-0.5">{point.description}</p>}
+                              </TableCell>
+                              {pIdx === 0 ? (
+                                <TableCell rowSpan={group.points.length} className="text-right pr-8 font-black text-xs text-blue-600 bg-slate-50/20 align-middle">
+                                  ৳{Number(group.amount || 0).toLocaleString()}
+                                </TableCell>
+                              ) : null}
+                           </TableRow>
+                         );
+                       })}
                     </TableBody>
                   </Table>
                 </CardContent>
