@@ -95,7 +95,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-stretch bg-[#F3F4F6] overflow-hidden">
       {/* LEFT SIDE: BRANDING & SCROLLABLE GRID */}
-      <div className="hidden lg:flex lg:w-3/5 relative bg-[#0F4C44] text-white p-10 flex-col justify-between overflow-hidden">
+      <div className="hidden lg:flex lg:w-3/5 relative bg-[#0F4C44] text-white p-8 flex-col justify-between overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[#0F4C44] via-[#136A5F] to-[#0A332E]" />
         
         {/* Top Branding */}
@@ -118,8 +118,8 @@ export default function LoginPage() {
         </div>
 
         {/* Content & Scrollable Grid */}
-        <div className="relative z-10 space-y-8 mt-6">
-          <div className="space-y-2">
+        <div className="relative z-10 space-y-6 mt-4">
+          <div className="space-y-1">
             <h2 className="text-3xl xl:text-4xl font-black font-headline tracking-tight leading-tight animate-in slide-in-from-left-4 duration-1000">
               {settings?.loginHeadline || "২৩টি মডিউল একটি প্ল্যাটফর্মে"}
             </h2>
@@ -128,20 +128,20 @@ export default function LoginPage() {
             </p>
           </div>
           
-          {/* 6-Column Grid Layout */}
-          <div className="max-h-[60vh] overflow-y-auto no-scrollbar pr-4 animate-in zoom-in-95 duration-700 delay-300">
-            <div className="grid grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3">
+          {/* 6-Column Grid Layout - Reduced Padding and Gap */}
+          <div className="max-h-[65vh] overflow-y-auto no-scrollbar pr-2 animate-in zoom-in-95 duration-700 delay-300">
+            <div className="grid grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-2">
               {gridItems.map((item: any, idx: number) => {
                 const Icon = (Icons as any)[item.icon] || Icons.LayoutGrid;
                 return (
-                  <div key={idx} className="bg-white/5 backdrop-blur-md rounded-2xl p-4 flex flex-col items-center justify-center gap-2 border border-white/10 group hover:bg-white/10 hover:scale-[1.05] transition-all cursor-default aspect-square shadow-xl">
+                  <div key={idx} className="bg-white/5 backdrop-blur-md rounded-xl p-2.5 flex flex-col items-center justify-center gap-1.5 border border-white/10 group hover:bg-white/10 hover:scale-[1.05] transition-all cursor-default aspect-square shadow-lg">
                     <div className={cn(
-                      "p-2.5 rounded-xl shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-2xl", 
+                      "p-2 rounded-lg shadow-md transition-all duration-300 group-hover:scale-110", 
                       item.color || "bg-emerald-500/20 text-emerald-400"
                     )}>
-                      <Icon className="h-5 w-5" />
+                      <Icon className="h-4 w-4" />
                     </div>
-                    <span className="text-[9px] font-black uppercase tracking-widest opacity-60 group-hover:opacity-100 transition-opacity text-center leading-tight">
+                    <span className="text-[8.5px] font-black uppercase tracking-widest opacity-60 group-hover:opacity-100 transition-opacity text-center leading-tight">
                       {item.label}
                     </span>
                   </div>
