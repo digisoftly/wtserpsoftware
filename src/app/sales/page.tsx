@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -84,31 +83,19 @@ export default function SalesPage() {
     );
   }, [invoices, searchTerm]);
 
-  // Grouping Logic
   const groupedData = React.useMemo(() => {
     const groups: Record<string, any> = {};
-
     filteredInvoices.forEach(inv => {
       const cId = inv.customerId || 'unknown';
       const cName = inv.customerName || t('unknownCustomer');
       const pName = inv.projectName || t('generalNoProject');
-
       if (!groups[cId]) {
         groups[cId] = {
-          id: cId,
-          name: cName,
-          totalDocs: 0,
-          totalAmount: 0,
-          totalDue: 0,
-          lastDate: inv.invoiceDate,
-          projects: {}
+          id: cId, name: cName, totalDocs: 0, totalAmount: 0, totalDue: 0,
+          lastDate: inv.invoiceDate, projects: {}
         };
       }
-
-      if (!groups[cId].projects[pName]) {
-        groups[cId].projects[pName] = [];
-      }
-
+      if (!groups[cId].projects[pName]) groups[cId].projects[pName] = [];
       groups[cId].projects[pName].push(inv);
       groups[cId].totalDocs += 1;
       groups[cId].totalAmount += (Number(inv.totalAmount) || 0);
@@ -117,7 +104,6 @@ export default function SalesPage() {
         groups[cId].lastDate = inv.invoiceDate;
       }
     });
-
     return Object.values(groups);
   }, [filteredInvoices, t]);
 
@@ -137,34 +123,34 @@ export default function SalesPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h1 className="text-xl font-bold text-slate-900 uppercase tracking-tight">{t('sales')}</h1>
+    <div className="space-y-6 pb-20 touch-scroll">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <h1 className="text-xl font-black text-slate-900 uppercase tracking-tight">{t('sales')}</h1>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="h-9 rounded-lg gap-2 text-[11px] font-black uppercase tracking-widest border-slate-200" onClick={() => router.push('/payments/bulk-collect')}>
-            <CreditCard className="h-4 w-4" /> Multiple Bill Payment
+          <Button variant="outline" size="sm" className="h-9 rounded-lg gap-2 text-[10px] font-black uppercase tracking-widest border-slate-200" onClick={() => router.push('/payments/bulk-collect')}>
+            <CreditCard className="h-4 w-4" /> Multi Payment
           </Button>
-          <Button size="sm" className="h-9 rounded-lg gap-2 px-6 font-black text-[11px] uppercase tracking-widest bg-blue-600 hover:bg-blue-700" asChild>
+          <Button size="sm" className="h-9 rounded-lg gap-2 px-6 font-black text-[10px] uppercase tracking-widest bg-blue-600 hover:bg-blue-700" asChild>
             <Link href="/sales/new">
-              <Plus className="h-4 w-4" /> {t('add')} {t('sales')}
+              <Plus className="h-4 w-4" /> {t('add')}
             </Link>
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
         <KPICard title="totalSales" value={formatCurrency(stats.totalSales)} icon={ShoppingCart} colorClass="bg-blue-600" />
         <KPICard title="todayIncome" value={formatCurrency(stats.collectedToday)} icon={TrendingUp} colorClass="bg-green-600" />
         <KPICard title="salesDue" value={formatCurrency(stats.receivable)} icon={AlertCircle} colorClass="bg-red-600" />
         <KPICard title="totalDocuments" value={stats.count} icon={Calendar} colorClass="bg-purple-600" />
       </div>
 
-      <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex flex-col sm:flex-row gap-3 items-center justify-between ring-1 ring-slate-100">
-        <div className="relative w-full sm:max-w-xs">
+      <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm ring-1 ring-slate-100">
+        <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
           <input 
             placeholder={t('search')} 
-            className="pl-10 h-10 w-full rounded-lg bg-slate-50/50 border-none text-xs font-bold focus:ring-1 focus:ring-blue-600 outline-none transition-all" 
+            className="pl-10 h-10 w-full rounded-xl bg-slate-50/50 border-none text-xs font-bold focus:ring-1 focus:ring-blue-600 outline-none transition-all" 
             value={searchTerm} 
             onChange={e => setSearchTerm(e.target.value)} 
           />
@@ -177,113 +163,61 @@ export default function SalesPage() {
         <div className="space-y-4">
           {groupedData.map((customer) => (
             <Card key={customer.id} className="border-none shadow-sm overflow-hidden rounded-[1.5rem] bg-white ring-1 ring-slate-100">
-              {/* CUSTOMER HEADER */}
               <div 
-                className="p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors border-b border-slate-50"
+                className="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors border-b border-slate-50 active:bg-slate-100"
                 onClick={() => toggleCustomer(customer.id)}
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-                    <User className="h-5 w-5" />
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                    <User className="h-4 w-4" />
                   </div>
-                  <div>
-                    <h2 className="text-sm font-black uppercase text-slate-900 leading-tight">{customer.name}</h2>
-                    <div className="flex gap-3 mt-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                        {customer.totalDocs} {t('documents')}
-                      </span>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                        • {Object.keys(customer.projects).length} {t('projectBilling')}
+                  <div className="overflow-hidden">
+                    <h2 className="text-xs font-black uppercase text-slate-900 leading-tight truncate max-w-[150px] md:max-w-md">{customer.name}</h2>
+                    <div className="flex gap-2 mt-0.5">
+                      <span className="text-[8px] md:text-[9px] font-bold text-slate-400 uppercase">
+                        {customer.totalDocs} Docs
                       </span>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-6">
-                  <div className="text-right hidden sm:block">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('totalAmount')}</p>
-                    <p className="text-sm font-black text-blue-600">{formatCurrency(customer.totalAmount)}</p>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <p className="text-[10px] font-black text-red-600">{formatCurrency(customer.totalDue)}</p>
                   </div>
-                  <div className="text-right hidden sm:block">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('balanceDue')}</p>
-                    <p className="text-sm font-black text-red-600">{formatCurrency(customer.totalDue)}</p>
-                  </div>
-                  {expandedCustomers[customer.id] ? <ChevronDown className="h-5 w-5 text-slate-300" /> : <ChevronRight className="h-5 w-5 text-slate-300" />}
+                  {expandedCustomers[customer.id] ? <ChevronDown className="h-4 w-4 text-slate-300" /> : <ChevronRight className="h-4 w-4 text-slate-300" />}
                 </div>
               </div>
 
-              {/* PROJECT GROUPS */}
               {expandedCustomers[customer.id] && (
-                <div className="p-4 bg-slate-50/30 space-y-3">
+                <div className="p-3 bg-slate-50/30 space-y-2">
                   {Object.entries(customer.projects).map(([projectName, docs]: [string, any]) => (
                     <Collapsible key={projectName} defaultOpen={true}>
-                      <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
+                      <div className="bg-white rounded-xl border border-slate-100 overflow-hidden shadow-sm">
                         <CollapsibleTrigger asChild>
-                          <div className="p-3 flex items-center justify-between cursor-pointer hover:bg-slate-50/50">
+                          <div className="p-2 px-3 flex items-center justify-between cursor-pointer hover:bg-slate-50/50">
                             <div className="flex items-center gap-2">
-                              <Folder className="h-3.5 w-3.5 text-teal-500" />
-                              <span className="text-[11px] font-black uppercase tracking-tight text-slate-600">{projectName}</span>
-                              <Badge className="bg-slate-100 text-slate-500 text-[8px] h-4 font-black border-none ml-2">
-                                {docs.length}
-                              </Badge>
+                              <Folder className="h-3 w-3 text-teal-500" />
+                              <span className="text-[10px] font-black uppercase tracking-tight text-slate-600 truncate max-w-[120px]">{projectName}</span>
                             </div>
-                            <ChevronDown className="h-3.5 w-3.5 text-slate-300" />
+                            <ChevronDown className="h-3 w-3 text-slate-300" />
                           </div>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
                           <div className="overflow-x-auto">
                             <Table>
-                              <TableHeader className="bg-slate-50/50">
-                                <TableRow className="h-8">
-                                  <TableHead className="h-8 text-[9px] uppercase font-black pl-6">{t('docNo')}</TableHead>
-                                  <TableHead className="h-8 text-[9px] uppercase font-black">{t('date')}</TableHead>
-                                  <TableHead className="h-8 text-[9px] uppercase font-black text-right">{t('total')}</TableHead>
-                                  <TableHead className="h-8 text-[9px] uppercase font-black text-right">{t('balanceDue')}</TableHead>
-                                  <TableHead className="h-8 text-[9px] uppercase font-black text-center">{t('status')}</TableHead>
-                                  <TableHead className="h-8 text-right pr-6 w-32">{t('actions')}</TableHead>
-                                </TableRow>
-                              </TableHeader>
                               <TableBody>
-                                {docs.map((inv: any, invIdx: number) => (
-                                  <TableRow 
-                                    key={inv.id} 
-                                    className={cn(
-                                      "h-14 transition-all border-b border-white/50",
-                                      invIdx % 2 === 0 ? "bg-[#EAF6FF] hover:bg-[#D9EFFF]" : "bg-[#EEF9F1] hover:bg-[#E1F2E6]"
-                                    )}
-                                  >
-                                    <TableCell className="pl-6 font-black text-[10px] text-blue-600 uppercase tracking-tighter">{inv.invoiceNumber}</TableCell>
-                                    <TableCell className="text-[10px] font-bold text-slate-500">{new Date(inv.invoiceDate).toLocaleDateString()}</TableCell>
-                                    <TableCell className="text-right font-black text-[10px] text-slate-900">{formatCurrency(inv.totalAmount)}</TableCell>
-                                    <TableCell className="text-right font-black text-[10px] text-red-600">{formatCurrency(inv.balanceDue)}</TableCell>
-                                    <TableCell className="text-center">
-                                      <Badge className={cn(
-                                        "text-[8px] uppercase font-black px-2 h-4 border-none",
-                                        inv.status === 'paid' ? "bg-green-50 text-green-700" : inv.status === 'partial' ? "bg-orange-50 text-orange-700" : "bg-red-50 text-red-700"
-                                      )}>
-                                        {inv.status || 'UNPAID'}
-                                      </Badge>
+                                {docs.map((inv: any) => (
+                                  <TableRow key={inv.id} className="h-12 transition-all border-b border-white/50 active:bg-blue-50">
+                                    <TableCell className="pl-4 py-2">
+                                       <p className="text-[10px] font-black text-blue-600 uppercase tracking-tighter">{inv.invoiceNumber}</p>
+                                       <p className="text-[8px] font-bold text-slate-400">{new Date(inv.invoiceDate).toLocaleDateString()}</p>
                                     </TableCell>
-                                    <TableCell className="text-right pr-6">
-                                      <div className="flex justify-end gap-1">
-                                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-blue-600" onClick={() => router.push(`/sales/${inv.id}/view`)}><Eye className="h-3.5 w-3.5" /></Button>
-                                        <DropdownMenu>
-                                          <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-slate-400"><MoreVertical className="h-4 w-4" /></Button>
-                                          </DropdownMenuTrigger>
-                                          <DropdownMenuContent align="end" className="w-64 rounded-2xl shadow-2xl p-2 border-slate-100">
-                                            <DropdownMenuItem onClick={() => router.push(`/sales/payments/collect/${inv.id}`)} className="rounded-xl h-10 text-xs font-bold py-1.5 text-green-600 focus:bg-green-50 focus:text-green-700"><CreditCard className="mr-2 h-4 w-4" /> Collect Payment</DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => router.push(`/challans/new?fromInvoice=${inv.id}`)} className="rounded-xl h-10 text-xs font-bold py-1.5 text-blue-600 focus:bg-blue-50 focus:text-blue-700"><Truck className="mr-2 h-4 w-4" /> Generate Challan</DropdownMenuItem>
-                                            <DropdownMenuSeparator className="my-1 bg-slate-50" />
-                                            <DropdownMenuItem onClick={() => router.push(`/sales/payments/history/${inv.id}`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><History className="mr-2 h-4 w-4" /> Payment History</DropdownMenuItem>
-                                            <DropdownMenuSeparator className="my-1 bg-slate-50" />
-                                            <DropdownMenuItem onClick={() => router.push(`/sales/new?copyFrom=${inv.id}`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><Copy className="mr-2 h-4 w-4 text-blue-600" /> Duplicate</DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => router.push(`/sales/${inv.id}/edit`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><Edit className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => router.push(`/sales/${inv.id}/view?print=true`)} className="rounded-xl h-10 text-xs font-bold py-1.5"><Printer className="mr-2 h-4 w-4" /> Print</DropdownMenuItem>
-                                            <DropdownMenuSeparator className="my-1 bg-slate-50" />
-                                            <DropdownMenuItem onClick={() => { setSelectedRecord(inv); setIsDeleteAlertOpen(true); }} className="rounded-xl h-10 text-red-600 text-xs font-bold py-1.5 focus:bg-red-50 focus:text-red-700"><Trash2 className="mr-2 h-4 w-4" /> Delete</DropdownMenuItem>
-                                          </DropdownMenuContent>
-                                        </DropdownMenu>
-                                      </div>
+                                    <TableCell className="text-right py-2">
+                                       <p className="text-[10px] font-black text-slate-900">{formatCurrency(inv.totalAmount)}</p>
+                                       <p className="text-[9px] font-black text-red-500">{formatCurrency(inv.balanceDue)}</p>
+                                    </TableCell>
+                                    <TableCell className="text-right pr-4 py-2">
+                                       <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-blue-600 active:bg-blue-100" onClick={() => router.push(`/sales/${inv.id}/view`)}><Eye className="h-4 w-4" /></Button>
                                     </TableCell>
                                   </TableRow>
                                 ))}
@@ -307,14 +241,14 @@ export default function SalesPage() {
       )}
 
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-        <AlertDialogContent className="rounded-[2.5rem] border-none p-10 shadow-2xl max-w-sm">
+        <AlertDialogContent className="rounded-[2.5rem] border-none p-8 md:p-10 shadow-2xl max-w-sm">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-xl font-black uppercase tracking-tight text-slate-900">{t('confirmDelete')}?</AlertDialogTitle>
-            <AlertDialogDescription className="text-xs font-bold text-slate-500">This action is permanent and will remove all linked payment data.</AlertDialogDescription>
+            <AlertDialogDescription className="text-xs font-bold text-slate-500">Record will be permanently removed.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 mt-6">
-            <AlertDialogCancel className="h-12 rounded-2xl font-black uppercase text-[10px] tracking-widest border-slate-200">{t('cancel')}</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700 h-12 text-[10px] font-black uppercase text-[10px] tracking-widest" onClick={handleDelete}>{t('delete')}</AlertDialogAction>
+            <AlertDialogCancel className="h-10 rounded-xl font-black uppercase text-[10px] border-slate-200">Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 h-10 text-[10px] font-black uppercase" onClick={handleDelete}>{t('delete')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

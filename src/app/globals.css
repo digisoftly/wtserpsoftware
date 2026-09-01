@@ -41,6 +41,8 @@
   }
   body {
     @apply bg-slate-50/50 text-foreground font-body antialiased selection:bg-blue-100 selection:text-blue-900;
+    /* Native App feel - preventing unwanted elastic scrolling on some containers */
+    overscroll-behavior-y: none;
   }
 }
 
@@ -62,6 +64,12 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  /* Touch scrolling optimization */
+  .touch-scroll {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
   }
 }
 
