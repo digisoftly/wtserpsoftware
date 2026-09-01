@@ -9,7 +9,7 @@ import { DocumentTemplateProps } from "../document-template"
 
 /**
  * Service Bill Layout - Warrior Official Edition
- * Optimized for single page fit with 12/14px fonts.
+ * Updated with structured customer info and Billing Month main header.
  */
 export function ServiceBillLayout(props: DocumentTemplateProps) {
   const { 
@@ -19,13 +19,19 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
     customerName, 
     customerInfo, 
     grandTotal, 
-    notes
+    notes,
+    status,
+    projectName
   } = props;
   
   const { settings } = useSettings()
   const { formatDate, amountToWords } = useTranslation()
 
   const groups = (props as any).groups || [];
+  const billingMonth = (props as any).billingMonth || "N/A";
+  
+  // Extract structured info if passed as object or parse from string
+  const cInfo = (props as any).customerData || {};
 
   const renderHeader = () => (
     <div className="flex items-center gap-6 px-4 pt-2 mb-2">
@@ -69,19 +75,32 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
       </div>
 
       <div className="grid grid-cols-2 gap-8 mb-6 px-4">
-        <div className="space-y-1">
-          <p className="text-[12px] font-bold text-slate-500 uppercase tracking-widest">Bill To:</p>
-          <p className="text-[14px] font-black uppercase text-slate-900">{customerName || "---"}</p>
-          <div className="text-[11px] leading-relaxed text-slate-700 whitespace-pre-wrap mt-1">
-            {customerInfo || "Address Not Available"}
+        <div className="space-y-1.5">
+          <p className="text-[11px] font-black text-blue-600 uppercase tracking-widest border-b border-blue-50 w-fit pb-0.5">Bill To:</p>
+          <div className="space-y-0.5">
+            <p className="text-[14px] font-black uppercase text-slate-900">{customerName || "---"}</p>
+            {cInfo.companyName && <p className="text-[11px] font-bold text-slate-600 uppercase">{cInfo.companyName}</p>}
+            <p className="text-[11px] font-medium text-slate-700">Contact: {cInfo.phoneNumber || "N/A"}</p>
+            {cInfo.email && <p className="text-[11px] font-medium text-slate-700">Email: {cInfo.email}</p>}
+            <p className="text-[11px] leading-relaxed text-slate-600 whitespace-pre-wrap mt-1">{cInfo.address || "Address Not Available"}</p>
+            
+            {cInfo.contactPerson && (
+              <div className="pt-2 border-t border-slate-100 mt-2">
+                 <p className="text-[10px] font-black uppercase text-slate-400">Attention:</p>
+                 <p className="text-[11px] font-bold text-slate-800">{cInfo.contactPerson}</p>
+              </div>
+            )}
           </div>
         </div>
         <div className="space-y-0.5 flex flex-col justify-end">
-          <div className="grid grid-cols-[110px_10px_1fr] text-[11px] leading-relaxed">
+          <div className="grid grid-cols-[120px_10px_1fr] text-[11px] leading-relaxed">
             <span className="font-bold uppercase text-slate-500">{settings?.pdfLabel_billNo || "Bill Number"}</span> <span>:</span> <span className="font-black text-blue-800">{docNumber}</span>
             <span className="font-bold uppercase text-slate-500">{settings?.pdfLabel_billDate || "Bill Date"}</span> <span>:</span> <span className="font-bold">{formatDate(date)}</span>
-            <span className="font-bold uppercase text-slate-500">{settings?.pdfLabel_slaRef || "SLA Ref"}</span> <span>:</span> <span className="font-bold">{(props as any).agreementNo || '---'}</span>
-            <span className="font-bold uppercase text-slate-500">{settings?.pdfLabel_status || "Status"}</span> <span>:</span> <span className="font-black text-green-700 uppercase">Authenticated</span>
+            <span className="font-bold uppercase text-slate-500">Project Name</span> <span>:</span> <span className="font-bold uppercase">{projectName || "General Service"}</span>
+            <span className="font-bold uppercase text-slate-500">{settings?.pdfLabel_status || "Status"}</span> <span>:</span> 
+            <span className={cn("font-black uppercase", status === 'paid' ? "text-green-700" : "text-red-600")}>
+              {status || "Authenticated"}
+            </span>
           </div>
         </div>
       </div>
@@ -96,12 +115,18 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
             <col style={{ width: '14%' }} />
           </colgroup>
           <thead>
+            {/* MAIN HEADER ROW FOR BILLING MONTH */}
+            <tr className="bg-slate-100">
+              <th colSpan={5} className="border border-black h-9 text-center text-[12px] font-black uppercase tracking-[0.2em] text-blue-900">
+                Billing Month: {billingMonth}
+              </th>
+            </tr>
             <tr className="bg-[#F57C00] text-white h-9">
               <th className="border border-black text-[11px] font-black uppercase text-center">{settings?.pdfTable_sl || "SL"}</th>
-              <th className="border border-black px-3 text-left text-[11px] font-black uppercase">{settings?.pdfTable_serviceName || "Service Name"}</th>
-              <th className="border border-black px-3 text-left text-[11px] font-black uppercase">{settings?.pdfTable_description || "Description / Location"}</th>
-              <th className="border border-black px-2 text-right text-[11px] font-black uppercase">{settings?.pdfTable_unitPrice || "Unit Price"}</th>
-              <th className="border border-black px-3 text-right text-[11px] font-black uppercase">{settings?.pdfTable_amount || "Amount"}</th>
+              <th className="border border-black text-center text-[11px] font-black uppercase">{settings?.pdfTable_serviceName || "Service Name"}</th>
+              <th className="border border-black text-center text-[11px] font-black uppercase">{settings?.pdfTable_description || "Description / Location"}</th>
+              <th className="border border-black text-center text-[11px] font-black uppercase">{settings?.pdfTable_unitPrice || "Unit Price"}</th>
+              <th className="border border-black text-center text-[11px] font-black uppercase">{settings?.pdfTable_amount || "Amount"}</th>
             </tr>
           </thead>
           <tbody>
@@ -116,12 +141,11 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
                       <td className="border border-black text-center text-[12px] font-bold py-1.5">
                         {globalSl.toString().padStart(2, '0')}
                       </td>
-                      <td className="border border-black px-3 text-[12px] font-black text-slate-900 text-left uppercase py-1.5">
+                      <td className="border border-black px-3 text-[12px] font-black text-slate-900 text-center uppercase py-1.5">
                         {group.serviceName}
                       </td>
                       <td className="border border-black px-3 text-[13px] text-slate-700 font-bold text-left uppercase py-1.5 leading-tight">
                         {point.location} 
-                        {point.description && <p className="text-slate-400 font-normal normal-case italic mt-0.5 text-[10px]">{point.description}</p>}
                       </td>
                       {pIdx === 0 && (
                         <td rowSpan={group.points.length} className="border border-black px-2 text-right text-[13px] font-black text-slate-800 align-middle tabular-nums">

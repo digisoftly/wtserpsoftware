@@ -12,7 +12,7 @@ import {
   FileText
 } from "lucide-react"
 import { useFirestore, useDoc, useMemoFirebase } from "@/firebase"
-import { doc } from "firebase/firestore"
+import { doc, getDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -28,12 +28,27 @@ export default function ViewContractInvoicePage() {
   const db = useFirestore();
   const { t } = useTranslation();
 
+  const [customerData, setCustomerData] = React.useState<any>(null);
+
   const invoiceRef = useMemoFirebase(() => {
     if (!db || !companyId || !branchId || !id) return null;
     return doc(db, "companies", companyId, "branches", branchId, "contract_invoices", id as string);
   }, [db, companyId, branchId, id]);
 
   const { data: invoice, isLoading } = useDoc(invoiceRef);
+
+  // Fetch full customer details for the PDF
+  React.useEffect(() => {
+    if (invoice?.customerId && db && companyId && branchId) {
+      const fetchCustomer = async () => {
+        const cSnap = await getDoc(doc(db, "companies", companyId, "branches", branchId, "customers", invoice.customerId));
+        if (cSnap.exists()) {
+          setCustomerData(cSnap.data());
+        }
+      };
+      fetchCustomer();
+    }
+  }, [invoice, db, companyId, branchId]);
 
   if (isLoading) {
     return (
@@ -91,11 +106,17 @@ export default function ViewContractInvoicePage() {
           date={invoice.createdAt?.toDate?.()?.toISOString() || new Date().toISOString()}
           customerName={invoice.customerName}
           customerInfo={`Contract Ref: ${invoice.contractNumber}\nBilling Month: ${invoice.billingMonth}`}
+          projectName={invoice.projectName || "General Service"}
           // Pass the groups for vertically merged layout
           {...{
             groups: invoice.groups || [],
             serviceName: invoice.serviceName,
-            agreementNo: invoice.agreementNo
+            agreementNo: invoice.agreementNo,
+            billingMonth: invoice.billingMonth,
+            customerData: customerData || {
+               address: invoice.customerAddress,
+               phoneNumber: invoice.customerPhone
+            }
           } as any}
           items={[]} // Main table handled by groups in layout
           subtotal={invoice.subtotal}
