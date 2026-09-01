@@ -6,86 +6,29 @@ import {
   Settings2,
   CheckCircle2,
   Loader2,
-  Palette,
   ImageIcon,
-  LayoutGrid,
-  Activity,
-  Plus,
-  Trash2,
-  BarChart3,
-  Edit,
-  MoveUp,
-  MoveDown,
-  Mail,
-  Phone,
-  Globe,
-  MapPin,
-  FileText,
-  Clock,
-  ShieldCheck,
-  MousePointer2,
-  RefreshCcw,
-  AlertTriangle,
+  Save,
   Type
 } from "lucide-react"
-import * as Icons from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useFirestore, useDoc, useMemoFirebase } from "@/firebase"
-import { doc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore"
+import { doc, serverTimestamp, setDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
 import { toast } from "@/hooks/use-toast"
 import { useTranslation } from "@/hooks/use-translation"
 import { Textarea } from "@/components/ui/textarea"
-import { KPICard } from "@/components/dashboard/kpi-card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
-import { Switch } from "@/components/ui/switch"
+import { errorEmitter } from "@/firebase/error-emitter"
+import { FirestorePermissionError } from "@/firebase/errors"
 
 const DEFAULT_MENU_ORDER = [
-  "dashboard", 
-  "sales", 
-  "quotations", 
-  "dispatch", 
-  "purchases", 
-  "returns", 
-  "inventory", 
-  "serialTracking", 
-  "contracts", 
-  "projectBilling", 
-  "customers", 
-  "suppliers", 
-  "accounts", 
-  "expenses", 
-  "masterManagement", 
-  "support", 
-  "crm", 
-  "hrm", 
-  "branches", 
-  "reports", 
-  "ai", 
-  "users", 
-  "settings", 
-  "audit"
-];
-
-const DATA_SOURCES = [
-  { label: "Total Sales", value: "totalSales" },
-  { label: "Today Sales", value: "todaySales" },
-  { label: "Monthly Sales", value: "monthlySales" },
-  { label: "Total Purchases", value: "totalPurchase" },
-  { label: "Net Profit", value: "netProfit" },
-  { label: "Total Expenses", value: "totalExpense" },
-  { label: "Active Customers", value: "totalCustomers" },
-  { label: "Total Suppliers", value: "totalSuppliers" },
-  { label: "Low Stock Items", value: "lowStockCount" },
-  { label: "Pending Projects", value: "pendingProjects" },
-  { label: "Customer Due", value: "customerDue" },
-  { label: "Supplier Due", value: "supplierDue" },
-  { label: "Total Staff", value: "staffCount" },
+  "dashboard", "sales", "quotations", "dispatch", "purchases", "returns", 
+  "inventory", "serialTracking", "contracts", "projectBilling", "customers", 
+  "suppliers", "accounts", "expenses", "masterManagement", "support", "crm", 
+  "hrm", "branches", "reports", "ai", "users", "settings", "audit"
 ];
 
 export default function SettingsPage() {
@@ -95,9 +38,6 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = React.useState(false);
   
   const [kpiCards, setKpiCards] = React.useState<any[]>([]);
-  const [isKpiModalOpen, setIsKpiModalOpen] = React.useState(false);
-  const [editingCard, setEditingCard] = React.useState<any>(null);
-
   const [logoPreview, setLogoPreview] = React.useState<string | null>(null);
   const [faviconPreview, setFaviconPreview] = React.useState<string | null>(null);
   const [loadingLogoPreview, setLoadingLogoPreview] = React.useState<string | null>(null);
@@ -124,13 +64,8 @@ export default function SettingsPage() {
       setLoadingLogoPreview(settings.loadingLogo || null);
       setSealPreview(settings.authorizedSeal || null);
       setSignPreview(settings.authorizedSignature || null);
-      
-      if (settings.sidebarMenuOrder) {
-        setMenuOrder(settings.sidebarMenuOrder);
-      }
-      
+      if (settings.sidebarMenuOrder) setMenuOrder(settings.sidebarMenuOrder);
       if (settings.dashboardKpiCards) setKpiCards(settings.dashboardKpiCards);
-      
       if (settings.sidebarBgColor) setSidebarBg(settings.sidebarBgColor);
       if (settings.sidebarTextColor) setSidebarText(settings.sidebarTextColor);
       if (settings.sidebarHoverColor) setSidebarHover(settings.sidebarHoverColor);
@@ -138,7 +73,7 @@ export default function SettingsPage() {
     }
   }, [settings]);
 
-  const handleSaveSettings = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveSettings = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!settingsRef) return;
 
@@ -164,14 +99,21 @@ export default function SettingsPage() {
       updates[key] = value;
     });
 
-    try {
-      await setDoc(settingsRef, updates, { merge: true });
-      toast({ title: t('success') });
-    } catch (err) {
-      toast({ variant: "destructive", title: t('error') });
-    } finally {
-      setIsSaving(false);
-    }
+    // Patterns: NO await, chain .catch with Contextual Error
+    setDoc(settingsRef, updates, { merge: true })
+      .then(() => {
+        toast({ title: t('success') });
+        setIsSaving(false);
+      })
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: settingsRef.path,
+          operation: 'write',
+          requestResourceData: updates,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        setIsSaving(false);
+      });
   };
 
   if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-blue-600" /></div>;
@@ -194,10 +136,7 @@ export default function SettingsPage() {
         <Tabs defaultValue="general" className="w-full">
           <TabsList className="bg-white border rounded-xl p-1 mb-6 shadow-sm flex overflow-x-auto h-auto no-scrollbar ring-1 ring-slate-100">
             <TabsTrigger value="general" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Company & Style</TabsTrigger>
-            <TabsTrigger value="branding" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Sidebar UI</TabsTrigger>
-            <TabsTrigger value="dashboard" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Dashboard Matrix</TabsTrigger>
             <TabsTrigger value="documents" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Document Lab</TabsTrigger>
-            <TabsTrigger value="navigation" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Navigation</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="space-y-6">
@@ -220,7 +159,6 @@ export default function SettingsPage() {
                       }
                     }} />
                   </div>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase">Primary Branding Logo</p>
                 </Card>
               </div>
 
@@ -237,92 +175,44 @@ export default function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="documents" className="space-y-6">
-             <div className="grid grid-cols-1 gap-8">
-                <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-8">
-                   <div className="flex items-center gap-3 border-b pb-4">
-                      <Type className="h-5 w-5 text-blue-600" />
-                      <h3 className="text-sm font-black uppercase tracking-widest text-slate-700">Contract & Service Bill Labels</h3>
+             <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-8">
+                <div className="flex items-center gap-3 border-b pb-4">
+                   <Type className="h-5 w-5 text-blue-600" />
+                   <h3 className="text-sm font-black uppercase tracking-widest text-slate-700">Contract & Service Bill Labels</h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                   <div className="space-y-4">
+                     <h4 className="text-[10px] font-black uppercase text-blue-600 tracking-widest">Header Labels</h4>
+                     <div className="space-y-3">
+                       <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Bill Number Label</Label><Input name="pdfLabel_billNo" defaultValue={settings?.pdfLabel_billNo || "Bill Number"} className="h-9 text-xs rounded-xl" /></div>
+                       <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Bill Date Label</Label><Input name="pdfLabel_billDate" defaultValue={settings?.pdfLabel_billDate || "Bill Date"} className="h-9 text-xs rounded-xl" /></div>
+                       <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">SLA Ref Label</Label><Input name="pdfLabel_slaRef" defaultValue={settings?.pdfLabel_slaRef || "SLA Ref"} className="h-9 text-xs rounded-xl" /></div>
+                       <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Status Label</Label><Input name="pdfLabel_status" defaultValue={settings?.pdfLabel_status || "Status"} className="h-9 text-xs rounded-xl" /></div>
+                     </div>
                    </div>
-                   
-                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                      <div className="space-y-4">
-                        <h4 className="text-[10px] font-black uppercase text-blue-600 tracking-widest">Header Labels</h4>
-                        <div className="space-y-3">
-                          <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Bill Number Label</Label><Input name="pdfLabel_billNo" defaultValue={settings?.pdfLabel_billNo || "Bill Number"} className="h-9 text-xs rounded-xl" /></div>
-                          <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Bill Date Label</Label><Input name="pdfLabel_billDate" defaultValue={settings?.pdfLabel_billDate || "Bill Date"} className="h-9 text-xs rounded-xl" /></div>
-                          <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">SLA Ref Label</Label><Input name="pdfLabel_slaRef" defaultValue={settings?.pdfLabel_slaRef || "SLA Ref"} className="h-9 text-xs rounded-xl" /></div>
-                          <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Status Label</Label><Input name="pdfLabel_status" defaultValue={settings?.pdfLabel_status || "Status"} className="h-9 text-xs rounded-xl" /></div>
-                        </div>
-                      </div>
 
-                      <div className="space-y-4">
-                        <h4 className="text-[10px] font-black uppercase text-blue-600 tracking-widest">Table Headers</h4>
-                        <div className="space-y-3">
-                          <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">SL Column</Label><Input name="pdfTable_sl" defaultValue={settings?.pdfTable_sl || "SL"} className="h-9 text-xs rounded-xl" /></div>
-                          <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Service Name Column</Label><Input name="pdfTable_serviceName" defaultValue={settings?.pdfTable_serviceName || "Service Name"} className="h-9 text-xs rounded-xl" /></div>
-                          <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Description Column</Label><Input name="pdfTable_description" defaultValue={settings?.pdfTable_description || "Description / Location"} className="h-9 text-xs rounded-xl" /></div>
-                          <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Unit Price Column</Label><Input name="pdfTable_unitPrice" defaultValue={settings?.pdfTable_unitPrice || "Unit Price"} className="h-9 text-xs rounded-xl" /></div>
-                          <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Amount Column</Label><Input name="pdfTable_amount" defaultValue={settings?.pdfTable_amount || "Amount"} className="h-9 text-xs rounded-xl" /></div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <h4 className="text-[10px] font-black uppercase text-blue-600 tracking-widest">Summary Labels</h4>
-                        <div className="space-y-3">
-                          <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Total BDT Label</Label><Input name="pdfLabel_totalBdt" defaultValue={settings?.pdfLabel_totalBdt || "Total (BDT)"} className="h-9 text-xs rounded-xl" /></div>
-                          <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">In Words Label</Label><Input name="pdfLabel_inWords" defaultValue={settings?.pdfLabel_inWords || "Amount in Words"} className="h-9 text-xs rounded-xl" /></div>
-                          <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Footer Heart Message</Label><Input name="footerHeartMsg" defaultValue={settings?.footerHeartMsg || "Thank You For Your Business"} className="h-10 text-xs rounded-xl" /></div>
-                        </div>
-                      </div>
+                   <div className="space-y-4">
+                     <h4 className="text-[10px] font-black uppercase text-blue-600 tracking-widest">Table Headers</h4>
+                     <div className="space-y-3">
+                       <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">SL Column</Label><Input name="pdfTable_sl" defaultValue={settings?.pdfTable_sl || "SL"} className="h-9 text-xs rounded-xl" /></div>
+                       <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Service Name Column</Label><Input name="pdfTable_serviceName" defaultValue={settings?.pdfTable_serviceName || "Service Name"} className="h-9 text-xs rounded-xl" /></div>
+                       <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Description Column</Label><Input name="pdfTable_description" defaultValue={settings?.pdfTable_description || "Description / Location"} className="h-9 text-xs rounded-xl" /></div>
+                       <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Unit Price Column</Label><Input name="pdfTable_unitPrice" defaultValue={settings?.pdfTable_unitPrice || "Unit Price"} className="h-9 text-xs rounded-xl" /></div>
+                       <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Amount Column</Label><Input name="pdfTable_amount" defaultValue={settings?.pdfTable_amount || "Amount"} className="h-9 text-xs rounded-xl" /></div>
+                     </div>
                    </div>
-                </Card>
 
-                <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-6">
-                   <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">Digital Validation Assets</h3>
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className="space-y-4">
-                        <Label className="text-[10px] font-black uppercase text-slate-400">Authorized Seal</Label>
-                        <div className="h-32 w-full bg-slate-50 border-2 border-dashed rounded-xl relative group flex items-center justify-center">
-                          {sealPreview ? <img src={sealPreview} className="h-28 object-contain" /> : <ImageIcon className="text-slate-200" />}
-                          <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onloadend = () => setSealPreview(reader.result as string);
-                              reader.readAsDataURL(file);
-                            }
-                          }} />
-                        </div>
-                      </div>
-                      <div className="space-y-4">
-                        <Label className="text-[10px] font-black uppercase text-slate-400">Authorized Signature</Label>
-                        <div className="h-32 w-full bg-slate-50 border-2 border-dashed rounded-xl relative group flex items-center justify-center">
-                          {signPreview ? <img src={signPreview} className="h-28 object-contain" /> : <ImageIcon className="text-slate-200" />}
-                          <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onloadend = () => setSignPreview(reader.result as string);
-                              reader.readAsDataURL(file);
-                            }
-                          }} />
-                        </div>
-                      </div>
+                   <div className="space-y-4">
+                     <h4 className="text-[10px] font-black uppercase text-blue-600 tracking-widest">Summary Labels</h4>
+                     <div className="space-y-3">
+                       <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Total BDT Label</Label><Input name="pdfLabel_totalBdt" defaultValue={settings?.pdfLabel_totalBdt || "Total (BDT)"} className="h-9 text-xs rounded-xl" /></div>
+                       <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">In Words Label</Label><Input name="pdfLabel_inWords" defaultValue={settings?.pdfLabel_inWords || "Amount in Words"} className="h-9 text-xs rounded-xl" /></div>
+                       <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Footer Heart Message</Label><Input name="footerHeartMsg" defaultValue={settings?.footerHeartMsg || "Thank You For Your Business"} className="h-10 text-xs rounded-xl" /></div>
+                     </div>
                    </div>
-                </Card>
-             </div>
-          </TabsContent>
-          
-          <TabsContent value="branding" className="space-y-6">
-            {/* Sidebar UI customization existing code */}
-          </TabsContent>
-
-          <TabsContent value="dashboard" className="space-y-6">
-             {/* Dashboard Matrix existing code */}
-          </TabsContent>
-
-          <TabsContent value="navigation" className="space-y-6">
-            {/* Navigation sequence existing code */}
+                </div>
+             </Card>
           </TabsContent>
         </Tabs>
       </form>
