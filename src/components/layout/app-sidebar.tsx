@@ -303,7 +303,6 @@ export function AppSidebar() {
     const savedOrder = settings?.sidebarMenuOrder || [];
     const allKeys = Object.keys(NAV_ITEMS_MAP);
     
-    // STRICT DEFAULT ORDER
     const defaultOrder = [
       "dashboard", "sales", "quotations", "dispatch", "purchases", "returns", 
       "inventory", "serialTracking", "contracts", "projectBilling", "customers", 
@@ -315,7 +314,6 @@ export function AppSidebar() {
       ? defaultOrder.filter(k => allKeys.includes(k))
       : [...savedOrder.filter(k => allKeys.includes(k)), ...allKeys.filter(k => !savedOrder.includes(k))];
     
-    // FORCE PROJECT BILLING UNDER CONTRACTS REGARDLESS OF DB (For safety)
     const contractIdx = currentOrder.indexOf("contracts");
     const projectIdx = currentOrder.indexOf("projectBilling");
 
@@ -331,6 +329,9 @@ export function AppSidebar() {
     return currentOrder;
   }, [settings?.sidebarMenuOrder]);
 
+  // Helper to determine if we should show labels/chevrons
+  const isExpanded = state === "expanded" || isMobile;
+
   return (
     <Sidebar 
       collapsible="icon" 
@@ -345,8 +346,8 @@ export function AppSidebar() {
           <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-lg shadow-lg shrink-0">
             {settings?.companyLogo ? <img src={settings.companyLogo} className="w-full h-full object-contain p-1.5" alt="Logo" /> : "W"}
           </div>
-          {state === "expanded" && (
-            <div className="flex flex-col">
+          {isExpanded && (
+            <div className="flex flex-col animate-in fade-in duration-300">
               <span className="font-black text-slate-900 text-[14px] tracking-tight leading-none uppercase">Warrior Tech</span>
               <span className="text-[10px] font-bold text-slate-400 tracking-widest mt-1 uppercase">ERP System</span>
             </div>
@@ -387,7 +388,7 @@ export function AppSidebar() {
                         >
                           <div className="flex items-center gap-3 w-full h-full">
                             <item.icon className={cn("h-5 w-5 shrink-0", sectionColor, isActive && "text-blue-600")} />
-                            {state === "expanded" && (
+                            {isExpanded && (
                               <>
                                 <span className="text-[12px] font-black uppercase tracking-tight">{t(item.name)}</span>
                                 <ChevronRight className="ml-auto h-3 w-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
@@ -397,7 +398,7 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                       </CollapsibleTrigger>
                       <CollapsibleContent>
-                        <SidebarMenu className="mt-1 ml-4 border-l border-slate-100 gap-0.5">
+                        <SidebarMenu className="mt-1 ml-4 border-l border-slate-100 gap-0.5 animate-in slide-in-from-top-1 duration-200">
                           {subItems.map((sub) => {
                              const hasChildren = (sub as any).children && (sub as any).children.length > 0;
                              const isSubActive = pathname.startsWith(sub.path);
@@ -417,7 +418,7 @@ export function AppSidebar() {
                                         </SidebarMenuButton>
                                       </CollapsibleTrigger>
                                       <CollapsibleContent>
-                                        <SidebarMenu className="ml-4 mt-1 border-l border-slate-50 gap-0.5">
+                                        <SidebarMenu className="ml-4 mt-1 border-l border-slate-50 gap-0.5 animate-in slide-in-from-top-1 duration-200">
                                           {(sub as any).children.map((child: any) => (
                                             <SidebarMenuItem key={child.path}>
                                               <SidebarMenuButton 
@@ -488,7 +489,7 @@ export function AppSidebar() {
                   >
                     <Link href={item.path} className="flex items-center gap-3 w-full h-full">
                       <item.icon className={cn("h-5 w-5 shrink-0", item.color, isActive && "text-blue-600")} />
-                      {state === "expanded" && (
+                      {isExpanded && (
                         <span className="text-[12px] font-black uppercase tracking-tight">
                           {t(item.name)}
                         </span>
@@ -517,7 +518,7 @@ export function AppSidebar() {
               )}
             >
               <LogOut className="h-5 w-5 shrink-0" />
-              <span className="text-[12px] font-black uppercase tracking-tight truncate group-data-[collapsible=icon]:hidden">
+              <span className={cn("text-[12px] font-black uppercase tracking-tight truncate", !isExpanded && "hidden")}>
                 Logout
               </span>
             </Button>
