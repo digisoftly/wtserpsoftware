@@ -9,8 +9,7 @@ import { DocumentTemplateProps } from "../document-template"
 
 /**
  * Service Bill Layout - Warrior Official Edition
- * Optimized Table structure: SL, Service Name, Description/Location, Unit Price, Amount.
- * Repetitive Service Name on every row as requested.
+ * Updated to use dynamic labels from admin settings.
  */
 export function ServiceBillLayout(props: DocumentTemplateProps) {
   const { 
@@ -79,18 +78,12 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
         </div>
         <div className="space-y-1 flex flex-col justify-end">
           <div className="grid grid-cols-[120px_10px_1fr] text-[11px] leading-relaxed">
-            <span className="font-bold uppercase">Bill Number</span> <span>:</span> <span className="font-black text-blue-800">{docNumber}</span>
-            <span className="font-bold uppercase">Bill Date</span> <span>:</span> <span>{formatDate(date)}</span>
-            <span className="font-bold uppercase">SLA Ref</span> <span>:</span> <span>{(props as any).agreementNo || '---'}</span>
-            <span className="font-bold uppercase">Status</span> <span>:</span> <span className="font-black text-green-700 uppercase">Authenticated</span>
+            <span className="font-bold uppercase">{settings?.pdfLabel_billNo || "Bill Number"}</span> <span>:</span> <span className="font-black text-blue-800">{docNumber}</span>
+            <span className="font-bold uppercase">{settings?.pdfLabel_billDate || "Bill Date"}</span> <span>:</span> <span>{formatDate(date)}</span>
+            <span className="font-bold uppercase">{settings?.pdfLabel_slaRef || "SLA Ref"}</span> <span>:</span> <span>{(props as any).agreementNo || '---'}</span>
+            <span className="font-bold uppercase">{settings?.pdfLabel_status || "Status"}</span> <span>:</span> <span className="font-black text-green-700 uppercase">Authenticated</span>
           </div>
         </div>
-      </div>
-
-      <div className="bg-[#FDEBD0] border border-black p-2 text-center mb-[1px]">
-        <h3 className="text-[14px] font-black text-[#0056B3] uppercase tracking-tight">
-          SERVICE AND LOCATION MATRIX
-        </h3>
       </div>
 
       <div className="flex-1">
@@ -104,11 +97,11 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
           </colgroup>
           <thead>
             <tr className="bg-[#F57C00] text-white h-10">
-              <th className="border border-black text-[10px] font-black uppercase text-center">SL</th>
-              <th className="border border-black px-4 text-left text-[10px] font-black uppercase">Service Name</th>
-              <th className="border border-black px-4 text-left text-[10px] font-black uppercase">Description / Location</th>
-              <th className="border border-black px-3 text-right text-[10px] font-black uppercase">Unit Price</th>
-              <th className="border border-black px-4 text-right text-[10px] font-black uppercase">Amount</th>
+              <th className="border border-black text-[10px] font-black uppercase text-center">{settings?.pdfTable_sl || "SL"}</th>
+              <th className="border border-black px-4 text-left text-[10px] font-black uppercase">{settings?.pdfTable_serviceName || "Service Name"}</th>
+              <th className="border border-black px-4 text-left text-[10px] font-black uppercase">{settings?.pdfTable_description || "Description / Location"}</th>
+              <th className="border border-black px-3 text-right text-[10px] font-black uppercase">{settings?.pdfTable_unitPrice || "Unit Price"}</th>
+              <th className="border border-black px-4 text-right text-[10px] font-black uppercase">{settings?.pdfTable_amount || "Amount"}</th>
             </tr>
           </thead>
           <tbody>
@@ -149,13 +142,13 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
             <tr className="bg-[#f8f9fa] border-t-2 border-black h-12">
               <td colSpan={3} className="border border-black px-5 py-3">
                  <div className="flex flex-col gap-1">
-                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Amount in Words</p>
+                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{settings?.pdfLabel_inWords || "Amount in Words"}</p>
                     <p className="text-[11px] font-bold text-blue-800 italic uppercase">
                        {amountToWords(grandTotal || 0)}
                     </p>
                  </div>
               </td>
-              <td className="border border-black px-3 text-right text-[11px] uppercase tracking-wider font-black bg-blue-50 text-blue-900">Total (BDT)</td>
+              <td className="border border-black px-3 text-right text-[11px] uppercase tracking-wider font-black bg-blue-50 text-blue-900">{settings?.pdfLabel_totalBdt || "Total (BDT)"}</td>
               <td className="border border-black px-4 text-right text-[16px] font-black text-blue-900 tabular-nums bg-blue-100">
                 {Number(grandTotal || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </td>
@@ -193,9 +186,9 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
           </div>
         </div>
         <p className="text-[11.5px] font-black text-slate-500 flex items-center justify-center gap-2">
-          Thank You For Your Business
+          {settings?.footerHeartMsg || "Thank You For Your Business"}
         </p>
-        <h4 className="text-[24px] font-black text-slate-900 uppercase tracking-tight leading-none">Warrior Tech System</h4>
+        <h4 className="text-[24px] font-black text-slate-900 uppercase tracking-tight leading-none">{settings?.companyName || "Warrior Tech System"}</h4>
       </div>
     </div>
   )
