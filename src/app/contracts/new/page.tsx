@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -12,7 +11,8 @@ import {
   Trash2,
   MapPin,
   LayoutGrid,
-  PlusCircle
+  PlusCircle,
+  X
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,6 +25,7 @@ import { useTenant } from "@/context/tenant-context"
 import { useTranslation } from "@/hooks/use-translation"
 import { toast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
+import { Textarea } from "@/components/ui/textarea"
 
 interface ServicePoint {
   id: string;
