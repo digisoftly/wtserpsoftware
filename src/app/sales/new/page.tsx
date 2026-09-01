@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -241,11 +240,17 @@ export default function NewInvoicePage() {
       await runTransaction(db!, async (transaction) => {
         const invoiceRef = doc(collection(db!, "companies", companyId!, "branches", branchId!, "sales_invoices"));
         const customer = customers?.find(c => c.id === selectedCustomerId);
+        
+        // Use logic-based name for display and storage
+        const resolvedCustomerName = customer 
+          ? (customer.customerType !== 'individual' ? customer.companyName : `${customer.firstName} ${customer.lastName}`)
+          : "Client";
+
         const invoiceData = {
           id: invoiceRef.id,
           invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
           customerId: selectedCustomerId,
-          customerName: customer ? (customer.customerType === 'company' ? customer.companyName : `${customer.firstName} ${customer.lastName}`) : "Client",
+          customerName: resolvedCustomerName,
           customerPhone: customer?.phoneNumber || "",
           customerAddress: customer?.address || "",
           projectName,
@@ -362,7 +367,7 @@ export default function NewInvoicePage() {
                           <SelectContent className="max-h-[300px] rounded-xl shadow-2xl">
                             {customers?.map((c, idx) => (
                               <SelectItem key={`c-inv-${c.id}-${idx}`} value={c.id} className="text-xs font-bold uppercase py-2.5">
-                                {c.customerType === 'company' ? c.companyName : `${c.firstName} ${c.lastName}`}
+                                {c.customerType !== 'individual' ? c.companyName : `${c.firstName} ${c.lastName}`}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -390,7 +395,7 @@ export default function NewInvoicePage() {
               )}
             </CardContent>
           </Card>
-
+          {/* Rest of the component remains the same */}
           <Card className="border-none shadow-sm ring-1 ring-slate-100 bg-white rounded-[2rem] overflow-hidden">
             <CardContent className="p-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

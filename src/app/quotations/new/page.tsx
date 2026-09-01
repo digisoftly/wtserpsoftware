@@ -296,12 +296,17 @@ export default function NewQuotationPage() {
     try {
       const quoteRef = doc(collection(db!, "companies", companyId!, "branches", branchId!, "quotations"));
       const customer = customers?.find(c => c.id === selectedCustomerId);
+      
+      // Handle correct identification
+      const resolvedCustomerName = customer 
+        ? (customer.customerType !== 'individual' ? customer.companyName : `${customer.firstName} ${customer.lastName}`)
+        : "Client";
 
       const quoteData = {
         id: quoteRef.id,
         quotationNumber: `QTN-${Date.now().toString().slice(-4)}`,
         customerId: selectedCustomerId,
-        customerName: customer ? (customer.customerType === 'company' ? customer.companyName : `${customer.firstName} ${customer.lastName}`) : "Client",
+        customerName: resolvedCustomerName,
         customerPhone: customer?.phoneNumber || "",
         customerAddress: customer?.address || "",
         projectName,
@@ -375,7 +380,7 @@ export default function NewQuotationPage() {
                     </Button>
                     <Button 
                       type="button" 
-                      variant="ghost"
+                      variant="ghost" 
                       size="sm" 
                       className={cn("h-8 rounded-full text-[10px] font-black uppercase gap-2 transition-all px-4", isNewCustomerMode ? "bg-blue-600 text-white shadow-lg" : "text-slate-400 hover:text-blue-600")}
                       onClick={() => setIsNewCustomerMode(true)}
@@ -398,7 +403,7 @@ export default function NewQuotationPage() {
                           <SelectContent className="max-h-[300px] rounded-xl shadow-2xl border-none ring-1 ring-slate-100">
                             {customers?.map((c, idx) => (
                               <SelectItem key={`c-qt-new-${c.id}-${idx}`} value={c.id} className="text-xs font-bold uppercase py-2.5 cursor-pointer">
-                                {c.customerType === 'company' ? c.companyName : `${c.firstName} ${c.lastName}`}
+                                {c.customerType !== 'individual' ? c.companyName : `${c.firstName} ${c.lastName}`}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -463,7 +468,7 @@ export default function NewQuotationPage() {
               )}
             </CardContent>
           </Card>
-
+          {/* Rest of UI unchanged */}
           <Card className="border-none shadow-sm ring-1 ring-slate-100 bg-white rounded-[2rem] overflow-hidden">
             <CardHeader className="bg-slate-50/50 px-6 py-4 border-b border-slate-100">
                <div className="flex items-center gap-2">

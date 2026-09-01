@@ -48,7 +48,7 @@ export default function CustomersPage() {
 
   const filteredCustomers = React.useMemo(() => {
     return customers?.filter(c => 
-      `${c.firstName} ${c.lastName}`.toLowerCase().includes(deferredSearch.toLowerCase()) ||
+      c.fullName?.toLowerCase().includes(deferredSearch.toLowerCase()) ||
       c.email?.toLowerCase().includes(deferredSearch.toLowerCase()) ||
       c.companyName?.toLowerCase().includes(deferredSearch.toLowerCase())
     );
@@ -100,8 +100,8 @@ export default function CustomersPage() {
               <TableHeader className="bg-slate-50/50">
                 <TableRow>
                   <TableHead className="text-[10px] uppercase font-black h-12 pl-8">Type</TableHead>
-                  <TableHead className="text-[10px] uppercase font-black h-12">Name</TableHead>
-                  <TableHead className="text-[10px] uppercase font-black h-12">Organization</TableHead>
+                  <TableHead className="text-[10px] uppercase font-black h-12">Customer Identity</TableHead>
+                  <TableHead className="text-[10px] uppercase font-black h-12">Contact / Reference</TableHead>
                   <TableHead className="h-12 text-right pr-8">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -120,14 +120,18 @@ export default function CustomersPage() {
                     >
                       <TableCell className="pl-8">
                         <Badge variant="outline" className="text-[8px] font-black h-5 px-2 bg-white border-none uppercase">
-                          {customer.customerType === "company" ? "Corp" : "Indiv"}
+                          {customer.customerType === "company" ? "Corp" : customer.customerType === "organization" ? "Org" : "Indiv"}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="font-bold text-xs uppercase text-slate-900">{customer.firstName} {customer.lastName}</div>
+                        <div className="font-bold text-xs uppercase text-slate-900">
+                          {customer.customerType !== 'individual' ? customer.companyName : customer.fullName}
+                        </div>
                         <div className="text-[9px] text-muted-foreground font-medium">{customer.email}</div>
                       </TableCell>
-                      <TableCell className="text-xs font-bold text-slate-700 uppercase">{customer.companyName || "---"}</TableCell>
+                      <TableCell className="text-xs font-bold text-slate-700 uppercase">
+                        {customer.customerType !== 'individual' ? (customer.contactPerson || "---") : "Personal"}
+                      </TableCell>
                       <TableCell className="text-right pr-8" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-end gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-blue-600" onClick={() => router.push(`/customers/${customer.id}/view`)} title="View Profile"><Eye className="h-4 w-4" /></Button>

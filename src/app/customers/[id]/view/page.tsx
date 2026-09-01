@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -140,7 +139,7 @@ export default function CustomerProfilePage() {
            <div className="space-y-2">
               <div className="flex items-center gap-4">
                 <h1 className="text-3xl font-black font-headline uppercase tracking-tight text-slate-900 leading-none">
-                  {customer.customerType === 'company' ? customer.companyName : customer.fullName}
+                  {customer.customerType !== 'individual' ? customer.companyName : customer.fullName}
                 </h1>
                 <Badge className="bg-cyan-50 text-cyan-700 text-[10px] font-black uppercase border-none px-3 h-6">
                   {customer.customerType}

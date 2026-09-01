@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -157,12 +156,17 @@ export default function NewChallanPage() {
       await runTransaction(db!, async (transaction) => {
         const challanRef = doc(collection(db!, "companies", companyId!, "branches", branchId!, "delivery_challans"));
         const customer = customers?.find(c => c.id === selectedCustomerId);
+        
+        // Correct identification based on type
+        const resolvedCustomerName = customer 
+          ? (customer.customerType !== 'individual' ? customer.companyName : `${customer.firstName} ${customer.lastName}`)
+          : "Client";
 
         const challanData = {
           id: challanRef.id,
           challanNumber: `CHL-${Date.now().toString().slice(-6)}`,
           customerId: selectedCustomerId,
-          customerName: customer ? (customer.customerType === 'company' ? customer.companyName : `${customer.firstName} ${customer.lastName}`) : "Client",
+          customerName: resolvedCustomerName,
           invoiceId: selectedInvoiceId,
           dispatchDate,
           deliveryMethod,
@@ -227,7 +231,7 @@ export default function NewChallanPage() {
               <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
                 <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select Client" /></SelectTrigger>
                 <SelectContent className="max-h-[300px]">
-                  {customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-medium">{c.customerType === 'company' ? c.companyName : `${c.firstName} ${c.lastName}`}</SelectItem>)}
+                  {customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-medium">{c.customerType !== 'individual' ? c.companyName : `${c.firstName} ${c.lastName}`}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
