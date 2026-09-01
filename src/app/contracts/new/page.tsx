@@ -44,17 +44,6 @@ interface ServiceGroup {
   points: ServicePoint[];
 }
 
-const SERVICE_TYPES = [
-  "Monthly Internet Service",
-  "CCTV Maintenance",
-  "Data Connectivity",
-  "AMC",
-  "IT Support",
-  "Network Maintenance",
-  "Security System Maintenance",
-  "Other Monthly Service"
-];
-
 export default function NewContractPage() {
   const router = useRouter();
   const { companyId, branchId } = useTenant();
@@ -65,20 +54,18 @@ export default function NewContractPage() {
   
   const [selectedCustomerId, setSelectedCustomerId] = React.useState("");
   const [agreementNo, setAgreementNo] = React.useState("");
-  const [selectedProjectId, setSelectedProjectId] = React.useState("none");
-  const [serviceType, setServiceType] = React.useState("CCTV Maintenance");
+  const [serviceType, setServiceType] = React.useState("Monthly Maintenance");
   const [startDate, setStartDate] = React.useState(new Date().toISOString().split('T')[0]);
-  const [endDate, setEndDate] = React.useState("");
   const [billingCycle, setBillingCycle] = React.useState("Monthly");
   const [billingDay, setBillingDay] = React.useState(1);
-  const [paymentTerms, setPaymentTerms] = React.useState("COD");
 
+  // Initialize with 1 group containing 13 empty points
   const [serviceGroups, setServiceGroups] = React.useState<ServiceGroup[]>([
     { 
       id: 'g1', 
-      serviceName: 'MRC for Data', 
+      serviceName: '', 
       amount: 0, 
-      points: [{ id: 'p1', location: 'Main Site Connection', description: '' }] 
+      points: Array.from({ length: 13 }, (_, i) => ({ id: `p${i+1}-${Date.now()}`, location: '', description: '' }))
     }
   ]);
 
@@ -92,18 +79,12 @@ export default function NewContractPage() {
   }, [db, companyId, branchId]);
   const { data: customers } = useCollection(customersQuery);
 
-  const projectsQuery = useMemoFirebase(() => {
-    if (!db || !companyId || !branchId) return null;
-    return collection(db, "companies", companyId, "branches", branchId, "projects");
-  }, [db, companyId, branchId]);
-  const { data: projects } = useCollection(projectsQuery);
-
   const addGroup = () => {
     setServiceGroups([...serviceGroups, { 
       id: Math.random().toString(36).substr(2, 9), 
       serviceName: '', 
       amount: 0, 
-      points: [{ id: Math.random().toString(36).substr(2, 9), location: '', description: '' }] 
+      points: Array.from({ length: 13 }, (_, i) => ({ id: `p-new-${i+1}-${Date.now()}`, location: '', description: '' }))
     }]);
   };
 
@@ -134,11 +115,17 @@ export default function NewContractPage() {
     setIsSubmitting(true);
     const customer = customers?.find(c => c.id === selectedCustomerId);
     
-    // Core Identity Selection
     const customerName = customer ? (customer.customerType !== 'individual' ? customer.companyName : `${customer.firstName} ${customer.lastName}`) : "Client";
     const customerAddress = customer?.address || "";
     const customerPhone = customer?.phoneNumber || "";
     const customerEmail = customer?.email || "";
+
+    // Filter out groups with no service name OR filter points with no location before saving? 
+    // Usually it's better to keep only non-empty points in DB.
+    const cleanedGroups = serviceGroups.map(g => ({
+      ...g,
+      points: g.points.filter(p => p.location.trim() !== "")
+    })).filter(g => g.serviceName.trim() !== "" || g.points.length > 0);
 
     const contractData = {
       companyId, branchId,
@@ -149,19 +136,16 @@ export default function NewContractPage() {
       customerAddress,
       customerPhone,
       customerEmail,
-      projectId: selectedProjectId, 
       serviceType, 
       startDate, 
-      endDate, 
       billingCycle,
       billingDay: Number(billingDay), 
-      groups: serviceGroups,
+      groups: cleanedGroups,
       monthlyAmount: grossSubtotal, 
       vatPercent: Number(vatPercent), 
       vatAmount,
       discountAmount: Number(discountAmount), 
       netMonthlyAmount: netMonthlyTotal,
-      paymentTerms, 
       status: "active", 
       notes,
       createdAt: serverTimestamp(), 
@@ -212,9 +196,9 @@ export default function NewContractPage() {
                 <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Target Client</Label>
                 <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId} required>
                   <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold text-xs"><SelectValue placeholder={t('search')} /></SelectTrigger>
-                  <SelectContent className="max-h-[300px] rounded-xl">
-                    {customers?.map(c => (
-                      <SelectItem key={c.id} value={c.id} className="text-xs font-bold uppercase">
+                  <SelectContent className="max-h-[300px] rounded-xl shadow-2xl border-none ring-1 ring-slate-100">
+                    {customers?.map((c, idx) => (
+                      <SelectItem key={`cust-sel-${c.id}-${idx}`} value={c.id} className="text-xs font-bold uppercase py-2.5">
                         {c.customerType !== 'individual' ? c.companyName : `${c.firstName} ${c.lastName}`}
                       </SelectItem>
                     ))}
@@ -231,7 +215,11 @@ export default function NewContractPage() {
                 <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Billing Cycle</Label>
                 <Select value={billingCycle} onValueChange={setBillingCycle}>
                   <SelectTrigger className="h-11 rounded-xl bg-slate-50 font-bold text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent className="rounded-xl"><SelectItem value="Monthly">Monthly</SelectItem><SelectItem value="Quarterly">Quarterly</SelectItem><SelectItem value="Yearly">Yearly</SelectItem></SelectContent>
+                  <SelectContent className="rounded-xl shadow-2xl border-none ring-1 ring-slate-100">
+                    <SelectItem value="Monthly">Monthly</SelectItem>
+                    <SelectItem value="Quarterly">Quarterly</SelectItem>
+                    <SelectItem value="Yearly">Yearly</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
 
@@ -256,7 +244,7 @@ export default function NewContractPage() {
                   <div className="flex items-center gap-4 flex-1 min-w-[300px]">
                     <div className="space-y-1 flex-1">
                        <Label className="text-[9px] font-black uppercase text-slate-400">Service Name</Label>
-                       <Input value={group.serviceName} onChange={e => updateGroup(group.id, 'serviceName', e.target.value)} className="h-10 rounded-xl bg-white font-black uppercase text-xs" placeholder="MRC for Data" />
+                       <Input value={group.serviceName} onChange={e => updateGroup(group.id, 'serviceName', e.target.value)} className="h-10 rounded-xl bg-white font-black uppercase text-xs" placeholder="e.g. Monthly Maintenance Fee" />
                     </div>
                     <div className="space-y-1 w-44">
                        <Label className="text-[9px] font-black uppercase text-slate-400">Monthly Group Fee (৳)</Label>
@@ -269,8 +257,8 @@ export default function NewContractPage() {
                 <div className="p-6">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between mb-2">
-                       <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><MapPin className="h-3.5 w-3.5" /> Locations / Points</p>
-                       <Button type="button" size="sm" onClick={() => addPoint(group.id)} className="h-8 rounded-lg gap-2 text-[9px] font-black uppercase bg-emerald-50 text-emerald-700 border-none px-4"><Plus className="h-3.5 w-3.5" /> Add Location</Button>
+                       <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><MapPin className="h-3.5 w-3.5" /> Locations / Points (Max 13 for A4 Fit)</p>
+                       <Button type="button" size="sm" onClick={() => addPoint(group.id)} className="h-8 rounded-lg gap-2 text-[9px] font-black uppercase bg-emerald-50 text-emerald-700 border-none px-4"><Plus className="h-3.5 w-3.5" /> Add Row</Button>
                     </div>
                     <div className="overflow-x-auto rounded-2xl border border-slate-100 bg-slate-50/20">
                       <table className="w-full border-collapse">
@@ -286,7 +274,7 @@ export default function NewContractPage() {
                             <tr key={point.id} className="border-t border-slate-50 h-14 group bg-white/40">
                               <td className="text-center text-[10px] font-black text-slate-300">{(pIdx + 1).toString().padStart(2, '0')}</td>
                               <td className="pl-4">
-                                <Input value={point.location} onChange={e => updatePoint(group.id, point.id, 'location', e.target.value)} className="h-9 border-none bg-white/50 text-[11px] font-bold uppercase rounded-lg focus:ring-1 focus:ring-emerald-500" placeholder="Location details..." />
+                                <Input value={point.location} onChange={e => updatePoint(group.id, point.id, 'location', e.target.value)} className="h-9 border-none bg-white/50 text-[11px] font-bold uppercase rounded-lg focus:ring-1 focus:ring-emerald-500" placeholder="Enter Location Details..." />
                               </td>
                               <td className="text-center">
                                 <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-200 hover:text-red-500" onClick={() => {
@@ -308,28 +296,24 @@ export default function NewContractPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <Card className="p-8 rounded-[2.5rem] bg-white space-y-6">
-              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Additional Remarks</h3>
-              <Textarea value={notes} onChange={e => setNotes(e.target.value)} className="min-h-[120px] rounded-2xl bg-slate-50 border-none p-4 text-[11px] font-bold text-slate-600" placeholder="Contract terms..." />
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Compliance Notes</h3>
+              <Textarea value={notes} onChange={e => setNotes(e.target.value)} className="min-h-[120px] rounded-2xl bg-slate-50 border-none p-4 text-[11px] font-bold text-slate-600" placeholder="Additional contract terms..." />
             </Card>
 
-            <Card className="p-8 rounded-[2.5rem] bg-slate-900 text-white space-y-6">
+            <Card className="p-8 rounded-[2.5rem] bg-slate-900 text-white space-y-6 shadow-2xl">
                <div className="flex justify-between items-end pb-4 border-b border-white/10">
                   <div className="space-y-1">
                     <p className="text-[10px] font-black uppercase opacity-60 tracking-[0.2em]">Gross Monthly Fee</p>
                     <h2 className="text-4xl font-black tracking-tighter text-emerald-400">৳{grossSubtotal.toLocaleString()}</h2>
                   </div>
                   <div className="text-right space-y-1">
-                    <p className="text-[10px] font-black uppercase opacity-60">Billing Cycle</p>
+                    <p className="text-[10px] font-black uppercase opacity-60">Cycle</p>
                     <Badge className="bg-emerald-600 text-white border-none font-black text-[10px] h-6 px-4 uppercase">{billingCycle}</Badge>
                   </div>
                </div>
-               <div className="pt-6 flex justify-between items-center border-t border-white/10">
-                  <p className="text-xs font-black uppercase text-slate-400 tracking-widest">Net Payable</p>
-                  <p className="text-2xl font-black text-blue-400">৳{netMonthlyTotal.toLocaleString()}</p>
-               </div>
-               <div className="pt-4 flex items-center gap-4">
+               <div className="pt-4 flex items-center gap-4 bg-white/5 p-5 rounded-3xl">
                   <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0"><ShieldCheck className="h-6 w-6 text-emerald-400" /></div>
-                  <p className="text-[10px] font-bold leading-relaxed opacity-60 uppercase">System will automatically calculate VAT and Net Payable during each billing cycle generation.</p>
+                  <p className="text-[10px] font-bold leading-relaxed opacity-60 uppercase">System will automatically calculate VAT and Net Payable during each billing cycle generation based on these master settings.</p>
                </div>
             </Card>
           </div>

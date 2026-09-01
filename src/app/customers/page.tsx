@@ -1,8 +1,9 @@
+
 "use client"
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { Users, UserPlus, Search, MoreVertical, Loader2, UserCheck, UserX, Edit, Trash2, Eye } from "lucide-react"
+import { Users, UserPlus, Search, MoreVertical, Loader2, UserCheck, UserX, Edit, Trash2, Eye, Phone, Mail } from "lucide-react"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, doc, query, limit, orderBy, deleteDoc } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"
@@ -50,7 +51,8 @@ export default function CustomersPage() {
     return customers?.filter(c => 
       c.fullName?.toLowerCase().includes(deferredSearch.toLowerCase()) ||
       c.email?.toLowerCase().includes(deferredSearch.toLowerCase()) ||
-      c.companyName?.toLowerCase().includes(deferredSearch.toLowerCase())
+      c.companyName?.toLowerCase().includes(deferredSearch.toLowerCase()) ||
+      c.phoneNumber?.toLowerCase().includes(deferredSearch.toLowerCase())
     );
   }, [customers, deferredSearch]);
 
@@ -101,7 +103,7 @@ export default function CustomersPage() {
                 <TableRow>
                   <TableHead className="text-[10px] uppercase font-black h-12 pl-8">Type</TableHead>
                   <TableHead className="text-[10px] uppercase font-black h-12">Customer Identity</TableHead>
-                  <TableHead className="text-[10px] uppercase font-black h-12">Contact / Reference</TableHead>
+                  <TableHead className="text-[10px] uppercase font-black h-12">Contact Details</TableHead>
                   <TableHead className="h-12 text-right pr-8">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -113,7 +115,7 @@ export default function CustomersPage() {
                     <TableRow 
                       key={customer.id} 
                       className={cn(
-                        "h-16 transition-all border-b border-white/50",
+                        "h-16 transition-all border-b border-white/50 cursor-pointer",
                         idx % 2 === 0 ? "bg-[#EAF6FF] hover:bg-[#D9EFFF]" : "bg-[#EEF9F1] hover:bg-[#E1F2E6]"
                       )}
                       onClick={() => router.push(`/customers/${customer.id}/view`)}
@@ -127,10 +129,21 @@ export default function CustomersPage() {
                         <div className="font-bold text-xs uppercase text-slate-900">
                           {customer.customerType !== 'individual' ? customer.companyName : customer.fullName}
                         </div>
-                        <div className="text-[9px] text-muted-foreground font-medium">{customer.email}</div>
+                        {customer.customerType !== 'individual' && customer.contactPerson && (
+                          <div className="text-[9px] text-muted-foreground font-black uppercase tracking-tighter mt-0.5">Attn: {customer.contactPerson}</div>
+                        )}
                       </TableCell>
-                      <TableCell className="text-xs font-bold text-slate-700 uppercase">
-                        {customer.customerType !== 'individual' ? (customer.contactPerson || "---") : "Personal"}
+                      <TableCell>
+                         <div className="flex flex-col gap-0.5">
+                            <span className="flex items-center gap-1.5 text-[10px] font-black text-slate-700">
+                               <Phone className="h-3 w-3 text-cyan-600" /> {customer.phoneNumber}
+                            </span>
+                            {customer.email && (
+                              <span className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400">
+                                <Mail className="h-2.5 w-2.5" /> {customer.email}
+                              </span>
+                            )}
+                         </div>
                       </TableCell>
                       <TableCell className="text-right pr-8" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-end gap-1">

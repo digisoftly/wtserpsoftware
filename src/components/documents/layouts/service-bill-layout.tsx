@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -24,7 +25,14 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
   const { settings } = useSettings()
   const { formatDate, amountToWords } = useTranslation()
 
-  const groups = (props as any).groups || [];
+  // Filter groups to only show those that have at least a name OR non-empty points
+  const rawGroups = (props as any).groups || [];
+  const groups = rawGroups.map((g: any) => ({
+    ...g,
+    // CRITICAL: Filter out empty points so they don't take up space in PDF
+    points: (g.points || []).filter((p: any) => p.location && p.location.trim() !== "")
+  })).filter((g: any) => g.serviceName || g.points.length > 0);
+
   const billingMonth = (props as any).billingMonth || "N/A";
   const cInfo = (props as any).customerData || {};
 
@@ -78,13 +86,6 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
             <p className="text-[11px] font-medium text-slate-700">Contact: {cInfo.phoneNumber || "N/A"}</p>
             {cInfo.email && <p className="text-[11px] font-medium text-slate-700">Email: {cInfo.email}</p>}
             <p className="text-[11px] leading-relaxed text-slate-600 whitespace-pre-wrap mt-1">{cInfo.address || "Address Not Available"}</p>
-            
-            {cInfo.contactPerson && (
-              <div className="pt-2 border-t border-slate-100 mt-2">
-                 <p className="text-[10px] font-black uppercase text-slate-400">Attention:</p>
-                 <p className="text-[11px] font-bold text-slate-800">{cInfo.contactPerson}</p>
-              </div>
-            )}
           </div>
         </div>
         <div className="space-y-0.5 flex flex-col justify-end">
@@ -141,16 +142,16 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
                       <td className="border border-black px-3 text-[13px] text-slate-700 font-bold text-left uppercase py-1.5 leading-tight">
                         {point.location} 
                       </td>
-                      {pIdx === 0 && (
+                      {pIdx === 0 ? (
                         <td rowSpan={group.points.length} className="border border-black px-2 text-right text-[13px] font-black text-slate-800 align-middle tabular-nums">
                           {Number(group.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </td>
-                      )}
-                      {pIdx === 0 && (
+                      ) : null}
+                      {pIdx === 0 ? (
                         <td rowSpan={group.points.length} className="border border-black px-3 text-right text-[14px] font-black text-blue-900 align-middle tabular-nums">
                           {Number(group.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </td>
-                      )}
+                      ) : null}
                     </tr>
                   );
                 })}
