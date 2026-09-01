@@ -35,19 +35,21 @@ export const KPICard = React.memo(function KPICard(props: KPICardProps) {
   const Icon = DirectIcon || (iconName ? (Icons as any)[iconName] : Icons.Activity);
   const displayValue = typeof value === 'number' ? formatNumber(value) : value;
 
-  // Optimized spacing for App-like feel
+  // App-like feel spacing
   const sizeClasses = {
-    sm: "p-3 min-h-[90px]",
-    md: "p-4 md:p-5 min-h-[100px] md:min-h-[120px]",
-    lg: "p-6 md:p-8 min-h-[130px] md:min-h-[150px]"
+    sm: "p-3 min-h-[85px]",
+    md: "p-3 md:p-4 min-h-[95px] md:min-h-[110px]",
+    lg: "p-4 md:p-6 min-h-[120px] md:min-h-[140px]"
   };
 
-  const titleSize = size === 'sm' ? "text-[8px] md:text-[9px]" : "text-[9px] md:text-[11px]";
-  const valueSize = size === 'sm' ? "text-lg md:text-xl" : size === 'lg' ? "text-2xl md:text-4xl" : "text-xl md:text-2xl";
+  // Fixed text scaling to prevent breaking
+  const titleSize = "text-[9px] md:text-[10px] font-black uppercase tracking-wider text-slate-500 mb-0.5 md:mb-1 truncate";
+  const valueSize = cn(
+    "font-black tracking-tighter leading-none break-all",
+    size === 'sm' ? "text-base md:text-lg" : "text-lg md:text-2xl"
+  );
 
-  const miniGraphData = [
-    { v: 10 }, { v: 25 }, { v: 15 }, { v: 45 }, { v: 30 }, { v: 55 }, { v: 40 }
-  ];
+  const miniGraphData = [{ v: 10 }, { v: 25 }, { v: 15 }, { v: 45 }, { v: 30 }, { v: 55 }, { v: 40 }];
 
   if (isLoading) {
     return (
@@ -55,10 +57,9 @@ export const KPICard = React.memo(function KPICard(props: KPICardProps) {
         <CardContent className={cn("flex flex-col justify-between h-full", sizeClasses[size])}>
           <div className="flex items-start justify-between w-full">
             <div className="space-y-2">
-              <div className="h-3 w-16 bg-slate-100 rounded" />
-              <div className="h-5 w-24 bg-slate-100 rounded" />
+              <div className="h-2 w-12 bg-slate-100 rounded" />
+              <div className="h-4 w-20 bg-slate-100 rounded" />
             </div>
-            <div className="h-8 w-8 bg-slate-100 rounded-xl" />
           </div>
         </CardContent>
       </Card>
@@ -67,7 +68,7 @@ export const KPICard = React.memo(function KPICard(props: KPICardProps) {
 
   return (
     <Card className={cn(
-      "overflow-hidden border-none shadow-sm transition-all hover:shadow-md active:scale-95 touch-none relative group",
+      "overflow-hidden border-none shadow-sm transition-all active:scale-[0.98] active:bg-slate-50 relative group select-none",
       shape,
       !bgColor && colorClass?.includes('green') ? 'bg-[#E8F5E9]/60' :
       !bgColor && colorClass?.includes('blue') ? 'bg-[#E3F2FD]/60' :
@@ -83,38 +84,31 @@ export const KPICard = React.memo(function KPICard(props: KPICardProps) {
     >
       <CardContent className={cn("flex flex-col justify-between h-full relative z-10", sizeClasses[size])}>
         <div className="flex items-start justify-between w-full gap-2">
-          <div className="flex flex-col space-y-0.5 md:space-y-1 overflow-hidden">
-            <p className={cn("font-black text-slate-500 uppercase tracking-widest truncate", titleSize)}>{t(title)}</p>
-            <div className="space-y-0">
-              <h3 className={cn("font-black text-slate-900 tracking-tighter leading-none break-words", valueSize)}>{displayValue}</h3>
-              {subtext && <p className="text-[8px] md:text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-1 truncate">{subtext}</p>}
+          <div className="flex flex-col flex-1 min-w-0">
+            <p className={titleSize}>{t(title)}</p>
+            <div className="flex flex-col">
+              <h3 className={valueSize}>{displayValue}</h3>
+              {subtext && <p className="text-[8px] font-bold text-slate-400 uppercase mt-0.5 truncate">{subtext}</p>}
             </div>
           </div>
           <div className={cn(
-            "p-2 md:p-2.5 rounded-lg md:rounded-xl shadow-md shrink-0 text-white transition-transform group-hover:scale-110", 
+            "p-1.5 md:p-2 rounded-lg md:rounded-xl shadow-sm shrink-0 text-white", 
             colorClass || "bg-blue-600"
           )}>
-            {Icon && <Icon className={size === 'sm' ? "h-3.5 w-3.5" : "h-4 w-4 md:h-6 md:w-6"} />}
+            {Icon && <Icon className="h-3.5 w-3.5 md:h-5 md:w-5" />}
           </div>
         </div>
 
         {showGraph && (
-          <div className="h-8 md:h-10 w-full mt-2 md:mt-4 opacity-50 group-hover:opacity-100 transition-opacity">
+          <div className="h-6 md:h-8 w-full mt-2 opacity-30">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={miniGraphData}>
-                <Line 
-                  type="monotone" 
-                  dataKey="v" 
-                  stroke={graphColor} 
-                  strokeWidth={2} 
-                  dot={false} 
-                />
+                <Line type="monotone" dataKey="v" stroke={graphColor} strokeWidth={1.5} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         )}
       </CardContent>
-      <div className="absolute top-0 right-0 -mr-6 -mt-6 w-24 h-24 bg-black/[0.01] rounded-full group-hover:scale-125 transition-transform pointer-events-none" />
     </Card>
   )
 })
