@@ -8,22 +8,22 @@ import { DocumentTemplateProps, DocumentItem } from "../document-template"
 import { Barcode } from "lucide-react"
 
 /**
- * Warrior Official Premium Layout - Smart Pagination Logic
- * Page 1: Header + Info + 1-10 Items
- * Page 2+: Header + Remaining Items + Summary + Footer
+ * Warrior Official Premium Layout - Unified Design
+ * Shared Pad branding for Invoice, Quotation, Challan, and PO
  */
 export function WarriorLayout(props: DocumentTemplateProps) {
   const { settings } = useSettings();
   const { t, formatDate, amountToWords } = useTranslation();
-  const { items = [], subtotal, taxAmount, discount, grandTotal, paidAmount, balanceDue, notes, type, title, docNumber, date, customerName, customerInfo, projectName, projectLocation } = props;
+  const { 
+    items = [], subtotal, taxAmount, discount, grandTotal, 
+    paidAmount, balanceDue, notes, type, title, docNumber, date, 
+    customerName, customerInfo, projectName, projectLocation 
+  } = props;
 
-  // Split items into chunks of 10
   const chunks: DocumentItem[][] = [];
   for (let i = 0; i < items.length; i += 10) {
     chunks.push(items.slice(i, i + 10));
   }
-
-  // If no items, still show at least one empty page structure
   const pages = chunks.length > 0 ? chunks : [[]];
 
   const renderHeader = () => (
@@ -61,16 +61,14 @@ export function WarriorLayout(props: DocumentTemplateProps) {
       {pages.map((chunk, pageIdx) => (
         <div key={pageIdx} className={cn("flex flex-col min-h-[297mm] relative", pageIdx < pages.length - 1 && "print:break-after-page mb-20")}>
           
-          {/* HEADER (Repeats on every page) */}
           {renderHeader()}
           <div className="border-t-[1.5px] border-red-500 border-dashed w-full mb-8" />
 
-          {/* PAGE 1 ONLY: INFO MATRIX */}
           {pageIdx === 0 && (
             <div className="grid grid-cols-2 gap-10 mb-6 px-4">
               <div className="space-y-1">
-                <p className="text-[12px] font-bold">{t('view')},</p>
-                <p className="text-[13px] font-black uppercase">{customerName || "---"}</p>
+                <p className="text-[12px] font-bold">Bill To,</p>
+                <p className="text-[13px] font-black uppercase text-slate-900">{customerName || "---"}</p>
                 <div className="text-[11px] leading-relaxed text-slate-700 whitespace-pre-wrap">
                   {customerInfo || "Address Not Available"}
                 </div>
@@ -86,7 +84,6 @@ export function WarriorLayout(props: DocumentTemplateProps) {
             </div>
           )}
 
-          {/* SECTION BANNER (First Page or Continuation) */}
           <div className="px-0 space-y-[1px]">
             <div className="bg-[#FDEBD0] border border-black p-1.5 text-center flex items-center justify-center">
               <span className="text-[12px] font-black text-blue-800 mr-2 border-r border-black pr-2">
@@ -98,17 +95,16 @@ export function WarriorLayout(props: DocumentTemplateProps) {
             </div>
           </div>
 
-          {/* TABLE FOR THIS CHUNK */}
           <div className="px-0 mt-[1px] flex-1">
             <table className="w-full border-collapse border border-black table-fixed">
               <thead>
                 <tr className="bg-[#F57C00] text-white h-10">
-                  <th className="border border-black w-[45px] text-[10px] font-black uppercase">{t('sl')}</th>
-                  <th className="border border-black w-[80px] text-center text-[10px] font-black uppercase">{t('image')}</th>
-                  <th className="border border-black px-4 text-left text-[10px] font-black uppercase">{t('itemName')}</th>
-                  <th className="border border-black w-[80px] text-center text-[10px] font-black uppercase">{t('qty')}</th>
-                  <th className="border border-black w-[100px] text-center text-[10px] font-black uppercase">{t('price')}</th>
-                  <th className="border border-black w-[120px] text-right text-[10px] font-black uppercase pr-4">{t('total')}</th>
+                  <th className="border border-black w-[45px] text-[10px] font-black uppercase text-center">{settings?.pdfTable_sl || t('sl')}</th>
+                  <th className="border border-black w-[80px] text-center text-[10px] font-black uppercase">Image</th>
+                  <th className="border border-black px-4 text-left text-[10px] font-black uppercase">{settings?.pdfTable_item || t('itemName')}</th>
+                  <th className="border border-black w-[80px] text-center text-[10px] font-black uppercase">{settings?.pdfTable_qty || t('qty')}</th>
+                  <th className="border border-black w-[100px] text-center text-[10px] font-black uppercase">{settings?.pdfTable_unitPrice || t('price')}</th>
+                  <th className="border border-black w-[120px] text-right text-[10px] font-black uppercase pr-4">{settings?.pdfTable_amount || t('total')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -131,7 +127,6 @@ export function WarriorLayout(props: DocumentTemplateProps) {
                           { item.model && <p className="text-[10px] font-normal text-slate-700">{t('model')}: <span className="font-bold">{item.model}</span></p> }
                           { item.sn && <p className="text-[10px] font-normal text-slate-700 mt-1">{t('sn')}: <span className="font-black text-blue-700">{item.sn}</span></p> }
                           { item.warranty && <p className="text-[10px] font-normal text-slate-700 mt-1"><span className="font-bold">{t('warranty')}:</span> {item.warranty}</p> }
-                          { item.specs && <p className="text-[9px] font-normal text-slate-500 mt-1 italic whitespace-pre-wrap">{item.specs}</p> }
                         </div>
                       </td>
                       <td className="border-x border-black p-2 text-center text-[11px] font-normal">{item.quantity} ({item.unit || 'Pcs'})</td>
@@ -141,23 +136,24 @@ export function WarriorLayout(props: DocumentTemplateProps) {
                   );
                 })}
 
-                {/* SUMMARY ROWS ONLY ON LAST PAGE */}
                 {pageIdx === pages.length - 1 && (
                   <>
                     <tr className="h-8">
-                      <td colSpan={5} className="bg-[#f8f9fa] border border-black p-1 text-right text-[11px] font-black uppercase pr-4">{t('subtotal')}</td>
+                      <td colSpan={5} className="bg-[#f8f9fa] border border-black p-1 text-right text-[11px] font-black uppercase pr-4">{settings?.pdfTable_subtotal || t('subtotal')}</td>
                       <td className="border border-black p-1 text-right text-[11px] font-black pr-4">{(subtotal || 0).toLocaleString()}</td>
                     </tr>
+                    {discount !== undefined && discount > 0 && (
+                      <tr className="h-8">
+                        <td colSpan={5} className="bg-red-50 border border-black p-1 text-right text-[11px] font-black uppercase pr-4 text-red-700">{settings?.pdfTable_discount || t('discount')}</td>
+                        <td className="border border-black p-1 text-right text-[11px] font-black pr-4 text-red-700">{(discount || 0).toLocaleString()}</td>
+                      </tr>
+                    )}
                     <tr className="h-8">
-                      <td colSpan={5} className="bg-red-50 border border-black p-1 text-right text-[11px] font-black uppercase pr-4 text-red-700">{t('discount')}</td>
-                      <td className="border border-black p-1 text-right text-[11px] font-black pr-4 text-red-700">{(discount || 0).toLocaleString()}</td>
-                    </tr>
-                    <tr className="h-8">
-                      <td colSpan={5} className="bg-[#f8f9fa] border border-black p-1 text-right text-[11px] font-black uppercase pr-4">{t('tax')}</td>
+                      <td colSpan={5} className="bg-[#f8f9fa] border border-black p-1 text-right text-[11px] font-black uppercase pr-4">{settings?.pdfTable_tax || t('tax')}</td>
                       <td className="border border-black p-1 text-right text-[11px] font-black pr-4">{(taxAmount || 0).toLocaleString()}</td>
                     </tr>
                     <tr className="h-10">
-                      <td colSpan={5} className="bg-[#F57C00] border border-black p-1 text-right text-[12px] font-black uppercase pr-4 text-white">{t('grandTotal')}</td>
+                      <td colSpan={5} className="bg-[#F57C00] border border-black p-1 text-right text-[12px] font-black uppercase pr-4 text-white">{settings?.pdfTable_grandTotal || t('grandTotal')}</td>
                       <td className="bg-[#F57C00] border border-black p-1 text-right text-[14px] font-black pr-4 text-white">{(grandTotal || 0).toLocaleString()}</td>
                     </tr>
                     {type === 'invoice' && (
@@ -178,12 +174,11 @@ export function WarriorLayout(props: DocumentTemplateProps) {
             </table>
           </div>
 
-          {/* WORDS, TERMS & FOOTER ONLY ON LAST PAGE */}
           {pageIdx === pages.length - 1 && (
             <>
               <div className="px-4 mt-6">
-                <p className="text-[10px] font-black uppercase text-slate-400 mb-1">{t('amountInWords')}:</p>
-                <p className="text-[11px] font-bold text-slate-800 italic border-l-2 border-slate-200 pl-3">
+                <p className="text-[10px] font-black uppercase text-slate-400 mb-1">{settings?.pdfLabel_inWords || t('amountInWords')}:</p>
+                <p className="text-[11px] font-bold text-slate-800 italic border-l-2 border-slate-200 pl-3 uppercase">
                   {amountToWords(grandTotal || 0)}
                 </p>
               </div>
@@ -195,7 +190,6 @@ export function WarriorLayout(props: DocumentTemplateProps) {
                 </div>
               </div>
 
-              {/* CORPORATE FOOTER & SIGNATURES */}
               <div className="mt-auto pt-4 pb-6 text-center space-y-2 border-t-2 border-[#F57C00] mx-2">
                 <div className="grid grid-cols-4 gap-4 px-4 pt-12 mb-8 relative">
                   <div className="text-center"><div className="border-t border-black pt-1 text-[9px] font-black uppercase">Customer Signature</div></div>
@@ -213,7 +207,7 @@ export function WarriorLayout(props: DocumentTemplateProps) {
                 <p className="text-[11.5px] font-black text-slate-500 flex items-center justify-center gap-2">
                   <span className="text-red-600">❤</span> {settings?.footerHeartMsg || "Thank You For Your Business"} <span className="text-red-600">❤</span>
                 </p>
-                <h4 className="text-[24px] font-black text-slate-900 uppercase tracking-tight leading-none">Warrior Tech System</h4>
+                <h4 className="text-[24px] font-black text-slate-900 uppercase tracking-tight leading-none">{settings?.companyName || "Warrior Tech System"}</h4>
                 <div className="flex justify-center gap-6 text-[9px] font-black text-blue-700 uppercase tracking-widest mt-2">
                   <span>• Security System</span>
                   <span>• Communication System</span>
@@ -224,8 +218,7 @@ export function WarriorLayout(props: DocumentTemplateProps) {
             </>
           )}
 
-          {/* PAGE NUMBER (Small at bottom) */}
-          <div className="absolute bottom-2 right-4 text-[9px] font-bold text-slate-300 uppercase">
+          <div className="absolute bottom-2 right-4 text-[9px] font-bold text-slate-300 uppercase no-print">
             Page {pageIdx + 1} of {pages.length}
           </div>
 

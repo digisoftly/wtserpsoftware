@@ -9,116 +9,72 @@ import { QrCode, Barcode, ShieldCheck, CheckCircle2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { useTranslation } from "@/hooks/use-translation"
 
-export function ProfessionalLayout({
-  title,
-  docNumber,
-  date,
-  customerName,
-  customerInfo,
-  items,
-  subtotal,
-  taxAmount,
-  taxRate,
-  discount,
-  grandTotal,
-  status,
-  notes,
-  type
-}: DocumentTemplateProps) {
+export function ProfessionalLayout(props: DocumentTemplateProps) {
+  const { 
+    title, docNumber, date, customerName, customerInfo, items, 
+    subtotal, taxAmount, taxRate, discount, grandTotal, status, 
+    notes, type, projectName, projectLocation 
+  } = props;
   const { currencySymbol, settings } = useSettings()
-  const { t } = useTranslation()
+  const { t, formatDate, amountToWords } = useTranslation()
+
+  const renderHeader = () => (
+    <div className="flex items-center gap-6 px-4 pt-4 mb-4">
+      <div className="w-[100px] h-[100px] shrink-0">
+        {settings?.companyLogo ? (
+          <img src={settings.companyLogo} alt="Logo" className="w-full h-full object-contain" />
+        ) : (
+          <div className="w-full h-full bg-blue-600 rounded-2xl flex items-center justify-center text-white text-5xl font-black shadow-lg">W</div>
+        )}
+      </div>
+      <div className="flex-1 flex flex-col items-center text-center space-y-1">
+        <h1 className="text-[42px] font-black tracking-tighter flex items-center justify-center leading-none">
+          <span className="text-[#00D4AA]">WARRIOR</span>
+          <span className="text-[#0056B3] ml-2">TECH</span>
+          <span className="text-[#F57C00] ml-2">SYSTEM</span>
+        </h1>
+        <p className="text-[16px] font-bold text-[#F57C00] uppercase tracking-[0.2em] italic leading-none mt-1">
+          {settings?.companySlogan || "Innovative Security Reliable Communication"}
+        </p>
+        <div className="flex items-center justify-center gap-8 text-[11px] font-bold text-[#444444] mt-3">
+          <span className="flex items-center gap-2"><span className="text-[#0056B3]">📞</span> {settings?.phone || "+8801753646372"}</span>
+          <span className="flex items-center gap-2"><span className="text-[#F57C00]">📧</span> {settings?.email || "warriortechsystem@gmail.com"}</span>
+          <span className="flex items-center gap-2"><span className="text-[#0056B3]">🌐</span> {settings?.website || "www.warriortechsystem.com"}</span>
+        </div>
+        <p className="text-[11px] font-bold text-[#444444] flex items-center justify-center gap-2 mt-1 max-w-2xl">
+          <span className="text-[#0056B3]">📍</span> {settings?.address || "GP Ja-66/2 Gojnabi Rd Wireless Gate Mohakhali Gulshan Dhaka-1212"}
+        </p>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="flex flex-col min-h-full text-slate-900">
-      {/* Header Grid: Star Tech Style Branding */}
-      <div className="grid grid-cols-12 gap-8 mb-12 border-b-4 border-primary pb-10">
-        <div className="col-span-8 space-y-6">
-          <div className="flex items-center gap-6">
-            <div className="w-24 h-24 bg-primary rounded-[1.5rem] flex items-center justify-center text-white text-5xl font-black shadow-2xl overflow-hidden ring-4 ring-primary/10">
-              {settings?.companyLogo ? (
-                <img src={settings.companyLogo} alt="Logo" className="w-full h-full object-contain p-2 bg-white" />
-              ) : (
-                <span>W</span>
-              )}
-            </div>
-            <div>
-              <h1 className="text-3xl font-black font-headline uppercase tracking-tighter text-primary leading-none">{settings?.companyName || "Warrior Tech System"}</h1>
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] mt-2 italic opacity-60">{settings?.companySlogan || "Innovative Security, Reliable Communication"}</p>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-8 pt-4">
-             <div className="space-y-1">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Office HQ</p>
-                <p className="text-[11px] font-bold leading-relaxed max-w-[280px]">{settings?.address || "Headquarters Address Not Set"}</p>
-             </div>
-             <div className="space-y-1">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Connect</p>
-                <p className="text-[11px] font-bold">{settings?.phone}</p>
-                <p className="text-[11px] font-bold text-primary">{settings?.email}</p>
-             </div>
+    <div className="flex flex-col min-h-full text-slate-900 bg-white">
+      {renderHeader()}
+      <div className="border-t-[1.5px] border-red-500 border-dashed w-full mb-8" />
+
+      <div className="grid grid-cols-2 gap-10 mb-6 px-4">
+        <div className="space-y-1">
+          <p className="text-[12px] font-black text-blue-600 uppercase tracking-widest border-b border-blue-50 w-fit pb-0.5">Bill To:</p>
+          <p className="text-[14px] font-black uppercase text-slate-900 leading-tight">{customerName || "---"}</p>
+          <div className="text-[11px] leading-relaxed text-slate-700 whitespace-pre-wrap">
+            {customerInfo || "Address Not Available"}
           </div>
         </div>
-
-        <div className="col-span-4 flex flex-col items-end justify-between">
-          <div className="text-right space-y-4">
-            <div className="bg-primary/10 text-primary px-6 py-3 rounded-2xl inline-block border-2 border-primary/20">
-              <h2 className="text-2xl font-black font-headline uppercase tracking-[0.1em]">{title}</h2>
-            </div>
-            <div className="space-y-1.5 mt-4">
-              <div className="flex justify-end items-center gap-3">
-                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No:</span>
-                 <span className="text-xs font-black font-mono text-slate-900 tracking-tighter">{docNumber}</span>
-              </div>
-              <div className="flex justify-end items-center gap-3">
-                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Date:</span>
-                 <span className="text-xs font-black text-slate-900">{new Date(date).toLocaleDateString()}</span>
-              </div>
-              <div className="flex justify-end items-center gap-3">
-                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status:</span>
-                 <Badge className={cn("text-[8px] h-4 uppercase border-none px-2 font-black shadow-sm", status === 'paid' ? 'bg-green-600 text-white' : 'bg-orange-500 text-white')}>{status}</Badge>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex gap-4">
-             <div className="w-16 h-16 rounded-xl bg-slate-50 border-2 border-slate-100 flex items-center justify-center p-2">
-                <QrCode className="w-full h-full text-slate-300" />
-             </div>
-             <div className="w-16 h-16 rounded-xl bg-slate-50 border-2 border-slate-100 flex items-center justify-center p-2">
-                <Barcode className="w-full h-full text-slate-300" />
-             </div>
+        <div className="space-y-1 flex flex-col justify-end">
+          <div className="grid grid-cols-[120px_10px_1fr] text-[11px] leading-relaxed">
+            <span className="font-bold uppercase">{t('docNo')}</span> <span>:</span> <span className="font-black text-blue-800">{docNumber}</span>
+            <span className="font-bold uppercase">{t('date')}</span> <span>:</span> <span className="font-bold">{formatDate(date)}</span>
+            <span className="font-bold uppercase">Project Name</span> <span>:</span> <span className="font-bold uppercase">{projectName || "General Service"}</span>
+            <span className="font-bold uppercase">Status</span> <span>:</span> 
+            <span className={cn("font-black uppercase", status === 'paid' ? "text-green-700" : "text-red-600")}>
+              {status || "Authenticated"}
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Customer & Relationship Details */}
-      <div className="grid grid-cols-2 gap-12 mb-12">
-        <div className="bg-slate-50/50 p-8 rounded-3xl border-2 border-dashed border-slate-200/60 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none"><CheckCircle2 className="h-20 w-20 text-slate-900" /></div>
-          <h3 className="text-[10px] font-black uppercase text-primary tracking-[0.3em] mb-4">
-            {type === 'po' ? 'Vendor Logistics' : 'Bill To / Customer Entity'}
-          </h3>
-          <p className="text-xl font-black font-headline text-slate-900 uppercase tracking-tight leading-none mb-2">{customerName || "Walk-in Customer"}</p>
-          <div className="h-1 w-12 bg-primary/20 rounded-full mb-4" />
-          <p className="text-[11px] font-bold text-slate-500 leading-relaxed whitespace-pre-wrap max-w-xs">{customerInfo || "Standard delivery profile used for this secure transaction."}</p>
-        </div>
-        <div className="flex flex-col justify-end p-6">
-           <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                 <p className="text-[9px] font-black uppercase text-slate-400">Payment Term</p>
-                 <p className="text-[11px] font-black text-slate-700 uppercase tracking-tight">Net 30 / COD</p>
-              </div>
-              <div className="space-y-1">
-                 <p className="text-[9px] font-black uppercase text-slate-400">Project Reference</p>
-                 <p className="text-[11px] font-black text-slate-700 uppercase tracking-tight">Standard Sale</p>
-              </div>
-           </div>
-        </div>
-      </div>
-
-      {/* Premium Product Matrix */}
-      <div className="flex-1">
+      <div className="flex-1 mt-4">
         <Table className="border border-slate-200 rounded-[1.5rem] overflow-hidden shadow-sm">
           <TableHeader className="bg-slate-900 text-white">
             <TableRow className="hover:bg-slate-900 border-none">
@@ -129,10 +85,10 @@ export function ProfessionalLayout({
                 {settings?.pdfTable_qty || t('forms.qty')}
               </TableHead>
               <TableHead className="text-white font-black uppercase text-[10px] tracking-widest text-right w-36">
-                {settings?.pdfTable_price || t('forms.price')} ({currencySymbol})
+                {settings?.pdfTable_unitPrice || t('forms.price')}
               </TableHead>
               <TableHead className="text-white font-black uppercase text-[10px] tracking-widest text-right w-40 pr-10">
-                {settings?.pdfTable_amount || t('common.amount')} ({currencySymbol})
+                {settings?.pdfTable_amount || t('common.amount')}
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -141,18 +97,18 @@ export function ProfessionalLayout({
               <TableRow key={idx} className={cn("border-b border-slate-100", idx % 2 === 0 ? "bg-white" : "bg-slate-50/30")}>
                 <TableCell className="pl-6 py-4">
                   <div className="flex flex-col">
-                    <span className="font-black text-sm uppercase text-slate-900 tracking-tight leading-none mb-1.5">{item.name}</span>
-                    {item.serialNumber && <div className="text-[9px] text-slate-400 font-black font-mono uppercase opacity-70 tracking-widest">S/N: {item.serialNumber}</div>}
+                    <span className="font-black text-[12px] uppercase text-slate-900 tracking-tight leading-none mb-1.5">{item.name}</span>
+                    {item.sn && <div className="text-[9px] text-blue-600 font-black font-mono uppercase opacity-70 tracking-widest">S/N: {item.sn}</div>}
                     {item.description && <div className="text-[10px] text-slate-500 font-bold italic mt-1 leading-relaxed">{item.description}</div>}
                   </div>
                 </TableCell>
                 <TableCell className="text-center">
                    <span className="text-[11px] font-black text-slate-600 bg-slate-100 px-3 py-1 rounded-full">{item.quantity} {item.unit || 'Pcs'}</span>
                 </TableCell>
-                <TableCell className="text-right font-bold text-xs text-slate-700">
+                <TableCell className="text-right font-bold text-[11px] text-slate-700">
                   {(item.unitPrice || 0).toLocaleString()}
                 </TableCell>
-                <TableCell className="text-right pr-10 font-black text-sm text-slate-900">
+                <TableCell className="text-right pr-10 font-black text-[11px] text-slate-900">
                   {(item.total || 0).toLocaleString()}
                 </TableCell>
               </TableRow>
@@ -161,13 +117,12 @@ export function ProfessionalLayout({
         </Table>
       </div>
 
-      {/* Summary Reconstruction */}
       <div className="flex justify-between items-start mt-12 gap-12">
         <div className="flex-1 space-y-8">
-           <div>
-            <h4 className="text-[10px] font-black uppercase text-slate-400 mb-3 tracking-[0.3em]">Corporate Terms & Conditions</h4>
+          <div>
+            <h4 className="text-[10px] font-black uppercase text-slate-400 mb-3 tracking-[0.3em]">Compliance & Terms</h4>
             <div className="text-[9px] font-bold text-slate-500 leading-relaxed space-y-1 bg-slate-50 p-6 rounded-2xl border-2 border-dotted border-slate-200 whitespace-pre-wrap">
-              {settings?.pdfTerms || "1. Payments are due within 15 days of invoice date unless specified otherwise.\n2. Equipment remains property of Warrior Tech System until full payment is realized.\n3. Hardware items are subject to specific manufacturer warranty policies.\n4. This document is a computer-generated transaction record."}
+              {settings?.pdfTerms || "1. Payments are due within 15 days of invoice date unless specified otherwise.\n2. Equipment remains property of Warrior Tech System until full payment is realized.\n3. Hardware items are subject to specific manufacturer warranty policies."}
             </div>
           </div>
           {notes && (
@@ -183,9 +138,9 @@ export function ProfessionalLayout({
             <span>{settings?.pdfTable_subtotal || t('forms.subtotal')}</span>
             <span className="text-slate-900">{currencySymbol}{(subtotal || 0).toLocaleString()}</span>
           </div>
-          {taxRate !== undefined && taxAmount !== undefined && (
+          {taxAmount !== undefined && (
             <div className="flex justify-between text-[11px] font-black text-slate-400 uppercase tracking-widest">
-              <span>{settings?.pdfTable_tax || t('forms.tax')} ({taxRate}%)</span>
+              <span>{settings?.pdfTable_tax || t('forms.tax')}</span>
               <span className="text-slate-900">+{currencySymbol}{(taxAmount || 0).toLocaleString()}</span>
             </div>
           )}
@@ -198,48 +153,40 @@ export function ProfessionalLayout({
           <div className="pt-6 border-t-2 border-slate-100 mt-2">
             <div className="flex justify-between items-end">
               <div className="space-y-1">
-                 <span className="text-xs font-black font-headline uppercase text-primary tracking-widest leading-none">
+                 <span className="text-xs font-black uppercase text-blue-800 tracking-widest leading-none">
                    {settings?.pdfTable_grandTotal || t('forms.grandTotal')}
                  </span>
-                 <p className="text-[8px] font-bold text-slate-400 uppercase">Inclusive of all duties</p>
+                 <p className="text-[8px] font-bold text-slate-400 uppercase">Total Payable</p>
               </div>
-              <span className="text-3xl font-black font-headline text-primary tracking-tighter leading-none">{currencySymbol}{(grandTotal || 0).toLocaleString()}</span>
+              <span className="text-3xl font-black text-blue-900 tracking-tighter leading-none">{(grandTotal || 0).toLocaleString()}</span>
             </div>
-          </div>
-          
-          <div className="mt-4 pt-4 border-t border-slate-50 flex items-center gap-3">
-             <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center text-green-600 shadow-inner">
-                <ShieldCheck className="h-4 w-4" />
-             </div>
-             <p className="text-[8px] font-black text-slate-400 uppercase leading-tight tracking-widest">
-                System Verified & Authenticated Transaction Record
-             </p>
           </div>
         </div>
       </div>
 
-      {/* Signature & Seal Footer */}
-      <div className="mt-auto pt-24 pb-8">
-        <div className="grid grid-cols-3 gap-12 items-end">
-          <div className="text-center space-y-4">
-             <div className="w-32 border-t-2 border-slate-200 pt-3 mx-auto">
-               <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Customer Authorization</p>
-             </div>
+      <div className="mt-auto pt-4 pb-6 text-center space-y-2 border-t-2 border-[#F57C00] mx-2">
+        <div className="grid grid-cols-4 gap-4 px-4 pt-12 mb-8 relative">
+          <div className="text-center"><div className="border-t border-black pt-1 text-[9px] font-black uppercase">Customer Signature</div></div>
+          <div className="text-center"><div className="border-t border-black pt-1 text-[9px] font-black uppercase">Prepared By</div></div>
+          <div className="text-center"><div className="border-t border-black pt-1 text-[9px] font-black uppercase">Checked By</div></div>
+          <div className="text-center relative">
+            <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex items-center justify-center h-20 w-40 gap-2">
+              {settings?.authorizedSeal && <img src={settings.authorizedSeal} className="h-20 w-20 object-contain opacity-80" alt="Seal" />}
+              {settings?.authorizedSignature && <img src={settings.authorizedSignature} className="h-16 w-32 object-contain absolute bottom-2" alt="Signature" />}
+            </div>
+            <div className="border-t-2 border-blue-700 pt-1 text-[10px] font-black uppercase text-blue-800">Authorized Signature</div>
           </div>
-          
-          <div className="text-center flex flex-col items-center gap-3 pb-4">
-             <div className="w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center opacity-40 grayscale group-hover:grayscale-0 transition-all duration-700">
-                <img src={settings?.companyLogo || ""} className="w-8 h-8 object-contain" alt="mini-logo" />
-             </div>
-             <p className="text-[8px] font-black uppercase text-slate-300 tracking-[0.5em] animate-pulse">WARRIOR TECHNOLOGY SYSTEMS</p>
-          </div>
+        </div>
 
-          <div className="text-center space-y-4">
-             <div className="w-48 border-t-2 border-primary pt-3 mx-auto relative">
-               <div className="absolute -top-12 left-1/2 -translate-x-1/2 opacity-20"><Barcode className="h-8 w-16" /></div>
-               <p className="text-[10px] font-black uppercase tracking-widest text-primary">Authorized Validation</p>
-             </div>
-          </div>
+        <p className="text-[11.5px] font-black text-slate-500 flex items-center justify-center gap-2">
+          <span className="text-red-600">❤</span> {settings?.footerHeartMsg || "Thank You For Your Business"} <span className="text-red-600">❤</span>
+        </p>
+        <h4 className="text-[24px] font-black text-slate-900 uppercase tracking-tight leading-none">{settings?.companyName || "Warrior Tech System"}</h4>
+        <div className="flex justify-center gap-6 text-[9px] font-black text-blue-700 uppercase tracking-widest mt-2">
+          <span>• Security System</span>
+          <span>• Communication System</span>
+          <span>• Fire Safety</span>
+          <span>• Network & IT Solutions</span>
         </div>
       </div>
     </div>
