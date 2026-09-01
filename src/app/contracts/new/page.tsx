@@ -133,23 +133,43 @@ export default function NewContractPage() {
 
     setIsSubmitting(true);
     const customer = customers?.find(c => c.id === selectedCustomerId);
+    
+    // Core Identity Selection
     const customerName = customer ? (customer.customerType !== 'individual' ? customer.companyName : `${customer.firstName} ${customer.lastName}`) : "Client";
+    const customerAddress = customer?.address || "";
+    const customerPhone = customer?.phoneNumber || "";
+    const customerEmail = customer?.email || "";
 
     const contractData = {
       companyId, branchId,
       contractNumber: `SLA-${Date.now().toString().slice(-6)}`,
-      agreementNo, customerId: selectedCustomerId, customerName,
-      projectId: selectedProjectId, serviceType, startDate, endDate, billingCycle,
-      billingDay: Number(billingDay), groups: serviceGroups,
-      monthlyAmount: grossSubtotal, vatPercent: Number(vatPercent), vatAmount,
-      discountAmount: Number(discountAmount), netMonthlyAmount: netMonthlyTotal,
-      paymentTerms, status: "active", notes,
-      createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+      agreementNo, 
+      customerId: selectedCustomerId, 
+      customerName,
+      customerAddress,
+      customerPhone,
+      customerEmail,
+      projectId: selectedProjectId, 
+      serviceType, 
+      startDate, 
+      endDate, 
+      billingCycle,
+      billingDay: Number(billingDay), 
+      groups: serviceGroups,
+      monthlyAmount: grossSubtotal, 
+      vatPercent: Number(vatPercent), 
+      vatAmount,
+      discountAmount: Number(discountAmount), 
+      netMonthlyAmount: netMonthlyTotal,
+      paymentTerms, 
+      status: "active", 
+      notes,
+      createdAt: serverTimestamp(), 
+      updatedAt: serverTimestamp(),
     };
 
     const contractRef = doc(collection(db, "companies", companyId, "branches", branchId, "service_contracts"));
     
-    // Patterns: NO await, chain .catch with Contextual Error
     setDoc(contractRef, { ...contractData, id: contractRef.id })
       .then(() => {
         toast({ title: t('success') });

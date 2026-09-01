@@ -37,7 +37,7 @@ export default function ViewContractInvoicePage() {
 
   const { data: invoice, isLoading } = useDoc(invoiceRef);
 
-  // Fetch full customer details for the PDF
+  // Fetch full customer details for the PDF to ensure fresh data
   React.useEffect(() => {
     if (invoice?.customerId && db && companyId && branchId) {
       const fetchCustomer = async () => {
@@ -107,7 +107,6 @@ export default function ViewContractInvoicePage() {
           customerName={invoice.customerName}
           customerInfo={`Contract Ref: ${invoice.contractNumber}\nBilling Month: ${invoice.billingMonth}`}
           projectName={invoice.projectName || "General Service"}
-          // Pass the groups for vertically merged layout
           {...{
             groups: invoice.groups || [],
             serviceName: invoice.serviceName,
@@ -115,10 +114,11 @@ export default function ViewContractInvoicePage() {
             billingMonth: invoice.billingMonth,
             customerData: customerData || {
                address: invoice.customerAddress,
-               phoneNumber: invoice.customerPhone
+               phoneNumber: invoice.customerPhone,
+               email: invoice.customerEmail
             }
           } as any}
-          items={[]} // Main table handled by groups in layout
+          items={[]} 
           subtotal={invoice.subtotal}
           grandTotal={invoice.amount}
           status={invoice.status}

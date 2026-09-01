@@ -13,6 +13,7 @@ import {
 /**
  * Core business logic for generating monthly contract invoices.
  * Includes support for multiple service groups and location points.
+ * Updated to preserve customer contact details in the invoice.
  */
 export async function runBillingCycle(
   db: Firestore, 
@@ -46,7 +47,7 @@ export async function runBillingCycle(
     const contract = contractDoc.data();
     const contractId = contractDoc.id;
 
-    // 2. Duplicate Check
+    // 2. Duplicate Check for this month/year
     const dupQuery = query(
       invoicesRef,
       where("contractId", "==", contractId),
@@ -69,7 +70,11 @@ export async function runBillingCycle(
         contractId: contractId,
         contractNumber: contract.contractNumber || "N/A",
         agreementNo: contract.agreementNo || "",
+        customerId: contract.customerId,
         customerName: contract.customerName || "Unknown Customer",
+        customerAddress: contract.customerAddress || "",
+        customerPhone: contract.customerPhone || "",
+        customerEmail: contract.customerEmail || "",
         serviceName: contract.serviceType || "Monthly Maintenance",
         billingMonth: billingMonthLabel,
         billMonth: month,
@@ -79,7 +84,7 @@ export async function runBillingCycle(
         discountAmount: discountAmount,
         amount: netAmount,
         status: "unpaid",
-        groups: contract.groups || [], // Pass the point details for PDF generation
+        groups: contract.groups || [], 
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
