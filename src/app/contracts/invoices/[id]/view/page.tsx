@@ -19,6 +19,7 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { DocumentTemplate } from "@/components/documents/document-template"
 import { useTranslation } from "@/hooks/use-translation"
+import { cn } from "@/lib/utils"
 
 export default function ViewContractInvoicePage() {
   const { id } = useParams();
