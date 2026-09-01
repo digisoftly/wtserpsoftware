@@ -85,7 +85,7 @@ export default function EditProjectPage() {
 
     const updateData = {
       ...formData,
-      customerName: customer ? (customer.customerType === 'company' ? customer.companyName : `${customer.firstName} ${customer.lastName}`) : (project?.customerName || "Client"),
+      customerName: customer ? (customer.customerType !== 'individual' ? customer.companyName : `${customer.firstName} ${customer.lastName}`) : (project?.customerName || "Client"),
       updatedAt: serverTimestamp(),
     };
 
@@ -99,7 +99,7 @@ export default function EditProjectPage() {
     }
   };
 
-  if (isProjectLoading || !project) return <div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-teal-600" /></div>;
+  if (isProjectLoading || !project) return <div className="flex h-[70vh] items-center justify-center"><Loader2 className="animate-spin h-10 w-10 text-teal-600" /></div>;
 
   return (
     <div className="flex flex-col h-full bg-slate-50 min-h-screen pb-20">
@@ -109,7 +109,7 @@ export default function EditProjectPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-lg font-black font-headline uppercase tracking-tight text-teal-600">{t('edit')} Project</h1>
+            <h1 className="text-lg font-black font-headline uppercase tracking-tight text-teal-600">Modify Project</h1>
             <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">{project?.projectCode}</p>
           </div>
         </div>
@@ -136,7 +136,7 @@ export default function EditProjectPage() {
                 <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('customer')} *</Label>
                 <Select value={formData.customerId} onValueChange={(v) => handleSelectChange('customerId', v)}>
                   <SelectTrigger className="h-12 rounded-xl bg-white"><SelectValue placeholder="Select Client" /></SelectTrigger>
-                  <SelectContent>{customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-bold">{c.customerType === 'company' ? c.companyName : `${c.firstName} ${c.lastName}`}</SelectItem>)}</SelectContent>
+                  <SelectContent>{customers?.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-bold">{c.customerType !== 'individual' ? c.companyName : `${c.firstName} ${c.lastName}`}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
@@ -144,7 +144,7 @@ export default function EditProjectPage() {
                 <Input name="startDate" type="date" required value={formData.startDate} onChange={handleChange} className="h-12 rounded-xl" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px) font-black uppercase text-muted-foreground">{t('deadline')}</Label>
+                <Label className="text-[10px] font-black uppercase text-muted-foreground">{t('deadline')}</Label>
                 <Input name="deadline" type="date" required value={formData.deadline} onChange={handleChange} className="h-12 rounded-xl" />
               </div>
               <div className="space-y-1.5">

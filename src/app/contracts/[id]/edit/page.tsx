@@ -83,7 +83,7 @@ export default function EditContractPage() {
   }, [db, companyId, branchId]);
   const { data: customers } = useCollection(customersQuery);
 
-  // Sync state with contract data
+  // Sync state with contract data - Ensures fields are populated and persist
   React.useEffect(() => {
     if (contract) {
       setSelectedCustomerId(contract.customerId || "");
@@ -137,10 +137,6 @@ export default function EditContractPage() {
     if (serviceGroups.length > 1) setServiceGroups(serviceGroups.filter(g => g.id !== groupId));
   };
 
-  const addPoint = (groupId: string) => {
-    setServiceGroups(serviceGroups.map(g => g.id === groupId ? { ...g, points: [...g.points, { id: Math.random().toString(36).substr(2, 9), location: '', description: '' }] } : g));
-  };
-
   const updateGroup = (groupId: string, field: keyof ServiceGroup, val: any) => {
     setServiceGroups(serviceGroups.map(g => g.id === groupId ? { ...g, [field]: val } : g));
   };
@@ -160,9 +156,10 @@ export default function EditContractPage() {
     setIsSubmitting(true);
     const customer = customers?.find(c => c.id === selectedCustomerId);
     
+    // Resolve dynamic name
     const customerName = customer ? (customer.customerType !== 'individual' ? customer.companyName : `${customer.firstName} ${customer.lastName}`) : (contract?.customerName || "Client");
 
-    // Clean empty points before saving
+    // Filter empty points and groups
     const cleanedGroups = serviceGroups.map(g => ({
       ...g,
       points: g.points.filter(p => p.location.trim() !== "")
@@ -233,7 +230,7 @@ export default function EditContractPage() {
           <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Client Entity</Label>
+                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Target Client</Label>
                 <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId} required>
                   <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold text-xs"><SelectValue placeholder={t('search')} /></SelectTrigger>
                   <SelectContent className="max-h-[300px] rounded-xl">
@@ -257,7 +254,7 @@ export default function EditContractPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Lifecycle Status</Label>
+                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Current Status</Label>
                 <Select value={status} onValueChange={setStatus}>
                   <SelectTrigger className="h-11 rounded-xl bg-slate-50 font-bold text-xs uppercase"><SelectValue /></SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -272,19 +269,19 @@ export default function EditContractPage() {
 
           <div className="space-y-6">
             <div className="flex items-center justify-between px-2">
-               <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2"><LayoutGrid className="h-4 w-4 text-emerald-600" /> Service Matrix</h3>
+               <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2"><LayoutGrid className="h-4 w-4 text-emerald-600" /> Service Group Matrix</h3>
                <Button type="button" onClick={addGroup} variant="outline" className="rounded-full gap-2 border-emerald-100 text-emerald-700 bg-white h-9 px-6 font-black text-[10px] uppercase shadow-sm">
-                 <PlusCircle className="h-4 w-4" /> Add Service Block
+                 <PlusCircle className="h-4 w-4" /> Add Block
                </Button>
             </div>
 
-            {serviceGroups.map((group, gIdx) => (
+            {serviceGroups.map((group) => (
               <Card key={group.id} className="border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 overflow-hidden">
                 <div className="p-6 bg-slate-50/50 border-b flex items-center justify-between flex-wrap gap-4">
                   <div className="flex items-center gap-4 flex-1 min-w-[300px]">
                     <div className="space-y-1 flex-1">
-                       <Label className="text-[9px] font-black uppercase text-slate-400">Service Name</Label>
-                       <Input value={group.serviceName} onChange={e => updateGroup(group.id, 'serviceName', e.target.value)} className="h-10 rounded-xl bg-white font-black uppercase text-xs" placeholder="e.g. Monthly Maintenance Fee" />
+                       <Label className="text-[9px] font-black uppercase text-slate-400">Service Group Name</Label>
+                       <Input value={group.serviceName} onChange={e => updateGroup(group.id, 'serviceName', e.target.value)} className="h-10 rounded-xl bg-white font-black uppercase text-xs" />
                     </div>
                     <div className="space-y-1 w-44">
                        <Label className="text-[9px] font-black uppercase text-slate-400">Monthly Group Fee (৳)</Label>
@@ -296,15 +293,13 @@ export default function EditContractPage() {
 
                 <div className="p-6">
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between mb-2">
-                       <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><MapPin className="h-3.5 w-3.5" /> Locations / Description</p>
-                    </div>
+                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2 px-1"><MapPin className="h-3.5 w-3.5" /> Point Allocation</p>
                     <div className="overflow-x-auto rounded-2xl border border-slate-100 bg-slate-50/20">
                       <table className="w-full border-collapse">
                         <thead className="bg-slate-50/50">
                           <tr className="h-10">
                             <th className="w-12 text-center text-[9px] font-black uppercase text-slate-400">SL</th>
-                            <th className="text-left text-[9px] font-black uppercase text-slate-400 pl-4">Description / Location</th>
+                            <th className="text-left text-[9px] font-black uppercase text-slate-400 pl-4">Location Detail</th>
                             <th className="w-12"></th>
                           </tr>
                         </thead>
@@ -313,7 +308,7 @@ export default function EditContractPage() {
                             <tr key={point.id} className="border-t border-slate-50 h-14 group bg-white/40">
                               <td className="text-center text-[10px] font-black text-slate-300">{(pIdx + 1).toString().padStart(2, '0')}</td>
                               <td className="pl-4">
-                                <Input value={point.location} onChange={e => updatePoint(group.id, point.id, 'location', e.target.value)} className="h-9 border-none bg-white/50 text-[11px] font-bold uppercase rounded-lg focus:ring-1 focus:ring-emerald-500" placeholder="Enter Location details..." />
+                                <Input value={point.location} onChange={e => updatePoint(group.id, point.id, 'location', e.target.value)} className="h-9 border-none bg-white/50 text-[11px] font-bold uppercase rounded-lg focus:ring-1 focus:ring-emerald-500" />
                               </td>
                               <td className="text-center">
                                 <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-200 hover:text-red-500 opacity-0 group-hover:opacity-100" onClick={() => {
@@ -335,10 +330,10 @@ export default function EditContractPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <Card className="p-8 rounded-[2.5rem] bg-white space-y-6">
-              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Financial Adjustments</h3>
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Financial Tuning</h3>
               <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">VAT %</Label><Input type="number" value={vatPercent} onChange={e => setVatPercent(Number(e.target.value))} className="h-11 rounded-xl bg-slate-50 border-none" /></div>
-                 <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">Discount (৳)</Label><Input type="number" value={discountAmount} onChange={e => setDiscountAmount(Number(e.target.value))} className="h-11 rounded-xl bg-slate-50 border-none" /></div>
+                 <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">Adjustment (৳)</Label><Input type="number" value={discountAmount} onChange={e => setDiscountAmount(Number(e.target.value))} className="h-11 rounded-xl bg-slate-50 border-none" /></div>
               </div>
               <Textarea value={notes} onChange={e => setNotes(e.target.value)} className="min-h-[120px] rounded-2xl bg-slate-50 border-none p-4 text-[11px] font-bold text-slate-600" />
             </Card>
@@ -346,21 +341,21 @@ export default function EditContractPage() {
             <Card className="p-8 rounded-[2.5rem] bg-slate-900 text-white space-y-6">
                <div className="flex justify-between items-end pb-4 border-b border-white/10">
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase opacity-60 tracking-[0.2em]">Gross Monthly Fee</p>
-                    <h2 className="text-4xl font-black tracking-tighter text-emerald-400">৳{grossSubtotal.toLocaleString()}</h2>
+                    <p className="text-[10px] font-black uppercase opacity-60 tracking-[0.2em]">Net Monthly Receivable</p>
+                    <h2 className="text-4xl font-black tracking-tighter text-emerald-400">৳{netMonthlyTotal.toLocaleString()}</h2>
                   </div>
                   <div className="text-right space-y-1">
-                    <p className="text-[10px] font-black uppercase opacity-60">Cycle</p>
+                    <p className="text-[10px] font-black uppercase opacity-60">Frequency</p>
                     <Badge className="bg-emerald-600 text-white border-none font-black text-[10px] h-6 px-4 uppercase">{billingCycle}</Badge>
                   </div>
                </div>
-               <div className="pt-6 flex justify-between items-center">
-                  <p className="text-xs font-black uppercase text-slate-400 tracking-widest">VAT Amount ({vatPercent}%)</p>
-                  <p className="text-lg font-black text-blue-300">+৳{vatAmount.toLocaleString()}</p>
+               <div className="pt-6 flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  <span>VAT Component ({vatPercent}%)</span>
+                  <span className="text-blue-300">৳{vatAmount.toLocaleString()}</span>
                </div>
-               <div className="pt-2 flex justify-between items-center border-t border-white/10 mt-2">
-                  <p className="text-sm font-black uppercase text-white tracking-widest">Net Monthly Payable</p>
-                  <p className="text-3xl font-black text-emerald-400">৳{netMonthlyTotal.toLocaleString()}</p>
+               <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  <span>Gross Group Fees</span>
+                  <span>৳{grossSubtotal.toLocaleString()}</span>
                </div>
             </Card>
           </div>

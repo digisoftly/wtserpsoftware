@@ -57,12 +57,12 @@ export default function EditCustomerPage() {
 
   const { data: customer, isLoading } = useDoc(customerRef);
 
-  // Sync data to state once it loads
+  // Sync data to state once it loads - Ensures data persists during edit
   React.useEffect(() => {
     if (customer) {
       setFormData({
         customerType: customer.customerType || "individual",
-        fullName: customer.customerType === 'individual' ? (customer.fullName || "") : "",
+        fullName: customer.fullName || "",
         companyName: customer.companyName || "",
         contactPerson: customer.contactPerson || "",
         phoneNumber: customer.phoneNumber || "",
@@ -92,10 +92,8 @@ export default function EditCustomerPage() {
 
     setIsSubmitting(true);
     
-    // Logic mapping for saving
     const updateData = {
       ...formData,
-      fullName: formData.customerType === 'individual' ? formData.fullName : formData.companyName,
       updatedAt: serverTimestamp(),
     };
 
@@ -109,12 +107,12 @@ export default function EditCustomerPage() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || !customer) {
     return (
       <div className="flex h-[70vh] items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading Profile...</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading Identity Matrix...</p>
         </div>
       </div>
     );
@@ -128,8 +126,8 @@ export default function EditCustomerPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-lg md:text-xl font-black font-headline uppercase tracking-tight text-slate-900">Edit Identity</h1>
-            <p className="text-[9px] font-black uppercase text-blue-600 tracking-widest mt-1">Ref: {id}</p>
+            <h1 className="text-lg md:text-xl font-black font-headline uppercase tracking-tight text-slate-900">Modify Identity</h1>
+            <p className="text-[9px] font-black uppercase text-blue-600 tracking-widest mt-1">ID: {customer.id}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -223,7 +221,7 @@ export default function EditCustomerPage() {
                 <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shadow-inner">
                   <CreditCard className="h-4 w-4" />
                 </div>
-                <h3 className="text-xs font-black uppercase text-slate-900 tracking-widest">Account & CRM Settings</h3>
+                <h3 className="text-xs font-black uppercase text-slate-900 tracking-widest">Account & CRM Matrix</h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -273,7 +271,7 @@ export default function EditCustomerPage() {
           <div className="pt-8 flex justify-center">
             <Button type="submit" disabled={isSubmitting} className="w-full max-w-md h-16 rounded-[2rem] bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-[0.3em] shadow-2xl transition-all active:scale-95 group">
               {isSubmitting ? <Loader2 className="animate-spin h-6 w-6" /> : <CheckCircle2 className="h-6 w-6 mr-3 group-hover:scale-110 transition-transform" />}
-              Update Records
+              Synchronize Profile
             </Button>
           </div>
         </form>
