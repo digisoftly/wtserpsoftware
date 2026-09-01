@@ -54,6 +54,21 @@ export default function EditContractPage() {
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
+  // Form State
+  const [selectedCustomerId, setSelectedCustomerId] = React.useState("");
+  const [agreementNo, setAgreementNo] = React.useState("");
+  const [serviceType, setServiceType] = React.useState("");
+  const [startDate, setStartDate] = React.useState("");
+  const [endDate, setEndDate] = React.useState("");
+  const [billingCycle, setBillingCycle] = React.useState("Monthly");
+  const [billingDay, setBillingDay] = React.useState(1);
+  const [serviceGroups, setServiceGroups] = React.useState<ServiceGroup[]>([]);
+  const [vatPercent, setVatPercent] = React.useState(0);
+  const [discountAmount, setDiscountAmount] = React.useState(0);
+  const [notes, setNotes] = React.useState("");
+  const [status, setStatus] = React.useState("active");
+  const [projectName, setProjectName] = React.useState("");
+
   // Queries
   const contractRef = useMemoFirebase(() => {
     if (!db || !companyId || !branchId || !id) return null;
@@ -68,20 +83,6 @@ export default function EditContractPage() {
   }, [db, companyId, branchId]);
   const { data: customers } = useCollection(customersQuery);
 
-  // Form State
-  const [selectedCustomerId, setSelectedCustomerId] = React.useState("");
-  const [agreementNo, setAgreementNo] = React.useState("");
-  const [serviceType, setServiceType] = React.useState("");
-  const [startDate, setStartDate] = React.useState("");
-  const [endDate, setEndDate] = React.useState("");
-  const [billingCycle, setBillingCycle] = React.useState("Monthly");
-  const [billingDay, setBillingDay] = React.useState(1);
-  const [serviceGroups, setServiceGroups] = React.useState<ServiceGroup[]>([]);
-  const [vatPercent, setVatPercent] = React.useState(0);
-  const [discountAmount, setDiscountAmount] = React.useState(0);
-  const [notes, setNotes] = React.useState("");
-  const [status, setStatus] = React.useState("active");
-
   // Sync state with contract data
   React.useEffect(() => {
     if (contract) {
@@ -92,11 +93,34 @@ export default function EditContractPage() {
       setEndDate(contract.endDate || "");
       setBillingCycle(contract.billingCycle || "Monthly");
       setBillingDay(contract.billingDay || 1);
-      setServiceGroups(contract.groups || []);
       setVatPercent(contract.vatPercent || 0);
       setDiscountAmount(contract.discountAmount || 0);
       setNotes(contract.notes || "");
       setStatus(contract.status || "active");
+      setProjectName(contract.projectName || "");
+
+      // Map service groups and ensure at least 13 points exist for easy editing
+      const mappedGroups = (contract.groups || []).map((g: any) => {
+        const points = g.points || [];
+        const needed = Math.max(0, 13 - points.length);
+        const emptyPoints = Array.from({ length: needed }, (_, i) => ({
+          id: `extra-${i}-${Date.now()}`,
+          location: '',
+          description: ''
+        }));
+        return { ...g, points: [...points, ...emptyPoints] };
+      });
+
+      if (mappedGroups.length === 0) {
+        mappedGroups.push({
+          id: 'g1',
+          serviceName: '',
+          amount: 0,
+          points: Array.from({ length: 13 }, (_, i) => ({ id: `p${i+1}-${Date.now()}`, location: '', description: '' }))
+        });
+      }
+
+      setServiceGroups(mappedGroups);
     }
   }, [contract]);
 
@@ -105,7 +129,7 @@ export default function EditContractPage() {
       id: Math.random().toString(36).substr(2, 9), 
       serviceName: '', 
       amount: 0, 
-      points: [{ id: Math.random().toString(36).substr(2, 9), location: '', description: '' }] 
+      points: Array.from({ length: 13 }, (_, i) => ({ id: `p-new-${i+1}-${Date.now()}`, location: '', description: '' }))
     }]);
   };
 
@@ -136,21 +160,28 @@ export default function EditContractPage() {
     setIsSubmitting(true);
     const customer = customers?.find(c => c.id === selectedCustomerId);
     
-    const customerName = customer ? (customer.customerType !== 'individual' ? customer.companyName : `${customer.firstName} ${customer.lastName}`) : "Client";
+    const customerName = customer ? (customer.customerType !== 'individual' ? customer.companyName : `${customer.firstName} ${customer.lastName}`) : (contract?.customerName || "Client");
+
+    // Clean empty points before saving
+    const cleanedGroups = serviceGroups.map(g => ({
+      ...g,
+      points: g.points.filter(p => p.location.trim() !== "")
+    })).filter(g => g.serviceName.trim() !== "" || g.points.length > 0);
 
     const updateData = {
       agreementNo, 
       customerId: selectedCustomerId, 
       customerName,
-      customerAddress: customer?.address || "",
-      customerPhone: customer?.phoneNumber || "",
-      customerEmail: customer?.email || "",
+      customerAddress: customer?.address || contract?.customerAddress || "",
+      customerPhone: customer?.phoneNumber || contract?.customerPhone || "",
+      customerEmail: customer?.email || contract?.customerEmail || "",
       serviceType, 
+      projectName,
       startDate, 
       endDate, 
       billingCycle,
       billingDay: Number(billingDay), 
-      groups: serviceGroups,
+      groups: cleanedGroups,
       monthlyAmount: grossSubtotal, 
       vatPercent: Number(vatPercent), 
       vatAmount,
@@ -177,7 +208,7 @@ export default function EditContractPage() {
       });
   };
 
-  if (isContractLoading) return <div className="flex h-[70vh] items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-emerald-600" /></div>;
+  if (isContractLoading || !contract) return <div className="flex h-[70vh] items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-emerald-600" /></div>;
 
   return (
     <div className="flex flex-col h-full bg-slate-50 min-h-screen pb-20">
@@ -192,7 +223,7 @@ export default function EditContractPage() {
         <div className="flex items-center gap-3">
           <Button variant="ghost" className="rounded-full text-[10px] font-black uppercase tracking-widest px-6" onClick={() => router.back()}>{t('cancel')}</Button>
           <Button onClick={handleUpdateContract} disabled={isSubmitting} className="bg-emerald-600 hover:bg-emerald-700 rounded-full px-10 h-11 text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-emerald-100 gap-2">
-            {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />} Synchronize Changes
+            {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />} Update Agreement
           </Button>
         </div>
       </div>
@@ -216,20 +247,13 @@ export default function EditContractPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Agreement No.</Label>
-                <Input value={agreementNo} onChange={e => setAgreementNo(e.target.value)} required className="h-11 rounded-xl font-bold" />
+                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Project Name</Label>
+                <Input value={projectName} onChange={e => setProjectName(e.target.value)} className="h-11 rounded-xl font-bold" />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Billing Cycle</Label>
-                <Select value={billingCycle} onValueChange={setBillingCycle}>
-                  <SelectTrigger className="h-11 rounded-xl bg-slate-50 font-bold text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="Monthly">Monthly</SelectItem>
-                    <SelectItem value="Quarterly">Quarterly</SelectItem>
-                    <SelectItem value="Yearly">Yearly</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Agreement No.</Label>
+                <Input value={agreementNo} onChange={e => setAgreementNo(e.target.value)} required className="h-11 rounded-xl font-bold" />
               </div>
 
               <div className="space-y-1.5">
@@ -250,7 +274,7 @@ export default function EditContractPage() {
             <div className="flex items-center justify-between px-2">
                <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2"><LayoutGrid className="h-4 w-4 text-emerald-600" /> Service Matrix</h3>
                <Button type="button" onClick={addGroup} variant="outline" className="rounded-full gap-2 border-emerald-100 text-emerald-700 bg-white h-9 px-6 font-black text-[10px] uppercase shadow-sm">
-                 <PlusCircle className="h-4 w-4" /> Add Service Group
+                 <PlusCircle className="h-4 w-4" /> Add Service Block
                </Button>
             </div>
 
@@ -260,7 +284,7 @@ export default function EditContractPage() {
                   <div className="flex items-center gap-4 flex-1 min-w-[300px]">
                     <div className="space-y-1 flex-1">
                        <Label className="text-[9px] font-black uppercase text-slate-400">Service Name</Label>
-                       <Input value={group.serviceName} onChange={e => updateGroup(group.id, 'serviceName', e.target.value)} className="h-10 rounded-xl bg-white font-black uppercase text-xs" placeholder="e.g. CCTV Maintenance" />
+                       <Input value={group.serviceName} onChange={e => updateGroup(group.id, 'serviceName', e.target.value)} className="h-10 rounded-xl bg-white font-black uppercase text-xs" placeholder="e.g. Monthly Maintenance Fee" />
                     </div>
                     <div className="space-y-1 w-44">
                        <Label className="text-[9px] font-black uppercase text-slate-400">Monthly Group Fee (৳)</Label>
@@ -273,8 +297,7 @@ export default function EditContractPage() {
                 <div className="p-6">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between mb-2">
-                       <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><MapPin className="h-3.5 w-3.5" /> Locations / Points</p>
-                       <Button type="button" size="sm" onClick={() => addPoint(group.id)} className="h-8 rounded-lg gap-2 text-[9px] font-black uppercase bg-emerald-50 text-emerald-700 border-none px-4"><Plus className="h-3.5 w-3.5" /> Add Location</Button>
+                       <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><MapPin className="h-3.5 w-3.5" /> Locations / Description</p>
                     </div>
                     <div className="overflow-x-auto rounded-2xl border border-slate-100 bg-slate-50/20">
                       <table className="w-full border-collapse">
@@ -290,10 +313,10 @@ export default function EditContractPage() {
                             <tr key={point.id} className="border-t border-slate-50 h-14 group bg-white/40">
                               <td className="text-center text-[10px] font-black text-slate-300">{(pIdx + 1).toString().padStart(2, '0')}</td>
                               <td className="pl-4">
-                                <Input value={point.location} onChange={e => updatePoint(group.id, point.id, 'location', e.target.value)} className="h-9 border-none bg-white/50 text-[11px] font-bold uppercase rounded-lg focus:ring-1 focus:ring-emerald-500" placeholder="Location details..." />
+                                <Input value={point.location} onChange={e => updatePoint(group.id, point.id, 'location', e.target.value)} className="h-9 border-none bg-white/50 text-[11px] font-bold uppercase rounded-lg focus:ring-1 focus:ring-emerald-500" placeholder="Enter Location details..." />
                               </td>
                               <td className="text-center">
-                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-200 hover:text-red-500" onClick={() => {
+                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-200 hover:text-red-500 opacity-0 group-hover:opacity-100" onClick={() => {
                                   if (group.points.length > 1) {
                                     setServiceGroups(serviceGroups.map(g => g.id === group.id ? { ...g, points: g.points.filter(p => p.id !== point.id) } : g));
                                   }
@@ -312,10 +335,10 @@ export default function EditContractPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <Card className="p-8 rounded-[2.5rem] bg-white space-y-6">
-              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Internal Remarks</h3>
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Financial Adjustments</h3>
               <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">VAT %</Label><Input type="number" value={vatPercent} onChange={e => setVatPercent(Number(e.target.value))} className="h-11 rounded-xl bg-slate-50 border-none" /></div>
-                 <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">Extra Discount</Label><Input type="number" value={discountAmount} onChange={e => setDiscountAmount(Number(e.target.value))} className="h-11 rounded-xl bg-slate-50 border-none" /></div>
+                 <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">Discount (৳)</Label><Input type="number" value={discountAmount} onChange={e => setDiscountAmount(Number(e.target.value))} className="h-11 rounded-xl bg-slate-50 border-none" /></div>
               </div>
               <Textarea value={notes} onChange={e => setNotes(e.target.value)} className="min-h-[120px] rounded-2xl bg-slate-50 border-none p-4 text-[11px] font-bold text-slate-600" />
             </Card>
@@ -338,10 +361,6 @@ export default function EditContractPage() {
                <div className="pt-2 flex justify-between items-center border-t border-white/10 mt-2">
                   <p className="text-sm font-black uppercase text-white tracking-widest">Net Monthly Payable</p>
                   <p className="text-3xl font-black text-emerald-400">৳{netMonthlyTotal.toLocaleString()}</p>
-               </div>
-               <div className="pt-4 flex items-center gap-4 bg-white/5 p-4 rounded-2xl">
-                  <Calculator className="h-6 w-6 text-emerald-400" />
-                  <p className="text-[9px] font-bold leading-relaxed opacity-60 uppercase">Calculations are saved for automated invoice generation cycles.</p>
                </div>
             </Card>
           </div>

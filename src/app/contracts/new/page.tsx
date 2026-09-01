@@ -55,6 +55,7 @@ export default function NewContractPage() {
   const [selectedCustomerId, setSelectedCustomerId] = React.useState("");
   const [agreementNo, setAgreementNo] = React.useState("");
   const [serviceType, setServiceType] = React.useState("Monthly Maintenance");
+  const [projectName, setProjectName] = React.useState("");
   const [startDate, setStartDate] = React.useState(new Date().toISOString().split('T')[0]);
   const [billingCycle, setBillingCycle] = React.useState("Monthly");
   const [billingDay, setBillingDay] = React.useState(1);
@@ -92,10 +93,6 @@ export default function NewContractPage() {
     if (serviceGroups.length > 1) setServiceGroups(serviceGroups.filter(g => g.id !== groupId));
   };
 
-  const addPoint = (groupId: string) => {
-    setServiceGroups(serviceGroups.map(g => g.id === groupId ? { ...g, points: [...g.points, { id: Math.random().toString(36).substr(2, 9), location: '', description: '' }] } : g));
-  };
-
   const updateGroup = (groupId: string, field: keyof ServiceGroup, val: any) => {
     setServiceGroups(serviceGroups.map(g => g.id === groupId ? { ...g, [field]: val } : g));
   };
@@ -120,8 +117,7 @@ export default function NewContractPage() {
     const customerPhone = customer?.phoneNumber || "";
     const customerEmail = customer?.email || "";
 
-    // Filter out groups with no service name OR filter points with no location before saving? 
-    // Usually it's better to keep only non-empty points in DB.
+    // Filter out empty points before saving
     const cleanedGroups = serviceGroups.map(g => ({
       ...g,
       points: g.points.filter(p => p.location.trim() !== "")
@@ -137,6 +133,7 @@ export default function NewContractPage() {
       customerPhone,
       customerEmail,
       serviceType, 
+      projectName,
       startDate, 
       billingCycle,
       billingDay: Number(billingDay), 
@@ -207,20 +204,13 @@ export default function NewContractPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Agreement / Service No.</Label>
-                <Input value={agreementNo} onChange={e => setAgreementNo(e.target.value)} required className="h-11 rounded-xl font-bold" />
+                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Project Name</Label>
+                <Input value={projectName} onChange={e => setProjectName(e.target.value)} className="h-11 rounded-xl font-bold" placeholder="e.g. IT Infrastructure" />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Billing Cycle</Label>
-                <Select value={billingCycle} onValueChange={setBillingCycle}>
-                  <SelectTrigger className="h-11 rounded-xl bg-slate-50 font-bold text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent className="rounded-xl shadow-2xl border-none ring-1 ring-slate-100">
-                    <SelectItem value="Monthly">Monthly</SelectItem>
-                    <SelectItem value="Quarterly">Quarterly</SelectItem>
-                    <SelectItem value="Yearly">Yearly</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Agreement No.</Label>
+                <Input value={agreementNo} onChange={e => setAgreementNo(e.target.value)} required className="h-11 rounded-xl font-bold" />
               </div>
 
               <div className="space-y-1.5">
@@ -234,7 +224,7 @@ export default function NewContractPage() {
             <div className="flex items-center justify-between px-2">
                <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2"><LayoutGrid className="h-4 w-4 text-emerald-600" /> Service Manifest</h3>
                <Button type="button" onClick={addGroup} variant="outline" className="rounded-full gap-2 border-emerald-100 text-emerald-700 bg-white h-9 px-6 font-black text-[10px] uppercase shadow-sm hover:bg-emerald-50">
-                 <PlusCircle className="h-4 w-4" /> Add Service Group
+                 <PlusCircle className="h-4 w-4" /> Add Service Block
                </Button>
             </div>
 
@@ -257,8 +247,7 @@ export default function NewContractPage() {
                 <div className="p-6">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between mb-2">
-                       <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><MapPin className="h-3.5 w-3.5" /> Locations / Points (Max 13 for A4 Fit)</p>
-                       <Button type="button" size="sm" onClick={() => addPoint(group.id)} className="h-8 rounded-lg gap-2 text-[9px] font-black uppercase bg-emerald-50 text-emerald-700 border-none px-4"><Plus className="h-3.5 w-3.5" /> Add Row</Button>
+                       <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><MapPin className="h-3.5 w-3.5" /> Locations / Description</p>
                     </div>
                     <div className="overflow-x-auto rounded-2xl border border-slate-100 bg-slate-50/20">
                       <table className="w-full border-collapse">
@@ -277,7 +266,7 @@ export default function NewContractPage() {
                                 <Input value={point.location} onChange={e => updatePoint(group.id, point.id, 'location', e.target.value)} className="h-9 border-none bg-white/50 text-[11px] font-bold uppercase rounded-lg focus:ring-1 focus:ring-emerald-500" placeholder="Enter Location Details..." />
                               </td>
                               <td className="text-center">
-                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-200 hover:text-red-500" onClick={() => {
+                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-200 hover:text-red-500 opacity-0 group-hover:opacity-100" onClick={() => {
                                   if (group.points.length > 1) {
                                     setServiceGroups(serviceGroups.map(g => g.id === group.id ? { ...g, points: g.points.filter(p => p.id !== point.id) } : g));
                                   }
@@ -296,7 +285,11 @@ export default function NewContractPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <Card className="p-8 rounded-[2.5rem] bg-white space-y-6">
-              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Compliance Notes</h3>
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Internal Remarks</h3>
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">VAT %</Label><Input type="number" value={vatPercent} onChange={e => setVatPercent(Number(e.target.value))} className="h-11 rounded-xl bg-slate-50 border-none" /></div>
+                 <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">Extra Discount (৳)</Label><Input type="number" value={discountAmount} onChange={e => setDiscountAmount(Number(e.target.value))} className="h-11 rounded-xl bg-slate-50 border-none" /></div>
+              </div>
               <Textarea value={notes} onChange={e => setNotes(e.target.value)} className="min-h-[120px] rounded-2xl bg-slate-50 border-none p-4 text-[11px] font-bold text-slate-600" placeholder="Additional contract terms..." />
             </Card>
 
@@ -313,7 +306,7 @@ export default function NewContractPage() {
                </div>
                <div className="pt-4 flex items-center gap-4 bg-white/5 p-5 rounded-3xl">
                   <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0"><ShieldCheck className="h-6 w-6 text-emerald-400" /></div>
-                  <p className="text-[10px] font-bold leading-relaxed opacity-60 uppercase">System will automatically calculate VAT and Net Payable during each billing cycle generation based on these master settings.</p>
+                  <p className="text-[10px] font-bold leading-relaxed opacity-60 uppercase">System will automatically calculate VAT and Net Payable during each billing cycle generation based on these settings.</p>
                </div>
             </Card>
           </div>
