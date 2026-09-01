@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -37,7 +38,10 @@ export default function ViewContractInvoicePage() {
     return (
       <div className="flex h-[70vh] items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+          <div className="h-16 w-16 bg-blue-600/10 rounded-2xl flex items-center justify-center animate-pulse">
+            <FileText className="h-8 w-8 text-blue-600" />
+          </div>
+          <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Retrieving Secure Document...</p>
         </div>
       </div>
@@ -58,8 +62,8 @@ export default function ViewContractInvoicePage() {
   }
 
   return (
-    <div className="max-w-[1000px] mx-auto space-y-6 pb-20">
-      <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b px-4 py-3 flex items-center justify-between no-print mb-6">
+    <div className="max-w-[1000px] mx-auto space-y-6 pb-20 no-scrollbar">
+      <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b px-4 py-3 flex items-center justify-between no-print mb-6 shadow-sm">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full">
             <ArrowLeft className="h-5 w-5" />
@@ -86,15 +90,14 @@ export default function ViewContractInvoicePage() {
           date={invoice.createdAt?.toDate?.()?.toISOString() || new Date().toISOString()}
           customerName={invoice.customerName}
           customerInfo={`Contract Ref: ${invoice.contractNumber}\nBilling Month: ${invoice.billingMonth}`}
-          items={[{
-            name: invoice.serviceName || "Service Subscription",
-            description: `Monthly service fee for ${invoice.billingMonth}`,
-            quantity: 1,
-            unit: "Month",
-            unitPrice: invoice.amount,
-            total: invoice.amount
-          }]}
-          subtotal={invoice.amount}
+          // Pass the groups for vertically merged layout
+          {...{
+            groups: invoice.groups || [],
+            serviceName: invoice.serviceName,
+            agreementNo: invoice.agreementNo
+          } as any}
+          items={[]} // Main table handled by groups in layout
+          subtotal={invoice.subtotal}
           grandTotal={invoice.amount}
           status={invoice.status}
           type="invoice"
@@ -107,7 +110,7 @@ export default function ViewContractInvoicePage() {
            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Cycle Reconciliation</p>
            <div className="flex justify-between items-baseline">
              <span className="text-xs font-bold text-slate-600">Invoice Status</span>
-             <Badge variant="outline" className={invoice.status === 'paid' ? "bg-green-50 text-green-700 border-none uppercase font-black text-[9px]" : "bg-orange-50 text-orange-700 border-none uppercase font-black text-[9px]"}>
+             <Badge variant="outline" className={cn("border-none uppercase font-black text-[9px] px-2 h-5", invoice.status === 'paid' ? "bg-green-50 text-green-700" : "bg-orange-50 text-orange-700")}>
                {invoice.status}
              </Badge>
            </div>
