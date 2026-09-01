@@ -31,12 +31,8 @@ import { Textarea } from "@/components/ui/textarea"
 
 interface ServicePoint {
   id: string;
-  item: string;
-  description: string;
   location: string;
-  siteCode: string;
-  contactPerson: string;
-  contactNumber: string;
+  description: string;
 }
 
 interface ServiceGroup {
@@ -61,7 +57,7 @@ export default function NewContractPage() {
   const router = useRouter();
   const { companyId, branchId } = useTenant();
   const db = useFirestore();
-  const { t, formatCurrency } = useTranslation();
+  const { t } = useTranslation();
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   
@@ -83,7 +79,7 @@ export default function NewContractPage() {
       serviceName: 'MRC for Data', 
       amount: 0, 
       points: [
-        { id: 'p1', item: 'MRC for Data', description: '', location: '', siteCode: '', contactPerson: '', contactNumber: '' }
+        { id: 'p1', location: 'Main Site Connection', description: '' }
       ] 
     }
   ]);
@@ -112,7 +108,7 @@ export default function NewContractPage() {
       id: Math.random().toString(36).substr(2, 9), 
       serviceName: '', 
       amount: 0, 
-      points: [{ id: Math.random().toString(36).substr(2, 9), item: '', description: '', location: '', siteCode: '', contactPerson: '', contactNumber: '' }] 
+      points: [{ id: Math.random().toString(36).substr(2, 9), location: '', description: '' }] 
     }]);
   };
 
@@ -129,12 +125,8 @@ export default function NewContractPage() {
         ...g,
         points: [...g.points, { 
           id: Math.random().toString(36).substr(2, 9), 
-          item: g.serviceName, 
-          description: '', 
           location: '', 
-          siteCode: '', 
-          contactPerson: '', 
-          contactNumber: '' 
+          description: '' 
         }]
       };
     }));
@@ -143,12 +135,7 @@ export default function NewContractPage() {
   const updateGroup = (groupId: string, field: keyof ServiceGroup, val: any) => {
     setServiceGroups(serviceGroups.map(g => {
       if (g.id !== groupId) return g;
-      const updated = { ...g, [field]: val };
-      // If group name changes, update all points' item name
-      if (field === 'serviceName') {
-        updated.points = updated.points.map(p => ({ ...p, item: val }));
-      }
-      return updated;
+      return { ...g, [field]: val };
     }));
   };
 
@@ -321,7 +308,7 @@ export default function NewContractPage() {
                 <div className="p-6 bg-slate-50/50 border-b flex items-center justify-between flex-wrap gap-4">
                   <div className="flex items-center gap-4 flex-1 min-w-[300px]">
                     <div className="space-y-1 flex-1">
-                       <Label className="text-[9px] font-black uppercase text-slate-400">Group Name (e.g. Internet Connectivity)</Label>
+                       <Label className="text-[9px] font-black uppercase text-slate-400">Service Name (e.g. Internet Connectivity)</Label>
                        <Input 
                          value={group.serviceName} 
                          onChange={e => updateGroup(group.id, 'serviceName', e.target.value)} 
@@ -348,9 +335,9 @@ export default function NewContractPage() {
                 <div className="p-6">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between mb-2">
-                       <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><MapPin className="h-3.5 w-3.5" /> Service Points / Locations</p>
+                       <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><MapPin className="h-3.5 w-3.5" /> Description / Locations</p>
                        <Button type="button" size="sm" onClick={() => addPoint(group.id)} className="h-8 rounded-lg gap-2 text-[9px] font-black uppercase bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-none transition-all px-4">
-                         <Plus className="h-3.5 w-3.5" /> Add Point
+                         <Plus className="h-3.5 w-3.5" /> Add Location
                        </Button>
                     </div>
                     
@@ -359,9 +346,8 @@ export default function NewContractPage() {
                         <thead className="bg-slate-50/50">
                           <tr className="h-10">
                             <th className="w-12 text-center text-[9px] font-black uppercase text-slate-400">SL</th>
-                            <th className="text-left text-[9px] font-black uppercase text-slate-400 pl-4">Location / Site Name</th>
-                            <th className="text-left text-[9px] font-black uppercase text-slate-400 pl-4">Description / Points</th>
-                            <th className="text-left text-[9px] font-black uppercase text-slate-400 pl-4">Contact Person</th>
+                            <th className="text-left text-[9px] font-black uppercase text-slate-400 pl-4">Location / Specific Details</th>
+                            <th className="text-left text-[9px] font-black uppercase text-slate-400 pl-4">Remarks</th>
                             <th className="w-12"></th>
                           </tr>
                         </thead>
@@ -374,7 +360,7 @@ export default function NewContractPage() {
                                   value={point.location} 
                                   onChange={e => updatePoint(group.id, point.id, 'location', e.target.value)} 
                                   className="h-9 border-none bg-white/50 text-[11px] font-bold uppercase rounded-lg focus:ring-1 focus:ring-emerald-500" 
-                                  placeholder="Site Location"
+                                  placeholder="e.g. Uttara Sector 4 Control Room"
                                 />
                               </td>
                               <td className="pl-4">
@@ -382,15 +368,7 @@ export default function NewContractPage() {
                                   value={point.description} 
                                   onChange={e => updatePoint(group.id, point.id, 'description', e.target.value)} 
                                   className="h-9 border-none bg-white/50 text-[11px] font-bold rounded-lg focus:ring-1 focus:ring-emerald-500" 
-                                  placeholder="Service Specifics"
-                                />
-                              </td>
-                              <td className="pl-4">
-                                <Input 
-                                  value={point.contactPerson} 
-                                  onChange={e => updatePoint(group.id, point.id, 'contactPerson', e.target.value)} 
-                                  className="h-9 border-none bg-white/50 text-[11px] font-bold rounded-lg focus:ring-1 focus:ring-emerald-500" 
-                                  placeholder="Name/Phone"
+                                  placeholder="Internal remarks (Optional)"
                                 />
                               </td>
                               <td className="text-center">

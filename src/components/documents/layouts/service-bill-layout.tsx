@@ -9,8 +9,8 @@ import { DocumentTemplateProps } from "../document-template"
 
 /**
  * Service Bill Layout - Warrior Official Edition
- * Specialized for Multi-Location Monthly Service Charge Bills
- * Matches the corporate 'Pad' design used in Sales/Quotations.
+ * Optimized Table structure: SL, Service Name, Description/Location, Unit Price, Amount.
+ * Matches corporate Pad design with vertical price/amount merging.
  */
 export function ServiceBillLayout(props: DocumentTemplateProps) {
   const { 
@@ -20,14 +20,12 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
     customerName, 
     customerInfo, 
     grandTotal, 
-    notes,
-    items 
+    notes
   } = props;
   
-  const { settings, currencySymbol } = useSettings()
-  const { t, formatDate, amountToWords } = useTranslation()
+  const { settings } = useSettings()
+  const { formatDate, amountToWords } = useTranslation()
 
-  // Extract groups from the props (passed from the view page)
   const groups = (props as any).groups || [];
 
   const renderHeader = () => (
@@ -62,18 +60,15 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
 
   return (
     <div className="flex flex-col min-h-full bg-white text-[#222222] font-sans p-0 select-none border-none leading-tight document-body">
-      {/* 1. CORPORATE HEADER */}
       {renderHeader()}
       <div className="border-t-[1.5px] border-red-500 border-dashed w-full mb-8" />
 
-      {/* 2. DYNAMIC STATEMENT TITLE */}
       <div className="text-center mb-8">
         <h2 className="text-[22px] font-black uppercase text-slate-900 underline underline-offset-8 decoration-2 decoration-blue-600">
           {(props as any).serviceName ? `${(props as any).serviceName} Bill` : title}
         </h2>
       </div>
 
-      {/* 3. INFO MATRIX */}
       <div className="grid grid-cols-2 gap-10 mb-8 px-4">
         <div className="space-y-1">
           <p className="text-[12px] font-bold">To,</p>
@@ -92,14 +87,12 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
         </div>
       </div>
 
-      {/* 4. SERVICE MATRIX BANNER */}
       <div className="bg-[#FDEBD0] border border-black p-2 text-center mb-[1px]">
         <h3 className="text-[14px] font-black text-[#0056B3] uppercase tracking-tight">
           SERVICE AND LOCATION MATRIX
         </h3>
       </div>
 
-      {/* 5. DATA TABLE */}
       <div className="flex-1">
         <table className="w-full border-collapse border border-black table-fixed">
           <colgroup>
@@ -112,19 +105,18 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
           <thead>
             <tr className="bg-[#F57C00] text-white h-10">
               <th className="border border-black text-[10px] font-black uppercase text-center">SL</th>
-              <th className="border border-black px-4 text-left text-[10px] font-black uppercase">Item / Service</th>
-              <th className="border border-black px-4 text-left text-[10px] font-black uppercase">Description / Locations</th>
-              <th className="border border-black px-3 text-right text-[10px] font-black uppercase">Price</th>
+              <th className="border border-black px-4 text-left text-[10px] font-black uppercase">Service Name</th>
+              <th className="border border-black px-4 text-left text-[10px] font-black uppercase">Description / Location</th>
+              <th className="border border-black px-3 text-right text-[10px] font-black uppercase">Unit Price</th>
               <th className="border border-black px-4 text-right text-[10px] font-black uppercase">Amount</th>
             </tr>
           </thead>
           <tbody>
             {groups.length === 0 ? (
-              <tr className="h-64"><td colSpan={5} className="text-center italic opacity-20 font-black uppercase border border-black">Service detail records not mapped in document memory</td></tr>
+              <tr className="h-64"><td colSpan={5} className="text-center italic opacity-20 font-black uppercase border border-black">Service detail records not mapped</td></tr>
             ) : groups.map((group: any, gIdx: number) => (
               <React.Fragment key={group.id || gIdx}>
                 {group.points.map((point: any, pIdx: number) => {
-                  // Calculate continuous SL No.
                   const globalSl = groups.slice(0, gIdx).reduce((acc: number, prevG: any) => acc + prevG.points.length, 0) + pIdx + 1;
                   return (
                     <tr key={point.id || pIdx} className="border-b border-black min-h-[40px] hover:bg-slate-50 transition-colors">
@@ -138,23 +130,13 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
                         {point.location} 
                         {point.description && <p className="text-slate-400 font-normal normal-case italic mt-0.5">{point.description}</p>}
                       </td>
-                      
-                      {/* Price Cell Merged */}
                       {pIdx === 0 && (
-                        <td 
-                          rowSpan={group.points.length} 
-                          className="border border-black px-3 text-right text-[11px] font-black text-slate-800 align-middle tabular-nums"
-                        >
+                        <td rowSpan={group.points.length} className="border border-black px-3 text-right text-[11px] font-black text-slate-800 align-middle tabular-nums">
                           {Number(group.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </td>
                       )}
-                      
-                      {/* Amount Cell Merged */}
                       {pIdx === 0 && (
-                        <td 
-                          rowSpan={group.points.length} 
-                          className="border border-black px-4 text-right text-[11px] font-black text-blue-900 align-middle tabular-nums"
-                        >
+                        <td rowSpan={group.points.length} className="border border-black px-4 text-right text-[11px] font-black text-blue-900 align-middle tabular-nums">
                           {Number(group.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </td>
                       )}
@@ -164,7 +146,6 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
               </React.Fragment>
             ))}
             
-            {/* TOTALS */}
             <tr className="bg-[#f8f9fa] border-t-2 border-black h-12">
               <td colSpan={3} className="border border-black px-5 py-3">
                  <div className="flex flex-col gap-1">
@@ -174,9 +155,7 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
                     </p>
                  </div>
               </td>
-              <td className="border border-black px-3 text-right text-[11px] uppercase tracking-wider font-black bg-blue-50 text-blue-900">
-                Total (BDT)
-              </td>
+              <td className="border border-black px-3 text-right text-[11px] uppercase tracking-wider font-black bg-blue-50 text-blue-900">Total (BDT)</td>
               <td className="border border-black px-4 text-right text-[16px] font-black text-blue-900 tabular-nums bg-blue-100">
                 {Number(grandTotal || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </td>
@@ -185,12 +164,11 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
         </table>
       </div>
 
-      {/* 6. TERMS & NOTES */}
       <div className="mt-8 px-4 grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
           <h4 className="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-[0.2em]">Compliance & Terms</h4>
           <div className="text-[10px] text-slate-600 leading-relaxed whitespace-pre-wrap border border-slate-100 p-4 rounded-xl bg-slate-50/50">
-            {settings?.pdfTerms || "1. Monthly service charges are payable in advance by the 10th of each billing month.\n2. Late payments may attract service suspension.\n3. This document is a computer-generated transaction record authenticated by the ERP terminal."}
+            {settings?.pdfTerms || "1. Monthly service charges are payable in advance by the 10th of each billing month.\n2. Late payments may attract service suspension.\n3. This document is a computer-generated transaction record."}
           </div>
         </div>
         {notes && (
@@ -201,32 +179,19 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
         )}
       </div>
 
-      {/* 7. SIGNATURES & CORPORATE FOOTER */}
       <div className="mt-auto pt-12 pb-6 text-center space-y-2 border-t-2 border-[#F57C00] mx-4">
         <div className="grid grid-cols-4 gap-4 pt-12 mb-8 relative">
           <div className="text-center"><div className="border-t border-black pt-1 text-[9px] font-black uppercase">Customer Signature</div></div>
           <div className="text-center"><div className="border-t border-black pt-1 text-[9px] font-black uppercase">Prepared By</div></div>
           <div className="text-center"><div className="border-t border-black pt-1 text-[9px] font-black uppercase">Finance Checked</div></div>
           <div className="text-center relative">
-            {settings?.authorizedSeal && (
-               <div className="absolute -top-16 left-1/2 -translate-x-1/2 h-20 w-20 opacity-30">
-                  <img src={settings.authorizedSeal} className="w-full h-full object-contain" alt="Seal" />
-               </div>
-            )}
             <div className="border-t-2 border-blue-700 pt-1 text-[10px] font-black uppercase text-blue-800">Authorized Signature</div>
           </div>
         </div>
-
         <p className="text-[11.5px] font-black text-slate-500 flex items-center justify-center gap-2">
-          <span className="text-red-600">❤</span> {settings?.footerHeartMsg || "Thank You For Your Business"} <span className="text-red-600">❤</span>
+          Thank You For Your Business
         </p>
         <h4 className="text-[24px] font-black text-slate-900 uppercase tracking-tight leading-none">Warrior Tech System</h4>
-        <div className="flex justify-center gap-6 text-[9px] font-black text-blue-700 uppercase tracking-widest mt-2">
-          <span>• Security System</span>
-          <span>• Communication System</span>
-          <span>• Fire Safety</span>
-          <span>• Network & IT Solutions</span>
-        </div>
       </div>
     </div>
   )
