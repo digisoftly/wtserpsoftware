@@ -181,7 +181,7 @@ export default function SettingsPage() {
                   {logoPreview ? (
                     <img src={logoPreview} className="w-full h-full object-contain rounded-xl border p-2 bg-slate-50" />
                   ) : (
-                    <div className="w-full h-full bg-slate-50 rounded-xl border-2 border-dashed flex items-center justify-center"><ImageIcon className="text-slate-300" /></div>
+                    <div className="w-full h-full bg-slate-50 rounded-xl border-2 border-dashed flex items-center justify-center"><Icons.ImageIcon className="text-slate-300" /></div>
                   )}
                   <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => {
                     const file = e.target.files?.[0];

@@ -52,7 +52,8 @@ import {
   FileStack,
   FolderOpen,
   Handshake,
-  LifeBuoy
+  LifeBuoy,
+  Store
 } from "lucide-react"
 
 import { 
@@ -89,6 +90,7 @@ interface NavItem {
   color: string
 }
 
+// 24 MODULE CORE MAPPING
 const NAV_ITEMS_MAP: Record<string, NavItem> = {
   dashboard: { name: "dashboard", key: "dashboard", icon: LayoutDashboard, path: "/", color: "text-blue-600" },
   sales: { name: "sales", key: "sales", icon: ShoppingCart, path: "/sales", color: "text-green-600" },
@@ -102,10 +104,10 @@ const NAV_ITEMS_MAP: Record<string, NavItem> = {
   projectBilling: { name: "projectBilling", key: "projectBilling", icon: ClipboardList, path: "/projects", color: "text-teal-600" },
   contracts: { name: "contracts", key: "contracts", icon: Handshake, path: "/contracts", color: "text-indigo-600" },
   customers: { name: "customers", key: "customers", icon: Users, path: "/customers", color: "text-blue-500" },
-  suppliers: { name: "suppliers", key: "suppliers", icon: Truck, path: "/suppliers", color: "text-rose-600" },
+  suppliers: { name: "suppliers", key: "suppliers", icon: Store, path: "/suppliers", color: "text-rose-600" },
   accounts: { name: "accounts", key: "accounts", icon: Wallet, path: "/accounts", color: "text-yellow-700" },
   expenses: { name: "expenses", key: "expenses", icon: Receipt, path: "/expenses", color: "text-red-500" },
-  support: { name: "support", key: "support", icon: GitPullRequest, path: "/support", color: "text-indigo-500" },
+  support: { name: "support", key: "support", icon: LifeBuoy, path: "/support", color: "text-indigo-500" },
   crm: { name: "crm", key: "crm", icon: Target, path: "/crm", color: "text-rose-700" },
   hrm: { name: "hrm", key: "hrm", icon: Briefcase, path: "/hrm", color: "text-purple-600" },
   branches: { name: "branches", key: "branches", icon: Building2, path: "/branches", color: "text-slate-700" },
