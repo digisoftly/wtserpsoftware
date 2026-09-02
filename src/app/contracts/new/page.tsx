@@ -6,14 +6,11 @@ import {
   ArrowLeft, 
   Save, 
   Loader2, 
-  Plus,
-  Trash2,
   PlusCircle,
   ShieldCheck,
   Building,
   User,
-  GitPullRequest,
-  Briefcase
+  Trash2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -56,7 +53,6 @@ export default function NewServiceContractPage() {
   const [serviceType, setServiceType] = React.useState("amc");
   const [startDate, setStartDate] = React.useState(new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = React.useState("");
-  const [renewalNoticeDays, setRenewalNoticeDays] = React.useState("30");
   const [billingCycle, setBillingCycle] = React.useState("Monthly");
   const [billingDay, setBillingDay] = React.useState(1);
   const [vatPercent, setVatPercent] = React.useState(0);
@@ -80,7 +76,11 @@ export default function NewServiceContractPage() {
 
   const customers = React.useMemo(() => {
     if (!rawCustomers) return [];
-    return [...rawCustomers].sort((a, b) => (a.fullName || '').localeCompare(b.fullName || ''));
+    return [...rawCustomers].sort((a, b) => {
+      const nameA = a.companyName || a.fullName || "";
+      const nameB = b.companyName || b.fullName || "";
+      return nameA.localeCompare(nameB);
+    });
   }, [rawCustomers]);
 
   const projectsQuery = useMemoFirebase(() => {
@@ -123,7 +123,8 @@ export default function NewServiceContractPage() {
     const customer = customers?.find(c => c.id === selectedCustomerId);
     const project = projects?.find(p => p.id === selectedProjectId);
     
-    const customerName = customer ? (customer.customerType !== 'individual' ? customer.companyName : `${customer.firstName} ${customer.lastName}`) : "Client";
+    // Resolve clean customer name
+    const customerName = customer ? (customer.companyName || customer.fullName || "Unknown Client") : "Client";
     
     const cleanedGroups = serviceGroups.map(g => ({
       ...g,
@@ -139,12 +140,12 @@ export default function NewServiceContractPage() {
       customerName,
       customerAddress: customer?.address || "",
       customerPhone: customer?.phoneNumber || "",
+      customerEmail: customer?.email || "",
       projectId: selectedProjectId || "standalone",
       projectName: project?.name || "Standalone Agreement",
       serviceType, 
       startDate, 
       endDate,
-      renewalNoticeDays: Number(renewalNoticeDays),
       billingCycle,
       billingDay: Number(billingDay), 
       groups: cleanedGroups,
@@ -171,27 +172,23 @@ export default function NewServiceContractPage() {
 
   return (
     <div className="max-w-full mx-auto space-y-6 pb-20">
-      {/* UNIFIED HEADER BAR */}
       <div className="bg-white border p-4 md:p-6 rounded-2xl md:rounded-[2.5rem] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm ring-1 ring-slate-100 sticky top-0 z-30">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full"><ArrowLeft className="h-5 w-5" /></Button>
           <div>
             <h1 className="text-xl md:text-2xl font-black font-headline uppercase tracking-tight text-slate-900">New Service Contract</h1>
-            <p className="text-[10px] font-black uppercase text-indigo-600 tracking-widest mt-0.5">Terminal Deployment Mode</p>
+            <p className="text-[10px] font-black uppercase text-indigo-600 tracking-widest mt-0.5">Deployment Terminal</p>
           </div>
         </div>
         <div className="flex gap-2">
           <Button variant="ghost" className="rounded-xl h-11 px-6 font-black text-[10px] uppercase tracking-widest" onClick={() => router.back()}>Cancel</Button>
           <Button onClick={handleAddContract} disabled={isSubmitting} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-10 h-11 font-black text-[10px] uppercase shadow-xl transition-all active:scale-95 gap-2">
-            {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />} Submit
+            {isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />} Save
           </Button>
         </div>
       </div>
 
-      {/* UNIFIED SINGLE PAGE CONTAINER */}
       <div className="bg-white border rounded-2xl md:rounded-[2.5rem] p-6 md:p-10 shadow-sm ring-1 ring-slate-100 space-y-12">
-        
-        {/* SECTION 1: IDENTITY */}
         <section className="space-y-6">
            <h3 className="text-[11px] font-black uppercase text-indigo-600 tracking-[0.2em] border-b pb-2">1. Identity & Scope</h3>
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -199,7 +196,12 @@ export default function NewServiceContractPage() {
                 <Label className="text-[10px] font-black uppercase text-slate-400">Target Client Account</Label>
                 <Select value={selectedCustomerId} onValueChange={(v) => { setSelectedCustomerId(v); setSelectedProjectId(""); }}>
                   <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-100 font-bold text-xs"><SelectValue placeholder="Search Client" /></SelectTrigger>
-                  <SelectContent className="max-h-[300px] rounded-xl shadow-2xl">{customers.map(c => <SelectItem key={c.id} value={c.id} className="text-xs font-bold uppercase">{c.customerType === 'company' ? c.companyName : `${c.firstName} ${c.lastName}`}</SelectItem>)}</SelectContent>
+                  <SelectContent className="max-h-[300px] rounded-xl shadow-2xl">
+                    {customers.map(c => {
+                      const cName = c.companyName || c.fullName || "Unnamed Client";
+                      return <SelectItem key={c.id} value={c.id} className="text-xs font-bold uppercase">{cName}</SelectItem>
+                    })}
+                  </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
@@ -213,7 +215,6 @@ export default function NewServiceContractPage() {
            </div>
         </section>
 
-        {/* SECTION 2: TERM */}
         <section className="space-y-6">
            <h3 className="text-[11px] font-black uppercase text-indigo-600 tracking-[0.2em] border-b pb-2">2. Term & Schedule</h3>
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -230,11 +231,10 @@ export default function NewServiceContractPage() {
            </div>
         </section>
 
-        {/* SECTION 3: MATRIX */}
         <section className="space-y-6">
            <div className="flex items-center justify-between flex-wrap gap-4 border-b pb-2">
               <h3 className="text-[11px] font-black uppercase text-indigo-600 tracking-[0.2em]">3. Service Matrix</h3>
-              <Button type="button" onClick={addGroup} variant="outline" className="h-9 px-5 rounded-lg font-black text-[10px] uppercase gap-2 border-indigo-100 text-indigo-600 bg-white"><PlusCircle className="h-3.5 w-3.5" /> Add Block</Button>
+              <Button type="button" onClick={addGroup} variant="outline" className="h-9 px-5 rounded-lg font-black text-[10px] uppercase gap-2 border-indigo-100 text-indigo-600 bg-white"><PlusCircle className="h-3.5 w-3.5" /> New Row</Button>
            </div>
            
            <div className="grid grid-cols-1 gap-8">
@@ -242,11 +242,11 @@ export default function NewServiceContractPage() {
                 <div key={group.id} className="border rounded-2xl overflow-hidden bg-slate-50/30 ring-1 ring-slate-100">
                    <div className="p-5 border-b bg-white flex flex-col md:flex-row gap-4 items-center justify-between">
                       <div className="flex-1 w-full space-y-1.5">
-                         <Label className="text-[9px] font-black uppercase text-slate-400">Service Group Category</Label>
-                         <Input value={group.serviceName} onChange={e => updateGroup(group.id, 'serviceName', e.target.value)} className="h-10 rounded-xl bg-slate-50/50" placeholder="e.g. CCTV Surveillance" />
+                         <Label className="text-[9px] font-black uppercase text-slate-400">Service Category</Label>
+                         <Input value={group.serviceName} onChange={e => updateGroup(group.id, 'serviceName', e.target.value)} className="h-10 rounded-xl bg-slate-50/50" placeholder="e.g. CCTV Maintenance" />
                       </div>
                       <div className="w-full md:w-40 space-y-1.5">
-                         <Label className="text-[9px] font-black uppercase text-slate-400">Fee (৳)</Label>
+                         <Label className="text-[9px] font-black uppercase text-slate-400">Rate (৳)</Label>
                          <Input type="number" value={group.amount || ''} onChange={e => updateGroup(group.id, 'amount', Number(e.target.value))} className="h-10 rounded-xl font-black text-indigo-600" />
                       </div>
                       <Button variant="ghost" size="icon" className="text-red-300 hover:text-red-600 h-10 w-10 mt-5" onClick={() => setServiceGroups(serviceGroups.filter(g => g.id !== group.id))} disabled={serviceGroups.length === 1}><Trash2 className="h-4 w-4" /></Button>
@@ -264,7 +264,6 @@ export default function NewServiceContractPage() {
            </div>
         </section>
 
-        {/* SECTION 4: FINANCIALS */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-10 pt-10 border-t">
            <div className="space-y-6">
               <h3 className="text-[11px] font-black uppercase text-indigo-600 tracking-[0.2em] border-b pb-2">4. Financial Tuning</h3>
@@ -272,11 +271,11 @@ export default function NewServiceContractPage() {
                  <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">VAT %</Label><Input type="number" value={vatPercent} onChange={e => setVatPercent(Number(e.target.value))} className="h-11 rounded-xl" /></div>
                  <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Discount (৳)</Label><Input type="number" value={discountAmount} onChange={e => setDiscountAmount(Number(e.target.value))} className="h-11 rounded-xl" /></div>
               </div>
-              <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Internal Remarks</Label><Textarea value={notes} onChange={e => setNotes(e.target.value)} className="min-h-[120px] rounded-xl p-4 text-xs font-medium" /></div>
+              <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Ledger Remarks</Label><Textarea value={notes} onChange={e => setNotes(e.target.value)} className="min-h-[120px] rounded-xl p-4 text-xs font-medium" /></div>
            </div>
            <div className="bg-slate-900 text-white p-10 rounded-[2.5rem] shadow-2xl flex flex-col justify-center items-center text-center space-y-6 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl" />
-              <p className="text-[10px] font-black uppercase opacity-50 tracking-[0.4em]">Net Periodic Total</p>
+              <p className="text-[10px] font-black uppercase opacity-50 tracking-[0.4em]">Net Periodic Receivable</p>
               <h2 className="text-5xl font-headline font-black text-emerald-400 tracking-tighter">৳{netMonthlyTotal.toLocaleString()}</h2>
               <div className="pt-6 border-t border-white/10 w-full grid grid-cols-2 gap-4 text-[10px] font-black uppercase tracking-widest">
                  <div className="text-left space-y-1"><p className="opacity-40">Gross Base</p><p>৳{grossSubtotal.toLocaleString()}</p></div>
@@ -287,4 +286,8 @@ export default function NewServiceContractPage() {
       </div>
     </div>
   );
+}
+
+function Badge({ className, children }: { className?: string, children: React.ReactNode }) {
+  return <span className={cn("inline-flex items-center px-2 py-0.5 rounded text-xs font-medium", className)}>{children}</span>;
 }
