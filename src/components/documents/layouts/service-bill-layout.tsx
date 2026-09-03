@@ -99,13 +99,7 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
 
       <div className="flex-1 px-4">
         <table className="w-full border-collapse border border-black table-fixed">
-          <colgroup>
-            <col style={{ width: '5%' }} />
-            <col style={{ width: '32%' }} /> {/* Widen Service Name column to 32% */}
-            <col style={{ width: '37%' }} /> 
-            <col style={{ width: '13%' }} />
-            <col style={{ width: '13%' }} />
-          </colgroup>
+          <colgroup><col style={{ width: '5%' }} /><col style={{ width: '32%' }} /><col style={{ width: '37%' }} /><col style={{ width: '13%' }} /><col style={{ width: '13%' }} /></colgroup>
           <thead>
             <tr className="bg-slate-100">
               <th colSpan={5} className="border border-black h-7 text-center text-[10px] font-black uppercase tracking-wider text-blue-900">
@@ -187,7 +181,6 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
         )}
       </div>
 
-      {/* Signature section with reduced top padding */}
       <div className="mt-auto pt-1 pb-3 text-center border-t-2 border-[#F57C00] mx-4">
         <div className="grid grid-cols-4 gap-4 px-4 pt-8 mb-3 relative">
           <div className="text-center border-t border-black pt-0.5 text-[8px] font-black uppercase">Customer Signature</div>
