@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils"
 import { DocumentTemplateProps } from "../document-template"
 
 /**
- * Service Bill Layout - Optimized for 13 Points strictly on a single A4 page
- * Widen Service Name column and tighter vertical spacing for zero-overflow
+ * Service Bill Layout - Strictly Optimized for A4 Single Page (13 Points)
+ * Wide Service Name column and precise vertical spacing.
  */
 export function ServiceBillLayout(props: DocumentTemplateProps) {
   const { 
@@ -67,9 +67,9 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
   return (
     <div className="flex flex-col min-h-[280mm] bg-white text-[#222222] font-sans p-0 select-none border-none leading-tight document-body overflow-hidden">
       {renderHeader()}
-      <div className="border-t-[1.2px] border-red-500 border-dashed w-full mb-2" />
+      <div className="border-t-[1.2px] border-red-500 border-dashed w-full mb-1.5" />
 
-      <div className="text-center mb-2">
+      <div className="text-center mb-1.5">
         <h2 className="text-[15px] font-black uppercase text-slate-900 underline underline-offset-4 decoration-2 decoration-blue-600">
           {(props as any).serviceName ? `${(props as any).serviceName} Bill` : title}
         </h2>
@@ -99,7 +99,7 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
 
       <div className="flex-1 px-4">
         <table className="w-full border-collapse border border-black table-fixed">
-          <colgroup><col style={{width:'5%'}} /><col style={{width:'35%'}} /><col style={{width:'34%'}} /><col style={{width:'13%'}} /><col style={{width:'13%'}} /></colgroup>
+          <colgroup><col style={{width:'5%'}}/><col style={{width:'38%'}}/><col style={{width:'31%'}}/><col style={{width:'13%'}}/><col style={{width:'13%'}}/></colgroup>
           <thead>
             <tr className="bg-slate-100">
               <th colSpan={5} className="border border-black h-6 text-center text-[9px] font-black uppercase tracking-wider text-blue-900">
@@ -122,7 +122,7 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
                 {group.points.map((point: any, pIdx: number) => {
                   const globalSl = groups.slice(0, gIdx).reduce((acc: number, prevG: any) => acc + prevG.points.length, 0) + pIdx + 1;
                   return (
-                    <tr key={point.id || pIdx} className="border-b border-black hover:bg-slate-50 min-h-[22px]">
+                    <tr key={point.id || pIdx} className="border-b border-black hover:bg-slate-50 min-h-[20px]">
                       <td className="border border-black text-center text-[8.5px] font-bold py-0.5">
                         {globalSl.toString().padStart(2, '0')}
                       </td>
@@ -166,15 +166,15 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
         </table>
       </div>
 
-      <div className="mt-2 px-4 grid grid-cols-2 gap-6">
+      <div className="mt-1.5 px-4 grid grid-cols-2 gap-6">
         <div className="space-y-0">
           <h4 className="text-[7.5px] font-black uppercase text-slate-400 tracking-widest">Compliance</h4>
-          <div className="text-[7.5px] text-slate-600 leading-tight border border-slate-50 p-1.5 rounded-lg bg-slate-50/50">
+          <div className="text-[7.5px] text-slate-600 leading-tight border border-slate-50 p-1 rounded-lg bg-slate-50/50">
             {settings?.pdfTerms || "1. Payments due by the 10th of each month.\n2. Late payment may attract suspension."}
           </div>
         </div>
         {notes && (
-          <div className="bg-blue-50/30 p-1.5 rounded-lg border-l-3 border-blue-600 h-fit">
+          <div className="bg-blue-50/30 p-1 rounded-lg border-l-3 border-blue-600 h-fit">
              <p className="text-[7.5px] font-black text-blue-600 uppercase mb-0.5">Remarks</p>
              <p className="text-[8.5px] font-medium text-slate-700 leading-tight">{notes}</p>
           </div>
@@ -182,7 +182,7 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
       </div>
 
       <div className="mt-auto pt-0.5 pb-2 text-center border-t border-[#F57C00] mx-4">
-        <div className="grid grid-cols-4 gap-4 px-4 pt-6 mb-2 relative">
+        <div className="grid grid-cols-4 gap-4 px-4 pt-5 mb-1.5 relative">
           <div className="text-center border-t border-black pt-0.5 text-[8px] font-black uppercase">Customer Signature</div>
           <div className="text-center border-t border-black pt-0.5 text-[8px] font-black uppercase">Prepared By</div>
           <div className="text-center border-t border-black pt-0.5 text-[8px] font-black uppercase">Checked By</div>
