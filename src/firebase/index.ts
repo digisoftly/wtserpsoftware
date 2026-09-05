@@ -5,9 +5,7 @@ import { getFirestore, Firestore, initializeFirestore } from 'firebase/firestore
 
 /**
  * WarriorERP - Global Firebase Singleton
- * Initializing outside the function scope ensures that during Next.js HMR 
- * (Hot Module Replacement) and Turbopack updates, we don't re-initialize 
- * the SDK and hit bandwidth/assertion limits.
+ * Initializing outside the function scope ensures stability during HMR.
  */
 
 // 1. Core App Instance
@@ -16,22 +14,20 @@ const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 // 2. Auth Instance
 const auth = getAuth(app);
 
-// 3. Firestore Instance with Production Config
-// We use initializeFirestore once with specific settings for production reliability.
+// 3. Firestore Instance with Connectivity Fix
 let db: Firestore;
 try {
-  // In a client-side environment, we attempt to initialize only once.
+  // Enabling experimentalForceLongPolling to fix connection timeouts in workstation/proxy environments
   db = initializeFirestore(app, {
     ignoreUndefinedProperties: true,
+    experimentalForceLongPolling: true, 
   });
 } catch (e) {
-  // If already initialized, get the existing instance
   db = getFirestore(app);
 }
 
 /**
  * Shared entry point for both Client and Server components.
- * Client components should use this via the FirebaseClientProvider.
  */
 export function initializeFirebase() {
   return {
