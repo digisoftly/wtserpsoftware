@@ -59,14 +59,11 @@ export interface DocumentTemplateProps {
 export function DocumentTemplate(props: DocumentTemplateProps) {
   const { get_setting } = useSettings();
   
-  // Determine layout: Override > Default per type > Fallback
   const defaultLayout = get_setting(`defaultTemplate_${props.type || 'invoice'}`, 'warrior') as DocumentLayoutType;
   const layout = props.layoutOverride || defaultLayout;
 
-  // Custom styling variables
   const primaryColor = props.customStyles?.primaryColor || get_setting('docPrimaryColor', '#0056B3');
   const accentColor = props.customStyles?.accentColor || get_setting('docAccentColor', '#F57C00');
-  const fontSize = props.customStyles?.fontSize || get_setting('docFontSize', 'standard');
 
   const renderLayout = () => {
     switch (layout) {
@@ -88,17 +85,13 @@ export function DocumentTemplate(props: DocumentTemplateProps) {
     }
   };
 
-  const fontSizeClass = fontSize === 'compact' ? 'text-[9px]' : fontSize === 'large' ? 'text-[13px]' : 'text-[11px]';
-
   return (
     <div 
       className={cn(
-        "document-container bg-white flex flex-col transition-all duration-300",
-        layout === 'thermal' ? "w-[80mm] min-h-auto p-4" : "min-h-[29.7cm] p-8 md:p-12",
-        fontSizeClass
+        "document-container bg-white flex flex-col transition-all duration-300 mx-auto overflow-hidden",
+        layout === 'thermal' ? "w-[80mm] min-h-auto p-4" : "w-[210mm] h-[297mm] p-6 md:p-8"
       )}
       style={{
-        // @ts-ignore
         '--primary': hexToHsl(primaryColor),
         '--accent': hexToHsl(accentColor),
       } as React.CSSProperties}
@@ -108,7 +101,6 @@ export function DocumentTemplate(props: DocumentTemplateProps) {
   );
 }
 
-// Utility to convert hex to HSL for compatibility with Tailwind variable injection if needed
 function hexToHsl(hex: string) {
   let r = 0, g = 0, b = 0;
   if (hex.length === 4) {
