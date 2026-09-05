@@ -46,7 +46,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
         <title>WarriorERP | Enterprise Resource Planning</title>
       </head>
-      <body className="font-body antialiased bg-background min-h-screen">
+      <body className="font-body antialiased bg-background min-h-screen" suppressHydrationWarning>
         <ErrorBoundary>
           <FirebaseClientProvider>
             <TenantProvider>

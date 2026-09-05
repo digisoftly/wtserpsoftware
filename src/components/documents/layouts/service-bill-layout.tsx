@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -8,8 +9,8 @@ import { DocumentTemplateProps } from "../document-template"
 
 /**
  * Service Bill Layout - Strictly Optimized for A4 Single Page (13 Points)
- * Wide Service Name column and precise vertical spacing.
- * CLEAN COLGROUP TO PREVENT HYDRATION ERROR.
+ * Enhanced Font Size, Wider Service Name, and Minimal Gaps.
+ * Clean Colgroup to prevent hydration errors.
  */
 export function ServiceBillLayout(props: DocumentTemplateProps) {
   const { 
@@ -66,7 +67,7 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
   );
 
   return (
-    <div className="flex flex-col min-h-[287mm] bg-white text-[#111111] font-sans p-0 select-none border-none leading-tight document-body overflow-hidden">
+    <div className="flex flex-col min-h-[285mm] bg-white text-[#111111] font-sans p-0 select-none border-none leading-tight document-body overflow-hidden">
       {renderHeader()}
       <div className="border-t-[1.5px] border-red-500 border-dashed w-full mb-1" />
 
@@ -124,44 +125,25 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
                   const globalSl = groups.slice(0, gIdx).reduce((acc: number, prevG: any) => acc + prevG.points.length, 0) + pIdx + 1;
                   return (
                     <tr key={point.id || pIdx} className="border-b border-black hover:bg-slate-50 min-h-[26px]">
-                      <td className="border border-black text-center text-[11px] font-black py-1">
-                        {globalSl.toString().padStart(2, '0')}
-                      </td>
-                      <td className="border border-black px-2 text-[11px] font-black text-slate-900 text-center uppercase py-1 whitespace-nowrap overflow-hidden">
-                        {group.serviceName}
-                      </td>
-                      <td className="border border-black px-2 text-[10.5px] text-slate-700 font-bold text-left uppercase py-1 leading-tight">
-                        {point.location} 
-                      </td>
-                      {pIdx === 0 ? (
-                        <td rowSpan={group.points.length} className="border border-black px-1.5 text-right text-[11px] font-black text-slate-800 align-middle tabular-nums">
-                          {Number(group.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                        </td>
-                      ) : null}
-                      {pIdx === 0 ? (
-                        <td rowSpan={group.points.length} className="border border-black px-1.5 text-right text-[11.5px] font-black text-blue-900 align-middle tabular-nums">
-                          {Number(group.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                        </td>
-                      ) : null}
+                      <td className="border border-black text-center text-[11px] font-black py-1">{globalSl.toString().padStart(2, '0')}</td>
+                      <td className="border border-black px-2 text-[11px] font-black text-slate-900 text-center uppercase py-1 whitespace-nowrap overflow-hidden">{group.serviceName}</td>
+                      <td className="border border-black px-2 text-[10.5px] text-slate-700 font-bold text-left uppercase py-1 leading-tight">{point.location}</td>
+                      {pIdx === 0 ? (<td rowSpan={group.points.length} className="border border-black px-1.5 text-right text-[11px] font-black text-slate-800 align-middle tabular-nums">{Number(group.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>) : null}
+                      {pIdx === 0 ? (<td rowSpan={group.points.length} className="border border-black px-1.5 text-right text-[11.5px] font-black text-blue-900 align-middle tabular-nums">{Number(group.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>) : null}
                     </tr>
                   );
                 })}
               </React.Fragment>
             ))}
-            
             <tr className="bg-[#f8f9fa] border-t-[0.6mm] border-black h-10">
               <td colSpan={3} className="border border-black px-3 py-1">
                  <div className="flex flex-col">
                     <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Amount in Words</p>
-                    <p className="text-[11px] font-black text-blue-800 italic uppercase leading-none truncate">
-                       {amountToWords(grandTotal || 0)}
-                    </p>
+                    <p className="text-[11px] font-black text-blue-800 italic uppercase leading-none truncate">{amountToWords(grandTotal || 0)}</p>
                  </div>
               </td>
               <td className="border border-black px-2 text-right text-[10px] uppercase font-black bg-blue-50">Total Payable</td>
-              <td className="border border-black px-2 text-right text-[15px] font-black text-blue-900 tabular-nums bg-blue-100">
-                {Number(grandTotal || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </td>
+              <td className="border border-black px-2 text-right text-[15px] font-black text-blue-900 tabular-nums bg-blue-100">{Number(grandTotal || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
             </tr>
           </tbody>
         </table>

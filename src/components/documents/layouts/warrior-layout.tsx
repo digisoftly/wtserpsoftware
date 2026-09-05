@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -8,8 +9,7 @@ import { DocumentTemplateProps } from "../document-template"
 
 /**
  * Warrior Official Premium Layout - Strictly Optimized for A4 Single Page
- * Precise vertical spacing and column control for Invoice, Quotation, and PO.
- * ENHANCED FONT SIZES AND REDUCED GAPS.
+ * Precise vertical spacing, larger text, and wider columns.
  */
 export function WarriorLayout(props: DocumentTemplateProps) {
   const { settings } = useSettings();
@@ -81,7 +81,7 @@ export function WarriorLayout(props: DocumentTemplateProps) {
 
       <div className="flex-1 px-4">
         <table className="w-full border-collapse border-[0.5mm] border-black table-fixed">
-          <colgroup><col style={{width:'5%'}}/><col style={{width:'55%'}}/><col style={{width:'10%'}}/><col style={{width:'15%'}}/><col style={{width:'15%'}}/></colgroup>
+          <colgroup><col style={{width:'5%'}}/><col style={{width:'50%'}}/><col style={{width:'10%'}}/><col style={{width:'17%'}}/><col style={{width:'18%'}}/></colgroup>
           <thead>
             <tr className="bg-[#F57C00] text-white h-7">
               <th className="border border-black text-[9px] font-black uppercase text-center">{settings?.pdfTable_sl || t('sl')}</th>
@@ -96,37 +96,36 @@ export function WarriorLayout(props: DocumentTemplateProps) {
               <tr key={idx} className="border-b border-black align-top min-h-[30px]">
                 <td className="border-x border-black p-1 text-center text-[10px] font-black">{(idx + 1).toString().padStart(2, '0')}</td>
                 <td className="border-x border-black p-2">
-                  <div className="text-[10px] space-y-0.5 leading-tight">
+                  <div className="text-[11px] space-y-0.5 leading-tight">
                     <p className="font-black text-slate-900 uppercase">{item.name}</p>
-                    <p className="text-[9px] font-bold text-slate-500 italic">
+                    <p className="text-[10px] font-bold text-slate-500 italic">
                       {item.brand && `Brand: ${item.brand}`} {item.model && `| Model: ${item.model}`}
                     </p>
-                    {item.sn && <p className="text-[9px] font-black text-blue-700 uppercase tracking-tighter">S/N: {item.sn}</p>}
+                    {item.sn && <p className="text-[9.5px] font-black text-blue-700 uppercase tracking-tighter">S/N: {item.sn}</p>}
                   </div>
                 </td>
                 <td className="border-x border-black p-1 text-center text-[10px] font-bold">{item.quantity} {item.unit || 'Pcs'}</td>
                 <td className="border-x border-black p-1 text-center text-[10px] font-bold tabular-nums">{(item.unitPrice || 0).toLocaleString()}</td>
-                <td className="border-x border-black p-1 text-right text-[10.5px] font-black tabular-nums pr-2">{(item.total || 0).toLocaleString()}</td>
+                <td className="border-x border-black p-1 text-right text-[11px] font-black tabular-nums pr-2">{(item.total || 0).toLocaleString()}</td>
               </tr>
             ))}
-            
             <tr className="h-6">
               <td colSpan={4} className="bg-[#f8f9fa] border border-black p-1 text-right text-[9.5px] font-black uppercase pr-2">Subtotal</td>
-              <td className="border border-black p-1 text-right text-[10px] font-black pr-2 tabular-nums">{(subtotal || 0).toLocaleString()}</td>
+              <td className="border border-black p-1 text-right text-[11px] font-black pr-2 tabular-nums">{(subtotal || 0).toLocaleString()}</td>
             </tr>
             {discount > 0 && (
               <tr className="h-6">
                 <td colSpan={4} className="bg-red-50 border border-black p-1 text-right text-[9.5px] font-black uppercase pr-2 text-red-700">Discount Applied</td>
-                <td className="border border-black p-1 text-right text-[10px] font-black pr-2 text-red-700 tabular-nums">{(discount || 0).toLocaleString()}</td>
+                <td className="border border-black p-1 text-right text-[11px] font-black pr-2 text-red-700 tabular-nums">{(discount || 0).toLocaleString()}</td>
               </tr>
             )}
             <tr className="h-6">
               <td colSpan={4} className="bg-[#f8f9fa] border border-black p-1 text-right text-[9.5px] font-black uppercase pr-2">VAT (15%)</td>
-              <td className="border border-black p-1 text-right text-[10px] font-black pr-2 tabular-nums">{(taxAmount || 0).toLocaleString()}</td>
+              <td className="border border-black p-1 text-right text-[11px] font-black pr-2 tabular-nums">{(taxAmount || 0).toLocaleString()}</td>
             </tr>
             <tr className="h-9 bg-[#F57C00] text-white">
               <td colSpan={4} className="border border-black p-1 text-right text-[11px] font-black uppercase pr-2">Net Payable Amount</td>
-              <td className="border border-black p-1 text-right text-[15px] font-black pr-2 tabular-nums">{(grandTotal || 0).toLocaleString()}</td>
+              <td className="border border-black p-1 text-right text-[16px] font-black pr-2 tabular-nums">{(grandTotal || 0).toLocaleString()}</td>
             </tr>
           </tbody>
         </table>
@@ -134,7 +133,7 @@ export function WarriorLayout(props: DocumentTemplateProps) {
 
       <div className="px-4 mt-2">
         <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Total Amount in Words:</p>
-        <p className="text-[10.5px] font-black text-slate-800 italic uppercase border-l-4 border-blue-600 pl-3 py-1 bg-slate-50/50">
+        <p className="text-[11px] font-black text-slate-800 italic uppercase border-l-4 border-blue-600 pl-3 py-1 bg-slate-50/50">
           {amountToWords(grandTotal || 0)}
         </p>
       </div>
@@ -142,7 +141,7 @@ export function WarriorLayout(props: DocumentTemplateProps) {
       <div className="px-4 mt-3 grid grid-cols-2 gap-8">
         <div className="space-y-0">
           <h4 className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Standard Terms & Conditions</h4>
-          <div className="text-[9px] text-slate-500 font-bold leading-tight whitespace-pre-wrap border border-slate-100 p-2 rounded-xl bg-slate-50/50">
+          <div className="text-[10px] text-slate-500 font-bold leading-tight whitespace-pre-wrap border border-slate-100 p-2 rounded-xl bg-slate-50/50">
             {settings?.pdfTerms || "1. Ownership of equipment remains with Warrior Tech System until full payment is received.\n2. Warranty covers manufacturing defects only; burn, physical or liquid damage is excluded.\n3. Any modifications after site installation will be charged separately."}
           </div>
         </div>
@@ -163,7 +162,7 @@ export function WarriorLayout(props: DocumentTemplateProps) {
             <div className="absolute -top-14 left-1/2 -translate-x-1/2 h-16 w-36">
                {settings?.authorizedSignature && <img src={settings.authorizedSignature} className="h-full w-full object-contain" alt="Signature" />}
             </div>
-            <div className="border-t-2 border-blue-700 pt-1 text-[10px] font-black uppercase text-blue-800">Authorized Signature</div>
+            <div className="border-t-2 border-blue-700 pt-1 text-[11px] font-black uppercase text-blue-800">Authorized Signature</div>
           </div>
         </div>
         <p className="text-[10px] font-black text-slate-500 flex items-center justify-center gap-2">
