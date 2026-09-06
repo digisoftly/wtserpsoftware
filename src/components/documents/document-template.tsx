@@ -58,7 +58,7 @@ export interface DocumentTemplateProps {
 
 /**
  * Global Document Template Wrapper - Strictly locked to 210mm x 297mm A4 at 100% scale.
- * Optimized for high-fidelity printing.
+ * Optimized for high-fidelity printing with zero overflow.
  */
 export function DocumentTemplate(props: DocumentTemplateProps) {
   const { get_setting } = useSettings();
@@ -93,16 +93,19 @@ export function DocumentTemplate(props: DocumentTemplateProps) {
     <div 
       className={cn(
         "document-container bg-white flex flex-col transition-all duration-300 mx-auto overflow-hidden relative",
-        layout === 'thermal' ? "w-[80mm] min-h-auto p-4 shadow-none" : "w-[210mm] h-[297mm] print:w-[210mm] print:h-[297mm] p-8 sm:p-10 shadow-none border-none"
+        layout === 'thermal' ? "w-[80mm] min-h-auto p-4 shadow-none" : "w-[210mm] h-[297mm] print:w-[210mm] print:h-[297mm] shadow-none border-none"
       )}
       style={{
         '--primary': hexToHsl(primaryColor),
         '--accent': hexToHsl(accentColor),
         boxSizing: 'border-box',
-        backgroundColor: '#FFFFFF'
+        backgroundColor: '#FFFFFF',
+        position: 'relative'
       } as React.CSSProperties}
     >
-      {renderLayout()}
+      <div className="flex-1 w-full h-full relative box-border overflow-hidden">
+        {renderLayout()}
+      </div>
     </div>
   );
 }

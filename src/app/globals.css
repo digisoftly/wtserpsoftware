@@ -70,7 +70,7 @@
 @media print {
   @page {
     size: A4 portrait;
-    margin: 0 !important; /* Handle margins inside container for 100% scale */
+    margin: 0 !important;
   }
   .no-print { display: none !important; }
   body { 
@@ -83,13 +83,14 @@
   .document-container {
     width: 210mm !important;
     height: 297mm !important;
-    padding: 10mm !important;
+    padding: 0 !important;
     margin: 0 !important;
     box-shadow: none !important;
     border: none !important;
     overflow: hidden !important;
     position: relative !important;
     page-break-after: always !important;
+    box-sizing: border-box !important;
   }
   * {
     -webkit-print-color-adjust: exact !important;
