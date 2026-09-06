@@ -20,7 +20,7 @@ export function WarriorLayout(props: DocumentTemplateProps) {
   } = props;
 
   const renderHeader = () => (
-    <div className="flex items-center gap-4 pt-4 mb-2 w-full px-6">
+    <div className="flex items-center gap-4 pt-4 mb-2 w-full px-8">
       <div className="w-[80px] h-[80px] shrink-0">
         {settings?.companyLogo ? (
           <img src={settings.companyLogo} alt="Logo" className="w-full h-full object-contain" />

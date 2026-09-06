@@ -9,7 +9,7 @@ import { DocumentTemplateProps } from "../document-template"
 /**
  * Service Bill Layout - Strictly optimized for A4 single page.
  * Guaranteed to fit Header, Table, Terms, and Signature in 297mm height.
- * Column Ratios: Category (40%), Location (35%).
+ * Column Ratios: Category (35%), Location (40%).
  */
 export function ServiceBillLayout(props: DocumentTemplateProps) {
   const { 
@@ -36,7 +36,7 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
   const cInfo = (props as any).customerData || {};
 
   const renderHeader = () => (
-    <div className="flex items-center gap-4 pt-4 mb-2 w-full px-6">
+    <div className="flex items-center gap-4 pt-4 mb-2 w-full px-8">
       <div className="w-[80px] h-[80px] shrink-0">
         {settings?.companyLogo ? (
           <img src={settings.companyLogo} alt="Logo" className="w-full h-full object-contain" />
@@ -98,7 +98,7 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
 
         <div className="px-6 mb-4 w-full">
           <table className="w-full border-collapse border-[0.3mm] border-black table-fixed">
-            <colgroup><col style={{width:'5%'}}/><col style={{width:'40%'}}/><col style={{width:'35%'}}/><col style={{width:'10%'}}/><col style={{width:'10%'}}/></colgroup>
+            <colgroup><col style={{width:'5%'}}/><col style={{width:'35%'}}/><col style={{width:'40%'}}/><col style={{width:'10%'}}/><col style={{width:'10%'}}/></colgroup>
             <thead>
               <tr className="bg-blue-50 h-8">
                 <th colSpan={5} className="border border-black text-center text-[12px] font-black uppercase tracking-widest text-blue-900">
