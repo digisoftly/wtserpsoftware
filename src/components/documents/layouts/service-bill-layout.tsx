@@ -8,7 +8,7 @@ import { DocumentTemplateProps } from "../document-template"
 
 /**
  * Service Bill Layout - Optimized for high-density A4 single page.
- * Perfectly balanced columns and full-width terms.
+ * Sections follow table naturally; Footer remains at bottom.
  */
 export function ServiceBillLayout(props: DocumentTemplateProps) {
   const { 
@@ -97,9 +97,9 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
         </div>
       </div>
 
-      <div className="flex-1 px-4">
+      <div className="flex-none px-4">
         <table className="w-full border-collapse border-[0.5mm] border-black table-fixed">
-          <colgroup><col style={{width:'5%'}}/><col style={{width:'38%'}}/><col style={{width:'32%'}}/><col style={{width:'12.5%'}}/><col style={{width:'12.5%'}}/></colgroup>
+          <colgroup><col style={{width:'5%'}}/><col style={{width:'35%'}}/><col style={{width:'35%'}}/><col style={{width:'12.5%'}}/><col style={{width:'12.5%'}}/></colgroup>
           <thead>
             <tr className="bg-slate-100 h-7">
               <th colSpan={5} className="border border-black text-center text-[12px] font-black uppercase tracking-widest text-blue-900">
@@ -147,34 +147,38 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
         </table>
       </div>
 
-      <div className="px-4 mt-2 space-y-2">
+      {/* TERMS & SIGNATURE SECTION: FOLLOWS TABLE IMMEDIATELY */}
+      <div className="px-4 mt-4 space-y-4">
         <div className="w-full">
-          <h4 className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Terms & Conditions</h4>
-          <div className="text-[10px] text-slate-600 font-bold leading-tight border border-slate-100 p-2 rounded-xl bg-slate-50/50 whitespace-pre-wrap w-full">
+          <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Terms & Conditions</h4>
+          <div className="text-[10.5px] text-slate-600 font-bold leading-tight border border-slate-100 p-3 rounded-xl bg-slate-50/50 whitespace-pre-wrap w-full">
             {settings?.pdfTerms || "1. Monthly service charges are payable by the 10th of each month.\n2. Invoices are subject to late payment penalties if delayed.\n3. Continuous non-payment result in immediate suspension."}
           </div>
         </div>
         {notes && (
-          <div className="bg-blue-50/30 p-2 rounded-xl border-l-4 border-blue-600 w-full">
-             <p className="text-[9px] font-black text-blue-600 uppercase mb-0.5 tracking-widest">Administrative Remarks</p>
+          <div className="bg-blue-50/30 p-3 rounded-xl border-l-4 border-blue-600 w-full">
+             <p className="text-[10px] font-black text-blue-600 uppercase mb-1 tracking-widest">Administrative Remarks</p>
              <p className="text-[11px] font-bold text-slate-800 leading-tight">{notes}</p>
           </div>
         )}
-      </div>
 
-      <div className="mt-auto pt-1 pb-4 text-center border-t-[1.5px] border-[#F57C00] mx-4">
-        <div className="grid grid-cols-4 gap-4 px-4 pt-10 mb-1 relative">
-          <div className="text-center border-t border-black pt-1 text-[9px] font-black uppercase">Customer Signature</div>
-          <div className="text-center border-t border-black pt-1 text-[9px] font-black uppercase">Prepared By</div>
-          <div className="text-center border-t border-black pt-1 text-[9px] font-black uppercase">Checked By</div>
+        {/* SIGNATURE SECTION: MOVED UP TO FOLLOW TERMS */}
+        <div className="grid grid-cols-4 gap-4 pt-12 relative pb-4">
+          <div className="text-center border-t border-black pt-1 text-[10px] font-black uppercase">Customer Signature</div>
+          <div className="text-center border-t border-black pt-1 text-[10px] font-black uppercase">Prepared By</div>
+          <div className="text-center border-t border-black pt-1 text-[10px] font-black uppercase">Checked By</div>
           <div className="text-center relative">
             <div className="absolute -top-14 left-1/2 -translate-x-1/2 h-14 w-32">
                {settings?.authorizedSignature && <img src={settings.authorizedSignature} className="h-full w-full object-contain" alt="Signature" />}
             </div>
-            <div className="border-t-2 border-blue-700 pt-1 text-[10px] font-black uppercase text-blue-800">Authorized Signature</div>
+            <div className="border-t-2 border-blue-700 pt-1 text-[11px] font-black uppercase text-blue-800">Authorized Signature</div>
           </div>
         </div>
-        <p className="text-[11px] font-black text-slate-500 flex items-center justify-center gap-2 mt-1">
+      </div>
+
+      {/* FOOTER: PUSHED TO BOTTOM */}
+      <div className="mt-auto pt-1 pb-6 text-center border-t-[1.5px] border-[#F57C00] mx-4">
+        <p className="text-[11px] font-black text-slate-500 flex items-center justify-center gap-2 mt-2">
           <span className="text-red-600">❤</span> {settings?.footerHeartMsg || "Thank You For Your Business"} <span className="text-red-600">❤</span>
         </p>
         <h4 className="text-[20px] font-black text-slate-900 uppercase tracking-tight leading-none mt-1">{settings?.companyName || "Warrior Tech System"}</h4>
