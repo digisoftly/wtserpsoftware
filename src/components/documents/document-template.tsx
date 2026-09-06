@@ -56,6 +56,10 @@ export interface DocumentTemplateProps {
   }
 }
 
+/**
+ * Global Document Template Wrapper - Strictly locked to 210mm x 297mm A4 at 100% scale.
+ * Optimized for high-fidelity printing.
+ */
 export function DocumentTemplate(props: DocumentTemplateProps) {
   const { get_setting } = useSettings();
   
@@ -89,12 +93,13 @@ export function DocumentTemplate(props: DocumentTemplateProps) {
     <div 
       className={cn(
         "document-container bg-white flex flex-col transition-all duration-300 mx-auto overflow-hidden relative",
-        layout === 'thermal' ? "w-[80mm] min-h-auto p-4" : "w-[210mm] h-[297mm] print:w-[210mm] print:h-[297mm] p-6 sm:p-10"
+        layout === 'thermal' ? "w-[80mm] min-h-auto p-4 shadow-none" : "w-[210mm] h-[297mm] print:w-[210mm] print:h-[297mm] p-8 sm:p-10 shadow-none border-none"
       )}
       style={{
         '--primary': hexToHsl(primaryColor),
         '--accent': hexToHsl(accentColor),
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        backgroundColor: '#FFFFFF'
       } as React.CSSProperties}
     >
       {renderLayout()}
