@@ -20,7 +20,7 @@ export function WarriorLayout(props: DocumentTemplateProps) {
   } = props;
 
   const renderHeader = () => (
-    <div className="flex items-center gap-4 pt-4 mb-3 w-full px-6">
+    <div className="flex items-center gap-4 pt-4 mb-2 w-full px-6">
       <div className="w-[80px] h-[80px] shrink-0">
         {settings?.companyLogo ? (
           <img src={settings.companyLogo} alt="Logo" className="w-full h-full object-contain" />
@@ -53,9 +53,9 @@ export function WarriorLayout(props: DocumentTemplateProps) {
     <div className="relative w-[210mm] h-[297mm] bg-white text-[#111111] font-sans p-0 select-none border-none leading-tight flex flex-col overflow-hidden box-border">
       <div className="flex-1">
         {renderHeader()}
-        <div className="border-t-[1px] border-red-500 border-dashed w-full mb-4" />
+        <div className="border-t-[1px] border-red-500 border-dashed w-full mb-3" />
 
-        <div className="grid grid-cols-2 gap-10 mb-6 px-8 w-full">
+        <div className="grid grid-cols-2 gap-10 mb-5 px-8 w-full">
           <div className="space-y-1">
             <p className="text-[11px] font-black text-blue-600 uppercase tracking-widest border-b border-blue-50 w-fit pb-0.5">Bill To:</p>
             <p className="text-[15px] font-black uppercase text-slate-900 mt-1.5 truncate">{customerName || "---"}</p>
@@ -73,13 +73,13 @@ export function WarriorLayout(props: DocumentTemplateProps) {
           </div>
         </div>
 
-        <div className="bg-[#FDEBD0] border-y-[0.3mm] border-black py-2 text-center mb-6 mx-6">
+        <div className="bg-[#FDEBD0] border-y-[0.3mm] border-black py-2 text-center mb-5 mx-6">
           <h3 className="text-[18px] font-black text-[#0056B3] uppercase tracking-[0.2em] leading-none">
             {title || "OFFICIAL DOCUMENT"}
           </h3>
         </div>
 
-        <div className="px-6 w-full mb-6">
+        <div className="px-6 w-full mb-5">
           <table className="w-full border-collapse border-[0.3mm] border-black table-fixed">
             <colgroup><col style={{width:'5%'}}/><col style={{width:'50%'}}/><col style={{width:'10%'}}/><col style={{width:'15%'}}/><col style={{width:'20%'}}/></colgroup>
             <thead>
@@ -137,7 +137,7 @@ export function WarriorLayout(props: DocumentTemplateProps) {
             </div>
           )}
 
-          <div className="grid grid-cols-4 gap-6 pt-16 relative pb-4 w-full">
+          <div className="grid grid-cols-4 gap-6 pt-12 relative pb-4 w-full">
             <div className="text-center border-t border-black pt-1.5 text-[10px] font-black uppercase">Customer Signature</div>
             <div className="text-center border-t border-black pt-1.5 text-[10px] font-black uppercase">Prepared By</div>
             <div className="text-center border-t border-black pt-1.5 text-[10px] font-black uppercase">Checked By</div>
