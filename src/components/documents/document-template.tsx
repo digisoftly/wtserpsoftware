@@ -88,8 +88,8 @@ export function DocumentTemplate(props: DocumentTemplateProps) {
   return (
     <div 
       className={cn(
-        "document-container bg-white flex flex-col transition-all duration-300 mx-auto overflow-hidden",
-        layout === 'thermal' ? "w-[80mm] min-h-auto p-4" : "w-[190mm] h-[277mm] print:w-[190mm] print:h-[277mm]"
+        "document-container bg-white flex flex-col transition-all duration-300 mx-auto overflow-hidden relative",
+        layout === 'thermal' ? "w-[80mm] min-h-auto p-4" : "w-[210mm] h-[297mm] print:w-[210mm] print:h-[297mm] p-6 sm:p-10"
       )}
       style={{
         '--primary': hexToHsl(primaryColor),
