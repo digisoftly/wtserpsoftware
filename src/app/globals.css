@@ -30,6 +30,7 @@
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
   body {
     @apply bg-slate-50/50 text-foreground font-body antialiased selection:bg-blue-100;
@@ -68,8 +69,8 @@
 
 @media print {
   @page {
-    size: A4;
-    margin: 8mm !important;
+    size: A4 portrait;
+    margin: 10mm !important;
   }
   .no-print { display: none !important; }
   body { 
@@ -80,10 +81,10 @@
     print-color-adjust: exact !important;
   }
   .document-container {
-    width: 210mm !important;
-    height: 297mm !important;
+    width: 190mm !important;
+    height: 277mm !important;
     padding: 0 !important;
-    margin: 0 !important;
+    margin: 0 auto !important;
     box-shadow: none !important;
     border: none !important;
     overflow: hidden !important;

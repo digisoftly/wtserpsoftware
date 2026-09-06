@@ -89,11 +89,12 @@ export function DocumentTemplate(props: DocumentTemplateProps) {
     <div 
       className={cn(
         "document-container bg-white flex flex-col transition-all duration-300 mx-auto overflow-hidden",
-        layout === 'thermal' ? "w-[80mm] min-h-auto p-4" : "w-[210mm] h-[297mm] p-6 md:p-8"
+        layout === 'thermal' ? "w-[80mm] min-h-auto p-4" : "w-[190mm] h-[277mm] print:w-[190mm] print:h-[277mm]"
       )}
       style={{
         '--primary': hexToHsl(primaryColor),
         '--accent': hexToHsl(accentColor),
+        boxSizing: 'border-box'
       } as React.CSSProperties}
     >
       {renderLayout()}
