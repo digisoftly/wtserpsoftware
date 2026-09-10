@@ -9,7 +9,7 @@ import { DocumentTemplateProps } from "../document-template"
 
 /**
  * Service Bill Layout - Ultra-Dynamic Version.
- * All text, color, size, and gaps are dynamic based on Admin settings.
+ * Every text property is linked to Admin Settings.
  */
 export function ServiceBillLayout(props: DocumentTemplateProps) {
   const { 
@@ -28,26 +28,38 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
   const billingMonth = (props as any).billingMonth || "N/A";
   const cInfo = (props as any).customerData || {};
 
-  // All Styles derived from Admin Dashboard
+  // Comprehensive Style Mapping from Admin
   const styles = {
     headerAlign: settings?.pdf_header_align || "left", 
     headerTitleColor: settings?.pdf_header_title_color || "#0056B3",
     headerTitleSize: `${settings?.pdf_header_title_size || 32}px`,
     headerSloganColor: settings?.pdf_header_slogan_color || "#F57C00",
     headerSloganSize: `${settings?.pdf_header_slogan_size || 12}px`,
+    headerContactColor: settings?.pdf_header_contact_color || "#333333",
+    headerContactSize: `${settings?.pdf_header_contact_size || 9.5}px`,
     headerLogoSize: Number(settings?.pdf_header_logo_size || 80),
     headerTopGap: Number(settings?.pdf_header_top_gap || 5),
     headerContentGap: Number(settings?.pdf_header_content_gap || 6),
+    
+    custNameColor: settings?.pdf_cust_name_color || "#0F172A",
+    custNameSize: `${settings?.pdf_cust_name_size || 13}px`,
+    custInfoColor: settings?.pdf_cust_info_color || "#475569",
+    custInfoSize: `${settings?.pdf_cust_info_size || 9}px`,
+
     tableHeaderBg: settings?.pdf_table_header_bg || "#F57C00",
-    tableHeaderTextColor: "#FFFFFF",
     rowFontSize: `${settings?.pdf_table_row_size || 10.5}pt`,
     rowHeight: `${settings?.pdf_table_row_height || 7}mm`,
     tableBorderColor: settings?.pdf_table_border_color || "#000000",
+    
     termsTitle: settings?.pdf_terms_title || "Terms & Conditions",
-    termsFontSize: `${settings?.pdf_terms_size || 9.5}pt`,
+    termsTitleColor: settings?.pdf_terms_title_color || "#94A3B8",
     termsTopGap: `${settings?.pdf_terms_top_gap || 8}mm`,
+    
     signatureTopGap: `${settings?.pdf_signature_top_gap || 20}mm`,
+    signatureAlign: settings?.pdf_sig_align || "center",
+    
     footerAccent: settings?.pdf_footer_accent || "#F57C00",
+    footerTextColor: settings?.pdf_footer_text_color || "#0F172A",
     footerBrandSize: `${settings?.pdf_footer_brand_size || 22}pt`
   };
 
@@ -65,7 +77,6 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
           gap: isLogoLeft ? `${styles.headerContentGap}mm` : '2mm'
         }}
       >
-        {/* LOGO SECTION */}
         <div style={{ width: `${styles.headerLogoSize}px`, height: `${styles.headerLogoSize}px` }} className="shrink-0 flex items-center justify-center">
           {settings?.companyLogo ? (
             <img src={settings.companyLogo} alt="Logo" className="w-full h-full object-contain" />
@@ -74,32 +85,38 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
           )}
         </div>
 
-        {/* TEXT SECTION */}
         <div className="flex-1 space-y-0.5 min-w-0">
           <h1 
             className="font-black tracking-tighter leading-none" 
             style={{ 
               display: 'flex', 
               justifyContent: isLogoLeft ? 'flex-start' : 'center',
-              fontSize: styles.headerTitleSize
+              fontSize: styles.headerTitleSize,
+              color: styles.headerTitleColor
             }}
           >
             <span className="text-[#00D4AA]">WARRIOR</span>
-            <span className="ml-2" style={{ color: styles.headerTitleColor }}>TECH</span>
+            <span className="ml-2">TECH</span>
             <span className="text-[#F57C00] ml-2">SYSTEM</span>
           </h1>
           <p 
-            className="font-bold text-[#F57C00] uppercase tracking-[0.2em] italic leading-none mt-1"
+            className="font-bold uppercase tracking-[0.2em] italic leading-none mt-1"
             style={{ color: styles.headerSloganColor, fontSize: styles.headerSloganSize }}
           >
             {settings?.companySlogan || "Innovative Security, Reliable Communication"}
           </p>
-          <div className={cn("flex items-center gap-6 text-[9.5px] font-bold text-[#333333] mt-1.5", !isLogoLeft && "justify-center")}>
+          <div 
+            className={cn("flex items-center gap-6 mt-1.5", !isLogoLeft && "justify-center")}
+            style={{ color: styles.headerContactColor, fontSize: styles.headerContactSize, fontWeight: 'bold' }}
+          >
             <span>📞 {settings?.phone}</span>
             <span>📧 {settings?.email}</span>
             <span>🌐 {settings?.website}</span>
           </div>
-          <p className="text-[9.5px] font-bold text-[#333333] leading-none mt-1">
+          <p 
+            className="leading-none mt-1 font-bold"
+            style={{ color: styles.headerContactColor, fontSize: styles.headerContactSize }}
+          >
             📍 {settings?.address}
           </p>
         </div>
@@ -119,14 +136,13 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
           </h2>
         </div>
 
-        {/* CUSTOMER SECTION */}
         <div className="grid grid-cols-2 gap-8 mb-4 px-8 w-full">
           <div className="space-y-1">
             <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest border-b border-blue-50 w-fit pb-0.5">Bill To:</p>
             <div className="space-y-0.5 mt-1">
-              <p className="text-[13px] font-black uppercase text-slate-900 leading-none truncate">{customerName || "---"}</p>
-              <p className="text-[9px] font-bold text-slate-700 uppercase">Contact: {cInfo.phoneNumber || "N/A"}</p>
-              <p className="text-[9px] font-medium leading-tight text-slate-600 uppercase max-w-full line-clamp-1">{cInfo.address || "Address Not Available"}</p>
+              <p className="font-black uppercase leading-none truncate" style={{ color: styles.custNameColor, fontSize: styles.custNameSize }}>{customerName || "---"}</p>
+              <p className="font-bold uppercase" style={{ color: styles.custInfoColor, fontSize: styles.custInfoSize }}>Contact: {cInfo.phoneNumber || "N/A"}</p>
+              <p className="font-medium leading-snug uppercase max-w-full line-clamp-1" style={{ color: styles.custInfoColor, fontSize: styles.custInfoSize }}>{cInfo.address || "Address Not Available"}</p>
             </div>
           </div>
           <div className="text-right flex flex-col justify-end">
@@ -139,7 +155,6 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
           </div>
         </div>
 
-        {/* TABLE SECTION */}
         <div className="px-6 mb-4 w-full">
           <table className="w-full border-collapse border-[0.3mm]" style={{ borderColor: styles.tableBorderColor }}>
             <colgroup>
@@ -151,7 +166,7 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
                   Billing Cycle: {billingMonth}
                 </th>
               </tr>
-              <tr style={{ backgroundColor: styles.tableHeaderBg, color: styles.tableHeaderTextColor }} className="h-8">
+              <tr style={{ backgroundColor: styles.tableHeaderBg, color: '#FFFFFF' }} className="h-8">
                 <th className="border border-black text-[9.5px] font-black uppercase text-center" style={{ borderColor: styles.tableBorderColor }}>SL</th>
                 <th className="border border-black text-center text-[9.5px] font-black uppercase" style={{ borderColor: styles.tableBorderColor }}>Service Category</th>
                 <th className="border border-black text-center text-[9.5px] font-black uppercase" style={{ borderColor: styles.tableBorderColor }}>Location / Point</th>
@@ -190,14 +205,10 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
           </table>
         </div>
 
-        {/* TERMS & SIGNATURE SECTION */}
         <div className="px-8" style={{ marginTop: styles.termsTopGap }}>
           <div className="w-full">
-            <h4 className="text-[9.5px] font-black uppercase text-slate-400 tracking-widest mb-1">{styles.termsTitle}</h4>
-            <div 
-              style={{ fontSize: styles.termsFontSize }}
-              className="text-slate-600 font-bold leading-snug border border-slate-100 p-3 rounded-xl bg-slate-50/50 whitespace-pre-wrap w-full shadow-inner uppercase"
-            >
+            <h4 className="text-[9.5px] font-black uppercase tracking-widest mb-1" style={{ color: styles.termsTitleColor }}>{styles.termsTitle}</h4>
+            <div className="text-slate-600 font-bold leading-snug border border-slate-100 p-3 rounded-xl bg-slate-50/50 whitespace-pre-wrap w-full shadow-inner uppercase text-[9pt]">
               {settings?.pdfTerms || "1. Monthly service charges are payable by the 10th of each month.\n2. Delayed payments incur a 5% late fee penalty.\n3. Non-payment for 2 months leads to immediate suspension."}
             </div>
           </div>
@@ -209,11 +220,17 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
             </div>
           )}
 
-          <div className="grid grid-cols-4 gap-6 relative pb-2 w-full" style={{ marginTop: styles.signatureTopGap }}>
-            <div className="text-center border-t border-black pt-1 text-[9.5px] font-black uppercase">Customer Signature</div>
-            <div className="text-center border-t border-black pt-1 text-[9.5px] font-black uppercase">Prepared By</div>
-            <div className="text-center border-t border-black pt-1 text-[9.5px] font-black uppercase">Checked By</div>
-            <div className="text-center relative">
+          <div 
+            className={cn("grid grid-cols-4 gap-6 relative pb-2 w-full")}
+            style={{ 
+              marginTop: styles.signatureTopGap,
+              justifyItems: styles.signatureAlign === 'center' ? 'center' : styles.signatureAlign === 'right' ? 'end' : 'start'
+            }}
+          >
+            <div className="text-center border-t border-black pt-1 text-[9.5px] font-black uppercase w-full">Customer Signature</div>
+            <div className="text-center border-t border-black pt-1 text-[9.5px] font-black uppercase w-full">Prepared By</div>
+            <div className="text-center border-t border-black pt-1 text-[9.5px] font-black uppercase w-full">Checked By</div>
+            <div className="text-center relative w-full">
               <div className="absolute -top-10 left-1/2 -translate-x-1/2 h-10 w-28">
                  {settings?.authorizedSignature && <img src={settings.authorizedSignature} className="h-full w-full object-contain" alt="Signature" />}
               </div>
@@ -223,12 +240,11 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
         </div>
       </div>
 
-      {/* FOOTER SECTION */}
       <div className="absolute bottom-0 left-0 right-0 pt-1.5 pb-4 text-center border-t-[1.2mm] bg-white w-full z-50" style={{ borderColor: styles.footerAccent }}>
         <p className="text-[10.5px] font-black text-slate-500 flex items-center justify-center gap-2">
           <span className="text-red-600 text-base">❤</span> {settings?.footerHeartMsg || "Thank You For Your Business"} <span className="text-red-600 text-base">❤</span>
         </p>
-        <h4 className="font-black text-slate-900 uppercase tracking-tight leading-none mt-1" style={{ fontSize: styles.footerBrandSize }}>{settings?.companyName || "Warrior Tech System"}</h4>
+        <h4 className="font-black uppercase tracking-tight leading-none mt-1" style={{ fontSize: styles.footerBrandSize, color: styles.footerTextColor }}>{settings?.companyName || "Warrior Tech System"}</h4>
         <div className="flex justify-center gap-8 text-[9.5px] font-black text-blue-700 uppercase tracking-widest mt-1.5 opacity-80">
           <span>• Security System</span>
           <span>• Communication</span>
