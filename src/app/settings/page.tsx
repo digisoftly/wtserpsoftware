@@ -19,9 +19,9 @@ import {
   AlignLeft,
   AlignCenter,
   Ruler,
-  Paintbrush
+  Paintbrush,
+  Layout
 } from "lucide-react"
-import * as Icons from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -37,12 +37,6 @@ import { errorEmitter } from "@/firebase/error-emitter"
 import { FirestorePermissionError } from "@/firebase/errors"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-
-const ICON_OPTIONS = [
-  "LayoutDashboard", "ShoppingCart", "FileText", "Truck", "Package", "RotateCcw", "Boxes", "Database", 
-  "Scan", "ClipboardList", "Handshake", "Users", "Store", "Wallet", "Receipt", "LifeBuoy", "Target", 
-  "Briefcase", "Building2", "BarChart3", "Zap", "Settings", "UserRoundCog", "ShieldAlert"
-];
 
 const DEFAULT_GRID_ITEMS = [
   { label: "ড্যাশবোর্ড", icon: "LayoutDashboard", color: "bg-blue-500/20 text-blue-400" },
@@ -188,17 +182,17 @@ export default function SettingsPage() {
                 {/* SECTION 1: HEADER & IDENTITY */}
                 <Card className="p-8 rounded-[2rem] border-none shadow-sm bg-white ring-1 ring-slate-100 space-y-8">
                    <div className="flex items-center gap-3 border-b pb-4">
-                      <Palette className="h-5 w-5 text-blue-600" />
-                      <h3 className="text-sm font-black uppercase tracking-widest text-slate-900">Header & Identity</h3>
+                      <Layout className="h-5 w-5 text-blue-600" />
+                      <h3 className="text-sm font-black uppercase tracking-widest text-slate-900">Header & Logo Style</h3>
                    </div>
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                         <Label className="text-[10px] font-black uppercase text-slate-400">Header Alignment</Label>
-                         <Select name="pdf_header_align" defaultValue={settings?.pdf_header_align || "center"}>
+                         <Label className="text-[10px] font-black uppercase text-slate-400">Header Style</Label>
+                         <Select name="pdf_header_align" defaultValue={settings?.pdf_header_align || "left"}>
                             <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
                             <SelectContent>
-                               <SelectItem value="left" className="text-xs font-bold">LEFT ALIGNED</SelectItem>
-                               <SelectItem value="center" className="text-xs font-bold">CENTER ALIGNED</SelectItem>
+                               <SelectItem value="left" className="text-xs font-bold">LOGO LEFT (HORIZONTAL)</SelectItem>
+                               <SelectItem value="center" className="text-xs font-bold">CENTERED (STACKED)</SelectItem>
                             </SelectContent>
                          </Select>
                       </div>
@@ -209,7 +203,8 @@ export default function SettingsPage() {
                             <div className="w-10 h-10 rounded-lg border shadow-inner" style={{ backgroundColor: settings?.pdf_header_title_color || "#0056B3" }} />
                          </div>
                       </div>
-                      <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Logo Size (mm)</Label><Input type="number" name="pdf_header_logo_size" defaultValue={settings?.pdf_header_logo_size || 70} className="h-10" /></div>
+                      <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Logo Size (px)</Label><Input type="number" name="pdf_header_logo_size" defaultValue={settings?.pdf_header_logo_size || 80} className="h-10" /></div>
+                      <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Logo-Text Gap (mm)</Label><Input type="number" name="pdf_header_content_gap" defaultValue={settings?.pdf_header_content_gap || 6} className="h-10" /></div>
                       <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Top Margin (mm)</Label><Input type="number" name="pdf_header_top_gap" defaultValue={settings?.pdf_header_top_gap || 5} className="h-10" /></div>
                    </div>
                 </Card>
@@ -230,17 +225,6 @@ export default function SettingsPage() {
                       </div>
                       <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Row Font Size (pt)</Label><Input type="number" name="pdf_table_row_size" defaultValue={settings?.pdf_table_row_size || 10.5} className="h-10" /></div>
                       <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Row Height (mm)</Label><Input type="number" name="pdf_table_row_height" defaultValue={settings?.pdf_table_row_height || 7} className="h-10" /></div>
-                      <div className="space-y-2">
-                         <Label className="text-[10px] font-black uppercase text-slate-400">Table Layout</Label>
-                         <Select name="pdf_table_density" defaultValue={settings?.pdf_table_density || "standard"}>
-                            <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                               <SelectItem value="compact" className="text-xs font-bold">COMPACT MODE</SelectItem>
-                               <SelectItem value="standard" className="text-xs font-bold">STANDARD MODE</SelectItem>
-                               <SelectItem value="large" className="text-xs font-bold">LARGE MODE</SelectItem>
-                            </SelectContent>
-                         </Select>
-                      </div>
                    </div>
                 </Card>
 
@@ -248,13 +232,13 @@ export default function SettingsPage() {
                 <Card className="p-8 rounded-[2rem] border-none shadow-sm bg-white ring-1 ring-slate-100 space-y-8">
                    <div className="flex items-center gap-3 border-b pb-4">
                       <Ruler className="h-5 w-5 text-indigo-600" />
-                      <h3 className="text-sm font-black uppercase tracking-widest text-slate-900">Compliance & Signature</h3>
+                      <h3 className="text-sm font-black uppercase tracking-widest text-slate-900">Compliance & Flow</h3>
                    </div>
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2 md:col-span-2"><Label className="text-[10px] font-black uppercase text-slate-400">Terms Box Title</Label><Input name="pdf_terms_title" defaultValue={settings?.pdf_terms_title || "Terms & Conditions"} className="h-10" /></div>
-                      <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Box Top Gap (mm)</Label><Input type="number" name="pdf_terms_top_gap" defaultValue={settings?.pdf_terms_top_gap || 10} className="h-10" /></div>
-                      <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Terms Text Size (pt)</Label><Input type="number" name="pdf_terms_size" defaultValue={settings?.pdf_terms_size || 9.5} className="h-10" /></div>
-                      <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Signature Top Gap (mm)</Label><Input type="number" name="pdf_signature_top_gap" defaultValue={settings?.pdf_signature_top_gap || 30} className="h-10" /></div>
+                      <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Terms Top Gap (mm)</Label><Input type="number" name="pdf_terms_top_gap" defaultValue={settings?.pdf_terms_top_gap || 8} className="h-10" /></div>
+                      <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Terms Font Size (pt)</Label><Input type="number" name="pdf_terms_size" defaultValue={settings?.pdf_terms_size || 9.5} className="h-10" /></div>
+                      <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Signature Top Gap (mm)</Label><Input type="number" name="pdf_signature_top_gap" defaultValue={settings?.pdf_signature_top_gap || 20} className="h-10" /></div>
                    </div>
                 </Card>
 

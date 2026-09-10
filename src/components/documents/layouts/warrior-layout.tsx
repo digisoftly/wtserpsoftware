@@ -9,7 +9,7 @@ import { DocumentTemplateProps } from "../document-template"
 
 /**
  * Warrior Layout - Ultra-Dynamic Version.
- * All positions, sizes, and colors are controlled via Admin settings.
+ * Fully customizable via Admin settings.
  */
 export function WarriorLayout(props: DocumentTemplateProps) {
   const { settings } = useSettings();
@@ -20,60 +20,71 @@ export function WarriorLayout(props: DocumentTemplateProps) {
     customerName, customerInfo, projectName, status 
   } = props;
 
-  // Admin Styled Parameters
+  // Admin Styled Parameters from Settings
   const styles = {
-    headerAlign: settings?.pdf_header_align || "center",
+    headerAlign: settings?.pdf_header_align || "left", // 'left' means Logo-Left, 'center' means Stacked
     headerTitleColor: settings?.pdf_header_title_color || "#0056B3",
-    headerLogoSize: Number(settings?.pdf_header_logo_size || 70),
+    headerLogoSize: Number(settings?.pdf_header_logo_size || 80),
     headerTopGap: Number(settings?.pdf_header_top_gap || 5),
+    headerContentGap: Number(settings?.pdf_header_content_gap || 6), // Gap between logo and text
     tableHeaderBg: settings?.pdf_table_header_bg || "#F57C00",
     tableHeaderTextColor: "#FFFFFF",
     rowFontSize: `${settings?.pdf_table_row_size || 10.5}pt`,
     rowHeight: `${settings?.pdf_table_row_height || 7}mm`,
     termsTitle: settings?.pdf_terms_title || "Terms & Conditions",
     termsFontSize: `${settings?.pdf_terms_size || 9.5}pt`,
-    termsTopGap: `${settings?.pdf_terms_top_gap || 10}mm`,
-    signatureTopGap: `${settings?.pdf_signature_top_gap || 30}mm`,
+    termsTopGap: `${settings?.pdf_terms_top_gap || 8}mm`,
+    signatureTopGap: `${settings?.pdf_signature_top_gap || 20}mm`,
     footerAccent: settings?.pdf_footer_accent || "#F57C00",
     footerBrandSize: `${settings?.pdf_footer_brand_size || 22}pt`
   };
 
-  const renderHeader = () => (
-    <div 
-      className={cn("flex flex-col mb-2 w-full px-8", styles.headerAlign === 'center' ? "items-center text-center" : "items-start text-left")}
-      style={{ paddingTop: `${styles.headerTopGap}mm` }}
-    >
-      <div style={{ width: `${styles.headerLogoSize}px`, height: `${styles.headerLogoSize}px` }} className="mb-2">
-        {settings?.companyLogo ? (
-          <img src={settings.companyLogo} alt="Logo" className="w-full h-full object-contain" />
-        ) : (
-          <div className="w-full h-full bg-blue-600 rounded-xl flex items-center justify-center text-white text-3xl font-black shadow-sm">W</div>
+  const renderHeader = () => {
+    const isLogoLeft = styles.headerAlign === 'left';
+    
+    return (
+      <div 
+        className={cn(
+          "flex w-full px-8 mb-2", 
+          isLogoLeft ? "flex-row items-center" : "flex-col items-center text-center"
         )}
-      </div>
-      <div className="space-y-0.5">
-        <h1 className="text-[32px] font-black tracking-tighter leading-none" style={{ display: 'flex', justifyContent: styles.headerAlign === 'center' ? 'center' : 'flex-start' }}>
-          <span className="text-[#00D4AA]">WARRIOR</span>
-          <span className="ml-2" style={{ color: styles.headerTitleColor }}>TECH</span>
-          <span className="text-[#F57C00] ml-2">SYSTEM</span>
-        </h1>
-        <p className="text-[12px] font-bold text-[#F57C00] uppercase tracking-[0.2em] italic leading-none mt-1">
-          {settings?.companySlogan || "Innovative Security, Reliable Communication"}
-        </p>
-        <div className={cn("flex items-center gap-6 text-[9.5px] font-bold text-[#333333] mt-1.5", styles.headerAlign === 'center' ? "justify-center" : "justify-start")}>
-          <span>📞 {settings?.phone}</span>
-          <span>📧 {settings?.email}</span>
-          <span>🌐 {settings?.website}</span>
+        style={{ 
+          paddingTop: `${styles.headerTopGap}mm`,
+          gap: isLogoLeft ? `${styles.headerContentGap}mm` : '2mm'
+        }}
+      >
+        <div style={{ width: `${styles.headerLogoSize}px`, height: `${styles.headerLogoSize}px` }} className="shrink-0 flex items-center justify-center">
+          {settings?.companyLogo ? (
+            <img src={settings.companyLogo} alt="Logo" className="w-full h-full object-contain" />
+          ) : (
+            <div className="w-full h-full bg-blue-600 rounded-xl flex items-center justify-center text-white text-3xl font-black shadow-sm">W</div>
+          )}
         </div>
-        <p className="text-[9.5px] font-bold text-[#333333] leading-none mt-1">
-          📍 {settings?.address}
-        </p>
+        <div className="flex-1 space-y-0.5">
+          <h1 className="text-[32px] font-black tracking-tighter leading-none" style={{ display: 'flex', justifyContent: isLogoLeft ? 'flex-start' : 'center' }}>
+            <span className="text-[#00D4AA]">WARRIOR</span>
+            <span className="ml-2" style={{ color: styles.headerTitleColor }}>TECH</span>
+            <span className="text-[#F57C00] ml-2">SYSTEM</span>
+          </h1>
+          <p className="text-[12px] font-bold text-[#F57C00] uppercase tracking-[0.2em] italic leading-none mt-1">
+            {settings?.companySlogan || "Innovative Security, Reliable Communication"}
+          </p>
+          <div className={cn("flex items-center gap-6 text-[9.5px] font-bold text-[#333333] mt-1.5", !isLogoLeft && "justify-center")}>
+            <span>📞 {settings?.phone}</span>
+            <span>📧 {settings?.email}</span>
+            <span>🌐 {settings?.website}</span>
+          </div>
+          <p className="text-[9.5px] font-bold text-[#333333] leading-none mt-1">
+            📍 {settings?.address}
+          </p>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="relative w-[210mm] h-[297mm] bg-white text-[#111111] font-sans p-0 select-none border-none leading-tight flex flex-col overflow-hidden box-border">
-      <div className="flex-1">
+      <div className="flex-1 relative">
         {renderHeader()}
         <div className="border-t-[1px] border-red-500 border-dashed w-full mb-3" />
 
@@ -102,14 +113,20 @@ export function WarriorLayout(props: DocumentTemplateProps) {
         </div>
 
         <div className="px-6 w-full mb-4">
-          <table className="w-full border-collapse border-[0.3mm] border-black table-fixed">
-            <colgroup><col style={{width:'5%'}}/><col style={{width:'50%'}}/><col style={{width:'10%'}}/><col style={{width:'15%'}}/><col style={{width:'20%'}}/></colgroup>
+          <table className="w-full border-collapse border-[0.3mm] border-black">
+            <colgroup>
+              <col style={{width: '5%'}} />
+              <col style={{width: '50%'}} />
+              <col style={{width: '10%'}} />
+              <col style={{width: '15%'}} />
+              <col style={{width: '20%'}} />
+            </colgroup>
             <thead>
               <tr style={{ backgroundColor: styles.tableHeaderBg, color: styles.tableHeaderTextColor }} className="h-8">
                 <th className="border border-black text-[9.5px] font-black uppercase text-center">SL</th>
                 <th className="border border-black px-2 text-left text-[9.5px] font-black uppercase">Item Description</th>
                 <th className="border border-black text-center text-[9.5px] font-black uppercase">Qty</th>
-                <th className="border border-black text-center text-[9.5px) font-black uppercase">Price</th>
+                <th className="border border-black text-center text-[9.5px] font-black uppercase">Price</th>
                 <th className="border border-black text-right text-[9.5px] font-black uppercase pr-2">Total</th>
               </tr>
             </thead>
@@ -180,7 +197,7 @@ export function WarriorLayout(props: DocumentTemplateProps) {
         <p className="text-[10.5px] font-black text-slate-500 flex items-center justify-center gap-2">
           <span className="text-red-600 text-base">❤</span> {settings?.footerHeartMsg || "Thank You For Your Business"} <span className="text-red-600 text-base">❤</span>
         </p>
-        <h4 className="font-black text-slate-900 uppercase tracking-tight leading-none mt-1" style={{ fontSize: styles.footerBrandSize }}>{settings?.companyName}</h4>
+        <h4 className="font-black text-slate-900 uppercase tracking-tight leading-none mt-1" style={{ fontSize: styles.footerBrandSize }}>{settings?.companyName || "Warrior Tech System"}</h4>
         <div className="flex justify-center gap-8 text-[9.5px] font-black text-blue-700 uppercase tracking-widest mt-1.5 opacity-80">
           <span>• Security System</span>
           <span>• Communication</span>
