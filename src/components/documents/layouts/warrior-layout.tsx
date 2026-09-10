@@ -20,17 +20,21 @@ export function WarriorLayout(props: DocumentTemplateProps) {
     customerName, customerInfo, projectName, status 
   } = props;
 
-  // Admin Styled Parameters from Settings
+  // All Styles derived from Admin Dashboard
   const styles = {
-    headerAlign: settings?.pdf_header_align || "left", // 'left' means Logo-Left, 'center' means Stacked
+    headerAlign: settings?.pdf_header_align || "left", 
     headerTitleColor: settings?.pdf_header_title_color || "#0056B3",
+    headerTitleSize: `${settings?.pdf_header_title_size || 32}px`,
+    headerSloganColor: settings?.pdf_header_slogan_color || "#F57C00",
+    headerSloganSize: `${settings?.pdf_header_slogan_size || 12}px`,
     headerLogoSize: Number(settings?.pdf_header_logo_size || 80),
     headerTopGap: Number(settings?.pdf_header_top_gap || 5),
-    headerContentGap: Number(settings?.pdf_header_content_gap || 6), // Gap between logo and text
+    headerContentGap: Number(settings?.pdf_header_content_gap || 6),
     tableHeaderBg: settings?.pdf_table_header_bg || "#F57C00",
     tableHeaderTextColor: "#FFFFFF",
     rowFontSize: `${settings?.pdf_table_row_size || 10.5}pt`,
     rowHeight: `${settings?.pdf_table_row_height || 7}mm`,
+    tableBorderColor: settings?.pdf_table_border_color || "#000000",
     termsTitle: settings?.pdf_terms_title || "Terms & Conditions",
     termsFontSize: `${settings?.pdf_terms_size || 9.5}pt`,
     termsTopGap: `${settings?.pdf_terms_top_gap || 8}mm`,
@@ -60,13 +64,24 @@ export function WarriorLayout(props: DocumentTemplateProps) {
             <div className="w-full h-full bg-blue-600 rounded-xl flex items-center justify-center text-white text-3xl font-black shadow-sm">W</div>
           )}
         </div>
-        <div className="flex-1 space-y-0.5">
-          <h1 className="text-[32px] font-black tracking-tighter leading-none" style={{ display: 'flex', justifyContent: isLogoLeft ? 'flex-start' : 'center' }}>
+        <div className="flex-1 space-y-0.5 min-w-0">
+          <h1 
+            className="font-black tracking-tighter leading-none" 
+            style={{ 
+              display: 'flex', 
+              justifyContent: isLogoLeft ? 'flex-start' : 'center',
+              fontSize: styles.headerTitleSize,
+              color: styles.headerTitleColor
+            }}
+          >
             <span className="text-[#00D4AA]">WARRIOR</span>
-            <span className="ml-2" style={{ color: styles.headerTitleColor }}>TECH</span>
+            <span className="ml-2">TECH</span>
             <span className="text-[#F57C00] ml-2">SYSTEM</span>
           </h1>
-          <p className="text-[12px] font-bold text-[#F57C00] uppercase tracking-[0.2em] italic leading-none mt-1">
+          <p 
+            className="font-bold text-[#F57C00] uppercase tracking-[0.2em] italic leading-none mt-1"
+            style={{ color: styles.headerSloganColor, fontSize: styles.headerSloganSize }}
+          >
             {settings?.companySlogan || "Innovative Security, Reliable Communication"}
           </p>
           <div className={cn("flex items-center gap-6 text-[9.5px] font-bold text-[#333333] mt-1.5", !isLogoLeft && "justify-center")}>
@@ -113,49 +128,39 @@ export function WarriorLayout(props: DocumentTemplateProps) {
         </div>
 
         <div className="px-6 w-full mb-4">
-          <table className="w-full border-collapse border-[0.3mm] border-black">
+          <table className="w-full border-collapse border-[0.3mm]" style={{ borderColor: styles.tableBorderColor }}>
             <colgroup>
-              <col style={{width: '5%'}} />
-              <col style={{width: '50%'}} />
-              <col style={{width: '10%'}} />
-              <col style={{width: '15%'}} />
-              <col style={{width: '20%'}} />
+              <col style={{width: '5%'}}/><col style={{width: '50%'}}/><col style={{width: '10%'}}/><col style={{width: '15%'}}/><col style={{width: '20%'}}/>
             </colgroup>
             <thead>
               <tr style={{ backgroundColor: styles.tableHeaderBg, color: styles.tableHeaderTextColor }} className="h-8">
-                <th className="border border-black text-[9.5px] font-black uppercase text-center">SL</th>
-                <th className="border border-black px-2 text-left text-[9.5px] font-black uppercase">Item Description</th>
-                <th className="border border-black text-center text-[9.5px] font-black uppercase">Qty</th>
-                <th className="border border-black text-center text-[9.5px] font-black uppercase">Price</th>
-                <th className="border border-black text-right text-[9.5px] font-black uppercase pr-2">Total</th>
+                <th className="border border-black text-[9.5px] font-black uppercase text-center" style={{ borderColor: styles.tableBorderColor }}>SL</th>
+                <th className="border border-black px-2 text-left text-[9.5px] font-black uppercase" style={{ borderColor: styles.tableBorderColor }}>Item Description</th>
+                <th className="border border-black text-center text-[9.5px] font-black uppercase" style={{ borderColor: styles.tableBorderColor }}>Qty</th>
+                <th className="border border-black text-center text-[9.5px] font-black uppercase" style={{ borderColor: styles.tableBorderColor }}>Price</th>
+                <th className="border border-black text-right text-[9.5px] font-black uppercase pr-2" style={{ borderColor: styles.tableBorderColor }}>Total</th>
               </tr>
             </thead>
             <tbody style={{ fontSize: styles.rowFontSize }}>
               {items.map((item, idx) => (
-                <tr key={idx} className="border-b border-black align-middle" style={{ height: styles.rowHeight }}>
-                  <td className="border-x border-black text-center font-black">{(idx + 1).toString().padStart(2, '0')}</td>
-                  <td className="border-x border-black px-2">
+                <tr key={idx} className="border-b align-middle" style={{ height: styles.rowHeight, borderColor: styles.tableBorderColor }}>
+                  <td className="border-x border-black text-center font-black" style={{ borderColor: styles.tableBorderColor }}>{(idx + 1).toString().padStart(2, '0')}</td>
+                  <td className="border-x border-black px-2" style={{ borderColor: styles.tableBorderColor }}>
                     <p className="font-black text-slate-900 uppercase truncate">{item.name}</p>
                     {item.sn && <p className="text-[7.5px] font-black text-blue-700 leading-none">S/N: {item.sn}</p>}
                   </td>
-                  <td className="border-x border-black text-center font-bold">{item.quantity} {item.unit || 'Pcs'}</td>
-                  <td className="border-x border-black text-center font-bold tabular-nums">{(item.unitPrice || 0).toLocaleString()}</td>
-                  <td className="border-x border-black text-right font-black tabular-nums pr-2">{(item.total || 0).toLocaleString()}</td>
+                  <td className="border-x border-black text-center font-bold" style={{ borderColor: styles.tableBorderColor }}>{item.quantity} {item.unit || 'Pcs'}</td>
+                  <td className="border-x border-black text-center font-bold tabular-nums" style={{ borderColor: styles.tableBorderColor }}>{(item.unitPrice || 0).toLocaleString()}</td>
+                  <td className="border-x border-black text-right font-black tabular-nums pr-2" style={{ borderColor: styles.tableBorderColor }}>{(item.total || 0).toLocaleString()}</td>
                 </tr>
               ))}
               <tr className="h-7 bg-slate-50">
-                <td colSpan={4} className="border border-black p-1 text-right text-[9.5px] font-black uppercase pr-2">Subtotal</td>
-                <td className="border border-black p-1 text-right text-[10.5px] font-black pr-2 tabular-nums">{(subtotal || 0).toLocaleString()}</td>
+                <td colSpan={4} className="border border-black p-1 text-right text-[9.5px] font-black uppercase pr-2" style={{ borderColor: styles.tableBorderColor }}>Subtotal</td>
+                <td className="border border-black p-1 text-right text-[10.5px] font-black pr-2 tabular-nums" style={{ borderColor: styles.tableBorderColor }}>{(subtotal || 0).toLocaleString()}</td>
               </tr>
-              {discount > 0 && (
-                <tr className="h-7 text-red-700">
-                  <td colSpan={4} className="border border-black p-1 text-right text-[9.5px] font-black uppercase pr-2">Discount</td>
-                  <td className="border border-black p-1 text-right text-[10.5px] font-black pr-2 tabular-nums">{(discount || 0).toLocaleString()}</td>
-                </tr>
-              )}
               <tr style={{ backgroundColor: styles.tableHeaderBg }} className="h-10 text-white">
-                <td colSpan={4} className="border border-black p-1 text-right text-[11px] font-black uppercase pr-3">Grand Total Payable</td>
-                <td className="border border-black p-1 text-right text-[16px] font-black pr-3 tabular-nums">{(grandTotal || 0).toLocaleString()}</td>
+                <td colSpan={4} className="border border-black p-1 text-right text-[11px] font-black uppercase pr-3" style={{ borderColor: styles.tableBorderColor }}>Grand Total</td>
+                <td className="border border-black p-1 text-right text-[16px] font-black pr-3 tabular-nums" style={{ borderColor: styles.tableBorderColor }}>{(grandTotal || 0).toLocaleString()}</td>
               </tr>
             </tbody>
           </table>
@@ -181,7 +186,7 @@ export function WarriorLayout(props: DocumentTemplateProps) {
 
           <div className="grid grid-cols-4 gap-6 relative pb-2 w-full" style={{ marginTop: styles.signatureTopGap }}>
             <div className="text-center border-t border-black pt-1 text-[9.5px] font-black uppercase">Customer Signature</div>
-            <div className="text-center border-t border-black pt-1 text-[9.5px] font-black uppercase">Prepared By</div>
+            <div className="text-center border-t border-black pt-1 text-[9.5px) font-black uppercase">Prepared By</div>
             <div className="text-center border-t border-black pt-1 text-[9.5px] font-black uppercase">Checked By</div>
             <div className="text-center relative">
               <div className="absolute -top-10 left-1/2 -translate-x-1/2 h-10 w-28">

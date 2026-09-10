@@ -9,7 +9,7 @@ import { DocumentTemplateProps } from "../document-template"
 
 /**
  * Service Bill Layout - Ultra-Dynamic Version.
- * Fully customizable via Admin settings.
+ * All text, color, size, and gaps are dynamic based on Admin settings.
  */
 export function ServiceBillLayout(props: DocumentTemplateProps) {
   const { 
@@ -28,17 +28,21 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
   const billingMonth = (props as any).billingMonth || "N/A";
   const cInfo = (props as any).customerData || {};
 
-  // Admin Styled Parameters from Settings
+  // All Styles derived from Admin Dashboard
   const styles = {
-    headerAlign: settings?.pdf_header_align || "left", // 'left' means Logo-Left, 'center' means Stacked
+    headerAlign: settings?.pdf_header_align || "left", 
     headerTitleColor: settings?.pdf_header_title_color || "#0056B3",
+    headerTitleSize: `${settings?.pdf_header_title_size || 32}px`,
+    headerSloganColor: settings?.pdf_header_slogan_color || "#F57C00",
+    headerSloganSize: `${settings?.pdf_header_slogan_size || 12}px`,
     headerLogoSize: Number(settings?.pdf_header_logo_size || 80),
     headerTopGap: Number(settings?.pdf_header_top_gap || 5),
-    headerContentGap: Number(settings?.pdf_header_content_gap || 6), // Gap between logo and text
+    headerContentGap: Number(settings?.pdf_header_content_gap || 6),
     tableHeaderBg: settings?.pdf_table_header_bg || "#F57C00",
     tableHeaderTextColor: "#FFFFFF",
     rowFontSize: `${settings?.pdf_table_row_size || 10.5}pt`,
     rowHeight: `${settings?.pdf_table_row_height || 7}mm`,
+    tableBorderColor: settings?.pdf_table_border_color || "#000000",
     termsTitle: settings?.pdf_terms_title || "Terms & Conditions",
     termsFontSize: `${settings?.pdf_terms_size || 9.5}pt`,
     termsTopGap: `${settings?.pdf_terms_top_gap || 8}mm`,
@@ -61,6 +65,7 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
           gap: isLogoLeft ? `${styles.headerContentGap}mm` : '2mm'
         }}
       >
+        {/* LOGO SECTION */}
         <div style={{ width: `${styles.headerLogoSize}px`, height: `${styles.headerLogoSize}px` }} className="shrink-0 flex items-center justify-center">
           {settings?.companyLogo ? (
             <img src={settings.companyLogo} alt="Logo" className="w-full h-full object-contain" />
@@ -68,13 +73,25 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
             <div className="w-full h-full bg-blue-600 rounded-xl flex items-center justify-center text-white text-3xl font-black shadow-sm">W</div>
           )}
         </div>
-        <div className="flex-1 space-y-0.5">
-          <h1 className="text-[32px] font-black tracking-tighter leading-none" style={{ display: 'flex', justifyContent: isLogoLeft ? 'flex-start' : 'center' }}>
+
+        {/* TEXT SECTION */}
+        <div className="flex-1 space-y-0.5 min-w-0">
+          <h1 
+            className="font-black tracking-tighter leading-none" 
+            style={{ 
+              display: 'flex', 
+              justifyContent: isLogoLeft ? 'flex-start' : 'center',
+              fontSize: styles.headerTitleSize
+            }}
+          >
             <span className="text-[#00D4AA]">WARRIOR</span>
             <span className="ml-2" style={{ color: styles.headerTitleColor }}>TECH</span>
             <span className="text-[#F57C00] ml-2">SYSTEM</span>
           </h1>
-          <p className="text-[12px] font-bold text-[#F57C00] uppercase tracking-[0.2em] italic leading-none mt-1">
+          <p 
+            className="font-bold text-[#F57C00] uppercase tracking-[0.2em] italic leading-none mt-1"
+            style={{ color: styles.headerSloganColor, fontSize: styles.headerSloganSize }}
+          >
             {settings?.companySlogan || "Innovative Security, Reliable Communication"}
           </p>
           <div className={cn("flex items-center gap-6 text-[9.5px] font-bold text-[#333333] mt-1.5", !isLogoLeft && "justify-center")}>
@@ -124,26 +141,22 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
 
         {/* TABLE SECTION */}
         <div className="px-6 mb-4 w-full">
-          <table className="w-full border-collapse border-[0.3mm] border-black">
+          <table className="w-full border-collapse border-[0.3mm]" style={{ borderColor: styles.tableBorderColor }}>
             <colgroup>
-              <col style={{width: '5%'}} />
-              <col style={{width: '35%'}} />
-              <col style={{width: '40%'}} />
-              <col style={{width: '10%'}} />
-              <col style={{width: '10%'}} />
+              <col style={{width: '5%'}}/><col style={{width: '35%'}}/><col style={{width: '40%'}}/><col style={{width: '10%'}}/><col style={{width: '10%'}}/>
             </colgroup>
             <thead>
               <tr className="bg-blue-50 h-7">
-                <th colSpan={5} className="border border-black text-center text-[11px] font-black uppercase tracking-widest text-blue-900">
+                <th colSpan={5} className="border border-black text-center text-[11px] font-black uppercase tracking-widest text-blue-900" style={{ borderColor: styles.tableBorderColor }}>
                   Billing Cycle: {billingMonth}
                 </th>
               </tr>
               <tr style={{ backgroundColor: styles.tableHeaderBg, color: styles.tableHeaderTextColor }} className="h-8">
-                <th className="border border-black text-[9.5px] font-black uppercase text-center">SL</th>
-                <th className="border border-black text-center text-[9.5px] font-black uppercase">Service Category</th>
-                <th className="border border-black text-center text-[9.5px] font-black uppercase">Location / Point</th>
-                <th className="border border-black text-center text-[9.5px] font-black uppercase">Rate</th>
-                <th className="border border-black text-center text-[9.5px] font-black uppercase">Amount</th>
+                <th className="border border-black text-[9.5px] font-black uppercase text-center" style={{ borderColor: styles.tableBorderColor }}>SL</th>
+                <th className="border border-black text-center text-[9.5px] font-black uppercase" style={{ borderColor: styles.tableBorderColor }}>Service Category</th>
+                <th className="border border-black text-center text-[9.5px] font-black uppercase" style={{ borderColor: styles.tableBorderColor }}>Location / Point</th>
+                <th className="border border-black text-center text-[9.5px] font-black uppercase" style={{ borderColor: styles.tableBorderColor }}>Rate</th>
+                <th className="border border-black text-center text-[9.5px] font-black uppercase" style={{ borderColor: styles.tableBorderColor }}>Amount</th>
               </tr>
             </thead>
             <tbody style={{ fontSize: styles.rowFontSize }}>
@@ -152,32 +165,32 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
                   {group.points.map((point: any, pIdx: number) => {
                     const globalSl = groups.slice(0, gIdx).reduce((acc: number, prevG: any) => acc + prevG.points.length, 0) + pIdx + 1;
                     return (
-                      <tr key={pIdx} className="border-b border-black" style={{ height: styles.rowHeight }}>
-                        <td className="border border-black text-center font-black">{globalSl.toString().padStart(2, '0')}</td>
-                        <td className="border border-black px-2 font-black text-slate-900 text-center uppercase truncate">{group.serviceName}</td>
-                        <td className="border border-black px-2 text-slate-800 font-bold text-left uppercase truncate">{point.location}</td>
-                        {pIdx === 0 ? (<td rowSpan={group.points.length} className="border border-black px-1 text-right font-black text-slate-900 align-middle tabular-nums">{Number(group.amount || 0).toLocaleString()}</td>) : null}
-                        {pIdx === 0 ? (<td rowSpan={group.points.length} className="border border-black px-1 text-right font-black text-blue-900 align-middle tabular-nums">{Number(group.amount || 0).toLocaleString()}</td>) : null}
+                      <tr key={pIdx} className="border-b" style={{ height: styles.rowHeight, borderColor: styles.tableBorderColor }}>
+                        <td className="border-x border-black text-center font-black" style={{ borderColor: styles.tableBorderColor }}>{globalSl.toString().padStart(2, '0')}</td>
+                        <td className="border-x border-black px-2 font-black text-slate-900 text-center uppercase truncate" style={{ borderColor: styles.tableBorderColor }}>{group.serviceName}</td>
+                        <td className="border-x border-black px-2 text-slate-800 font-bold text-left uppercase truncate" style={{ borderColor: styles.tableBorderColor }}>{point.location}</td>
+                        {pIdx === 0 ? (<td rowSpan={group.points.length} className="border border-black px-1 text-right font-black text-slate-900 align-middle tabular-nums" style={{ borderColor: styles.tableBorderColor }}>{Number(group.amount || 0).toLocaleString()}</td>) : null}
+                        {pIdx === 0 ? (<td rowSpan={group.points.length} className="border border-black px-1 text-right font-black text-blue-900 align-middle tabular-nums" style={{ borderColor: styles.tableBorderColor }}>{Number(group.amount || 0).toLocaleString()}</td>) : null}
                       </tr>
                     );
                   })}
                 </React.Fragment>
               ))}
-              <tr className="bg-slate-50 border-t-[0.3mm] border-black h-10">
-                <td colSpan={3} className="border border-black px-4 py-1">
+              <tr className="bg-slate-50 border-t-[0.3mm] h-10" style={{ borderColor: styles.tableBorderColor }}>
+                <td colSpan={3} className="border border-black px-4 py-1" style={{ borderColor: styles.tableBorderColor }}>
                    <div className="flex flex-col">
                       <p className="text-[7.5px] font-black uppercase text-slate-400 tracking-widest leading-none mb-0.5">Amount in Words</p>
                       <p className="text-[11px] font-black text-blue-900 italic uppercase leading-none truncate">{amountToWords(grandTotal || 0)}</p>
                    </div>
                 </td>
-                <td className="border border-black px-1 text-right text-[9.5px] uppercase font-black bg-blue-100/50">Payable</td>
-                <td className="border border-black px-1 text-right text-[15px] font-black text-blue-900 tabular-nums bg-blue-100">{Number(grandTotal || 0).toLocaleString()}</td>
+                <td className="border border-black px-1 text-right text-[9.5px] uppercase font-black bg-blue-100/50" style={{ borderColor: styles.tableBorderColor }}>Payable</td>
+                <td className="border border-black px-1 text-right text-[15px] font-black text-blue-900 tabular-nums bg-blue-100" style={{ borderColor: styles.tableBorderColor }}>{Number(grandTotal || 0).toLocaleString()}</td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        {/* TERMS SECTION */}
+        {/* TERMS & SIGNATURE SECTION */}
         <div className="px-8" style={{ marginTop: styles.termsTopGap }}>
           <div className="w-full">
             <h4 className="text-[9.5px] font-black uppercase text-slate-400 tracking-widest mb-1">{styles.termsTitle}</h4>
@@ -196,7 +209,6 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
             </div>
           )}
 
-          {/* SIGNATURE SECTION */}
           <div className="grid grid-cols-4 gap-6 relative pb-2 w-full" style={{ marginTop: styles.signatureTopGap }}>
             <div className="text-center border-t border-black pt-1 text-[9.5px] font-black uppercase">Customer Signature</div>
             <div className="text-center border-t border-black pt-1 text-[9.5px] font-black uppercase">Prepared By</div>
