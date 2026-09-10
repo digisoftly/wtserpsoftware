@@ -14,7 +14,12 @@ import {
   Trash2,
   Palette,
   Monitor,
-  RefreshCw
+  RefreshCw,
+  Table as TableIcon,
+  AlignLeft,
+  AlignCenter,
+  Ruler,
+  Paintbrush
 } from "lucide-react"
 import * as Icons from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -31,6 +36,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { errorEmitter } from "@/firebase/error-emitter"
 import { FirestorePermissionError } from "@/firebase/errors"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { cn } from "@/lib/utils"
 
 const ICON_OPTIONS = [
   "LayoutDashboard", "ShoppingCart", "FileText", "Truck", "Package", "RotateCcw", "Boxes", "Database", 
@@ -38,7 +44,6 @@ const ICON_OPTIONS = [
   "Briefcase", "Building2", "BarChart3", "Zap", "Settings", "UserRoundCog", "ShieldAlert"
 ];
 
-// STRICT 24 ITEM DEFAULT LIST
 const DEFAULT_GRID_ITEMS = [
   { label: "ড্যাশবোর্ড", icon: "LayoutDashboard", color: "bg-blue-500/20 text-blue-400" },
   { label: "বিক্রয়", icon: "ShoppingCart", color: "bg-emerald-500/20 text-emerald-400" },
@@ -66,13 +71,6 @@ const DEFAULT_GRID_ITEMS = [
   { label: "অডিট লগ", icon: "ShieldAlert", color: "bg-red-800/20 text-red-600" },
 ];
 
-const SIDEBAR_KEYS = [
-  "dashboard", "sales", "quotations", "dispatch", "purchases", "returns", 
-  "inventory", "masterManagement", "serialTracking", "projectBilling", 
-  "contracts", "customers", "suppliers", "accounts", "expenses", 
-  "support", "crm", "hrm", "branches", "reports", "ai", "settings", "users", "audit"
-];
-
 export default function SettingsPage() {
   const { companyId } = useTenant();
   const db = useFirestore();
@@ -96,25 +94,6 @@ export default function SettingsPage() {
     }
   }, [settings]);
 
-  const resetToDefault = () => {
-    setLoginGrid(DEFAULT_GRID_ITEMS);
-    toast({ title: "Order Reset", description: "Default module sequence has been restored." });
-  };
-
-  const addGridItem = () => {
-    setLoginGrid([...loginGrid, { label: "New Module", icon: "LayoutGrid", color: "bg-emerald-500/20 text-emerald-400" }]);
-  };
-
-  const updateGridItem = (idx: number, field: string, value: string) => {
-    const next = [...loginGrid];
-    next[idx] = { ...next[idx], [field]: value };
-    setLoginGrid(next);
-  };
-
-  const removeGridItem = (idx: number) => {
-    setLoginGrid(loginGrid.filter((_, i) => i !== idx));
-  };
-
   const handleSaveSettings = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!settingsRef) return;
@@ -126,7 +105,6 @@ export default function SettingsPage() {
       updatedAt: serverTimestamp(),
       companyLogo: logoPreview,
       loginGridItems: loginGrid,
-      sidebarMenuOrder: SIDEBAR_KEYS, // Sync sidebar with strict list
     };
 
     formData.forEach((value, key) => {
@@ -139,12 +117,11 @@ export default function SettingsPage() {
         setIsSaving(false);
       })
       .catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: settingsRef.path,
           operation: 'write',
           requestResourceData: updates,
-        });
-        errorEmitter.emit('permission-error', permissionError);
+        }));
         setIsSaving(false);
       });
   };
@@ -159,7 +136,7 @@ export default function SettingsPage() {
             <h1 className="text-2xl font-bold font-headline text-blue-600 flex items-center gap-2">
               <Settings2 className="h-8 w-8" /> System Configuration
             </h1>
-            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mt-1">Enterprise UI & Branding Terminal</p>
+            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mt-1">Universal UI & PDF Lab</p>
           </div>
           <Button type="submit" disabled={isSaving} className="bg-blue-600 hover:bg-blue-700 rounded-full px-12 h-12 font-bold shadow-xl shadow-blue-100 transition-all active:scale-95">
             {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t('save')}
@@ -168,20 +145,20 @@ export default function SettingsPage() {
 
         <Tabs defaultValue="general" className="w-full">
           <TabsList className="bg-white border rounded-xl p-1 mb-6 shadow-sm flex overflow-x-auto h-auto no-scrollbar ring-1 ring-slate-100">
-            <TabsTrigger value="general" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Company & Style</TabsTrigger>
-            <TabsTrigger value="login" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Login UI Lab</TabsTrigger>
-            <TabsTrigger value="documents" className="rounded-lg gap-2 flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase tracking-widest">Document Lab</TabsTrigger>
+            <TabsTrigger value="general" className="rounded-lg flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase">Company Info</TabsTrigger>
+            <TabsTrigger value="login" className="rounded-lg flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase">Login UI Lab</TabsTrigger>
+            <TabsTrigger value="pdf_lab" className="rounded-lg flex-1 min-w-[150px] py-3 text-[10px] font-black uppercase text-blue-600">PDF Design Lab</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card className="border-none shadow-sm rounded-2xl flex flex-col items-center justify-center p-6 text-center bg-white ring-1 ring-slate-100">
-                <Label className="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest">Main Company Logo</Label>
+                <Label className="text-[10px] font-black uppercase text-slate-400 mb-4">Company Logo</Label>
                 <div className="w-32 h-32 mb-4 relative group">
                   {logoPreview ? (
                     <img src={logoPreview} className="w-full h-full object-contain rounded-xl border p-2 bg-slate-50" />
                   ) : (
-                    <div className="w-full h-full bg-slate-50 rounded-xl border-2 border-dashed flex items-center justify-center"><Icons.ImageIcon className="text-slate-300" /></div>
+                    <div className="w-full h-full bg-slate-50 rounded-xl border-2 border-dashed flex items-center justify-center"><ImageIcon className="text-slate-300" /></div>
                   )}
                   <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => {
                     const file = e.target.files?.[0];
@@ -196,95 +173,104 @@ export default function SettingsPage() {
 
               <Card className="md:col-span-2 border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-8 space-y-6">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Legal Name</Label><Input name="companyName" defaultValue={settings?.companyName} className="h-11 rounded-xl" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Slogan / Motto</Label><Input name="companySlogan" defaultValue={settings?.companySlogan} className="h-11 rounded-xl" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Official Email</Label><Input name="email" defaultValue={settings?.email} className="h-11 rounded-xl" /></div>
-                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Connect Phone</Label><Input name="phone" defaultValue={settings?.phone} className="h-11 rounded-xl" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Legal Name</Label><Input name="companyName" defaultValue={settings?.companyName} className="h-11" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Slogan</Label><Input name="companySlogan" defaultValue={settings?.companySlogan} className="h-11" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Official Email</Label><Input name="email" defaultValue={settings?.email} className="h-11" /></div>
+                    <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Phone</Label><Input name="phone" defaultValue={settings?.phone} className="h-11" /></div>
                  </div>
-                 <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Corporate Address</Label><Textarea name="address" defaultValue={settings?.address} className="rounded-xl min-h-[80px]" /></div>
+                 <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-500">Address</Label><Textarea name="address" defaultValue={settings?.address} className="rounded-xl min-h-[80px]" /></div>
               </Card>
             </div>
           </TabsContent>
 
-          <TabsContent value="login" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-8 space-y-6">
-                <div className="flex items-center gap-2 mb-4">
-                   <Monitor className="h-5 w-5 text-emerald-600" />
-                   <h3 className="text-sm font-black uppercase tracking-widest">Branding Text</h3>
-                </div>
-                <div className="space-y-4">
-                  <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">Grid Headline</Label><Input name="loginHeadline" defaultValue={settings?.loginHeadline || "২৪টি মডিউল একটি প্ল্যাটফর্মে"} className="h-11 rounded-xl" /></div>
-                  <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase">Grid Sub-headline</Label><Input name="loginSubHeadline" defaultValue={settings?.loginSubHeadline || "ব্যবসার প্রতিটি বিভাগ, এক জায়গা থেকেই নিয়ন্ত্রণ"} className="h-11 rounded-xl" /></div>
-                </div>
-              </Card>
-
-              <Card className="md:col-span-2 border-none shadow-sm rounded-[2rem] bg-white ring-1 ring-slate-100 p-8 space-y-6">
-                <div className="flex items-center justify-between border-b pb-4">
-                  <div className="flex items-center gap-2">
-                    <LayoutGrid className="h-5 w-5 text-emerald-600" />
-                    <h3 className="text-sm font-black uppercase tracking-widest">Login & Navigation Order</h3>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button type="button" variant="outline" size="sm" className="rounded-full h-8 px-4 text-[10px] font-black uppercase gap-2 border-amber-200 text-amber-700 bg-amber-50" onClick={resetToDefault}>
-                      <RefreshCw className="h-3 w-3" /> Reset to Default
-                    </Button>
-                    <Button type="button" variant="outline" size="sm" className="rounded-full h-8 px-4 text-[10px] font-black uppercase gap-2" onClick={addGridItem}>
-                      <Plus className="h-3 w-3" /> Add Item
-                    </Button>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                  {loginGrid.map((item, i) => (
-                    <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3 relative group">
-                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7 absolute top-2 right-2 text-slate-300 hover:text-red-600" onClick={() => removeGridItem(i)}>
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                      <div className="space-y-1">
-                        <Label className="text-[9px] font-black uppercase">Item Label</Label>
-                        <Input value={item.label} onChange={e => updateGridItem(i, 'label', e.target.value)} className="h-9 rounded-lg bg-white" />
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                         <div className="space-y-1">
-                            <Label className="text-[9px] font-black uppercase">Icon</Label>
-                            <Select value={item.icon} onValueChange={val => updateGridItem(i, 'icon', val)}>
-                               <SelectTrigger className="h-9 rounded-lg bg-white text-[10px]"><SelectValue /></SelectTrigger>
-                               <SelectContent>
-                                  {ICON_OPTIONS.map(opt => <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>)}
-                               </SelectContent>
-                            </Select>
-                         </div>
-                         <div className="space-y-1">
-                            <Label className="text-[9px] font-black uppercase">Tailwind Color</Label>
-                            <Input value={item.color} onChange={e => updateGridItem(i, 'color', e.target.value)} className="h-9 rounded-lg bg-white text-[9px]" placeholder="bg-blue-500/20 text-blue-400" />
-                         </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="documents" className="space-y-6">
-             <Card className="p-8 rounded-[2.5rem] border-none shadow-sm ring-1 ring-slate-100 bg-white space-y-8">
-                <div className="flex items-center gap-3 border-b pb-4">
-                   <Type className="h-5 w-5 text-blue-600" />
-                   <h3 className="text-sm font-black uppercase tracking-widest text-slate-700">Contract & Service Bill Labels</h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                   <div className="space-y-4">
-                     <h4 className="text-[10px] font-black uppercase text-blue-600 tracking-widest">Header Labels</h4>
-                     <div className="space-y-3">
-                       <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Bill Number Label</Label><Input name="pdfLabel_billNo" defaultValue={settings?.pdfLabel_billNo || "Bill Number"} className="h-9 text-xs rounded-xl" /></div>
-                       <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Bill Date Label</Label><Input name="pdfLabel_billDate" defaultValue={settings?.pdfLabel_billDate || "Bill Date"} className="h-9 text-xs rounded-xl" /></div>
-                       <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">SLA Ref Label</Label><Input name="pdfLabel_slaRef" defaultValue={settings?.pdfLabel_slaRef || "SLA Ref"} className="h-9 text-xs rounded-xl" /></div>
-                       <div className="space-y-1.5"><Label className="text-[9px] font-bold uppercase text-slate-400">Status Label</Label><Input name="pdfLabel_status" defaultValue={settings?.pdfLabel_status || "Status"} className="h-9 text-xs rounded-xl" /></div>
-                     </div>
+          <TabsContent value="pdf_lab" className="space-y-8">
+             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* SECTION 1: HEADER & IDENTITY */}
+                <Card className="p-8 rounded-[2rem] border-none shadow-sm bg-white ring-1 ring-slate-100 space-y-8">
+                   <div className="flex items-center gap-3 border-b pb-4">
+                      <Palette className="h-5 w-5 text-blue-600" />
+                      <h3 className="text-sm font-black uppercase tracking-widest text-slate-900">Header & Identity</h3>
                    </div>
-                </div>
-             </Card>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                         <Label className="text-[10px] font-black uppercase text-slate-400">Header Alignment</Label>
+                         <Select name="pdf_header_align" defaultValue={settings?.pdf_header_align || "center"}>
+                            <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                               <SelectItem value="left" className="text-xs font-bold">LEFT ALIGNED</SelectItem>
+                               <SelectItem value="center" className="text-xs font-bold">CENTER ALIGNED</SelectItem>
+                            </SelectContent>
+                         </Select>
+                      </div>
+                      <div className="space-y-2">
+                         <Label className="text-[10px] font-black uppercase text-slate-400">Title Color (Hex)</Label>
+                         <div className="flex gap-2">
+                            <Input name="pdf_header_title_color" defaultValue={settings?.pdf_header_title_color || "#0056B3"} className="h-10 font-mono" />
+                            <div className="w-10 h-10 rounded-lg border shadow-inner" style={{ backgroundColor: settings?.pdf_header_title_color || "#0056B3" }} />
+                         </div>
+                      </div>
+                      <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Logo Size (mm)</Label><Input type="number" name="pdf_header_logo_size" defaultValue={settings?.pdf_header_logo_size || 70} className="h-10" /></div>
+                      <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Top Margin (mm)</Label><Input type="number" name="pdf_header_top_gap" defaultValue={settings?.pdf_header_top_gap || 5} className="h-10" /></div>
+                   </div>
+                </Card>
+
+                {/* SECTION 2: TABLE CUSTOMIZATION */}
+                <Card className="p-8 rounded-[2rem] border-none shadow-sm bg-white ring-1 ring-slate-100 space-y-8">
+                   <div className="flex items-center gap-3 border-b pb-4">
+                      <TableIcon className="h-5 w-5 text-orange-600" />
+                      <h3 className="text-sm font-black uppercase tracking-widest text-slate-900">Table & Grid Lab</h3>
+                   </div>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                         <Label className="text-[10px] font-black uppercase text-slate-400">Header BG Color</Label>
+                         <div className="flex gap-2">
+                            <Input name="pdf_table_header_bg" defaultValue={settings?.pdf_table_header_bg || "#F57C00"} className="h-10 font-mono" />
+                            <div className="w-10 h-10 rounded-lg border shadow-inner" style={{ backgroundColor: settings?.pdf_table_header_bg || "#F57C00" }} />
+                         </div>
+                      </div>
+                      <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Row Font Size (pt)</Label><Input type="number" name="pdf_table_row_size" defaultValue={settings?.pdf_table_row_size || 10.5} className="h-10" /></div>
+                      <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Row Height (mm)</Label><Input type="number" name="pdf_table_row_height" defaultValue={settings?.pdf_table_row_height || 7} className="h-10" /></div>
+                      <div className="space-y-2">
+                         <Label className="text-[10px] font-black uppercase text-slate-400">Table Layout</Label>
+                         <Select name="pdf_table_density" defaultValue={settings?.pdf_table_density || "standard"}>
+                            <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                               <SelectItem value="compact" className="text-xs font-bold">COMPACT MODE</SelectItem>
+                               <SelectItem value="standard" className="text-xs font-bold">STANDARD MODE</SelectItem>
+                               <SelectItem value="large" className="text-xs font-bold">LARGE MODE</SelectItem>
+                            </SelectContent>
+                         </Select>
+                      </div>
+                   </div>
+                </Card>
+
+                {/* SECTION 3: TERMS & SIGNATURE */}
+                <Card className="p-8 rounded-[2rem] border-none shadow-sm bg-white ring-1 ring-slate-100 space-y-8">
+                   <div className="flex items-center gap-3 border-b pb-4">
+                      <Ruler className="h-5 w-5 text-indigo-600" />
+                      <h3 className="text-sm font-black uppercase tracking-widest text-slate-900">Compliance & Signature</h3>
+                   </div>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2 md:col-span-2"><Label className="text-[10px] font-black uppercase text-slate-400">Terms Box Title</Label><Input name="pdf_terms_title" defaultValue={settings?.pdf_terms_title || "Terms & Conditions"} className="h-10" /></div>
+                      <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Box Top Gap (mm)</Label><Input type="number" name="pdf_terms_top_gap" defaultValue={settings?.pdf_terms_top_gap || 10} className="h-10" /></div>
+                      <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Terms Text Size (pt)</Label><Input type="number" name="pdf_terms_size" defaultValue={settings?.pdf_terms_size || 9.5} className="h-10" /></div>
+                      <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Signature Top Gap (mm)</Label><Input type="number" name="pdf_signature_top_gap" defaultValue={settings?.pdf_signature_top_gap || 30} className="h-10" /></div>
+                   </div>
+                </Card>
+
+                {/* SECTION 4: FOOTER BRANDING */}
+                <Card className="p-8 rounded-[2rem] border-none shadow-sm bg-white ring-1 ring-slate-100 space-y-8">
+                   <div className="flex items-center gap-3 border-b pb-4">
+                      <Paintbrush className="h-5 w-5 text-teal-600" />
+                      <h3 className="text-sm font-black uppercase tracking-widest text-slate-900">Footer Branding</h3>
+                   </div>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Footer Accent Color</Label><Input name="pdf_footer_accent" defaultValue={settings?.pdf_footer_accent || "#F57C00"} className="h-10" /></div>
+                      <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Brand Name Size (pt)</Label><Input type="number" name="pdf_footer_brand_size" defaultValue={settings?.pdf_footer_brand_size || 22} className="h-10" /></div>
+                      <div className="space-y-2 md:col-span-2"><Label className="text-[10px] font-black uppercase text-slate-400">Heart Message</Label><Input name="footerHeartMsg" defaultValue={settings?.footerHeartMsg || "Thank You For Your Business"} className="h-10" /></div>
+                   </div>
+                </Card>
+             </div>
           </TabsContent>
         </Tabs>
       </form>
