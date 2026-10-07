@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -24,6 +23,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Textarea } from "@/components/ui/textarea"
 import { useFirestore, useDoc, useCollection, useMemoFirebase } from "@/firebase"
 import { doc, updateDoc, serverTimestamp, collection, query, orderBy } from "firebase/firestore"
 import { useTenant } from "@/context/tenant-context"

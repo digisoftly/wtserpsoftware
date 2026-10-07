@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -18,7 +17,8 @@ import {
   Building2,
   User,
   CreditCard,
-  FileText
+  FileText,
+  AlignRight
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
