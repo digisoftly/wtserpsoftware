@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -72,7 +73,11 @@
     size: A4 portrait;
     margin: 0 !important;
   }
-  .no-print { display: none !important; }
+  
+  .no-print { 
+    display: none !important; 
+  }
+  
   body { 
     background: white !important;
     padding: 0 !important;
@@ -80,23 +85,45 @@
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
+
   .document-container {
     width: 210mm !important;
-    height: 297mm !important;
+    min-height: 297mm !important;
     padding: 0 !important;
     margin: 0 !important;
     box-shadow: none !important;
     border: none !important;
-    overflow: hidden !important;
+    overflow: visible !important;
     position: relative !important;
-    page-break-after: always !important;
     box-sizing: border-box !important;
   }
+
+  /* Force brand footer to bottom of every page or last page */
+  .no-print-absolute {
+    position: absolute !important;
+    bottom: 0 !important;
+    width: 100% !important;
+  }
+
+  table { 
+    page-break-inside: auto !important; 
+  }
+  
+  tr { 
+    page-break-inside: avoid !important; 
+    page-break-after: auto !important;
+  }
+
+  thead { 
+    display: table-header-group !important; 
+  }
+
+  tfoot { 
+    display: table-footer-group !important; 
+  }
+
   * {
     -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
     color-adjust: exact !important;
   }
-  tr { page-break-inside: avoid !important; }
-  table { page-break-inside: auto !important; }
 }
