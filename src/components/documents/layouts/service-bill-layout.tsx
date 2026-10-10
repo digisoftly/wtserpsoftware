@@ -10,6 +10,7 @@ import { DocumentTemplateProps } from "../document-template"
 /**
  * Optimized Monthly Service Bill Layout.
  * Features: A4 Pagination, Hind Siliguri font for Bengali, Dynamic rowSpan Price/Amount.
+ * Styled to match the exact design reference from image.
  */
 export function ServiceBillLayout(props: DocumentTemplateProps) {
   const { 
@@ -127,13 +128,7 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
         {renderHeader()}
         <div className="border-t-[1px] border-red-500 border-dashed w-full mb-4" />
 
-        <div className="text-center mb-6">
-          <h2 className="text-[20px] font-black uppercase text-slate-900 underline underline-offset-8 decoration-2 decoration-blue-600 leading-none">
-            {title}
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-2 gap-10 mb-6 px-8 w-full">
+        <div className="grid grid-cols-2 gap-10 mb-4 px-8 w-full">
           <div className="space-y-1">
             <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest border-b border-blue-50 w-fit pb-0.5">{t('billTo')}:</p>
             <div className="space-y-1 mt-2">
@@ -144,12 +139,18 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
           </div>
           <div className="text-right flex flex-col justify-end">
             <div className="grid grid-cols-[1fr_8px_130px] text-[10px] leading-snug uppercase font-bold text-slate-500 gap-y-1.5">
-              <span>{t('docNo')}</span> <span>:</span> <span className="font-black text-blue-800 text-left pl-2">{docNumber}</span>
-              <span>{t('date')}</span> <span>:</span> <span className="font-black text-slate-900 text-left pl-2">{formatDate(date)}</span>
-              <span>{t('projectName')}</span> <span>:</span> <span className="font-black text-slate-900 text-left pl-2 truncate">{projectName || "General"}</span>
-              <span>{t('status')}</span> <span>:</span> <span className={cn("font-black text-left pl-2", status === 'paid' ? "text-green-700" : "text-red-600")}>{status || "DUE"}</span>
+              <span>{t('invoiceNo')}</span> <span>:</span> <span className="font-black text-blue-800 text-left pl-2">{docNumber}</span>
+              <span>{t('invoiceDate')}</span> <span>:</span> <span className="font-black text-slate-900 text-left pl-2">{formatDate(date)}</span>
+              <span>{t('billingPeriod')}</span> <span>:</span> <span className="font-black text-slate-900 text-left pl-2">{billingMonth}</span>
+              <span>{t('projectName')}</span> <span>:</span> <span className="font-black text-slate-900 text-left pl-2 truncate uppercase">{projectName || "General"}</span>
             </div>
           </div>
+        </div>
+
+        <div className="bg-[#0070C0] border-y-[0.3mm] border-black py-1.5 text-center mb-4 mx-0">
+          <h3 className="text-[18px] font-black text-white uppercase tracking-[0.2em] leading-none">
+            {title}
+          </h3>
         </div>
 
         <div className="px-8 mb-6 w-full">
@@ -158,15 +159,10 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
               <col style={{width: '6%'}}/><col style={{width: '30%'}}/><col style={{width: '44%'}}/><col style={{width: '10%'}}/><col style={{width: '10%'}}/>
             </colgroup>
             <thead>
-              <tr className="bg-blue-50 h-8">
-                <th colSpan={5} className="border border-black text-center text-[12px] font-black uppercase tracking-widest text-blue-900" style={{ borderColor: styles.tableBorderColor }}>
-                  {t('billingMonth')}: {billingMonth}
-                </th>
-              </tr>
               <tr style={{ backgroundColor: styles.tableHeaderBg, color: '#FFFFFF' }} className="h-10">
                 <th className="border border-black text-[10px] font-black uppercase text-center" style={{ borderColor: styles.tableBorderColor }}>{t('sl')}</th>
-                <th className="border border-black text-center text-[10px] font-black uppercase" style={{ borderColor: styles.tableBorderColor }}>{t('itemName')}</th>
-                <th className="border border-black text-center text-[10px] font-black uppercase" style={{ borderColor: styles.tableBorderColor }}>{t('details')}</th>
+                <th className="border border-black text-center text-[10px] font-black uppercase" style={{ borderColor: styles.tableBorderColor }}>{t('serviceAgreement')}</th>
+                <th className="border border-black text-center text-[10px] font-black uppercase" style={{ borderColor: styles.tableBorderColor }}>{t('itemDescription')}</th>
                 <th className="border border-black text-center text-[10px] font-black uppercase" style={{ borderColor: styles.tableBorderColor }}>{t('price')}</th>
                 <th className="border border-black text-center text-[10px] font-black uppercase" style={{ borderColor: styles.tableBorderColor }}>{t('amount')}</th>
               </tr>
@@ -183,12 +179,12 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
                         <td className="border-x border-black px-3 text-slate-800 font-bold text-left uppercase" style={{ borderColor: styles.tableBorderColor }}>{point.location}</td>
                         {pIdx === 0 ? (
                           <td rowSpan={group.points.length} className="border border-black px-2 text-right font-black text-slate-900 align-middle tabular-nums" style={{ borderColor: styles.tableBorderColor }}>
-                            {Number(group.amount || 0).toLocaleString()}
+                            {Number(group.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
                         ) : null}
                         {pIdx === 0 ? (
                           <td rowSpan={group.points.length} className="border border-black px-2 text-right font-black text-blue-900 align-middle tabular-nums bg-slate-50/30" style={{ borderColor: styles.tableBorderColor }}>
-                            {Number(group.amount || 0).toLocaleString()}
+                            {Number(group.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
                         ) : null}
                       </tr>
@@ -196,65 +192,80 @@ export function ServiceBillLayout(props: DocumentTemplateProps) {
                   })}
                 </React.Fragment>
               ))}
-              <tr className="bg-slate-50 border-t-[0.4mm] h-12" style={{ borderColor: styles.tableBorderColor }}>
-                <td colSpan={3} className="border border-black px-6 py-2" style={{ borderColor: styles.tableBorderColor }}>
-                   <div className="flex flex-col">
-                      <p className="text-[8px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">{t('amountInWords')}</p>
-                      <p className="text-[12px] font-black text-blue-900 italic uppercase leading-tight">{amountToWords(grandTotal || 0)}</p>
-                   </div>
-                </td>
-                <td className="border border-black px-2 text-right text-[10px] uppercase font-black bg-blue-100/50" style={{ borderColor: styles.tableBorderColor }}>{t('total')}</td>
-                <td className="border border-black px-2 text-right text-[18px] font-black text-blue-900 tabular-nums bg-blue-100" style={{ borderColor: styles.tableBorderColor }}>{Number(grandTotal || 0).toLocaleString()}</td>
+              <tr className="bg-blue-50 border-t-[0.4mm] h-8" style={{ borderColor: styles.tableBorderColor }}>
+                <td colSpan={3} className="border-none"></td>
+                <td className="border border-black px-2 text-right text-[10px] uppercase font-black" style={{ borderColor: styles.tableBorderColor }}>SUB TOTAL (BDT)</td>
+                <td className="border border-black px-2 text-right text-[11px] font-black text-slate-900 tabular-nums" style={{ borderColor: styles.tableBorderColor }}>{Number(grandTotal || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+              </tr>
+              <tr className="bg-blue-50 h-8" style={{ borderColor: styles.tableBorderColor }}>
+                <td colSpan={3} className="border-none"></td>
+                <td className="border border-black px-2 text-right text-[10px] uppercase font-black" style={{ borderColor: styles.tableBorderColor }}>VAT & TAX (BDT)</td>
+                <td className="border border-black px-2 text-right text-[11px] font-black text-slate-900 tabular-nums" style={{ borderColor: styles.tableBorderColor }}>0.00</td>
+              </tr>
+              <tr className="bg-[#0070C0] h-10 text-white" style={{ borderColor: styles.tableBorderColor }}>
+                <td colSpan={3} className="border-none"></td>
+                <td className="border border-black px-2 text-right text-[11px] uppercase font-black" style={{ borderColor: styles.tableBorderColor }}>GRAND TOTAL (BDT)</td>
+                <td className="border border-black px-2 text-right text-[14px] font-black tabular-nums" style={{ borderColor: styles.tableBorderColor }}>{Number(grandTotal || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
               </tr>
             </tbody>
           </table>
+          <div className="border border-black border-t-0 p-2 bg-slate-50">
+             <p className="text-[11px] font-black text-slate-900"><span className="underline">In Word:</span> {amountToWords(grandTotal || 0)}</p>
+             <p className="text-[9px] font-bold text-slate-500 mt-1 italic">Note: The above amount is exclusive of applicable VAT & Tax.</p>
+          </div>
         </div>
 
-        <div className="px-8" style={{ marginTop: styles.termsTopGap }}>
-          <div className="w-full">
-            <h4 className="text-[10px] font-black uppercase tracking-widest mb-1.5" style={{ color: styles.termsTitleColor }}>{styles.termsTitle}</h4>
-            <div className="text-slate-600 font-bold leading-snug border border-slate-100 p-5 rounded-2xl bg-slate-50/50 whitespace-pre-wrap w-full shadow-inner uppercase text-[10px]">
-              {settings?.pdfTerms || "1. Monthly service charges are payable by the 10th of each month.\n2. Delayed payments incur a late fee penalty.\n3. Ownership of equipment remains with WTS until full payment."}
+        <div className="px-8 grid grid-cols-2 gap-4" style={{ marginTop: styles.termsTopGap }}>
+          <div className="border border-black overflow-hidden rounded-sm">
+            <h4 className="bg-[#0070C0] text-white text-[10px] font-black uppercase text-center py-1">TERMS & CONDITIONS</h4>
+            <div className="p-3 text-[9px] font-bold text-slate-700 leading-snug whitespace-pre-wrap h-24">
+              {settings?.pdfTerms || "1. The monthly internet bill is payable in advance by the 10th of each billing month.\n2. Late payment may result in temporary suspension of service.\n3. Any billing discrepancy should be reported within 7 days of receiving the bill."}
             </div>
           </div>
-          
-          {notes && (
-            <div className="bg-blue-50/30 p-4 rounded-xl border-l-4 border-blue-600 w-full mt-3">
-               <p className="text-[9px] font-black text-blue-600 uppercase mb-1">{t('details')}</p>
-               <p className="text-[11px] font-bold text-slate-800 leading-normal">{notes}</p>
+          <div className="border border-black overflow-hidden rounded-sm">
+            <h4 className="bg-[#0070C0] text-white text-[10px] font-black uppercase text-center py-1">PAYMENT DETAILS</h4>
+            <div className="p-3 text-[9px] font-bold text-slate-700 leading-tight space-y-1.5 h-24">
+               <div className="grid grid-cols-[100px_8px_1fr]"><span>BANK NAME</span><span>:</span><span className="font-black">AB BANK</span></div>
+               <div className="grid grid-cols-[100px_8px_1fr]"><span>ACCOUNT NAME</span><span>:</span><span className="font-black">WARRIOR TECH SYSTEM</span></div>
+               <div className="grid grid-cols-[100px_8px_1fr]"><span>ACCOUNT NUMBER</span><span>:</span><span className="font-black">4019-753646-372</span></div>
+               <div className="grid grid-cols-[100px_8px_1fr]"><span>BRANCH</span><span>:</span><span className="font-black uppercase">MOHAKHALI</span></div>
+               <div className="grid grid-cols-[100px_8px_1fr]"><span>ACCOUNT TYPE</span><span>:</span><span className="font-black">CURRENT ACCOUNT</span></div>
             </div>
-          )}
+          </div>
+        </div>
 
+        <div className="px-8" style={{ marginTop: styles.signatureTopGap }}>
           <div 
-            className="grid grid-cols-4 gap-8 relative pb-4 w-full"
+            className="grid grid-cols-3 gap-12 relative pb-4 w-full"
             style={{ 
-              marginTop: styles.signatureTopGap,
-              justifyItems: styles.signatureAlign === 'center' ? 'center' : styles.signatureAlign === 'right' ? 'end' : 'start'
+              justifyItems: 'center'
             }}
           >
-            <div className="text-center border-t border-black pt-2 text-[10px] font-black uppercase w-full">Customer Sign</div>
-            <div className="text-center border-t border-black pt-2 text-[10px] font-black uppercase w-full">Prepared By</div>
-            <div className="text-center border-t border-black pt-2 text-[10px] font-black uppercase w-full">Checked By</div>
+            <div className="text-center border-t border-black border-dashed pt-2 text-[10px] font-black uppercase w-full">Customer Signature</div>
+            <div className="text-center border-t border-black border-dashed pt-2 text-[10px] font-black uppercase w-full">Prepared By</div>
             <div className="text-center relative w-full">
-              <div className="absolute -top-12 left-1/2 -translate-x-1/2 h-12 w-32">
-                 {settings?.authorizedSignature && <img src={settings.authorizedSignature} className="h-full w-full object-contain" alt="Signature" />}
+              <div className="absolute -top-12 left-1/2 -translate-x-1/2 h-16 w-32 flex flex-col items-center justify-center">
+                 <p className="text-[8px] font-black uppercase text-slate-400 mb-1">Warrior Tech System</p>
+                 {settings?.authorizedSignature && <img src={settings.authorizedSignature} className="h-10 w-full object-contain" alt="Signature" />}
+                 <p className="text-[8px] font-black uppercase text-slate-900 mt-1">Proprietor</p>
               </div>
-              <div className="border-t-2 border-blue-700 pt-2 text-[11px] font-black uppercase text-blue-800">Authorized Sign</div>
+              <div className="border-t border-black border-dashed pt-2 text-[10px] font-black uppercase w-full">Authorized Signature</div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 pt-2 pb-6 text-center border-t-[1.5mm] bg-white w-full z-50 no-print-absolute" style={{ borderColor: styles.footerAccent }}>
+      <div className="absolute bottom-0 left-0 right-0 pt-2 pb-6 text-center border-t-[1px] border-red-400 border-dotted bg-white w-full z-50 no-print-absolute">
         <p className="text-[11px] font-black text-slate-500 flex items-center justify-center gap-2 mb-1">
           <span className="text-red-600 text-lg">❤</span> {settings?.footerHeartMsg || "Thank You For Your Business"} <span className="text-red-600 text-lg">❤</span>
         </p>
-        <h4 className="font-black uppercase tracking-tight leading-none" style={{ fontSize: styles.footerBrandSize, color: styles.footerTextColor }}>{settings?.companyName || "Warrior Tech System"}</h4>
-        <div className="flex justify-center gap-10 text-[10px] font-black text-blue-700 uppercase tracking-widest mt-2.5 opacity-80">
+        <h4 className="font-black uppercase tracking-tight leading-none text-slate-800" style={{ fontSize: '18px' }}>{settings?.companyName || "Warrior Tech System"}</h4>
+        <p className="text-[9px] font-bold text-orange-500 uppercase tracking-widest mt-1">Innovative Security, Reliable Communication</p>
+        <div className="flex justify-center gap-6 text-[9px] font-black text-blue-700 uppercase tracking-widest mt-2.5 opacity-80">
           <span>• SECURITY SYSTEM</span>
-          <span>• COMMUNICATION</span>
+          <span>• COMMUNICATION SYSTEM</span>
           <span>• FIRE SAFETY</span>
-          <span>• NETWORKING</span>
+          <span>• NETWORK & IT SOLUTIONS</span>
         </div>
       </div>
     </div>

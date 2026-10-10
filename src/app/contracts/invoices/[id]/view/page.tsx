@@ -77,6 +77,9 @@ export default function ViewContractInvoicePage() {
     );
   }
 
+  // Generate dynamic title based on service category
+  const dynamicTitle = t(`${invoice.serviceName || 'otherService'}_title`).toUpperCase() || t('serviceAgreement').toUpperCase();
+
   return (
     <div className="max-w-[1000px] mx-auto space-y-6 pb-20 no-scrollbar">
       <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b px-4 py-3 flex items-center justify-between no-print mb-6 shadow-sm">
@@ -101,7 +104,7 @@ export default function ViewContractInvoicePage() {
 
       <div className="bg-white shadow-2xl rounded-none md:rounded-[2.5rem] overflow-hidden border border-slate-100 ring-1 ring-slate-100/50">
         <DocumentTemplate
-          title="MONTHLY SERVICE CHARGE BILL"
+          title={dynamicTitle}
           docNumber={`SLA-${invoice.id.slice(-6).toUpperCase()}`}
           date={invoice.createdAt?.toDate?.()?.toISOString() || new Date().toISOString()}
           customerName={invoice.customerName}

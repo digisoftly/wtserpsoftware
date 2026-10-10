@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -50,7 +51,7 @@ export default function NewServiceContractPage() {
   const [selectedProjectId, setSelectedProjectId] = React.useState("");
   const [agreementNo, setAgreementNo] = React.useState("");
   const [contractName, setContractName] = React.useState("");
-  const [serviceType, setServiceType] = React.useState("amc");
+  const [serviceType, setServiceType] = React.useState("internetService");
   const [startDate, setStartDate] = React.useState(new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = React.useState("");
   const [billingCycle, setBillingCycle] = React.useState("Monthly");
@@ -134,7 +135,7 @@ export default function NewServiceContractPage() {
     const contractData = {
       companyId, branchId,
       contractNumber: `SC-${Date.now().toString().slice(-6)}`,
-      contractName: contractName || `${customerName} - ${serviceType.toUpperCase()}`,
+      contractName: contractName || `${customerName} - ${t(serviceType).toUpperCase()}`,
       agreementNo, 
       customerId: selectedCustomerId, 
       customerName,
@@ -207,8 +208,24 @@ export default function NewServiceContractPage() {
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-slate-400">Linked Project</Label>
                 <Select value={selectedProjectId} onValueChange={setSelectedProjectId} disabled={!selectedCustomerId}>
-                  <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-100 font-bold text-xs"><SelectValue placeholder="Standalone or Project" /></SelectTrigger>
+                  <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-200 font-bold text-xs"><SelectValue placeholder="Standalone or Project" /></SelectTrigger>
                   <SelectContent className="max-h-[300px] rounded-xl shadow-2xl"><SelectItem value="standalone" className="text-xs font-bold">STANDALONE</SelectItem>{projects.map(p => <SelectItem key={p.id} value={p.id} className="text-xs font-bold uppercase">{p.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-black uppercase text-slate-400">Service Category</Label>
+                <Select value={serviceType} onValueChange={setServiceType}>
+                  <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none ring-1 ring-slate-100 font-bold text-xs uppercase"><SelectValue /></SelectTrigger>
+                  <SelectContent className="rounded-xl shadow-2xl">
+                    <SelectItem value="internetService" className="text-xs font-bold uppercase">{t('internetService')}</SelectItem>
+                    <SelectItem value="cctvService" className="text-xs font-bold uppercase">{t('cctvService')}</SelectItem>
+                    <SelectItem value="amcService" className="text-xs font-bold uppercase">{t('amcService')}</SelectItem>
+                    <SelectItem value="networkService" className="text-xs font-bold uppercase">{t('networkService')}</SelectItem>
+                    <SelectItem value="itSupportService" className="text-xs font-bold uppercase">{t('itSupportService')}</SelectItem>
+                    <SelectItem value="accessControlService" className="text-xs font-bold uppercase">{t('accessControlService')}</SelectItem>
+                    <SelectItem value="pabxService" className="text-xs font-bold uppercase">{t('pabxService')}</SelectItem>
+                    <SelectItem value="otherService" className="text-xs font-bold uppercase">{t('otherService')}</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5"><Label className="text-[10px] font-black uppercase text-slate-400">Reference No.</Label><Input value={agreementNo} onChange={e => setAgreementNo(e.target.value)} required className="h-11 rounded-xl font-black uppercase" placeholder="WTS/AMC/26/001" /></div>
