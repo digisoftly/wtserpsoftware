@@ -28,6 +28,7 @@ import { collection, doc, updateDoc, serverTimestamp, increment, query, orderBy 
 import { useTenant } from "@/context/tenant-context"
 import { useTranslation } from "@/hooks/use-translation"
 import { toast } from "@/hooks/use-toast"
+import { AuditService } from "@/lib/audit-service"
 import { cn } from "@/lib/utils"
 
 interface InvoiceItem {
@@ -52,7 +53,7 @@ interface InvoiceItem {
 export default function EditInvoicePage() {
   const { id } = useParams();
   const router = useRouter();
-  const { companyId, branchId } = useTenant();
+  const { companyId, branchId, userRole } = useTenant();
   const db = useFirestore();
   const { t } = useTranslation();
 
@@ -134,6 +135,7 @@ export default function EditInvoicePage() {
     if (!invoiceRef || lineItems.length === 0 || isSubmitting) return;
     setIsSubmitting(true);
     const customer = customers?.find(c => c.id === selectedCustomerId);
+    
     const updatedData = {
       customerId: selectedCustomerId,
       customerName: customer ? (customer.customerType !== 'individual' ? customer.companyName : `${customer.firstName} ${customer.lastName}`) : (invoice?.customerName || "Client"),
@@ -156,9 +158,21 @@ export default function EditInvoicePage() {
       terms,
       updatedAt: serverTimestamp(),
     };
+
     try {
       await updateDoc(invoiceRef, updatedData);
-      toast({ title: t('success') });
+      
+      // Audit Log
+      await AuditService.logAction(db!, companyId!, {
+        userId: userRole?.id || "admin",
+        userName: userRole?.name || "Admin",
+        action: 'UPDATE',
+        module: 'sales',
+        recordId: id as string,
+        details: `Invoice Modified: ${invoice?.invoiceNumber}. New Total: ${grandTotal}. Status: ${updatedData.status}`
+      });
+
+      toast({ title: t('success'), description: "Ledger entry updated successfully." });
       router.push("/sales");
     } catch (e: any) {
       toast({ variant: "destructive", title: t('error'), description: e.message });
@@ -196,7 +210,7 @@ export default function EditInvoicePage() {
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="font-bold text-xs" onClick={() => router.back()}>{t('cancel')}</Button>
           <Button size="sm" className="font-bold text-xs gap-2 px-8 h-10 rounded-full bg-blue-600 hover:bg-blue-700 shadow-xl" disabled={isSubmitting} onClick={handleUpdate}>
-            {isSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} {t('save')} Changes
+            {isSubmitting ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : <Save className="h-3.5 w-3.5" />} {t('save')} Changes
           </Button>
         </div>
       </div>

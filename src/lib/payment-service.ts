@@ -10,6 +10,7 @@ import {
   where,
   getDocs
 } from "firebase/firestore";
+import { AuditService } from "./audit-service";
 
 /**
  * PaymentService handles the complex atomic operations for payment collection.
@@ -19,7 +20,7 @@ export const PaymentService = {
   /**
    * Process a new payment against an invoice.
    */
-  async processPayment(db: Firestore, companyId: string, branchId: string, paymentData: any) {
+  async processPayment(db: Firestore, companyId: string, branchId: string, paymentData: any, adminInfo?: { id: string, name: string }) {
     const { invoiceId, amount, customerId, paymentMethod, reference, receivedBy, notes, paymentDate } = paymentData;
 
     return await runTransaction(db, async (transaction) => {
@@ -44,7 +45,7 @@ export const PaymentService = {
       const paymentRef = doc(collection(db, "companies", companyId, "branches", branchId, "payments"));
       const receiptNumber = `RCP-${Date.now().toString().slice(-6)}`;
       
-      transaction.set(paymentRef, {
+      const pRecord = {
         id: paymentRef.id,
         receiptNumber,
         invoiceId,
@@ -59,7 +60,9 @@ export const PaymentService = {
         paymentDate,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-      });
+      };
+      
+      transaction.set(paymentRef, pRecord);
 
       // 2. Update Invoice
       transaction.update(invoiceRef, {
@@ -86,6 +89,18 @@ export const PaymentService = {
         createdAt: serverTimestamp(),
       });
 
+      // 4. Log Audit
+      if (adminInfo) {
+        await AuditService.logAction(db, companyId, {
+          userId: adminInfo.id,
+          userName: adminInfo.name,
+          action: 'CREATE',
+          module: 'payments',
+          recordId: paymentRef.id,
+          details: `Payment Collected: ${amount} for Invoice ${invoice.invoiceNumber}. Method: ${paymentMethod}`
+        });
+      }
+
       return { success: true, receiptNumber, paymentId: paymentRef.id };
     });
   },
@@ -93,7 +108,7 @@ export const PaymentService = {
   /**
    * Deletes a payment and reverses all related balances and accounting entries.
    */
-  async deletePayment(db: Firestore, companyId: string, branchId: string, paymentId: string) {
+  async deletePayment(db: Firestore, companyId: string, branchId: string, paymentId: string, adminInfo?: { id: string, name: string }) {
     return await runTransaction(db, async (transaction) => {
       const paymentRef = doc(db, "companies", companyId, "branches", branchId, "payments", paymentId);
       const paymentSnap = await transaction.get(paymentRef);
@@ -130,7 +145,19 @@ export const PaymentService = {
       const txSnaps = await getDocs(txQuery);
       txSnaps.forEach(tDoc => transaction.delete(tDoc.ref));
 
-      // 3. Delete Payment Record
+      // 3. Log Audit
+      if (adminInfo) {
+        await AuditService.logAction(db, companyId, {
+          userId: adminInfo.id,
+          userName: adminInfo.name,
+          action: 'DELETE',
+          module: 'payments',
+          recordId: paymentId,
+          details: `Payment Reversed: ${payment.amount} for Receipt ${payment.receiptNumber}`
+        });
+      }
+
+      // 4. Delete Payment Record
       transaction.delete(paymentRef);
 
       return { success: true };
